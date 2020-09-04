@@ -7,7 +7,7 @@ For more information, see http://andreasviklund.com/dt_portfolio/leaves/
 
 /* General styles */
 body {background-color:#000; color:#ccc; font:80% "Lato",Tahoma,sans-serif; line-height:1.5em;}
-a {color:#60d060; text-decoration:none; font-weight:400;}
+a {color:#008000; text-decoration:none; font-weight:400;}
 a:hover {text-decoration:underline;}
 p,ul,ol,dl {margin:0 0 15px 0; line-height:1.6em;}
 h1 {color:#888; font-size:4.6em; margin-bottom:0;}
@@ -15,7 +15,7 @@ h1 a {text-transform:none; font-weight:400;}
 h1 a:hover {text-decoration:none; color:#eee;}
 h2 {font-size:2.8em; color:#333; margin:0 0 10px;}
 h3 {font-size:1.8em; margin:0 0 10px 0;}
-h1,h2,h3,.navmenu a {font-family: 'Alegreya SC', sans-serif; color:#60d060; font-weight:400; line-height:1.4em;}
+h1,h2,h3,.navmenu a {font-family: 'Alegreya SC', sans-serif; color:#008000; font-weight:400; line-height:1.4em;}
 
 /* Main layout container */
 #layout {margin:40px auto 0; width:960px;}
@@ -83,13 +83,13 @@ ul.menu li a:hover {color:#eee; text-decoration:none;}
 body .navmenu {line-height:2.6em;}
 
 /* Light styles, apply by using class="light" on the body HTML element */
-body.light {background:#fff; border-top:4px solid #60d060; border-bottom:8px solid #60d060; color:#888;}
-body.light a {color:#60d060;}
+body.light {background:#fff; border-top:4px solid #008000; border-bottom:8px solid #008000; color:#888;}
+body.light a {color:#008000;}
 body.light a:hover {color:#555;}
 body.light h1 {color:#888; font-size:4.6em; margin-bottom:0;}
 body.light h1 a:hover {color:#303030;}
 body.light h2 {color:#555;}
-body.light h1, body.light h2, body.light h3 {color:#60d060;}
+body.light h1, body.light h2, body.light h3 {color:#008000;}
 body.light ul.menu {border-top:1px solid #ddd;}
 body.light ul.menu li {border-bottom:1px solid #ddd;}
 body.light ul.menu li a:hover {color:#333;}
@@ -120,5 +120,5 @@ body .navmenu a {font-size:1.4em; display:inline-block; line-height:2.0em;paddin
 body.light .navmenu a {font-size:1.4em; display:inline-block; line-height:2.0em;padding:7px 12px; margin:0 10px 8px 0; background-color:#fff; border:1px solid #eee; border-radius:10px;}
 body .navmenu a.current {border-color:#444;}
 body.light .navmenu a.current {border-color:#ddd;}
-.headerimage img {width:100%; height:auto;}
+.headerimage img {width:auto; height:auto;}
 }
