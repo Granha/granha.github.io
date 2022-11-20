@@ -10,7 +10,7 @@ body {background-color:#000; color:#ccc; font:90% "Lato",Tahoma,sans-serif; line
 a {color:#008000; text-decoration:none; font-weight:400;}
 a:hover {text-decoration:underline;}
 p,ul,ol,dl {margin:0 0 15px 0; line-height:1.6em;}
-h1 {color:#555; font-size:4.6em; margin-bottom:0;}
+h1 {color:#6a6a6a; font-size:4.6em; margin-bottom:0;}
 h1 a {text-transform:none; font-weight:400;}
 h1 a:hover {text-decoration:none; color:#eee;}
 h2 {font-size:2.8em; color:#333; margin:0 0 10px;}
@@ -23,10 +23,10 @@ body.wider #layout {margin:40px auto 0; width:1200px;}
 
 /* Footer */
 #footer {}
-#footer .col {color:#555; border-top:1px dotted #1a1a1a; padding:20px 0 0;}
+#footer .col {color:#6a6a6a; border-top:1px dotted #1a1a1a; padding:20px 0 0;}
 #footer p {text-align:center;}
-#footer a {color:#555; font-weight:400; text-decoration:none; border-bottom:1px dotted #333;}
-#footer a:hover {color:#aaa; text-decoration:none; border-bottom:1px dotted #555;}
+#footer a {color:#6a6a6a; font-weight:400; text-decoration:none; border-bottom:1px dotted #333;}
+#footer a:hover {color:#aaa; text-decoration:none; border-bottom:1px dotted #6a6a6a;}
 
 /* Grid classes, fixed width, 960px with 12 columns */
 .col {float:left; margin:0 10px; overflow:hidden; float:left; display:inline;}
@@ -63,7 +63,7 @@ body.wider .c12 {width:1180px;}
 
 /* Menu list styles */
 ul.menu {list-style:none; margin:0; padding:10px 0; border-top:1px solid #333;}
-ul.menu li {list-style:none; text-align:center; font-size:1.2em; margin:0 0 10px; padding:0 0 8px 0; color:#555; border-bottom:1px solid #333;}
+ul.menu li {list-style:none; text-align:center; font-size:1.2em; margin:0 0 10px; padding:0 0 8px 0; color:#6a6a6a; border-bottom:1px solid #333;}
 ul.menu li a {font-size:1.2em; font-weight:400;}
 ul.menu li a:hover {color:#eee; text-decoration:none;}
 
@@ -83,19 +83,19 @@ ul.menu li a:hover {color:#eee; text-decoration:none;}
 body .navmenu {line-height:2.6em;}
 
 /* Light styles, apply by using class="light" on the body HTML element */
-body.light {background:#fff; border-top:4px solid #008000; border-bottom:8px solid #008000; color:#555;}
+body.light {background:#fff; border-top:4px solid #008000; border-bottom:8px solid #008000; color:#6a6a6a;}
 body.light a {color:#008000;}
-body.light a:hover {color:#555;}
-body.light h1 {color:#555; font-size:4.6em; margin-bottom:0;}
+body.light a:hover {color:#6a6a6a;}
+body.light h1 {color:#6a6a6a; font-size:4.6em; margin-bottom:0;}
 body.light h1 a:hover {color:#303030;}
-body.light h2 {color:#555;}
+body.light h2 {color:#6a6a6a;}
 body.light h1, body.light h2, body.light h3 {color:#008000;}
 body.light ul.menu {border-top:1px solid #ddd;}
 body.light ul.menu li {border-bottom:1px solid #ddd;}
 body.light ul.menu li a:hover {color:#333;}
-body.light .slogan {color:#555;}
-body.light #footer .col {color:#555; border-top:1px dotted #ccc;}
-body.light #footer a {color:#555; border-bottom:1px dotted #ddd;}
+body.light .slogan {color:#6a6a6a;}
+body.light #footer .col {color:#6a6a6a; border-top:1px dotted #ccc;}
+body.light #footer a {color:#6a6a6a; border-bottom:1px dotted #ddd;}
 body.light #footer a:hover {color:#444; border-bottom:1px dotted #eee;}
 body.light .navmenu a {font-size:1.4em;}
 
