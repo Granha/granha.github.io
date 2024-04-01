@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS 598: Expansion, Codes, and Optimization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fff5e6; /* Light orange background */
+            color: #333;
+        }
+        header, footer {
+            background-color: #ff8c00; /* Darker orange */
+            color: #fff;
+            text-align: center;
+            padding: 1rem 0;
+        }
+        header h1 {
+            margin: 0.5rem 0;
+        }
+        section {
+            background-color: #fff;
+            margin: 1rem auto;
+            padding: 2rem;
+            max-width: 800px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #ff8c00; /* Orange for headings */
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+            text-indent: -1rem;
+        }
+        li:before {
+            content: "– "; /* Unicode en dash */
+            padding-right: 5px;
+            color: #ff8c00; /* Orange for bullet points */
+        }
+        p, li {
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CS 598: Expansion, Codes, and Optimization both Classical and Quantum</h1>
+        <p><strong>When:</strong> Fall 2024</p>
+        <p><strong>Where:</strong> UIUC</p>
+    </header>
+
+    <section>
+        <h2>Course Description</h2>
+        <p>The goal of this graduate topics course is to take students from the rudiments all the way
+        to some parts of the research frontiers of expansion, coding theory, and optimization both
+        from a classical and quantum perspective.</p>
+    </section>
+
+    <section>
+        <h2>Main Topics</h2>
+        <ul>
+            <li><strong>Expansion:</strong> Expander graphs combine two opposing properties of being well-connected yet
+            sparse. This powerful combination leads to a variety of applications in CS (and mathematics)
+            such as error correction, hardness of approximation, fast algorithms, sampling, etc.</li>
+            <li><strong>Coding theory:</strong> Codes are "robust" collections of strings that not only have implications
+            for protection against errors in communication and storage, but they also have connections
+            to diverse fields such as complexity theory, expansion, etc. Recently, many breakthrough
+            constructions of codes were discovered, such as explicit binary codes close to the GV bound,
+            good LTCs, and good qLDPC.</li>
+            <li><strong>Optimization:</strong> Convex programming, in particular, linear programming (LP) and semi-definite programming (SDP),
+            are at the heart of many efficient algorithms. The use of powerful SDP hierarchies such as the Sum-of-Squares
+            hierarchy has recently found many algorithmic applications.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Course Phases</h2>
+        <article>
+            <h3>Phase 1</h3>
+            <p>In this initial phase, we will cover some foundational topics of these fields which may include some of the following:</p>
+            <ul>
+                <li>Expanders: Notions of expansion, Random Walks, Cheeger's inequality, Cayley graphs of Abelian groups, Zig-zag construction, Ramanujan Graphs</li>
+                <li>Coding Theory: Reed Solomon, Reed Muller, Hadamard, LDPC, Tanner, and Quantum CSS Codes, Operations: code concatenation, AEL, tensor, Some code bounds: GV bound, MRRW, Singleton, etc, List Decoding</li>
+                <li>Fourier Analysis: Basics (Fourier decomposition, Parseval, etc), BLR, biased distributions and codes, Hypercontractivity</li>
+                <li>Optimization: Linear programming (Delsarte's LP combining codes, Fourier analysis and LPs), Semi-definite programming, and Sum-of-Squares (CSPs on Expanders and a local-to-global phenomenon)</li>
+                <li>Spectral graph theory: Sensitivity Conjecture (signing, interlacing, etc), Johnson scheme (a complete analog of simplicial HDXs)</li>
+            </ul>
+        </article>
+        <article>
+            <h3>Phase 2</h3>
+            <p>In this second phase, we will cover some recent topics at the research frontiers which may include some of the following:</p>
+            <ul>
+                <li>Dinur's PCP by gap amplification</li>
+                <li>Explicit balanced codes close to the GV bound by Ta-Shma</li>	      
+                <li>Locally Testable Codes, Left-Right Cayley Complexes, c^3-LTC of Dinur et al</li>
+                <li>Good quantum LDPC Codes, Quantum Tanner Codes</li>
+                <li>Locally Decodable Codes, Matching Vector Codes</li>
+                <li>Bipartite Ramanujan graphs (2-lifts MSS'14)</li>
+                <li>High-dimensional expanders: Random walks (Up and Down walks), Trickle-down, Expansion of bases exchange of Matroids</li>
+            </ul>
+        </article>
+        <article>
+            <h3>Phase 3</h3>
+            <p>In this last phase, we will have project presentations. Topics for projects will be selected as we transition from phase 1 to phase 2, with several suggestions available and students encouraged to consult with the instructor.</p>
+            <h4>Topics for Projects</h4>
+            <p>Possible topics include, but are not limited to:</p>
+            <ul>
+                <li><strong>Classical:</strong> Agreement Expansion, HDX constructions, Derandomizing Space Bounded Computation, Tree codes, Global Hypercontractivity, Lower bounds on LCCs, Strong bounds for 3-APs, Insertions and Deletions, Reed Muller against BEC and BSC.</li>
+                <li><strong>Quantum:</strong> Quantum PCP, Locally Testable Quantum Codes, SYK and Sum-of-Squares, Pseudorandom Unitaries, Quantum Expanders.</li>
+            </ul>
+        </article>
+    </section>
+
+    <section>
+        <h2>Grading</h2>
+        <p>This is an advanced graduate topics course, so the primary goal is to develop your research maturity and increase your knowledge and skills. Grades will be a secondary concern. We do expect you to seriously attack your chosen research project, but there is no requirement of a tangible outcome.</p>
+    </section>
+
+    <section>
+        <h2>Pre-requisites</h2>
+        <p>Mathematical maturity is the only pre-requisite. Having taken some proof-based courses in CS or math may be extremely helpful.</p>
+    </section>
+
+    <footer>
+      <p class="disclaimer">Disclaimer: This page is currently under construction and subject to change.</p>      
+    </footer>
+</body>
+</html>
