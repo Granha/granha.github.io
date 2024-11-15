@@ -196,6 +196,25 @@
 	  </li>  
 	  <li><b>Lecture 22: </b> We recalled the abstract weak regularity lemma and its proof from last class. Next, we proceeded to make it algorithmically efficient (for cut functions as distinguishers) since our existential weak regularity proof relies on an oracle call to find a "violating" distinguisher (and this may not even be computable). Toward this goal, we introduced the cut norm of a matrix. and we also stated the SDP-based approximating algorithm of Alon and Naor. We moved on to provide an efficient approximation algorithm for MaxCut (and implicitly to other cut problems) on dense graphs. Flipped classroom: you were asked to design this algorithm, and you were allowed to invoke the Alon-Naor algorithm as a subroutine. (Sampling-based ideas, as some of you hinted, also work in this dense regime, but we continued with our SDP-based strategy.). A crucial observation is that the weak regularity decomposition uses only O(1/delta^2) cut functions, where delta is the (normalized) approximation error. Using these few cut functions, we showed an exp(exp(poly(1/delta))) poly(n) time approximation algorithm for MaxCut (it is possible to improve this running time. Can you see how?).
 	  </li>
+	  <li><b>Lecture 23: </b> We started by discussing 2-CSPs and how the structure of the underlying constraint graph influences how well they can be approximated. We considered some extreme
+	    cases: planar graphs (more generality hyperfinite graphs) and expanders (more generality low-threshold rank graphs, which include dense graphs). Efficient approximation algorithms are known for various parameter regimes of these extreme cases. Next, we introduced general k-CSPs. We introduced Max 3-SAT and gave a very simple algorithm that gives
+	    a 7/8-approximation. We introduced the proof verification class PCP[r,q], where 'r' is the number of random bits and 'q' is the number of queries. First, we stated the celebrated PCP
+	    theorem for NP in terms of proof verification, namely, NP is contained in PCP[O(log(n)),O(1)]. Second, we stated the PCP theorem for NP in terms of the hardness of approximation of k-CSPs. Third,
+	    we stated the PCP theorem for NP in terms of multi-prover interactive systems. We proved (various directions of) the equivalence of these three versions of the classical PCP theorem. We also
+	    discussed that NEXP (an exponential scaled-up version of NP) is contained in PCP[O(poly(n)),O(1)].
+	  </li>
+	  <li><b>Lecture 24: </b> We recalled that PCP theorem for NP and their equivalent views from last class. Next, we introduced the k-local Hamiltonian (k-LH) problem, which is a quantum analog of
+	    classical k-CSPs.  We stated Kitaev's quantum Cook-Levin theorem, establishing that k-LH is QMA-complete. We introduced the k-LH (quantum CSP) version of the quantum PCP Conjecture and 
+	    briefly discussed the other two versions based on proof verification and multi-prover systems and how the connection among them is not as simple as in the classical case. Next, we switched gears back to
+	    the classical setting and proceeded to prove an exponential-sized PCP for NP, namely, NP is contained in PCP[O(poly(n)), O(1)]. For this, we started with the quadratic equations problems over
+	    F_2 (QuadEq) and showed how to make a robust version of an assignment to the system of equations (a much more robust proof), allowing for verifications using O(1) queries. As a warm-up, we
+	    discussed a simple sum-check protocol to test the equality of two vectors over F_2 probabilistically. This naturally leads to a way of checking if the input system of equations is satisfied
+	    assuming the assignment is 'y=x tensor x', and to the Hadamard encoding of the assignment. We saw how the BRL test (studied in class before) can be used to check closeness to a true
+	    codeword. We also established that the Hadamard code is 2-query locally correctable code (2-LCC), and used this to recover (w.h.p) arbitrary positions in a corrupted encoding of the
+	    assignment. Next, we asked for the Hadamard encoding of 'x' as part of our robust proof, so that we can check that 'y' is actually of the form 'x tensor x'. We again apply a sum-check
+	    strategy to check this property and conclude the proof. Finally, we discussed that this exponential PCP can be used effectively in some PCP composition settings (when the
+	    problem to be verified has constant or small input size).
+	  </li>   	  
 	</ul>
     </section>    
 
