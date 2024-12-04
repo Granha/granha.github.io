@@ -214,7 +214,32 @@
 	    assignment. Next, we asked for the Hadamard encoding of 'x' as part of our robust proof, so that we can check that 'y' is actually of the form 'x tensor x'. We again apply a sum-check
 	    strategy to check this property and conclude the proof. Finally, we discussed that this exponential PCP can be used effectively in some PCP composition settings (when the
 	    problem to be verified has constant or small input size).
-	  </li>   	  
+	  </li>
+
+         <li><b>Lecture 25: </b> We started sketching Dinur's proof of the PCP theorem for NP via gap amplification. We recalled the CSP version of the PCP. We stated the gap amplification theorem
+	 and deduced the PCP theorem from it. We showed that the gap amplifications is comprised of four steps: (i) degree reduction of the constraint graph, (ii) "expanderization" of the constraint
+	 graph, (iii) powering of the CSP (analogous to graph powering), (iv) alphabet reduction via PCP(P) composition.  For steps i, ii and iv, there is a constant loss in the gap, which is
+	 compensated by the powering step (provided the powering parameter is sufficiently large). We deduced the gap amplification theorem from these four steps. Next, we sketched the proofs
+	 of steps (i) and (ii). Finally, we described in more detail the powering step.
+	 </li>
+	 <li><b>Lecture 26: </b> We recalled the gap amplification theorem and its four steps from last class. We then proceed to give a proof sketch of the powering step of Dinur (with the improved
+	 parameters of Radhakrishna). We concluded with the alphabet reduction of step (iv) via a PCP(P) composition leveraging ideas from our baby PCP. Next, we switched gears to discuss some
+	 open problems about PCP. We mention the dream goal of having a linear size PCP (vaguely analogous to having a good code). We mentioned desired of better understanding the PCP theorem by
+	 having a more direct one-shot construction. Next, we introduced Khot's Unique Games Conjecture and briefly mentioned Arora-Barak-Steurer subexponential algorithm, as well, the recent
+	 proof of the 2-to-2 conjecture.
+	 </li>
+	 <li><b>Lecture 27: </b> Fall break.
+	 </li>
+	 <li><b>Lecture 28: </b> Fall break.
+	 </li>
+	 <li><b>Lecture 29: </b> We surveyed some of the frontiers and open questions in coding theory, mostly about the elusive case of binary codes. We recalled the existential 1950's GV bound
+	 from previous lectures. We discussed the 1970's MRRW impossibility bound via linear programming. These two bound are still the state-of-art bounds for binary codes in the important good code regime. We discuss
+	 the substantial gap between these two bounds and how this is an important longstanding open problem in coding theory. We discussed Ta-Shma's breakthrough construction of epsilon-balanced
+	 codes near the GV bound with its key ingredient: a "higher-order" Zig-Zag. We also recalled how Zig-Zag has influenced other important results such as Reingold SL=L and Dinur's PCP by gap
+	 amplification. We mentioned that the Sum-of-Squares SDP hierarchy (studied in class) was used to give the first efficient decoding algorithm for Ta-Shma's codes. We mentioned that weak regularity
+	 (of sparse expanding tensors) was used to give near-linear time decoding of Ta-Shma's codes. We briefly discussed the role of the alphabet size and how increasing the alphabet can substantially
+	 change the nature of the coding theory problem. We briefly mentioned some large alphabet codes, recalled the singleton bound, and mentioned the generalized singleton bound.
+	 </li> 	  
 	</ul>
     </section>    
 
