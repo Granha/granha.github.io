@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading Group: Around the Classical and Quantum PCP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fff5e6; /* Light orange background */
+            color: #333;
+        }
+        header, footer {
+            background-color: #ff8c00; /* Darker orange */
+            color: #fff;
+            text-align: center;
+            padding: 1rem 0;
+        }
+        header h1 {
+            margin: 0.5rem 0;
+        }
+        section {
+            background-color: #fff;
+            margin: 1rem auto;
+            padding: 2rem;
+            max-width: 800px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #ff8c00; /* Orange for headings */
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+            text-indent: -1rem;
+        }
+        li:before {
+            content: "– "; /* Unicode en dash */
+            padding-right: 5px;
+            color: #ff8c00; /* Orange for bullet points */
+        }
+        p, li {
+            line-height: 1.6;
+        }
+        img {
+	    display: block;
+	    margin-left: auto;
+	    margin-right: auto;	    
+            width: 35%;	    
+            height: 35%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+      <h1>Reading Group: Around the Classical and Quantum PCP</h1>
+      <p><strong>When:</strong> 4:30pm-7:30pm, Thursdays (Winter 2025)</p>
+      <p><strong>Where:</strong> SC 0216, University of Illinois Urbana-Champaign</p>
+      <p><strong>Organizers:</strong> <a href="https://granha.github.io"> Fernando Granha Jeronimo </a> </p> 
+    </header>
+    <main>
+      <section>
+	<h2> Overview </h2>
+        <p>
+          Welcome to our reading group dedicated to a broad exploration around Classical and Quantum PCPs (Probabilistically Checkable Proofs).
+        </p>	
+        <img src="img_pcp.jpg" alt="Classical and Quantum PCP visualization">
+      </section>
+      <section>
+	<h2> Tentative Format</h2>
+	We can have usual ~1 hour talks, or, ideally, more intense (and fun ;) ~3 hours gatherings depending on the speaker interests.
+	<ul>
+	  <li> First Part (~1 hour): general presentation about the work with context, motivation, and overview of technical results possibly with some simpler proofs.</li>
+	  <li> Break (~30 minutes): recharge and socialize. </li>
+	  <li> Second Part (~1 hour + x minutes): present (some of) the technical part and proofs in more detail.</li>
+	  <li> Final Part (~30- x minutes): more questions, free speculations, and socialization.</li> 
+	</ul>
+      </section>
+      <section>
+	<h2> A List of Papers </h2>
+        <p>
+	  You are welcome to present any paper broadly related to our main topic.
+        </p>
+
+	<ul>
+	  <li> <a href="https://arxiv.org/abs/1309.7495">The Quantum PCP Conjecture</a> survey by Aharonov, Arad, Vidick </li>
+	  <li> <a href="https://arxiv.org/abs/2309.16475">Circuit-to-Hamiltonian from tensor networks and fault tolerance</a> by Anshu, Breuckmann, Nguyen</li>
+	  <li> <a href="https://arxiv.org/abs/2402.07476">Expansion of higher-dimensional cubical complexes with application to quantum locally testable codes</a> by Dinur, Lin, Vidick</li>	  
+	</ul>
+
+	<ul>
+	  <li> <a href="https://arxiv.org/abs/2407.12762">Quasi-Linear Size PCPs with Small Soundness from HDX</a> by Bafna, Minzer, Vyas</li>
+	</ul>
+      </section>      
+    </main>
+</body>
+</html>
