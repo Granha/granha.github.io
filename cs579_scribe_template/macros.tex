@@ -1,0 +1,102 @@
+%%%%%%%%% For WordPress conversion
+
+\newif\ifblog
+\newif\iftex
+\blogfalse
+\textrue
+
+\def\more{}
+
+
+\usepackage{ulem}
+\def\em{\it}
+\def\emph#1{\textit{#1}}
+
+\def\image#1#2#3{\begin{center}\includegraphics[#1pt]{#3}\end{center}}
+
+\let\hrefnosnap=\href
+
+\newenvironment{btabular}[1]{\begin{tabular} {#1}}{\end{tabular}}
+
+\newenvironment{red}{\color{red}}{}
+\newenvironment{green}{\color{green}}{}
+\newenvironment{blue}{\color{blue}}{}
+
+
+
+%%%%%%%%% Complexity classes
+
+\def\np{{\rm NP}}
+\def\p{{\rm P}}
+\def\dtime{{\rm DTIME}}
+\def\ntime{{\rm NTIME}}
+
+
+%%%%%%%%% Typesetting shortcuts
+
+\def\B{\{0,1\}}
+\def\xor{\oplus}
+
+\def\P{\mathop{\mathbb P}}
+\def\E{\mathop{\mathbb E}}
+\def\var{{\bf Var}}
+
+\def\N{{\mathbb N}}
+\def\Z{{\mathbb Z}}
+\def\R{{\mathbb R}}
+
+
+\def\bz{{\bf z}}
+
+\def\true{{\tt true}}
+\def\false{{\tt false}}
+
+%%%%%%%%% Theorems and proofs
+
+\newtheorem{exercise}{Exercise}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+\newenvironment{proof}{\noindent {\sc Proof:}}{$\Box$ \medskip} 
+
+
+%%%%%%%%% To typeset the header
+
+\def\courseprof{Fernando Granha Jeronimo}
+\def\coursenum{CS 579}
+\def\coursename{Computational Complexity}
+
+\newlength{\tpush}
+\setlength{\tpush}{2\headheight}
+\addtolength{\tpush}{\headsep}
+
+
+\newcommand{\scribenotesAux}[4]{\noindent\vspace*{-\tpush}\newline\parbox{\textwidth}
+{UIUC --- \coursenum : \coursename \newline
+Instructor: \courseprof \hfill #1 \newline
+Scriber(s): #3 \newline
+\mbox{}\hrulefill\mbox{}}\vspace*{1ex}\mbox{}\newline
+\bigskip
+\begin{center}{\Large\bf  #2}\end{center}
+\bigskip}
+
+\newcommand{\scribenotes}[3]{\scribenotesAux{#2}{#1}{#3}}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
