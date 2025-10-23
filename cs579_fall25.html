@@ -81,15 +81,55 @@
       <h2>Lectures</h2>
 	<ul>
 	  <li><b>Lecture 1 (26 Aug):</b> A Glimpse of Computational Complexity.
-	   <a href="./cs579_fall25/Lecture_01.pdf">[notes]</a></li>
+	    <a href="./cs579_fall25/Lecture_01.pdf">[notes]</a></li>
+	  
 	  <li><b>Lecture 2 (28 Aug):</b> Part 1: Space-bounded computation, Savitch's theorem, L vs NL. Part 2: Introduction to Boolean Fourier analysis. <a href="./cs579_fall25/Lecture_02.pdf">[notes]</a></li>
+	  
 	  <li><b>Lecture 3 (02 Sep):</b> Codes, local testability, and BLR linearity testing via Fourier analysis. <a href="./cs579_fall25/Lecture_03.pdf">[notes]</a></li>
+	  
 	  <li><b>Lecture 4 (04 Sep):</b> Local correctability, local decodability, Cayley graphs, Boolean hypercube (with eigenvectors and eigenvalues), some complexity measures of Boolean functions (sensitivity, degree, decision tree complexity). <a href="./cs579_fall25/Lecture_04.pdf">[notes]</a></li>
+	  
 	  <li><b>Lecture 5 (09 Sep):</b> No class (<a href="https://www.mfo.de">Oberwolfach</a> workshop). Assigned video: <a href="https://www.youtube.com/watch?v=rGHCuLqSvww">Expanders survey</a> by Wigderson. Further reading: <a href="https://www.cs.huji.ac.il/~nati/PAPERS/expander_survey.pdf">Expander Graphs and Their Applications</a> survey by Hoory, Linial and Wigderson.</li>
+	  
 	  <li><b>Lecture 6 (11 Sep):</b> No class (<a href="https://www.mfo.de">Oberwolfach</a> workshop). Assigned video: <a href="https://www.youtube.com/watch?v=JIdtNIWcnWY">List and local decoding</a> by Guruswami. Further reading: <a href="https://cse.buffalo.edu/faculty/atri/courses/coding-theory/book/web-coding-book.pdf">Essential Coding Theory</a> book by Guruswami, Rudra and Sudan.</li>
+	  
 	  <li><b>Lecture 7 (16 Sep):</b> From Graph Isomorphism to Interactive Proofs and the PCP Theorem: Randomness, Verification, and Hardness of Approximation.  <a href="./cs579_fall25/Lecture_07.pdf">[notes]</a></li>
-	  <li><b>Lecture 8 (18 Sep):</b> Flipped Classroom: Probabilistically Checkable Proofs via the Hadamard Code.  <a href="./cs579_fall25/Lecture_08.pdf">[notes]</a></li>
-	  <li><b>Lecture 9 (23 Sep):</b> TBD</li>	  	  
+	  <li><b>Lecture 8 (18 Sep):</b> <i>Flipped classroom:</i> Probabilistically Checkable Proofs via the Hadamard Code.  <a href="./cs579_fall25/Lecture_08.pdf">[notes]</a></li>
+
+	  <li><b>Lecture 9 (23 Sep):</b> We completed the proof of the Hadamard PCP together to iron out all details. Introduced <i>expander graphs</i> and discussed various expansion regimes, including optimal spectral expanders known as <i>Ramanujan graphs</i>.</li>
+
+	  <li><b>Lecture 10 (25 Sep):</b> Expander graphs and fundamental pseudorandom properties. Proved the <i>Expander Mixing Lemma (EML)</i>, showing the pseudorandom behavior of edges
+	    (analogous to Erdős–Rényi random graphs). Demonstrated the fast mixing time of random walks on expanders.</li>
+
+	  <li><b>Lecture 11 (30 Sep):</b> <i>Cayley graphs</i> over abelian groups. Presented a randomized construction of ε-spectral expanders over ℤ<sub>2</sub><sup>n</sup>
+	    using the Chernoff bound. Discussed the adjacency matrix and its quadratic form, and their connection to the spectral theorem. Introduced the Courant–Fischer min–max
+	    variational identities for eigenvalues. Mentioned <i>Cheeger’s inequality</i> (and its higher-order versions).</li>
+	  
+	  <li><b>Lecture 12 (02 Oct):</b> A glimpse of the power of pseudorandomness: <i>Expander Chernoff</i>. Introduced the <i>Matrix Chernoff</i> bound and analyzed expansion of Cayley
+	    graphs over general groups. Discussed <i>k-wise independent</i> (uniform) generators and their ability to fool decision trees and low-degree polynomials. Introduced
+	    <i>ε-biased distributions</i> that fool all Fourier characters, and <i>ε-balanced codes</i>. Highlighted the pseudorandom triad: the equivalence between ε-biased distributions,
+	    ε-balanced codes, and ε-spectral expanders over ℤ<sub>2</sub><sup>n</sup>.</li>
+
+	  <li><b>Lecture 13 (09 Oct):</b> Recalled ε-biased distributions. Introduced polynomials over 𝔽<sub>2</sub> and Reed–Muller codes. Noted that summing ε-biased distributions can
+	    fool low-degree polynomials. Began our multistage quest to construct explicit ε-biased distributions from scratch, requiring three ingredients: (1) a good explicit binary code,
+	    (2) derandomized XOR amplification, and (3) an explicit family of bounded-degree expanders. Studied the first ingredient—the <i>Sipser–Spielman Tanner code construction</i>
+	    of good binary LDPC codes—and analyzed its distance and rate.</li>
+	  
+	  <li><b>Lecture 14 (11 Oct):</b> <i>Interlude (in preparation for a talk on derandomizing random linear codes)</i>: Hamming vs. Shannon error models, list decoding, Reed–Solomon codes,
+	    the Singleton bound, list-decoding capacity, folded Reed–Solomon codes, the Alon–Edmonds–Luby (AEL) expander-based construction, the generalized Singleton bound (GRS), and how AEL
+	    approaches GRS capacity. <a href="./presentations/fernando_talk_ael_gsb.pdf">[presentation]</a></li>
+
+	  <li><b>Lecture 15 (14 Oct):</b> XOR/direct-sum as a distance and hardness amplification operation. XOR amplification via complete hypergraphs, and derandomized XOR amplification
+	    using expander walks. Expressed bias reduction in spectral terms and proved exponential decay of operator norms. Constructed explicit ε-biased distributions for arbitrary
+	    target ε &gt; 0.</li>
+
+	  <li><b>Lecture 16 (16 Oct):</b> Final missing explicit ingredient in our construction of ε-biased distributions: an explicit construction of expander graphs via the
+	    <i>Zig–Zag product</i>. <a href="https://annals.math.princeton.edu/2002/155-1/p04">[paper]</a></li>
+
+	  <li><b>Lecture 17 (21 Oct):</b> <i>Flipped classroom:</i> you proved the properties of the Zig–Zag product, including its expansion guarantees and composition behavior.</li>
+
+
+	  <!-- <li><b>Lecture 17 (23 Oct):</b> <a href="./presentations/zig_zag.pdf">[presentation]</a>, TBD...</li> -->
 	</ul>
     </section>
 
