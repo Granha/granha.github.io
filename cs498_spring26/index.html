@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS 498QC Introduction to Quantum Computing - UIUC</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Import Avenir font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Avenir:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Avenir', sans-serif; /* Use Avenir font */
+            font-size: 18px; /* Font size for the new sections */
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+            color: rgb(79, 79, 79); /* Change text color to dark gray */
+        }
+
+         .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .container p {
+            margin-bottom: 15px; /* Increase the margin between paragraphs in the content */
+        } 
+
+        .smaller-text {
+            font-size: 14px; /* Font size for the new sections */
+            text-align: left;
+        }
+
+        .container.smaller-spacing {
+          padding: 0px; /* Adjusted spacing for the new sections */
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            background-color: black; 
+        }
+
+        footer {
+            margin-top: 40px;
+            text-align: right;
+            background-color: black; 
+          /*  font-family: 'Playfair Display', serif;*/ /* Set the font to Georgia for the footer */
+        }
+
+        h1 {
+            font-size: 36px;
+            white-space: nowrap;
+            color: white;
+        }
+
+     h2 {
+        margin-bottom: 20px; /* Adjust the value as needed */
+        }
+
+        table {
+            border: none; 
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: none; /* 1px solid #ddd;*/
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2; 
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        /* Set the width of each column in the table */
+    table th:nth-child(1),
+    table td:nth-child(1) {
+        width: 10%;
+    }
+
+    table th:nth-child(2),
+    table td:nth-child(2) {
+        width: 50%;
+    }
+
+    table th:nth-child(3),
+    table td:nth-child(3), {
+        width: 10%;
+    }
+
+    table th:nth-child(4),
+    table td:nth-child(4) {
+        width: 30%;
+    }
+
+
+         ul {
+            padding-left: 3px; /* Add padding to align bullets with text */
+        }
+
+         a {
+             text-decoration: none; /* Remove the underline */
+             color: #4682B4;
+         }
+
+        a:hover {
+            text-decoration: underline; /* Add underline on hover */
+        }
+
+        .list-container {
+            margin: 20px;
+        }
+        .list-item {
+            margin-bottom: 20px;
+        }
+        .label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>CS 498QC: Introduction to Quantum Computing<br> (Spring 2026)</h1>
+        </div>
+    </header>
+
+    <section class="course-info">
+        <div class="container">
+            <h2>Course Information</h2>
+
+            <p><strong>Instructors:</strong>  Fernando Granha Jeronimo (granha@illinois.edu)</p>
+            <p><strong>Credits:</strong> 4</p>
+            <p><strong>Time:</strong>  Tuesdays and Thursdays 9:30 - 10:45 am</p>
+            <p><strong>Location:</strong> 1304 Siebel Center for Computer Science</p>
+            <p><strong>Office Hours:</strong> Fernando (Tuesdays 10:45am-noon after class in Siebel 3304 or by appointment)</p>
+	    <!--
+            <p><strong>Discussion Forum:</strong> <a href="https://edstem.org/us/courses/74355/discussion">Ed Discussion</a>. You will automatically be enrolled the day before the first day of the instruction (the first day of instruction is January 21st) on your @illinois.edu email. All course announcenments, policies, discussions and homeworks will be available only on Ed Discussion. Instead of sending emails, students are encouraged to send direct messages to the course staff via the chat feature on Ed Discussion.</p>	   
+            <p><strong>Homework Submission:</strong> <a href="https://www.gradescope.com/courses/959276">Gradescope</a>. You will automatically be enrolled on your @illinois.edu email. </p>
+	    -->
+        </div>
+    </section>
+
+    <section class="course-description">
+        <div class="container">
+            <h2>Course Description</h2>
+            <p>This course aims to introduce the principles of quantum computing, laying a solid foundation for further advanced courses or research in quantum information. We will tentatively cover the following topics:</p>
+        <ul>
+            <li>Basic concepts and axioms in quantum information, including what a qubit is, what entanglement means, and other related concepts</li>
+           <li>Fundamental computational operations like quantum gates and measurements</li>
+           <li>Exchanging quantum information through basic protocols like quantum teleportation and superdense coding</li>
+ <li>Solving computational problems using quantum algorithms such as Simons' algorithm, Quantum Fourier Transform and phase estimation, Shor's factoring algorithm, Grover search and amplitude amplification</li>
+ <li>Advanced topics possibly covering quantum complexity, cryptography, error correction, or more</li>
+        </ul>         
+        <br> 
+        <p>This course will take a theoretical computer science perspective on quantum computing. A background in quantum physics is not required, although it can be helpful.</p>
+        </div>
+    </section>
+
+    <section class="prerequisites">
+        <div class="container">
+            <h2>Prerequisites</h2>
+            <p>This will be a challenging theory course and a solid understanding of linear algebra, discrete math, probability theory, and algorithms and models of computation is important. In particular, a good background and comfort in the topics covered in <a href="https://cs.illinois.edu/academics/courses/cs374">CS 374</a> will be assumed.</p>
+        </div>
+    </section>
+
+    <section class="schedule">
+        <div class="container">
+            <h2>Tentative Schedule (subject to changes)</h2>
+
+
+    <div class="list-container">
+      <ul>
+	
+            <li class="list-item">
+              01/20: Overview of the field, what is a qubit? <!-- (<a href="./Notes/intro.pdf">slides</a>, <a href="./Notes/Lecture-1.pdf">notes</a>)--> <br>
+              <strong>Important background:</strong> <a href="https://www.3blue1brown.com/topics/linear-algebra">linear algebra review by 3Blue1Brown.</a> <a href="https://www.youtube.com/watch?v=7UJ4CFRGd-U&list=PLE7DDD91010BC51F8&index=1"> MIT 18.06 Linear Algebra by Gilbert Strang.</a> A suggested textbook reference for linear algebra is <em>Linear Algebra Done Right</em> by Sheldon Axler. A digital version of this book can be accessed <a href="https://link.springer.com/book/10.1007/978-3-031-41026-0" target="_blank" rel="noreferrer noopener">here</a>.<br>
+            </li>
+	    
+
+<!--
+	    
+<li class="list-item">
+  01/23: Single-qubit states, measurements, braket notation (<a href="./Notes/Lecture-2.pdf">notes</a>) <br>
+  <strong>Pennylane tutorial:</strong> <a href="https://pennylane.ai/codebook/introduction-to-quantum-computing/all-about-qubits">qubit basics</a><br>
+</li>
+
+<li class="list-item">
+  01/28: Measurements (contd), global vs relative phase, Elitzur-Vaidman tester, quantum operations (<a href="./Notes/Lecture-3.pdf">notes</a>) <br>
+  <strong>Pennylane tutorial:</strong> <a href="https://pennylane.ai/codebook/introduction-to-quantum-computing/all-about-qubits">qubit basics</a><br>
+</li>
+
+<li class="list-item">
+  01/30: Quantum operations (contd), Elitzur-Vaidman tester (contd) (<a href="./Notes/Lecture-4.pdf">notes</a>) <br>
+  <strong>Pennylane tutorials:</strong> <a href="https://pennylane.ai/codebook/introduction-to-quantum-computing/all-about-qubits">qubit basics</a>, <a href="https://pennylane.ai/codebook/introduction-to-quantum-computing/unitary-matrices">unitary matrices</a><br>
+</li>
+
+<li class="list-item">
+  02/04: Multi-qubit systems, quantum circuits, entanglement (<a href="./Notes/Lecture-5.pdf">notes</a>) <br>
+  <strong>Pennylane tutorials:</strong> <a href="https://pennylane.ai/codebook/circuits-with-many-qubits/multi-qubit-systems">multi-qubit systems</a>, <a href="https://pennylane.ai/codebook/introduction-to-quantum-computing/quantum-circuits">quantum circuits</a><br>
+</li>
+
+<li class="list-item">
+  02/06: Quantum circuits (contd), partial measurements, EPR paradox (<a href="./Notes/Lecture-6.pdf">notes</a>) <br>
+  <strong>Pennylane tutorial:</strong> <a href="https://pennylane.ai/codebook/introduction-to-quantum-computing/quantum-circuits">quantum circuits</a><br>
+</li>
+
+<li class="list-item">
+  02/11: EPR paradox (contd), Bell's theorem, CHSH game (<a href="./Notes/Lecture-7.pdf">notes</a>) <br>
+</li>
+
+<li class="list-item">
+  02/13: CHSH game (contd), no-cloning, teleportation (<a href="./Notes/Lecture-8.pdf">notes</a>) <br>
+</li>
+
+<li class="list-item">
+  02/18: Teleportation (contd), Holevo's theorem, basics of quantum computation (<a href="./Notes/Lecture-9.pdf">notes</a>) <br>
+</li>
+
+<li class="list-item">
+  02/20: Basics of quantum computation (contd), uncomputing garbage, universal gate sets (<a href="./Notes/Lecture-10.pdf">notes</a>) <br>
+  <strong>Pennylane tutorial:</strong> <a href="https://pennylane.ai/codebook/circuits-with-many-qubits/all-tied-up">entanglement and universal gate sets</a><br>
+</li>
+
+<li class="list-item">
+  02/25: Deutsch's and Simon's algorithms (<a href="./Notes/Lecture-11.pdf">notes</a>) <br>
+  <strong>Pennylane tutorial:</strong> <a href="https://pennylane.ai/codebook/basic-quantum-algorithms/deutsch-jozsa">Deutsch's algorithm</a><br>
+</li>
+
+<li class="list-item">
+  02/27: Simon's algorithms (contd), Quantum Fourier Transform (<a href="./Notes/Lecture-12.pdf">notes</a>) <br>
+  <strong>Pennylane tutorial:</strong> <a href="https://pennylane.ai/codebook/quantum-fourier-transform/quantum-fourier-transform">Quantum Fourier Transform</a><br>
+</li>
+
+<li class="list-item">
+  03/04: Quantum Fourier Transform (contd), order finding (<a href="./Notes/Lecture-13.pdf">notes</a>) <br>
+</li>
+
+<li class="list-item">
+  03/06: Shor's algorithm (<a href="./Notes/Lecture-14.pdf">notes</a>) <br>
+</li>
+
+<li class="list-item">
+  03/11: No lecture <br>
+</li>
+
+<li class="list-item">
+  03/13: Midterm <br>
+</li>
+
+<li class="list-item">
+  03/25: Unstructured search via Grover's algorithm - Part 1 <br>
+</li>
+<li class="list-item">
+  03/27: Unstructured search via Grover's algorithm - Part 2<br>
+  (<a href="./Notes/unstructured_search.pdf">slides parts 1 & 2</a>)
+ <strong>Qiskit tutorial:</strong> <a href="https://learning.quantum.ibm.com/tutorial/grovers-algorithm">Grover's algorithm</a><br>
+</li>
+
+<li class="list-item">
+  04/01: Generalized Quantum States via Mixed States and Density Operators - Part 1 <br>
+</li>
+<li class="list-item">
+  04/03:  Generalized Quantum States via Mixed States and Density Operators - Part 2<br>
+</li>
+
+<li class="list-item">
+  04/08: Generalized Quantum States via Mixed States and Density Operators - Part 3 <br>
+  (<a href="./Notes/mixed_states.pdf">slides parts 1, 2 & 3</a>)
+</li>
+<li class="list-item">
+  04/10:  Quantum Complexity - a Brief Overview - Part 1<br>
+</li>
+
+<li class="list-item">
+  04/15:  Quantum Complexity - a Brief Overview - Part 2<br>
+ (<a href="./Notes/quantum_complexity.pdf">slides parts 1 & 2</a>)
+</li>
+
+<li class="list-item">
+  04/17:  No class (cancelled).
+</li>
+
+<li class="list-item">
+  04/22:  An overview of the QMA-hardness of the local Hamiltonian problem.<br>
+(<a href="https://arxiv.org/pdf/quant-ph/0210077">Quantum NP survey by Aharonov and Naveh</a>)
+</li>
+<li class="list-item">
+  04/24:  Introduction to Quantum Error Correction: Shor's 9-qubit code. <br>
+(<a href="https://www.cs.umd.edu/class/spring2024/cmsc858G/QECCbook-2024-ch1-8.pdf">QECC book by Gottesman</a>)
+</li>
+<li class="list-item">
+  04/29:  Introduction to Quantum Error Correction: CSS codes, Steane 7-qubit code, and Kitaev's Toric Code <br>
+(<a href="https://www.cs.umd.edu/class/spring2024/cmsc858G/QECCbook-2024-ch1-8.pdf">QECC book by Gottesman</a>)<br>
+(<a href="https://bookstore.ams.org/view?ProductCode=GSM/47">Classical and Quantum Computation</a>)
+</li>
+<li class="list-item">
+  05/01:   Quantum Cryptography: BB84 QKD Protocol <br>
+(<a href="https://arxiv.org/pdf/2003.06557">BB84 paper</a>) <br>
+(<a href="https://arxiv.org/pdf/quant-ph/0003004">Shor and Preskill's security proof of BB84</a>) 
+</li>
+<li class="list-item">
+  05/06:  Quantum TCS Hackathon (1st prize a Toric Dog)
+</li>
+-->
+
+        </ul>
+    </div>
+
+        </div>
+    </section>
+
+    <section class="additional">
+        <div class="container">
+            <h2>Additional Resources</h2>
+            <ul>
+                <li><a href="https://www.cambridge.org/highereducation/books/quantum-computation-and-quantum-information/01E10196D0A682A6AEFFEA52D53BE9AE">Quantum Computation and Quantum Information</a> by Michael A. Nielsen and Isaac L. Chuang</li>
+                <li>Scott Aaronson's <a href="https://www.scottaaronson.com/qclec.pdf">Lecture Notes</a></li>
+                <li>Ronald de Wolf's <a href="https://homepages.cwi.nl/~rdewolf/qcnotes.pdf">Lecture Notes</a></li>
+                <li>Daniel Gottesman's <a href="https://www.cs.umd.edu/class/spring2024/cmsc858G/QECCbook-2024-ch1-8.pdf">Surviving as a Quantum Computer in a Classical World</a></li>
+            </ul>
+        </div>
+ </section>
+
+    <section class="grading-policy">
+      <div class="container">
+
+<h2>Grading Policy</h2>
+<ul>
+  <li>
+    <strong>Homeworks:</strong>
+    Homework 1–Homework 4 (discussion in groups is allowed, but submissions must be individual).
+    You are allowed and encouraged to experiment with AI tools, provided that
+    you first produce a purely human-created solution. AI tools should be used
+    responsibly and only to enhance your learning; be especially cautious about
+    hallucinations and incorrect outputs. Each homework counts for 10% of your
+    final grade.
+  </li>
+  <li>
+    <strong>Project:</strong>
+    One group project based on a research paper (either classical or recent),
+    worth 40% of your final grade. This consists of a written report of at least
+    10 pages (20%) and a presentation delivered toward the end of the course
+    (20%). Groups should consist of 2 to 4 students.
+  </li>
+  <li>
+    <strong>Class and Group Participation:</strong>
+    20% of your final grade. This includes attending class, asking questions,
+    and actively engaging in discussions.
+  </li>
+</ul>	
+        </div>
+    </section>
+
+
+ <footer>
+<div class="container">
+<section class="anti-racism">
+ <div class="container smaller-text smaller-spacing">
+     <h3>Statement on Anti-Racism and Inclusivity</h3>
+                <p>The intent of this section is to raise student and instructor awareness of the ongoing threat of bias and racism and of the need to take personal responsibility in creating an inclusive learning environment.</p>
+
+                <p>The Grainger College of Engineering is committed to the creation of an anti-racist, inclusive community that welcomes diversity along a number of dimensions, including, but not limited to, race, ethnicity and national origins, gender and gender identity, sexuality, disability status, class, age, or religious beliefs. The College recognizes that we are learning together in the midst of the Black Lives Matter movement, that Black, Hispanic, and Indigenous voices and contributions have largely either been excluded from, or not recognized in, science and engineering, and that both overt racism and micro-aggressions threaten the well-being of our students and our university community.</p>
+
+                <p>The effectiveness of this course is dependent upon each of us to create a safe and encouraging learning environment that allows for the open exchange of ideas while also ensuring equitable opportunities and respect for all of us. Everyone is expected to help establish and maintain an environment where students, staff, and faculty can contribute without fear of personal ridicule, or intolerant or offensive language. If you witness or experience racism, discrimination, micro-aggressions, or other offensive behavior, you are encouraged to bring this to the attention of the course director if you feel comfortable. You can also report these behaviors to the Bias Assessment and Response Team (BART). Based on your report, BART members will follow up and reach out to students to make sure they have the support they need to be healthy and safe. If the reported behavior also violates university policy, staff in the Office for Student Conflict Resolution may respond as well and will take appropriate action.</p>
+     </div">
+            </section>
+
+            <section class="cs-values">
+             <div class="container smaller-text smaller-spacing">
+                <h3>Statement on CS CARES and CS Values and Code of Conduct</h3>
+                <p>All members of the Illinois Computer Science department &mdash faculty, staff, and students &mdash; are expected to adhere to the CS Values and Code of Conduct. The CS CARES Committee is available to serve as a resource to help people who are concerned about or experience a potential violation of the Code. If you experience such issues, please contact the CS CARES Committee. The Instructors of this course are also available for issues related to this class.</p>
+             </div> 
+            </section>
+
+            <section class="mental-health">
+             <div class="container smaller-text smaller-spacing">
+                <h3>Statement on Mental Health</h3>
+                <p>Diminished mental health, including significant stress, mood changes, excessive worry, substance/alcohol abuse, or problems with eating and/or sleeping can interfere with optimal academic performance, social development, and emotional well-being. The University of Illinois offers a variety of confidential services including individual and group counseling, crisis intervention, psychiatric services, and specialized screenings at no additional cost. If you or someone you know experiences any of the above mental health concerns, it is strongly encouraged to contact or visit any of the University's resources provided below. Getting help is a smart and courageous thing to do &mdash; for yourself and for those who care about you.</p>
+
+                <p>Counseling Center: 217-333-3704, 610 East John Street Champaign, IL 61820</p>
+
+                <p>McKinley Health Center:217-333-2700, 1109 South Lincoln Avenue, Urbana, Illinois 61801</p>
+
+                <p>University wellness center: <a href="https://wellness.illinois.edu/">https://wellness.illinois.edu</a></p>
+    </div>
+            </section>
+ </footer>             
+
+ </body>
+</html>
