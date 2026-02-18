@@ -30,7 +30,7 @@ main {
 }
 
 #layout {
-  width: min(1080px, calc(100vw - 3rem));
+  width: min(840px, calc(100vw - 3rem));
   margin: 2.5rem auto 3.2rem;
 }
 
