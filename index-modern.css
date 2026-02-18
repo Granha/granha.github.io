@@ -285,6 +285,7 @@ a:focus-visible {
   box-shadow: inset 0 -1px 0 rgba(31, 122, 67, 0.04);
   position: relative;
   transition: background 120ms ease;
+  color: #6b7280;
 }
 
 #papers p:last-of-type {
