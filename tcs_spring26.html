@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading Group on TCS - Spring 2026</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fff5e6; /* Light orange background */
+            color: #333;
+        }
+        header, footer {
+            background-color: #ff8c00; /* Darker orange */
+            color: #fff;
+            text-align: center;
+            padding: 1rem 0;
+        }
+        header h1 {
+            margin: 0.5rem 0;
+        }
+        section {
+            background-color: #fff;
+            margin: 1rem auto;
+            padding: 2rem;
+            max-width: 800px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #ff8c00; /* Orange for headings */
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+            text-indent: -1rem;
+        }
+        li:before {
+            content: "– ";
+            padding-right: 5px;
+            color: #ff8c00; /* Orange for bullet points */
+        }
+        p, li {
+            line-height: 1.6;
+        }
+        img {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            width: 35%;
+            height: 35%;
+        }
+
+        .collapsible {
+            background-color: #777;
+            color: white;
+            cursor: pointer;
+            padding: 18px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+        }
+
+        .active, .collapsible:hover {
+            background-color: #555;
+        }
+
+        .content {
+            padding: 0 18px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Reading Group on TCS - Spring 2026</h1>
+        <p><strong>When:</strong> 5:00pm, Thursdays (Spring 2026)</p>
+        <p><strong>Where:</strong> SC 3401, University of Illinois Urbana-Champaign</p>
+        <p><strong>Student Leaders:</strong> Will, Ricardo, Xiaojuan, Andrei, Yuan-Pon, Lenny, Quizhao, Alex, and Abhi</p>
+        <p><a href="https://granha.github.io"> Fernando Granha Jeronimo </a></p>
+    </header>
+    <main>
+        <section>
+            <h2> Overview </h2>
+            <p>
+                Welcome to our reading group exploring Theoretical Computer Science (TCS).
+                Everyone is invited: students and faculty from any department (and visitors from outside UIUC are welcome, too). TCS has deep ties to Math, ECE, Physics, and many other areas.
+                If you would like to give a talk, please let the organizers know. If you are a student interested in helping lead and organize the group, please reach out to Fernando.
+            </p>
+            <p>
+                This semester, we will focus on one book:
+                <a href="https://people.seas.harvard.edu/~salil/pseudorandomness/">Pseudorandomness</a> by Salil Vadhan.
+            </p>
+        </section>
+        <section>
+            <h2> Tentative Format</h2>
+            The format is flexible. For instance, our usual format can be more intense (and fun ;)
+            ~2 hour gatherings depending on the speaker interests, and occasionally we can run a compressed ~1 hour talk.
+            A suggestion for longer talks is the following.
+            <ul>
+                <li> First Part (~1 hour): general chapter presentation with context, motivation, and overview of technical results with some proofs.</li>
+                <li> Break (~10 minutes): recharge and socialize. </li>
+                <li> Second and Final Part (~40-60 minutes): present the technical part and proofs in more detail, followed by more questions and free speculations.</li>
+            </ul>
+            Compressed format (~1 hour): chapter overview, key ideas, and discussion.
+        </section>
+        <section>
+            <h2> Tentative Schedule </h2>
+            <p>
+                A tentative schedule with speakers is given below. Please note that this is under construction.
+            </p>
+            <button class="collapsible"><b>(02/26) Chapter 2</b> by Will</button>
+            <div class="content">
+                <p>Chapter 2 introduces the power of randomness through core randomized algorithms and the complexity-theoretic framework for studying them.</p>
+            </div>
+
+            <button class="collapsible"><b>(03/05) Chapter 3</b> by Ricardo</button>
+            <div class="content">
+                <p>Chapter 3 presents basic derandomization techniques, including methods that reduce randomness but are often specialized or computationally inefficient.</p>
+            </div>
+
+            <button class="collapsible"><b>(03/19) Chapter 4</b> by Xiaojuan</button>
+            <div class="content">
+                <p>Chapter 4 studies expander graphs as sparse yet highly connected pseudorandom objects, covering expansion notions, random walks, and constructions.</p>
+            </div>
+
+            <button class="collapsible"><b>(03/26) Chapter 4</b> by Andrei</button>
+            <div class="content">
+                <p>Continuation of Chapter 4, with deeper discussion of expander properties, explicit constructions, and algorithmic applications.</p>
+            </div>
+
+            <button class="collapsible"><b>(04/02) Chapter 5</b> by Will</button>
+            <div class="content">
+                <p>Chapter 5 introduces list-decodable codes, their algorithmic decoding viewpoint, and their role as a unifying lens for several pseudorandom objects.</p>
+            </div>
+
+            <button class="collapsible"><b>(04/09) Chapter 5</b> by Yuan-Pon</button>
+            <div class="content">
+                <p>Continuation of Chapter 5, focusing on list-decoding ideas and connections to samplers, expanders, and extractors.</p>
+            </div>
+
+            <button class="collapsible"><b>(04/16) Chapter 6</b> by Lenny</button>
+            <div class="content">
+                <p>Chapter 6 develops randomness extractors: functions that turn weak, biased, and correlated randomness into nearly uniform bits.</p>
+            </div>
+
+            <button class="collapsible"><b>(04/23) Chapter 6</b> by Quizhao</button>
+            <div class="content">
+                <p>Continuation of Chapter 6, including extractor constructions and their structural links to other pseudorandom primitives.</p>
+            </div>
+
+            <button class="collapsible"><b>(04/30) Chapter 7</b> by Alex</button>
+            <div class="content">
+                <p>Chapter 7 introduces pseudorandom generators, formal definitions of computational indistinguishability, and key proof techniques such as hybrids.</p>
+            </div>
+
+            <button class="collapsible"><b>(05/07) Chapter 7</b> by Abhi</button>
+            <div class="content">
+                <p>Continuation of Chapter 7, with further constructions and complexity-theoretic implications of pseudorandom generators.</p>
+            </div>
+
+            <br><br>
+            <img src="tcs.jpg" alt="">
+        </section>
+    </main>
+</body>
+<script>
+  var coll = document.getElementsByClassName("collapsible");
+  var i;
+
+  for (i = 0; i < coll.length; i++) {
+      coll[i].addEventListener("click", function() {
+          this.classList.toggle("active");
+          var content = this.nextElementSibling;
+          if (content.style.maxHeight) {
+              content.style.maxHeight = null;
+          } else {
+              content.style.maxHeight = content.scrollHeight + "px";
+          }
+      });
+  }
+</script>
+</html>
