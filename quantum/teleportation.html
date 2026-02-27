@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Teleportation Protocol</title>
+<style>
+  :root {
+    --bg: #0b0d14;
+    --bg2: #0f1219;
+    --surface: #151922;
+    --surface2: #1c2030;
+    --surface3: #232838;
+    --border: #2a3048;
+    --border-glow: rgba(108,140,255,0.12);
+    --text: #e0e4f0;
+    --text-dim: #7880a0;
+    --text-muted: #505878;
+    --accent: #6c8cff;
+    --accent-soft: rgba(108,140,255,0.08);
+    --accent-glow: rgba(108,140,255,0.2);
+    --alpha-color: #5eaaff;
+    --beta-color: #ff6e8a;
+    --green: #4ecb8d;
+    --green-glow: rgba(78,203,141,0.15);
+    --yellow: #f0c050;
+    --orange: #e8944c;
+    --alice: #a78bfa;
+    --alice-dim: rgba(167,139,250,0.12);
+    --bob: #34d399;
+    --bob-dim: rgba(52,211,153,0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(108,140,255,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(78,203,141,0.03) 0%, transparent 60%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .container {
+    width: 100%;
+    max-width: 1100px;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    flex-wrap: wrap;
+    gap: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  header h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #8aa4ff 0%, #6c8cff 40%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+  }
+  .state-selector { display: flex; align-items: center; gap: 10px; }
+  .state-selector label { color: var(--text-dim); font-size: 0.85rem; }
+  .state-selector select {
+    background: var(--surface3); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 14px; font-family: inherit; font-size: 0.85rem; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .state-selector select:hover { border-color: var(--accent); }
+
+  /* ── Shared panel base ── */
+  .panel {
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg2) 100%);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(108,140,255,0.15) 50%, transparent 100%);
+  }
+  .panel-header {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    padding: 18px 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-header::before {
+    content: '';
+    width: 3px;
+    height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .panel-body { padding: 14px 24px 22px; }
+
+  /* ── Circuit panel ── */
+  .circuit-panel .panel-body { padding: 10px 20px 16px; }
+  #circuitCanvas { width: 100%; display: block; border-radius: 8px; }
+
+  /* ── Info panels grid ── */
+  .info-panels {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 800px) { .info-panels { grid-template-columns: 1fr; } }
+
+  /* ── State panel ── */
+  .state-panel .panel-header::before { background: var(--alpha-color); }
+  .state-panel .panel-body { min-height: 100px; }
+
+  /* ── Explain panel ── */
+  .explain-panel .panel-header::before { background: var(--green); }
+  .explain-panel .panel-body { min-height: 100px; }
+
+  /* ── Crossfade animation ── */
+  .crossfade-wrapper { position: relative; }
+  .crossfade-content {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .crossfade-content.fade-out {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  .crossfade-content.fade-in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── State display ── */
+  #stateDisplay { font-size: 1.05rem; line-height: 2; word-wrap: break-word; }
+  .ket { color: var(--text); }
+  .alpha { color: var(--alpha-color); font-style: italic; }
+  .beta { color: var(--beta-color); font-style: italic; }
+  .coeff { color: var(--text-dim); }
+  .plus, .minus { color: var(--yellow); font-weight: bold; padding: 0 3px; }
+  .bra-ket { color: var(--green); }
+  .tensor { color: var(--text-dim); padding: 0 4px; }
+  .frac { display: inline-flex; flex-direction: column; align-items: center;
+    vertical-align: middle; font-size: 0.75em; line-height: 1.2; margin: 0 3px; }
+  .frac-num { border-bottom: 1px solid var(--text-dim); padding: 0 3px; }
+  .frac-den { padding: 0 3px; }
+  .measurement-group {
+    display: inline-block; margin: 4px 0; padding: 4px 10px;
+    border-left: 3px solid var(--border);
+    border-radius: 0 4px 4px 0;
+    background: rgba(108,140,255,0.03);
+  }
+
+  /* ── Explanation text ── */
+  #explanationText {
+    font-size: 0.92rem; line-height: 1.7; color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  #explanationText strong { color: var(--accent); }
+
+  /* ── Measurement choice buttons ── */
+  .measurement-choices {
+    display: none; margin-top: 14px; gap: 10px; flex-wrap: wrap;
+  }
+  .measurement-choices.visible {
+    display: flex;
+    animation: fadeSlideIn 0.35s ease;
+  }
+  .meas-btn {
+    background: var(--surface3); border: 2px solid var(--border);
+    border-radius: 10px; color: var(--text); padding: 10px 18px;
+    font-family: inherit; font-size: 0.9rem; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .meas-btn:hover { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 12px var(--accent-glow); }
+  .meas-btn.selected { border-color: var(--green); background: var(--green-glow); }
+
+  /* ── Controls bar ── */
+  .controls {
+    display: flex; justify-content: center; align-items: center;
+    gap: 10px; padding: 18px 24px;
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+    border: 1px solid var(--border); border-radius: 14px;
+    flex-wrap: wrap;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .ctrl-btn {
+    background: var(--surface3); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); padding: 10px 16px;
+    font-size: 1rem; cursor: pointer; transition: all 0.2s;
+    font-family: inherit; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .ctrl-btn:hover { background: var(--accent-soft); border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+  .ctrl-btn:active { transform: scale(0.96); }
+  .ctrl-btn:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
+  .ctrl-btn.play-btn {
+    background: linear-gradient(135deg, #5a7aee 0%, #6c8cff 100%);
+    color: #fff; border-color: transparent;
+    padding: 10px 30px; font-weight: 600;
+    box-shadow: 0 2px 12px rgba(108,140,255,0.3);
+  }
+  .ctrl-btn.play-btn:hover { opacity: 0.9; box-shadow: 0 2px 20px rgba(108,140,255,0.4); }
+
+  .step-info-area {
+    display: flex; align-items: center; gap: 16px; margin-left: 8px;
+  }
+  .step-dots {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .step-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--surface3);
+    border: 2px solid var(--border);
+    transition: all 0.35s ease;
+  }
+  .step-dot.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+  .step-dot.completed {
+    background: rgba(108,140,255,0.3);
+    border-color: rgba(108,140,255,0.5);
+  }
+  .step-info {
+    display: flex; flex-direction: column; align-items: flex-start; min-width: 140px;
+  }
+  .step-name {
+    color: var(--accent); font-size: 0.82rem; font-weight: 600;
+    transition: opacity 0.2s;
+  }
+  .step-counter { color: var(--text-muted); font-size: 0.7rem; margin-top: 2px; }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Quantum Teleportation Protocol</h1>
+    <div class="state-selector">
+      <label>Alice's qubit |&psi;&rang; :</label>
+      <select id="stateSelect">
+        <option value="generic">&alpha;|0&rang; + &beta;|1&rang; (generic)</option>
+        <option value="zero">|0&rang;</option>
+        <option value="one">|1&rang;</option>
+        <option value="plus">|+&rang; = (|0&rang;+|1&rang;)/&radic;2</option>
+        <option value="minus">|&minus;&rang; = (|0&rang;&minus;|1&rang;)/&radic;2</option>
+      </select>
+    </div>
+  </header>
+
+  <div class="circuit-panel panel">
+    <div class="panel-header">Circuit Diagram</div>
+    <div class="panel-body">
+      <canvas id="circuitCanvas"></canvas>
+    </div>
+  </div>
+
+  <div class="info-panels">
+    <div class="state-panel panel">
+      <div class="panel-header">System State Vector</div>
+      <div class="panel-body">
+        <div class="crossfade-wrapper">
+          <div id="stateDisplay" class="crossfade-content fade-in"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="explain-panel panel">
+      <div class="panel-header">Explanation</div>
+      <div class="panel-body">
+        <div class="crossfade-wrapper">
+          <div id="explanationText" class="crossfade-content fade-in"></div>
+        </div>
+        <div id="measurementChoices" class="measurement-choices">
+          <button class="meas-btn" data-outcome="00">|00&rang; &rarr; I</button>
+          <button class="meas-btn" data-outcome="01">|01&rang; &rarr; X</button>
+          <button class="meas-btn" data-outcome="10">|10&rang; &rarr; Z</button>
+          <button class="meas-btn" data-outcome="11">|11&rang; &rarr; ZX</button>
+          <button class="meas-btn" style="border-color:var(--orange);color:var(--orange)" data-outcome="random">Random</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" id="btnFirst" title="First step (Home)">&laquo;</button>
+    <button class="ctrl-btn" id="btnPrev" title="Previous step (&larr;)">&lsaquo;</button>
+    <button class="ctrl-btn play-btn" id="btnPlay" title="Play / Pause (Space)">Play</button>
+    <button class="ctrl-btn" id="btnNext" title="Next step (&rarr;)">&rsaquo;</button>
+    <button class="ctrl-btn" id="btnLast" title="Last step (End)">&raquo;</button>
+    <div class="step-info-area">
+      <div class="step-dots" id="stepDots">
+        <div class="step-dot active" data-step="0"></div>
+        <div class="step-dot" data-step="1"></div>
+        <div class="step-dot" data-step="2"></div>
+        <div class="step-dot" data-step="3"></div>
+        <div class="step-dot" data-step="4"></div>
+      </div>
+      <div class="step-info">
+        <div class="step-name" id="stepName">Setup</div>
+        <div class="step-counter" id="stepCounter">Step 0 / 4</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MAX_STEP = 4;
+
+const STEPS = [
+  {
+    name: 'Setup \u2014 shared EPR pair',
+    gate: null,
+    explain: `<strong>Alice</strong> wants to teleport an unknown qubit |&psi;&rang; = &alpha;|0&rang; + &beta;|1&rang; to <strong>Bob</strong>. They are <em>far apart</em> and can only communicate classically (no quantum channel). However, they previously shared an <strong>EPR pair</strong> (Bell state): |&Phi;<sup>+</sup>&rang; = (|00&rang;+|11&rang;)/&radic;2. Alice holds one half, Bob holds the other.`
+  },
+  {
+    name: 'CNOT(q\u2080, q\u2081) \u2014 Alice',
+    gate: 'CX01',
+    explain: `Alice applies a <strong>CNOT gate</strong> locally, using her qubit |&psi;&rang; (q<sub>0</sub>) as control and her EPR half (q<sub>1</sub>) as target. This is a <em>local</em> operation &mdash; Alice acts only on her two qubits. It begins correlating the unknown state |&psi;&rang; with the entangled pair.`
+  },
+  {
+    name: 'Hadamard on q\u2080 \u2014 Alice',
+    gate: 'H0',
+    explain: `Alice applies a <strong>Hadamard gate</strong> to q<sub>0</sub>, completing the change to the Bell measurement basis. The full three-qubit state can now be rewritten as four terms, each labeled by a possible measurement outcome for Alice's two qubits. In every branch, Bob's qubit differs from |&psi;&rang; by at most a known Pauli gate.`
+  },
+  {
+    name: 'Measure & send \u2014 classical channel',
+    gate: 'M',
+    explain: `Alice <strong>measures</strong> q<sub>0</sub> and q<sub>1</sub>, collapsing them into one of four outcomes. She sends these <strong>2 classical bits</strong> to Bob through the classical channel (e.g. phone, radio, or any non-quantum link). Choose an outcome:`
+  },
+  {
+    name: "Correction \u2014 Bob recovers |\u03C8\u27E9",
+    gate: 'CORRECT',
+    explain: ''
+  }
+];
+
+// ─── State Vector Engine ─────────────────────────────────
+function getStateHTML(step, inputState, outcome) {
+  const s = inputState;
+  const frac12 = '<span class="frac"><span class="frac-num">1</span><span class="frac-den">&radic;2</span></span>';
+  const frac2 = '<span class="frac"><span class="frac-num">1</span><span class="frac-den">2</span></span>';
+  const plus = '<span class="plus"> + </span>';
+  const minus = '<span class="minus"> &minus; </span>';
+  const tensor = '<span class="tensor">&otimes;</span>';
+  const ket = (v) => `<span class="bra-ket">|${v}&rang;</span>`;
+
+  function psiKet() {
+    if (s === 'generic') return `(<span class="alpha">&alpha;</span>${ket('0')}${plus}<span class="beta">&beta;</span>${ket('1')})`;
+    if (s === 'zero') return ket('0');
+    if (s === 'one') return ket('1');
+    if (s === 'plus') return `${frac12}(${ket('0')}${plus}${ket('1')})`;
+    if (s === 'minus') return `${frac12}(${ket('0')}${minus}${ket('1')})`;
+  }
+
+  function bobBranch(outcome_bits) {
+    const alphaNum = { zero: [1,0], one: [0,1], plus: [1,1], minus: [1,-1] };
+    if (s === 'generic') {
+      return {
+        '00': `<span class="alpha">&alpha;</span>${ket('0')}${plus}<span class="beta">&beta;</span>${ket('1')}`,
+        '01': `<span class="beta">&beta;</span>${ket('0')}${plus}<span class="alpha">&alpha;</span>${ket('1')}`,
+        '10': `<span class="alpha">&alpha;</span>${ket('0')}${minus}<span class="beta">&beta;</span>${ket('1')}`,
+        '11': `&minus;<span class="beta">&beta;</span>${ket('0')}${plus}<span class="alpha">&alpha;</span>${ket('1')}`
+      }[outcome_bits];
+    }
+    const [a, b] = alphaNum[s];
+    let c0, c1;
+    if (outcome_bits === '00') { c0 = a; c1 = b; }
+    else if (outcome_bits === '01') { c0 = b; c1 = a; }
+    else if (outcome_bits === '10') { c0 = a; c1 = -b; }
+    else { c0 = -b; c1 = a; }
+    const isNorm = (s === 'plus' || s === 'minus');
+    function fmtCoeff(c, basis, isFirst) {
+      if (c === 0) return '';
+      const prefix = isNorm ? frac12 : '';
+      const spacedSign = isFirst ? (c < 0 ? '&minus;' : '') : (c < 0 ? minus : plus);
+      return `${spacedSign}${prefix}${ket(basis)}`;
+    }
+    const p0 = fmtCoeff(c0, '0', true);
+    const p1 = fmtCoeff(c1, '1', p0 === '');
+    return (p0 + p1) || '0';
+  }
+
+  switch(step) {
+    case 0:
+      return `<span class="ket">${psiKet()}${tensor}${frac12}(${ket('00')}${plus}${ket('11')})</span><br>` +
+        `<span class="coeff">= ${psiKet()}${tensor}${ket('&Phi;<sup>+</sup>')}</span>`;
+    case 1: {
+      if (s === 'generic')
+        return `<span class="ket">${frac12}(<span class="alpha">&alpha;</span>${ket('000')}${plus}<span class="alpha">&alpha;</span>${ket('011')}${plus}<span class="beta">&beta;</span>${ket('110')}${plus}<span class="beta">&beta;</span>${ket('101')})</span>`;
+      if (s === 'zero') return `<span class="ket">${frac12}(${ket('000')}${plus}${ket('011')})</span>`;
+      if (s === 'one') return `<span class="ket">${frac12}(${ket('110')}${plus}${ket('101')})</span>`;
+      const bsign = (s === 'minus') ? minus : plus;
+      return `<span class="ket">${frac2}(${ket('000')}${plus}${ket('011')}${bsign}${ket('110')}${bsign}${ket('101')})</span>`;
+    }
+    case 2: {
+      const line = (m, inner, label) =>
+        `<div class="measurement-group">${ket(m)}${tensor}(${inner}) &nbsp;<span class="coeff">&larr; ${label}</span></div>`;
+      return `${frac2} [<br>` +
+        line('00', bobBranch('00'), 'apply I') +
+        line('01', bobBranch('01'), 'apply X') +
+        line('10', bobBranch('10'), 'apply Z') +
+        line('11', bobBranch('11'), 'apply ZX') + `]`;
+    }
+    case 3: {
+      if (!outcome) return '<span class="coeff">Choose a measurement outcome below&hellip;</span>';
+      return `Alice measured: ${ket(outcome)}<br>` +
+        `Bob's qubit (before correction): ${bobBranch(outcome)}<br>` +
+        `<span class="coeff">Classical bits ${outcome[0]}${outcome[1]} sent to Bob via classical channel</span>`;
+    }
+    case 4:
+      return `Bob applies correction &rarr; Bob's qubit = ${psiKet()}<br>` +
+        `<span class="coeff" style="color:var(--green)">Teleportation complete! Bob now has |&psi;&rang;</span>`;
+  }
+  return '';
+}
+
+// ─── Circuit Renderer (with animation loop) ──────────────
+class CircuitRenderer {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.currentStep = 0;
+    this.outcome = null;
+    this.animTime = 0;
+    this.cursorX = 0;
+    this.targetCursorX = 0;
+    this.progressVal = 0;
+    this.targetProgress = 0;
+    // Classical bit animation state
+    this.bitAnimActive = false;
+    this.bitAnimStart = 0;
+    this.bitAnimDuration = 1.6; // seconds
+    this.bitAnimProgress = 0;
+    this.bitAnimCallback = null;
+    this.bitAnimDone = false; // true once animation finished (bits arrived)
+    // Entanglement particles (flowing between EPR halves)
+    this.eParticles = Array.from({length: 8}, (_, i) => ({
+      pos: i / 8,
+      speed: 0.15 + Math.random() * 0.2,
+      dir: (i % 2 === 0) ? 1 : -1,
+      size: 1.5 + Math.random() * 1.5,
+      phase: Math.random() * Math.PI * 2,
+      xWobble: Math.random() * Math.PI * 2
+    }));
+    // Gate activation ripples
+    this.ripples = [];
+    this._prevStepForFX = -1;
+    // Finale animation
+    this.finaleActive = false;
+    this.finaleStart = 0;
+    this.finaleParticles = [];
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+    this._startLoop();
+  }
+
+  startBitAnim(callback) {
+    this.bitAnimActive = true;
+    this.bitAnimStartReal = performance.now() / 1000;
+    this.bitAnimProgress = 0;
+    this.bitAnimDone = false;
+    this.bitAnimCallback = callback;
+    // Fallback timer in case rAF doesn't fire (headless browsers)
+    clearTimeout(this._bitAnimFallback);
+    this._bitAnimFallback = setTimeout(() => {
+      if (this.bitAnimActive) {
+        this.bitAnimActive = false;
+        this.bitAnimDone = true;
+        this.bitAnimProgress = 1;
+        if (this.bitAnimCallback) {
+          const cb = this.bitAnimCallback;
+          this.bitAnimCallback = null;
+          cb();
+        }
+      }
+    }, this.bitAnimDuration * 1000 + 100);
+  }
+
+  cancelBitAnim() {
+    this.bitAnimActive = false;
+    this.bitAnimDone = false;
+    this.bitAnimProgress = 0;
+    this.bitAnimCallback = null;
+    clearTimeout(this._bitAnimFallback);
+  }
+
+  resize() {
+    const rect = this.canvas.parentElement.getBoundingClientRect();
+    const w = rect.width - 40;
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = w * dpr;
+    this.canvas.height = 300 * dpr;
+    this.canvas.style.width = w + 'px';
+    this.canvas.style.height = '300px';
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.W = w;
+    this.H = 300;
+  }
+
+  _startLoop() {
+    const loop = (ts) => {
+      this.animTime = ts / 1000;
+      this.cursorX += (this.targetCursorX - this.cursorX) * 0.12;
+      this.progressVal += (this.targetProgress - this.progressVal) * 0.12;
+      // Update classical bit animation (using real clock for reliability)
+      if (this.bitAnimActive) {
+        const elapsed = performance.now() / 1000 - this.bitAnimStartReal;
+        this.bitAnimProgress = Math.min(1, elapsed / this.bitAnimDuration);
+        if (this.bitAnimProgress >= 1) {
+          this.bitAnimActive = false;
+          this.bitAnimDone = true;
+          clearTimeout(this._bitAnimFallback);
+          if (this.bitAnimCallback) {
+            const cb = this.bitAnimCallback;
+            this.bitAnimCallback = null;
+            cb();
+          }
+        }
+      }
+      this._drawFrame();
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+
+  setStep(step, outcome) {
+    const prevStep = this._prevStepForFX;
+    this.currentStep = step;
+    this.outcome = outcome;
+    this.targetProgress = step / MAX_STEP;
+    const startX = 145;
+    const endX = this.W - 30;
+    const maxGateX = 490;
+    const available = endX - startX - 20;
+    const sc = Math.min(1, available / maxGateX);
+    const gxPositions = [startX - 10, startX + 100, startX + 200, startX + 300, startX + 455];
+    const pos = gxPositions[step] || gxPositions[0];
+    this.targetCursorX = startX + (pos - startX) * sc;
+
+    // Trigger gate ripple on step forward
+    if (step > prevStep && step >= 1 && step <= 3) {
+      const wireY = [55, 125, 245];
+      const ripplePositions = {
+        1: [[startX + 100, (wireY[0] + wireY[1]) / 2]],
+        2: [[startX + 200, wireY[0]]],
+        3: [[startX + 300, wireY[0]], [startX + 300, wireY[1]]]
+      };
+      const rps = ripplePositions[step] || [];
+      rps.forEach(([rx, ry]) => {
+        const sx = startX + (rx - startX) * sc;
+        this.ripples.push({ x: sx, y: ry, start: performance.now() / 1000 });
+      });
+    }
+    // Trigger finale at step 4
+    if (step === 4 && outcome && prevStep !== 4) {
+      this.finaleActive = true;
+      this.finaleStart = performance.now() / 1000;
+      this._spawnFinaleParticles();
+    }
+    if (step < 4) {
+      this.finaleActive = false;
+      this.finaleParticles = [];
+    }
+    this._prevStepForFX = step;
+  }
+
+  _spawnFinaleParticles() {
+    const wireY2 = 245;
+    const startX = 145;
+    const endX = this.W - 30;
+    const sc = Math.min(1, (endX - startX - 20) / 490);
+    const cx1 = startX + (startX + 420 - startX) * sc;
+    const cx2 = startX + (startX + 490 - startX) * sc;
+    this.finaleParticles = [];
+    for (let i = 0; i < 20; i++) {
+      const fromX = (i < 10) ? cx1 : cx2;
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 30 + Math.random() * 60;
+      this.finaleParticles.push({
+        x: fromX, y: wireY2,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 1.5 + Math.random() * 2,
+        life: 1,
+        decay: 0.4 + Math.random() * 0.5
+      });
+    }
+  }
+
+  _drawFrame() {
+    const ctx = this.ctx;
+    const W = this.W, H = this.H;
+    const currentStep = this.currentStep;
+    const outcome = this.outcome;
+    const t = this.animTime;
+    ctx.clearRect(0, 0, W, H);
+
+    const wireY = [55, 125, 245];
+    const labelX = 55;
+    const startX = 145;
+    const endX = W - 30;
+    const gateW = 38;
+
+    const gx = {
+      CX01: startX + 100, H0: startX + 200,
+      M0: startX + 300, M1: startX + 300,
+      CORR_X: startX + 420, CORR_Z: startX + 490,
+    };
+    const maxGateX = 490;
+    const available = endX - startX - 20;
+    const scale = Math.min(1, available / maxGateX);
+    if (scale < 1) Object.keys(gx).forEach(k => { gx[k] = startX + (gx[k] - startX) * scale; });
+
+    // ── Alice / Bob separator ──
+    const divY = (wireY[1] + wireY[2]) / 2;
+    ctx.save();
+    // Separator band
+    const bandH = 36;
+    ctx.fillStyle = 'rgba(40,46,66,0.35)';
+    roundRect(ctx, 10, divY - bandH/2, W - 20, bandH, 6);
+    ctx.fill();
+    ctx.setLineDash([6, 4]);
+    ctx.strokeStyle = 'rgba(58,63,85,0.6)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(10, divY - bandH/2); ctx.lineTo(W - 10, divY - bandH/2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10, divY + bandH/2); ctx.lineTo(W - 10, divY + bandH/2); ctx.stroke();
+    ctx.setLineDash([]);
+    // Region labels
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(167,139,250,0.55)';
+    ctx.fillText('ALICE (local)', 15, divY - bandH/2 - 8);
+    ctx.fillStyle = 'rgba(52,211,153,0.55)';
+    ctx.fillText('BOB (distant)', 15, divY + bandH/2 + 14);
+    // Separator text
+    ctx.fillStyle = 'rgba(136,144,168,0.4)';
+    ctx.font = 'italic 10px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('\u2190\u2190\u2190  spatially separated  \u2192\u2192\u2192', W / 2, divY - 2);
+    ctx.fillText('classical communication only', W / 2, divY + 10);
+    ctx.restore();
+
+    // ── Wires ──
+    wireY.forEach((y, i) => {
+      ctx.strokeStyle = (i < 2) ? 'rgba(167,139,250,0.25)' : 'rgba(52,211,153,0.25)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(startX, y);
+      if (i < 2 && currentStep >= 3) {
+        ctx.lineTo(gx.M0, y); ctx.stroke();
+        ctx.strokeStyle = 'rgba(108,90,48,0.6)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(gx.M0 + 19, y - 2); ctx.lineTo(endX, y - 2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(gx.M0 + 19, y + 2); ctx.lineTo(endX, y + 2); ctx.stroke();
+      } else { ctx.lineTo(endX, y); ctx.stroke(); }
+    });
+
+    // ── EPR bracket ──
+    const eprX = startX + 20;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(240,192,80,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(eprX, wireY[1] + 6); ctx.lineTo(eprX, wireY[2] - 6); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(eprX - 4, wireY[1] + 6); ctx.lineTo(eprX + 4, wireY[1] + 6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(eprX - 4, wireY[2] - 6); ctx.lineTo(eprX + 4, wireY[2] - 6); ctx.stroke();
+    ctx.fillStyle = 'rgba(240,192,80,0.6)';
+    ctx.font = 'italic 11px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('EPR', eprX + 6, divY - 2);
+    ctx.fillText('|\u03A6\u207A\u27E9', eprX + 6, divY + 10);
+    ctx.restore();
+
+    // ── Entanglement particles (visible before measurement) ──
+    if (currentStep < 3) {
+      const epY1 = wireY[1] + 6;
+      const epY2 = wireY[2] - 6;
+      const epRange = epY2 - epY1;
+      const dt = 0.016; // approx frame time
+      this.eParticles.forEach(p => {
+        p.pos += p.dir * p.speed * dt;
+        if (p.pos > 1) { p.pos = 1; p.dir = -1; }
+        if (p.pos < 0) { p.pos = 0; p.dir = 1; }
+        p.phase += dt * 2.5;
+        const py = epY1 + p.pos * epRange;
+        const wobble = Math.sin(p.xWobble + t * 2) * 6;
+        const glow = 0.3 + 0.3 * Math.sin(p.phase);
+        ctx.save();
+        ctx.shadowColor = `rgba(240,192,80,${glow})`;
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = `rgba(240,192,80,${0.4 + glow * 0.4})`;
+        ctx.beginPath();
+        ctx.arc(eprX + wobble, py, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+    } else if (currentStep === 3 && !outcome) {
+      // Fading residual glow where entanglement was
+      const fadeGlow = 0.12 + 0.06 * Math.sin(t * 4);
+      ctx.fillStyle = `rgba(240,192,80,${fadeGlow})`;
+      ctx.beginPath();
+      ctx.arc(eprX, divY, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // ── Wire labels ──
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#a78bfa';
+    ctx.font = 'bold 13px "SF Mono", "Fira Code", monospace';
+    ctx.fillText('|\u03C8\u27E9', labelX + 75, wireY[0]);
+    ctx.fillStyle = '#7880a0'; ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillText("Alice's qubit", labelX + 75, wireY[0] - 16);
+    ctx.fillStyle = '#a78bfa';
+    ctx.font = 'bold 13px "SF Mono", "Fira Code", monospace';
+    ctx.fillText('EPR\u2081', labelX + 75, wireY[1]);
+    ctx.fillStyle = '#7880a0'; ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillText("Alice's EPR half", labelX + 75, wireY[1] - 16);
+    ctx.fillStyle = '#34d399';
+    ctx.font = 'bold 13px "SF Mono", "Fira Code", monospace';
+    ctx.fillText('EPR\u2082', labelX + 75, wireY[2]);
+    ctx.fillStyle = '#7880a0'; ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillText("Bob's EPR half", labelX + 75, wireY[2] - 16);
+
+    // ── Helpers ──
+    const isActive = (gs) => currentStep >= gs;
+    const isCurrent = (gs) => currentStep === gs;
+
+    const pulseGlow = (x, y) => {
+      const pulse = 0.5 + 0.5 * Math.sin(t * 3);
+      const radius = 30 + pulse * 8;
+      const alpha = 0.06 + pulse * 0.06;
+      ctx.save();
+      ctx.shadowColor = `rgba(108,140,255,${0.4 + pulse * 0.3})`;
+      ctx.shadowBlur = 16 + pulse * 10;
+      ctx.fillStyle = `rgba(108,140,255,${alpha})`;
+      ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    };
+
+    const drawGate = (x, y, label, active, color) => {
+      const c = active ? (color || '#6c8cff') : '#3a4060';
+      const bg = active ? 'rgba(108,140,255,0.12)' : 'rgba(22,26,38,0.8)';
+      ctx.fillStyle = bg; ctx.strokeStyle = c; ctx.lineWidth = 2;
+      roundRect(ctx, x - gateW/2, y - 19, gateW, 38, 7);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = active ? '#fff' : '#556';
+      ctx.font = 'bold 15px "SF Mono", monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(label, x, y);
+    };
+
+    const drawCNOT = (cx, cy_ctrl, cy_tgt, active) => {
+      const c = active ? '#6c8cff' : '#3a4060';
+      ctx.strokeStyle = c; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx, cy_ctrl); ctx.lineTo(cx, cy_tgt); ctx.stroke();
+      ctx.fillStyle = c;
+      ctx.beginPath(); ctx.arc(cx, cy_ctrl, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = c; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx, cy_tgt, 13, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, cy_tgt - 13); ctx.lineTo(cx, cy_tgt + 13); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx - 13, cy_tgt); ctx.lineTo(cx + 13, cy_tgt); ctx.stroke();
+    };
+
+    const drawMeter = (x, y, active) => {
+      const c = active ? '#f0c050' : '#3a4060';
+      const bg = active ? 'rgba(240,192,80,0.1)' : 'rgba(22,26,38,0.8)';
+      ctx.fillStyle = bg; ctx.strokeStyle = c; ctx.lineWidth = 2;
+      roundRect(ctx, x - gateW/2, y - 19, gateW, 38, 7); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = active ? '#f0c050' : '#444'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(x, y + 4, 10, Math.PI, 0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y + 4); ctx.lineTo(x + 7, y - 10); ctx.stroke();
+    };
+
+    // ── Draw gates ──
+    if (isCurrent(1)) pulseGlow(gx.CX01, (wireY[0] + wireY[1]) / 2);
+    drawCNOT(gx.CX01, wireY[0], wireY[1], isActive(1));
+
+    if (isCurrent(2)) pulseGlow(gx.H0, wireY[0]);
+    drawGate(gx.H0, wireY[0], 'H', isActive(2), isCurrent(2) ? '#6c8cff' : null);
+
+    if (isCurrent(3)) { pulseGlow(gx.M0, wireY[0]); pulseGlow(gx.M1, wireY[1]); }
+    drawMeter(gx.M0, wireY[0], isActive(3));
+    drawMeter(gx.M1, wireY[1], isActive(3));
+
+    // ── Classical communication + bit animation ──
+    // Path definitions for the two classical bits (L-shaped: horizontal then vertical)
+    // m₁ → CORR_X  and  m₀ → CORR_Z
+    const path1 = [ // m₁ bit (outcome[1]) → X correction
+      [gx.M1 + 19, wireY[1]],       // start: right of measurement gate on wire 1
+      [gx.CORR_X, wireY[1]],        // corner: above X correction gate
+      [gx.CORR_X, wireY[2] - 19]    // end: top of X correction gate
+    ];
+    const path0 = [ // m₀ bit (outcome[0]) → Z correction
+      [gx.M0 + 19, wireY[0]],       // start: right of measurement gate on wire 0
+      [gx.CORR_Z, wireY[0]],        // corner: above Z correction gate
+      [gx.CORR_Z, wireY[2] - 19]    // end: top of Z correction gate
+    ];
+
+    // Interpolate position along an L-shaped 3-point path
+    const interpPath = (pts, prog) => {
+      const [A, B, C] = pts;
+      const dAB = Math.hypot(B[0]-A[0], B[1]-A[1]);
+      const dBC = Math.hypot(C[0]-B[0], C[1]-B[1]);
+      const total = dAB + dBC;
+      const dist = prog * total;
+      if (dist <= dAB) {
+        const f = dAB > 0 ? dist / dAB : 0;
+        return [A[0] + (B[0]-A[0]) * f, A[1] + (B[1]-A[1]) * f];
+      }
+      const f = dBC > 0 ? (dist - dAB) / dBC : 0;
+      return [B[0] + (C[0]-B[0]) * f, B[1] + (C[1]-B[1]) * f];
+    };
+
+    // Draw partial L-path up to progress
+    const drawPartialPath = (pts, prog, color, alpha) => {
+      const [A, B, C] = pts;
+      const dAB = Math.hypot(B[0]-A[0], B[1]-A[1]);
+      const dBC = Math.hypot(C[0]-B[0], C[1]-B[1]);
+      const total = dAB + dBC;
+      const dist = prog * total;
+      ctx.save();
+      ctx.setLineDash([4, 3]);
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(A[0], A[1]);
+      if (dist <= dAB) {
+        const pos = interpPath(pts, prog);
+        ctx.lineTo(pos[0], pos[1]);
+      } else {
+        ctx.lineTo(B[0], B[1]);
+        const pos = interpPath(pts, prog);
+        ctx.lineTo(pos[0], pos[1]);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    };
+
+    // Draw a classical bit packet
+    const drawBitPacket = (x, y, label) => {
+      ctx.save();
+      // Glow
+      ctx.shadowColor = 'rgba(240,192,80,0.7)';
+      ctx.shadowBlur = 14;
+      // Packet body
+      ctx.fillStyle = '#f0c050';
+      roundRect(ctx, x - 9, y - 8, 18, 16, 4);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // Border
+      ctx.strokeStyle = 'rgba(180,144,30,0.8)';
+      ctx.lineWidth = 1;
+      roundRect(ctx, x - 9, y - 8, 18, 16, 4);
+      ctx.stroke();
+      // Label
+      ctx.fillStyle = '#1a1d27';
+      ctx.font = 'bold 10px "SF Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, x, y);
+      ctx.restore();
+    };
+
+    // Draw trail behind a packet
+    const drawTrail = (pts, prog, eased) => {
+      const trailLen = 6;
+      for (let i = trailLen; i > 0; i--) {
+        const tProg = Math.max(0, eased - i * 0.02);
+        if (tProg <= 0) continue;
+        const [tx, ty] = interpPath(pts, tProg);
+        const a = 0.2 * (1 - i / trailLen);
+        ctx.fillStyle = `rgba(240,192,80,${a})`;
+        ctx.beginPath();
+        ctx.arc(tx, ty, 3 + (trailLen - i) * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+
+    // Easing function
+    const easeInOutCubic = (x) => x < 0.5 ? 4*x*x*x : 1 - Math.pow(-2*x+2, 3)/2;
+
+    // Measurement labels (appear immediately when outcome is known)
+    if (currentStep >= 3 && outcome) {
+      ctx.fillStyle = '#f0c050'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(`m\u2080=${outcome[0]}`, gx.M0, wireY[0] - 27);
+      ctx.fillText(`m\u2081=${outcome[1]}`, gx.M1, wireY[1] - 27);
+    }
+
+    if (currentStep >= 3 && outcome && this.bitAnimActive) {
+      // ── Animated classical bits traveling ──
+      const rawP = this.bitAnimProgress;
+      const eased = easeInOutCubic(rawP);
+
+      // Draw ghost path at low opacity (full guide)
+      drawPartialPath(path1, 1, 'rgba(108,90,48,0.3)', 1);
+      drawPartialPath(path0, 1, 'rgba(108,90,48,0.3)', 1);
+
+      // Draw bright trail path up to current position
+      drawPartialPath(path1, eased, 'rgba(240,192,80,0.7)', 1);
+      drawPartialPath(path0, eased, 'rgba(240,192,80,0.7)', 1);
+
+      // Draw trails
+      drawTrail(path1, rawP, eased);
+      drawTrail(path0, rawP, eased);
+
+      // Draw packets
+      const [px1, py1] = interpPath(path1, eased);
+      const [px0, py0] = interpPath(path0, eased);
+      drawBitPacket(px1, py1, outcome[1]);
+      drawBitPacket(px0, py0, outcome[0]);
+
+      // Flash on separation band when packets cross it
+      if (eased > 0.3 && eased < 0.85) {
+        const flashAlpha = 0.08 * Math.sin((eased - 0.3) / 0.55 * Math.PI);
+        ctx.fillStyle = `rgba(240,192,80,${flashAlpha})`;
+        roundRect(ctx, 10, divY - bandH/2, W - 20, bandH, 6);
+        ctx.fill();
+      }
+
+    } else if ((currentStep >= 4 || this.bitAnimDone) && outcome) {
+      // ── Static classical lines (animation finished or at step 4+) ──
+      ctx.setLineDash([4, 3]);
+      ctx.strokeStyle = 'rgba(108,90,48,0.7)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(path1[0][0], path1[0][1]);
+      ctx.lineTo(path1[1][0], path1[1][1]); ctx.lineTo(path1[2][0], path1[2][1]); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(path0[0][0], path0[0][1]);
+      ctx.lineTo(path0[1][0], path0[1][1]); ctx.lineTo(path0[2][0], path0[2][1]); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Correction gates
+    if (currentStep >= 4 && outcome) {
+      const xLabel = outcome[1] === '1' ? 'X' : 'I';
+      const zLabel = outcome[0] === '1' ? 'Z' : 'I';
+      if (isCurrent(4)) { pulseGlow(gx.CORR_X, wireY[2]); pulseGlow(gx.CORR_Z, wireY[2]); }
+      drawGate(gx.CORR_X, wireY[2], xLabel, true, outcome[1]==='1' ? '#4ecb8d' : '#555');
+      drawGate(gx.CORR_Z, wireY[2], zLabel, true, outcome[0]==='1' ? '#4ecb8d' : '#555');
+    } else if (currentStep < 4) {
+      drawGate(gx.CORR_X, wireY[2], 'X\u1d50\u00b9', false);
+      drawGate(gx.CORR_Z, wireY[2], 'Z\u1d50\u2070', false);
+    }
+
+    // ── Gate activation ripples ──
+    const nowSec = performance.now() / 1000;
+    this.ripples = this.ripples.filter(r => {
+      const age = nowSec - r.start;
+      if (age > 0.7) return false;
+      const progress = age / 0.7;
+      const radius = 10 + progress * 45;
+      const alpha = 0.4 * (1 - progress);
+      ctx.save();
+      ctx.strokeStyle = `rgba(108,140,255,${alpha})`;
+      ctx.lineWidth = 2.5 * (1 - progress);
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      if (age < 0.4) {
+        const innerAlpha = 0.25 * (1 - age / 0.4);
+        ctx.strokeStyle = `rgba(167,139,250,${innerAlpha})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, radius * 0.55, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+      return true;
+    });
+
+    // ── Teleportation finale effects ──
+    if (this.finaleActive) {
+      const elapsed = nowSec - this.finaleStart;
+      const fadeIn = Math.min(1, elapsed / 0.5);
+
+      // Green glow along Bob's wire
+      ctx.save();
+      const glowPulse = 0.5 + 0.3 * Math.sin(nowSec * 4);
+      const glowAlpha = fadeIn * glowPulse * 0.15;
+      const greenGlow = ctx.createLinearGradient(startX, 0, endX, 0);
+      greenGlow.addColorStop(0, `rgba(52,211,153,0)`);
+      greenGlow.addColorStop(0.3, `rgba(52,211,153,${glowAlpha})`);
+      greenGlow.addColorStop(0.7, `rgba(78,203,141,${glowAlpha})`);
+      greenGlow.addColorStop(1, `rgba(52,211,153,0)`);
+      ctx.fillStyle = greenGlow;
+      ctx.fillRect(startX, wireY[2] - 20, endX - startX, 40);
+      ctx.restore();
+
+      // Sparkle ring around correction gates
+      if (elapsed < 2.5) {
+        const sparkPhase = elapsed * 5;
+        [gx.CORR_X, gx.CORR_Z].forEach(gateX => {
+          const sparkRadius = 24 + 8 * Math.sin(sparkPhase);
+          for (let i = 0; i < 6; i++) {
+            const angle = sparkPhase + (i / 6) * Math.PI * 2;
+            const sx = gateX + Math.cos(angle) * sparkRadius;
+            const sy = wireY[2] + Math.sin(angle) * sparkRadius;
+            const sparkAlpha = 0.6 * fadeIn * Math.max(0, 1 - elapsed / 2.5);
+            ctx.save();
+            ctx.shadowColor = `rgba(52,211,153,${sparkAlpha})`;
+            ctx.shadowBlur = 6;
+            ctx.fillStyle = `rgba(78,203,141,${sparkAlpha})`;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        });
+      }
+
+      // Finale burst particles
+      const pdt = 0.016;
+      this.finaleParticles = this.finaleParticles.filter(p => {
+        p.x += p.vx * pdt;
+        p.y += p.vy * pdt;
+        p.vx *= 0.99; p.vy *= 0.99;
+        p.life -= p.decay * pdt;
+        if (p.life <= 0) return false;
+        ctx.save();
+        ctx.shadowColor = `rgba(52,211,153,${p.life * 0.5})`;
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = `rgba(78,203,141,${p.life * 0.7})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        return true;
+      });
+
+      // Success text shimmer
+      if (elapsed > 0.3) {
+        const textAlpha = Math.min(1, (elapsed - 0.3) / 0.5) * (0.6 + 0.2 * Math.sin(nowSec * 3));
+        ctx.save();
+        ctx.fillStyle = `rgba(52,211,153,${textAlpha * 0.85})`;
+        ctx.font = 'bold 13px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = `rgba(52,211,153,${textAlpha * 0.4})`;
+        ctx.shadowBlur = 12;
+        ctx.fillText('\u2713 |\u03C8\u27E9 teleported!', (gx.CORR_X + gx.CORR_Z) / 2, wireY[2] + 35);
+        ctx.restore();
+      }
+    }
+
+    // ── Animated scan cursor ──
+    if (currentStep > 0) {
+      const cx = this.cursorX;
+      const pulse = 0.5 + 0.5 * Math.sin(t * 2.5);
+      ctx.save();
+      ctx.strokeStyle = `rgba(108,140,255,${0.12 + pulse * 0.08})`;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 4]);
+      ctx.beginPath(); ctx.moveTo(cx, 15); ctx.lineTo(cx, H - 20); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    // ── Smooth progress bar ──
+    const barY = H - 10;
+    const barW = endX - startX;
+    ctx.fillStyle = 'rgba(108,140,255,0.06)';
+    roundRect(ctx, startX, barY, barW, 4, 2); ctx.fill();
+    const fillW = barW * this.progressVal;
+    if (fillW > 0) {
+      const grad = ctx.createLinearGradient(startX, 0, startX + fillW, 0);
+      grad.addColorStop(0, 'rgba(108,140,255,0.5)');
+      grad.addColorStop(1, 'rgba(167,139,250,0.5)');
+      ctx.fillStyle = grad;
+      roundRect(ctx, startX, barY, fillW, 4, 2); ctx.fill();
+    }
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ─── Main Controller ─────────────────────────────────────
+class TeleportationApp {
+  constructor() {
+    this.step = 0;
+    this.outcome = null;
+    this.playing = false;
+    this.playTimer = null;
+    this.inputState = 'generic';
+    this._prevStep = -1;
+
+    this.renderer = new CircuitRenderer(document.getElementById('circuitCanvas'));
+    this.stateDisplay = document.getElementById('stateDisplay');
+    this.explanationText = document.getElementById('explanationText');
+    this.measurementChoices = document.getElementById('measurementChoices');
+    this.stepName = document.getElementById('stepName');
+    this.stepCounter = document.getElementById('stepCounter');
+    this.stepDots = document.querySelectorAll('.step-dot');
+
+    document.getElementById('btnFirst').addEventListener('click', () => this.goTo(0));
+    document.getElementById('btnPrev').addEventListener('click', () => this.prev());
+    document.getElementById('btnNext').addEventListener('click', () => this.next());
+    document.getElementById('btnLast').addEventListener('click', () => this.goTo(MAX_STEP));
+    document.getElementById('btnPlay').addEventListener('click', () => this.togglePlay());
+    document.getElementById('stateSelect').addEventListener('change', (e) => {
+      this.inputState = e.target.value;
+      this.outcome = null;
+      this._prevStep = -1;
+      this.goTo(0);
+    });
+
+    document.querySelectorAll('.meas-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        let oc = btn.dataset.outcome;
+        if (oc === 'random') oc = ['00','01','10','11'][Math.floor(Math.random()*4)];
+        this.outcome = oc;
+        document.querySelectorAll('.meas-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        this.render();
+        // Start classical bit animation — auto-advance when bits arrive at Bob
+        this.renderer.startBitAnim(() => {
+          if (this.step === 3) this.next();
+        });
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') this.next();
+      else if (e.key === 'ArrowLeft') this.prev();
+      else if (e.key === ' ') { e.preventDefault(); this.togglePlay(); }
+      else if (e.key === 'Home') this.goTo(0);
+      else if (e.key === 'End') this.goTo(MAX_STEP);
+    });
+
+    this.render();
+  }
+
+  goTo(step) {
+    if (step < 0) step = 0;
+    if (step > MAX_STEP) step = MAX_STEP;
+    if (step < 3) {
+      this.outcome = null;
+      this.renderer.cancelBitAnim();
+    }
+    if (step >= 4 && !this.outcome) step = 3;
+    this.step = step;
+    this.render();
+  }
+
+  next() {
+    if (this.step === 3 && !this.outcome) return;
+    this.goTo(this.step + 1);
+  }
+
+  prev() {
+    if (this.step === 4) { this.outcome = null; }
+    this.goTo(this.step - 1);
+  }
+
+  togglePlay() {
+    this.playing = !this.playing;
+    document.getElementById('btnPlay').textContent = this.playing ? 'Pause' : 'Play';
+    if (this.playing) {
+      this.playTimer = setInterval(() => {
+        if (this.step >= MAX_STEP || (this.step === 3 && !this.outcome)) {
+          this.togglePlay(); return;
+        }
+        this.next();
+      }, 2000);
+    } else { clearInterval(this.playTimer); }
+  }
+
+  _crossfade(el, newHTML) {
+    el.classList.remove('fade-in');
+    el.classList.add('fade-out');
+    setTimeout(() => {
+      el.innerHTML = newHTML;
+      el.classList.remove('fade-out');
+      el.classList.add('fade-in');
+    }, 200);
+  }
+
+  render() {
+    const stepChanged = this.step !== this._prevStep;
+    this._prevStep = this.step;
+
+    this.renderer.setStep(this.step, this.outcome);
+
+    const stateHTML = getStateHTML(this.step, this.inputState, this.outcome);
+    let explainHTML = STEPS[this.step].explain;
+    if (this.step === 4 && this.outcome) {
+      const corrections = {
+        '00': 'I (identity &mdash; no correction needed)',
+        '01': 'X (bit-flip)',
+        '10': 'Z (phase-flip)',
+        '11': 'ZX (bit-flip then phase-flip)'
+      };
+      explainHTML = `Alice&rsquo;s classical message was <strong>|${this.outcome}&rang;</strong>. Bob applies <strong>${corrections[this.outcome]}</strong> to his EPR half. After this <em>local</em> operation, Bob&rsquo;s qubit is exactly |&psi;&rang;.<br><br><strong>Key insight:</strong> No quantum information traveled between Alice and Bob &mdash; only 2 classical bits crossed the gap. The original |&psi;&rang; was destroyed at Alice&rsquo;s side (no-cloning theorem). Entanglement was the essential resource consumed in the process.`;
+    }
+
+    if (stepChanged) {
+      this._crossfade(this.stateDisplay, stateHTML);
+      this._crossfade(this.explanationText, explainHTML);
+    } else {
+      this.stateDisplay.innerHTML = stateHTML;
+      this.explanationText.innerHTML = explainHTML;
+    }
+
+    this.measurementChoices.classList.toggle('visible', this.step === 3);
+    this.stepName.textContent = STEPS[this.step].name;
+    this.stepCounter.textContent = `Step ${this.step} / ${MAX_STEP}`;
+
+    // Update step dots
+    this.stepDots.forEach((dot, i) => {
+      dot.classList.remove('active', 'completed');
+      if (i === this.step) dot.classList.add('active');
+      else if (i < this.step) dot.classList.add('completed');
+    });
+
+    document.getElementById('btnFirst').disabled = this.step === 0;
+    document.getElementById('btnPrev').disabled = this.step === 0;
+    document.getElementById('btnNext').disabled = this.step === MAX_STEP || (this.step === 3 && !this.outcome);
+    document.getElementById('btnLast').disabled = this.step === MAX_STEP;
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => { window.app = new TeleportationApp(); });
+</script>
+</body>
+</html>
