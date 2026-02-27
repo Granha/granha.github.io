@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linear Algebra for Quantum Computing</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+  startup: { pageReady: () => MathJax.startup.defaultPageReady().then(() => document.body.classList.add('mathjax-ready')) }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d2e;
+  --surface2: #232740;
+  --border: #2e3350;
+  --text: #e2e4f0;
+  --text-dim: #8b8fa8;
+  --accent: #7c6aef;
+  --accent-glow: rgba(124,106,239,0.15);
+  --green: #34d399;
+  --green-bg: rgba(52,211,153,0.1);
+  --red: #f87171;
+  --red-bg: rgba(248,113,113,0.1);
+  --yellow: #fbbf24;
+  --yellow-bg: rgba(251,191,36,0.1);
+  --blue: #60a5fa;
+  --blue-bg: rgba(96,165,250,0.1);
+  --cyan: #22d3ee;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+body:not(.mathjax-ready) .math-content { visibility: hidden; min-height: 2em; }
+
+/* ── Sidebar Navigation ── */
+.layout { display: flex; min-height: 100vh; }
+
+nav {
+  position: fixed; top: 0; left: 0;
+  width: 260px; height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 0;
+  overflow-y: auto;
+  z-index: 100;
+}
+nav .logo {
+  padding: 0 1.25rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+nav .logo h2 { font-size: .95rem; color: var(--accent); letter-spacing: .5px; }
+nav .logo p { font-size: .7rem; color: var(--text-dim); margin-top: .2rem; }
+
+nav a {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .55rem 1.25rem;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: .82rem;
+  border-left: 3px solid transparent;
+  transition: all .2s;
+}
+nav a:hover { color: var(--text); background: var(--accent-glow); }
+nav a.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-glow); }
+nav a .num { font-size: .7rem; font-weight: 700; min-width: 1.1rem; }
+
+.main { margin-left: 260px; flex: 1; max-width: 860px; padding: 2rem 3rem 6rem; }
+
+/* ── Hero ── */
+.hero {
+  text-align: center;
+  padding: 3rem 0 2.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 3rem;
+}
+.hero h1 {
+  font-size: 2.2rem;
+  background: linear-gradient(135deg, var(--accent), var(--cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: .5rem;
+}
+.hero p { color: var(--text-dim); max-width: 540px; margin: 0 auto; font-size: .95rem; }
+
+/* ── Sections ── */
+section { margin-bottom: 4rem; scroll-margin-top: 1.5rem; }
+section h2 {
+  font-size: 1.45rem;
+  margin-bottom: .4rem;
+  display: flex; align-items: center; gap: .6rem;
+}
+section h2 .sec-num {
+  font-size: .75rem; font-weight: 700;
+  background: var(--accent);
+  color: #fff;
+  width: 1.6rem; height: 1.6rem;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.section-subtitle { color: var(--text-dim); margin-bottom: 1.5rem; font-size: .88rem; }
+
+h3 { font-size: 1.05rem; margin: 1.8rem 0 .6rem; color: var(--blue); }
+p, li { font-size: .92rem; }
+p { margin-bottom: .8rem; }
+ul, ol { margin-left: 1.4rem; margin-bottom: 1rem; }
+li { margin-bottom: .3rem; }
+
+/* ── Cards & Boxes ── */
+.concept-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.3rem 1.5rem;
+  margin: 1.2rem 0;
+}
+.concept-box.definition { border-left: 4px solid var(--accent); }
+.concept-box.quantum { border-left: 4px solid var(--cyan); background: rgba(34,211,238,.04); }
+.concept-box.example { border-left: 4px solid var(--yellow); background: var(--yellow-bg); }
+.concept-box.warning { border-left: 4px solid var(--red); background: var(--red-bg); }
+
+.box-label {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: .5rem;
+}
+.concept-box.definition .box-label { color: var(--accent); }
+.concept-box.quantum .box-label { color: var(--cyan); }
+.concept-box.example .box-label { color: var(--yellow); }
+.concept-box.warning .box-label { color: var(--red); }
+
+/* ── Interactive Quiz ── */
+.quiz {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.quiz-header {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--green); margin-bottom: .8rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.quiz-question { font-weight: 600; margin-bottom: 1rem; font-size: .95rem; }
+.quiz-options { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1rem; }
+.quiz-option {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .6rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .2s;
+  font-size: .88rem;
+}
+.quiz-option:hover { border-color: var(--accent); }
+.quiz-option.selected { border-color: var(--accent); background: var(--accent-glow); }
+.quiz-option .radio {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: all .2s;
+}
+.quiz-option.selected .radio { border-color: var(--accent); background: var(--accent); box-shadow: inset 0 0 0 3px var(--surface); }
+.quiz-option.correct { border-color: var(--green); background: var(--green-bg); }
+.quiz-option.incorrect { border-color: var(--red); background: var(--red-bg); opacity: .6; }
+
+.quiz-btn {
+  padding: .55rem 1.4rem;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .85rem;
+  transition: all .2s;
+}
+.quiz-btn:hover { filter: brightness(1.15); }
+.quiz-btn:disabled { opacity: .4; cursor: default; }
+
+.quiz-feedback.show { display: block; }
+.quiz-feedback.correct { background: var(--green-bg); color: var(--green); }
+.quiz-feedback.incorrect { background: var(--red-bg); color: var(--red); }
+
+/* ── Interactive Calculator Widgets ── */
+.widget {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.widget-title {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--blue); margin-bottom: 1rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.widget-grid { display: flex; gap: 1.2rem; flex-wrap: wrap; align-items: flex-start; }
+.widget-col { flex: 1; min-width: 180px; }
+
+.matrix-input {
+  display: grid;
+  gap: 4px;
+  margin: .4rem 0;
+}
+.matrix-input input {
+  width: 60px; height: 36px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  text-align: center;
+  font-size: .85rem;
+  font-family: 'Courier New', monospace;
+}
+.matrix-input input:focus { outline: none; border-color: var(--accent); }
+
+.matrix-bracket {
+  display: flex; align-items: center; gap: .3rem;
+}
+.bracket {
+  font-size: 2.2rem; color: var(--text-dim); font-weight: 200; line-height: 1;
+}
+
+.widget-result {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: .8rem;
+  font-family: 'Courier New', monospace;
+  font-size: .88rem;
+  min-height: 2.5rem;
+}
+
+.compute-btn {
+  padding: .5rem 1.2rem;
+  background: var(--blue);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .82rem;
+  transition: all .2s;
+  margin-top: .6rem;
+}
+.compute-btn:hover { filter: brightness(1.15); }
+
+label.widget-label {
+  font-size: .78rem; color: var(--text-dim); display: block; margin-bottom: .3rem;
+}
+
+/* ── Collapsible Worked Example ── */
+details {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 1.2rem 0;
+  overflow: hidden;
+}
+summary {
+  padding: .9rem 1.2rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--yellow);
+  display: flex; align-items: center; gap: .5rem;
+  user-select: none;
+}
+summary::marker, summary::-webkit-details-marker { display: none; }
+summary::before { content: '\25B6'; font-size: .65rem; transition: transform .2s; display: inline-block; }
+details[open] summary::before { transform: rotate(90deg); }
+
+/* ── Progress tracker ── */
+.progress-bar {
+  position: fixed; top: 0; left: 260px; right: 0; height: 3px;
+  background: var(--surface); z-index: 99;
+}
+.progress-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+  transition: width .3s;
+}
+
+/* ── Score badge ── */
+.score-badge {
+  position: fixed; bottom: 1.5rem; right: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: .6rem 1rem;
+  font-size: .8rem;
+  z-index: 99;
+  display: flex; align-items: center; gap: .5rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+.score-badge .score-num { color: var(--green); font-weight: 700; font-size: 1.05rem; }
+
+/* ── Tables ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: .88rem;
+}
+th, td { padding: .6rem .8rem; border: 1px solid var(--border); text-align: center; }
+th { background: var(--surface2); font-size: .78rem; text-transform: uppercase; letter-spacing: .5px; }
+
+/* ── Scroll Reveal Animations ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Quiz feedback animation ── */
+.quiz-feedback {
+  margin-top: .8rem;
+  padding: .8rem 1rem;
+  border-radius: 8px;
+  font-size: .88rem;
+  display: none;
+  animation: feedbackIn .4s ease;
+}
+@keyframes feedbackIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Details open animation ── */
+details .details-body {
+  padding: .4rem 1.2rem 1.2rem;
+  animation: detailsOpen .35s ease;
+}
+@keyframes detailsOpen {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 2000px; }
+}
+
+/* ── Widget result flash ── */
+.widget-result.flash { animation: resultFlash .5s ease; }
+@keyframes resultFlash {
+  0% { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+  100% { border-color: var(--border); box-shadow: none; }
+}
+
+/* ── Button hover improvements ── */
+.compute-btn { position: relative; overflow: hidden; }
+.compute-btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,.12) 50%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform .5s;
+}
+.compute-btn:hover::after { transform: translateX(100%); }
+
+.quiz-btn { position: relative; overflow: hidden; }
+.quiz-btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,.12) 50%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform .5s;
+}
+.quiz-btn:hover::after { transform: translateX(100%); }
+
+/* ── Concept box hover lift ── */
+.concept-box { transition: transform .2s ease, box-shadow .2s ease; }
+.concept-box:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,.3); }
+
+/* ── Canvas styling ── */
+canvas.viz {
+  width: 100%;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  cursor: crosshair;
+}
+
+/* ── Mobile hamburger ── */
+.hamburger {
+  display: none;
+  position: fixed; top: .8rem; left: .8rem;
+  z-index: 200;
+  width: 40px; height: 40px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.hamburger span {
+  display: block; width: 20px; height: 2px;
+  background: var(--text); border-radius: 2px;
+  transition: all .3s;
+}
+.hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+.nav-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 99;
+}
+.nav-overlay.show { display: block; }
+
+/* ── Circuit Simulator ── */
+.circuit-sim {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.circuit-steps { display: flex; flex-direction: column; gap: .8rem; }
+.circuit-step {
+  display: flex; gap: 1rem; align-items: flex-start;
+  padding: .8rem 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  opacity: .35;
+  transform: translateX(-8px);
+  transition: all .4s ease;
+  font-size: .88rem;
+}
+.circuit-step.active {
+  opacity: 1;
+  transform: translateX(0);
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+.circuit-step.done {
+  opacity: .7;
+  transform: translateX(0);
+}
+.step-num {
+  background: var(--accent);
+  color: #fff;
+  width: 1.4rem; height: 1.4rem;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .7rem; font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.circuit-controls {
+  display: flex; gap: .6rem;
+  margin-top: 1rem;
+}
+.circuit-controls button {
+  padding: .45rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .82rem;
+  transition: all .2s;
+}
+.circuit-controls button:hover { border-color: var(--accent); background: var(--accent-glow); }
+.circuit-controls button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ── Light Theme ── */
+body.light {
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --surface2: #eef0f6;
+  --border: #d4d7e5;
+  --text: #1a1d2e;
+  --text-dim: #6b7094;
+  --accent-glow: rgba(124,106,239,0.1);
+  --green-bg: rgba(16,185,129,0.1);
+  --red-bg: rgba(239,68,68,0.08);
+  --yellow-bg: rgba(245,158,11,0.08);
+  --blue-bg: rgba(59,130,246,0.06);
+}
+body.light canvas.viz { background: #eef0f6; }
+body.light .circuit-step { background: var(--surface2); }
+body.light .quiz-option { background: var(--surface2); }
+
+/* ── Theme Toggle ── */
+.theme-toggle {
+  position: fixed; top: .8rem; right: .8rem;
+  z-index: 200;
+  width: 38px; height: 38px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  transition: all .3s;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+.theme-toggle:hover { transform: scale(1.1); }
+
+/* ── Nav completion checks ── */
+nav a .check {
+  margin-left: auto;
+  font-size: .7rem;
+  opacity: 0;
+  transition: opacity .3s;
+  color: var(--green);
+}
+nav a .check.done { opacity: 1; }
+
+/* ── Fill-in-blank exercises ── */
+.fill-blank {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.3rem 1.5rem;
+  margin: 1.5rem 0;
+}
+.fill-blank .fb-header {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--yellow); margin-bottom: .8rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.fill-blank .fb-prompt { font-size: .92rem; margin-bottom: .8rem; }
+.fill-blank .fb-row {
+  display: flex; gap: .6rem; align-items: center; flex-wrap: wrap;
+  margin-bottom: .5rem;
+}
+.fill-blank input[type="text"] {
+  width: 120px; height: 34px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  text-align: center;
+  font-size: .88rem;
+  font-family: 'Courier New', monospace;
+  transition: border-color .2s;
+}
+.fill-blank input[type="text"]:focus { outline: none; border-color: var(--accent); }
+.fill-blank input.correct-input { border-color: var(--green) !important; background: var(--green-bg); }
+.fill-blank input.incorrect-input { border-color: var(--red) !important; background: var(--red-bg); }
+.fill-blank .fb-feedback {
+  font-size: .85rem;
+  margin-top: .5rem;
+  min-height: 1.2em;
+}
+
+/* ── Gate Buttons Row ── */
+.gate-btns {
+  display: flex; gap: .35rem; flex-wrap: wrap;
+  margin-top: .6rem; justify-content: center;
+}
+.gate-btns button {
+  padding: .3rem .65rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: .75rem;
+  font-weight: 600;
+  transition: all .2s;
+}
+.gate-btns button:hover { border-color: var(--accent); background: var(--accent-glow); }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  nav { transform: translateX(-100%); transition: transform .3s ease; }
+  nav.open { transform: translateX(0); }
+  .hamburger { display: flex; }
+  .main { margin-left: 0; padding: 1.5rem; padding-top: 3.5rem; }
+  .progress-bar { left: 0; }
+  .hero h1 { font-size: 1.6rem; }
+  .widget-grid { flex-direction: column; }
+  .theme-toggle { top: .8rem; right: .8rem; }
+}
+
+@media print {
+  nav, .hamburger, .nav-overlay, .progress-bar, .score-badge, .theme-toggle { display: none !important; }
+  .main { margin-left: 0; max-width: 100%; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+  body { background: #fff; color: #000; }
+  .concept-box, .widget, .quiz, .fill-blank, .circuit-sim { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<button class="hamburger" id="hamburger" onclick="toggleNav()">
+  <span></span><span></span><span></span>
+</button>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark theme">&#9790;</button>
+<div class="nav-overlay" id="navOverlay" onclick="toggleNav()"></div>
+
+<div class="layout">
+<nav id="sideNav">
+  <div class="logo">
+    <h2>LINEAR ALGEBRA</h2>
+    <p>Quantum Computing Refresher</p>
+  </div>
+  <a href="#sec-complex" data-sec="1"><span class="num">1</span> Complex Numbers<span class="check" data-check="sec-complex">&#10003;</span></a>
+  <a href="#sec-vectors" data-sec="2"><span class="num">2</span> Vectors & Dirac Notation<span class="check" data-check="sec-vectors">&#10003;</span></a>
+  <a href="#sec-inner" data-sec="3"><span class="num">3</span> Inner Products<span class="check" data-check="sec-inner">&#10003;</span></a>
+  <a href="#sec-matrices" data-sec="4"><span class="num">4</span> Matrices<span class="check" data-check="sec-matrices">&#10003;</span></a>
+  <a href="#sec-eigen" data-sec="5"><span class="num">5</span> Eigenvalues & Eigenvectors<span class="check" data-check="sec-eigen">&#10003;</span></a>
+  <a href="#sec-tensor" data-sec="6"><span class="num">6</span> Tensor Products<span class="check" data-check="sec-tensor">&#10003;</span></a>
+  <a href="#sec-special" data-sec="7"><span class="num">7</span> Special Matrices<span class="check" data-check="sec-special">&#10003;</span></a>
+  <a href="#sec-putting" data-sec="8"><span class="num">8</span> Putting It Together<span class="check" data-check="sec-putting">&#10003;</span></a>
+</nav>
+
+<main class="main">
+
+<!-- ═══ HERO ═══ -->
+<div class="hero">
+  <h1>Linear Algebra for Quantum Computing</h1>
+  <p>An interactive refresher covering the essential linear algebra you need. Work through each section, try the interactive tools, and test yourself with quizzes.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SECTION 1 — COMPLEX NUMBERS                        -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="sec-complex">
+<h2><span class="sec-num">1</span> Complex Numbers</h2>
+<p class="section-subtitle">The number system underlying all of quantum mechanics.</p>
+
+<p>A <strong>complex number</strong> has the form $z = a + bi$, where $a, b \in \mathbb{R}$ and $i = \sqrt{-1}$. We call $a = \text{Re}(z)$ the <em>real part</em> and $b = \text{Im}(z)$ the <em>imaginary part</em>.</p>
+
+<div class="concept-box reveal definition">
+  <div class="box-label">Key Operations</div>
+  <div class="math-content">
+  <ul>
+    <li><strong>Addition:</strong> $(a+bi)+(c+di) = (a+c) + (b+d)i$</li>
+    <li><strong>Multiplication:</strong> $(a+bi)(c+di) = (ac-bd) + (ad+bc)i$</li>
+    <li><strong>Complex conjugate:</strong> $\bar{z} = z^* = a - bi$</li>
+    <li><strong>Modulus:</strong> $|z| = \sqrt{a^2+b^2} = \sqrt{z\bar{z}}$</li>
+    <li><strong>Euler form:</strong> $z = re^{i\theta}$ where $r=|z|$ and $\theta = \text{arg}(z)$</li>
+  </ul>
+  </div>
+</div>
+
+<div class="concept-box reveal quantum">
+  <div class="box-label">Why This Matters in Quantum Computing</div>
+  <p>Quantum states are vectors with <strong>complex amplitudes</strong>. A qubit state $|\psi\rangle = \alpha|0\rangle + \beta|1\rangle$ has $\alpha, \beta \in \mathbb{C}$ with $|\alpha|^2 + |\beta|^2 = 1$. The phases of these complex numbers encode information that leads to interference &mdash; the heart of quantum computation.</p>
+</div>
+
+<details>
+  <summary>Worked Example: Multiplying complex numbers</summary>
+  <div class="details-body math-content">
+    <p><strong>Problem:</strong> Compute $(1+2i)(3-i)$.</p>
+    <p><strong>Step 1:</strong> Expand using FOIL:</p>
+    <p>$(1)(3) + (1)(-i) + (2i)(3) + (2i)(-i)$</p>
+    <p>$= 3 - i + 6i - 2i^2$</p>
+    <p><strong>Step 2:</strong> Replace $i^2 = -1$:</p>
+    <p>$= 3 - i + 6i + 2 = 5 + 5i$</p>
+  </div>
+</details>
+
+<!-- Complex Number Calculator -->
+<div class="widget reveal">
+  <div class="widget-title">&#9881; Interactive: Complex Number Arithmetic</div>
+  <div class="widget-grid">
+    <div class="widget-col">
+      <label class="widget-label">z&#8321; = a + bi</label>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <input type="number" id="c1a" value="1" style="width:55px;height:34px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);text-align:center;font-size:.85rem;">
+        <span>+</span>
+        <input type="number" id="c1b" value="2" style="width:55px;height:34px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);text-align:center;font-size:.85rem;">
+        <span>i</span>
+      </div>
+    </div>
+    <div class="widget-col">
+      <label class="widget-label">z&#8322; = c + di</label>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <input type="number" id="c2a" value="3" style="width:55px;height:34px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);text-align:center;font-size:.85rem;">
+        <span>+</span>
+        <input type="number" id="c2b" value="-1" style="width:55px;height:34px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);text-align:center;font-size:.85rem;">
+        <span>i</span>
+      </div>
+    </div>
+  </div>
+  <button class="compute-btn" onclick="computeComplex()">Compute</button>
+  <div class="widget-result" id="complexResult">Click "Compute" to see results.</div>
+</div>
+
+<!-- Complex Plane Visualizer -->
+<div class="widget reveal">
+  <div class="widget-title">&#127912; Visualize: The Complex Plane</div>
+  <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:.8rem;">Click anywhere on the plane to place a complex number. See its real part, imaginary part, modulus, and argument in real time.</p>
+  <canvas class="viz" id="complexPlane" width="560" height="360"></canvas>
+  <div class="widget-result" id="cpResult" style="margin-top:.6rem;">Click on the plane to plot a complex number.</div>
+</div>
+
+<!-- Quiz 1 -->
+<div class="quiz reveal" data-quiz="q1">
+  <div class="quiz-header">&#10004; Check Your Understanding</div>
+  <div class="quiz-question math-content">What is the modulus of $z = 3 + 4i$?</div>
+  <div class="quiz-options">
+    <div class="quiz-option" data-val="a"><span class="radio"></span> $7$</div>
+    <div class="quiz-option" data-val="b"><span class="radio"></span> $5$</div>
+    <div class="quiz-option" data-val="c"><span class="radio"></span> $\sqrt{7}$</div>
+    <div class="quiz-option" data-val="d"><span class="radio"></span> $25$</div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q1','b')">Check Answer</button>
+  <div class="quiz-feedback" id="fb-q1"></div>
+</div>
+
+<!-- Fill-in-blank: Complex Multiplication -->
+<div class="fill-blank reveal" data-section="sec-complex">
+  <div class="fb-header">&#9998; Practice: Compute It Yourself</div>
+  <div class="fb-prompt math-content">Compute $(2+i)(1-3i)$. Enter the real and imaginary parts:</div>
+  <div class="fb-row">
+    <span>Answer:</span>
+    <input type="text" id="fib1_re" placeholder="real"> <span>+</span>
+    <input type="text" id="fib1_im" placeholder="imag"> <span>$i$</span>
+    <button class="compute-btn" style="font-size:.78rem;padding:.3rem .8rem;" onclick="checkFillBlank('fib1', 5, -5)">Check</button>
+  </div>
+  <div class="fb-feedback" id="fib1_fb"></div>
+</div>
+
+<div class="quiz reveal" data-quiz="q1b">
+  <div class="quiz-header">&#10004; Check Your Understanding</div>
+  <div class="quiz-question math-content">What is the complex conjugate of $z = 2 - 3i$?</div>
+  <div class="quiz-options">
+    <div class="quiz-option" data-val="a"><span class="radio"></span> $-2 + 3i$</div>
+    <div class="quiz-option" data-val="b"><span class="radio"></span> $-2 - 3i$</div>
+    <div class="quiz-option" data-val="c"><span class="radio"></span> $2 + 3i$</div>
+    <div class="quiz-option" data-val="d"><span class="radio"></span> $3 - 2i$</div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q1b','c')">Check Answer</button>
+  <div class="quiz-feedback" id="fb-q1b"></div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SECTION 2 — VECTORS & DIRAC NOTATION               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="sec-vectors">
+<h2><span class="sec-num">2</span> Vectors &amp; Dirac Notation</h2>
+<p class="section-subtitle">The language of quantum states.</p>
+
+<p>A vector in $\mathbb{C}^n$ is an ordered $n$-tuple of complex numbers. In quantum computing, we primarily work in $\mathbb{C}^2$ (single qubit) and $\mathbb{C}^{2^n}$ ($n$ qubits).</p>
+
+<div class="concept-box reveal definition">
+  <div class="box-label">Dirac (Bra-Ket) Notation</div>
+  <div class="math-content">
+  <table>
+    <tr><th>Name</th><th>Symbol</th><th>Meaning</th></tr>
+    <tr><td>Ket</td><td>$|\psi\rangle$</td><td>Column vector (state)</td></tr>
+    <tr><td>Bra</td><td>$\langle\psi|$</td><td>Conjugate transpose (row vector)</td></tr>
+    <tr><td>Bracket</td><td>$\langle\phi|\psi\rangle$</td><td>Inner product (scalar)</td></tr>
+    <tr><td>Outer product</td><td>$|\psi\rangle\langle\phi|$</td><td>Matrix (operator)</td></tr>
+  </table>
+  </div>
+</div>
+
+<p>The <strong>computational basis</strong> for a single qubit is:</p>
+<div class="math-content">
+$$|0\rangle = \begin{pmatrix} 1 \\ 0 \end{pmatrix}, \qquad |1\rangle = \begin{pmatrix} 0 \\ 1 \end{pmatrix}$$
+</div>
+
+<p>Any single-qubit state can be written as $|\psi\rangle = \alpha|0\rangle + \beta|1\rangle$ &mdash; a <strong>superposition</strong>.</p>
+
+<h3>Important Basis States</h3>
+<div class="math-content">
+$$|+\rangle = \frac{1}{\sqrt{2}}\begin{pmatrix}1\\1\end{pmatrix}, \qquad |-\rangle = \frac{1}{\sqrt{2}}\begin{pmatrix}1\\-1\end{pmatrix}$$
+</div>
+
+<details>
+  <summary>Worked Example: Writing a state in Dirac notation</summary>
+  <div class="details-body math-content">
+    <p><strong>Problem:</strong> Express $\begin{pmatrix} \frac{1}{\sqrt{3}} \\ \frac{i\sqrt{2}}{\sqrt{3}} \end{pmatrix}$ in Dirac notation.</p>
+    <p><strong>Solution:</strong></p>
+    <p>$|\psi\rangle = \frac{1}{\sqrt{3}}|0\rangle + \frac{i\sqrt{2}}{\sqrt{3}}|1\rangle$</p>
+    <p><strong>Verify normalization:</strong> $|\alpha|^2 + |\beta|^2 = \frac{1}{3} + \frac{2}{3} = 1$ &#10004;</p>
+  </div>
+</details>
+
+<div class="concept-box reveal quantum">
+  <div class="box-label">Quantum Connection</div>
+  <p>The <strong>normalization constraint</strong> $\langle\psi|\psi\rangle = 1$ reflects the fact that measurement probabilities must sum to 1. The probability of measuring outcome $|k\rangle$ is $|\langle k|\psi\rangle|^2$.</p>
+</div>
+
+<!-- Bloch Sphere Visualizer -->
+<div class="widget reveal">
+  <div class="widget-title">&#127912; Visualize: The Bloch Sphere</div>
+  <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:.8rem;">Drag on the sphere to rotate the view. Use the buttons to jump to common qubit states and see their position on the Bloch sphere.</p>
+  <canvas class="viz" id="blochSphere" width="400" height="400" style="max-width:400px;margin:0 auto;display:block;"></canvas>
+  <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.8rem;justify-content:center;" id="blochBtns">
+    <button class="compute-btn" onclick="setBlochState(0,0)" style="font-size:.75rem;padding:.35rem .7rem;">|0&#10217;</button>
+    <button class="compute-btn" onclick="setBlochState(Math.PI,0)" style="font-size:.75rem;padding:.35rem .7rem;">|1&#10217;</button>
+    <button class="compute-btn" onclick="setBlochState(Math.PI/2,0)" style="font-size:.75rem;padding:.35rem .7rem;">|+&#10217;</button>
+    <button class="compute-btn" onclick="setBlochState(Math.PI/2,Math.PI)" style="font-size:.75rem;padding:.35rem .7rem;">|-&#10217;</button>
+    <button class="compute-btn" onclick="setBlochState(Math.PI/2,Math.PI/2)" style="font-size:.75rem;padding:.35rem .7rem;">|+i&#10217;</button>
+    <button class="compute-btn" onclick="setBlochState(Math.PI/2,-Math.PI/2)" style="font-size:.75rem;padding:.35rem .7rem;">|-i&#10217;</button>
+  </div>
+  <p style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-top:.8rem;text-align:center;">Apply a Gate</p>
+  <div class="gate-btns">
+    <button onclick="applyBlochGate('H')">H</button>
+    <button onclick="applyBlochGate('X')">X</button>
+    <button onclick="applyBlochGate('Y')">Y</button>
+    <button onclick="applyBlochGate('Z')">Z</button>
+    <button onclick="applyBlochGate('S')">S</button>
+    <button onclick="applyBlochGate('T')">T</button>
+  </div>
+  <div class="widget-result" id="blochResult" style="margin-top:.6rem;text-align:center;">
+    State: |0&#10217; &nbsp;&mdash;&nbsp; &#952; = 0, &#966; = 0
+  </div>
+</div>
+
+<!-- Quiz 2 -->
+<div class="quiz reveal" data-quiz="q2">
+  <div class="quiz-header">&#10004; Check Your Understanding</div>
+  <div class="quiz-question math-content">What is $\langle 0|$ in row vector form?</div>
+  <div class="quiz-options">
+    <div class="quiz-option" data-val="a"><span class="radio"></span> $\begin{pmatrix} 1 \\ 0 \end{pmatrix}$</div>
+    <div class="quiz-option" data-val="b"><span class="radio"></span> $\begin{pmatrix} 0 & 1 \end{pmatrix}$</div>
+    <div class="quiz-option" data-val="c"><span class="radio"></span> $\begin{pmatrix} 1 & 0 \end{pmatrix}$</div>
+    <div class="quiz-option" data-val="d"><span class="radio"></span> $\begin{pmatrix} 0 \\ 1 \end{pmatrix}$</div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q2','c')">Check Answer</button>
+  <div class="quiz-feedback" id="fb-q2"></div>
+</div>
+
+<div class="quiz reveal" data-quiz="q2b">
+  <div class="quiz-header">&#10004; Check Your Understanding</div>
+  <div class="quiz-question math-content">If $|\psi\rangle = \frac{1}{2}|0\rangle + \frac{\sqrt{3}}{2}|1\rangle$, what is the probability of measuring $|1\rangle$?</div>
+  <div class="quiz-options">
+    <div class="quiz-option" data-val="a"><span class="radio"></span> $\frac{1}{2}$</div>
+    <div class="quiz-option" data-val="b"><span class="radio"></span> $\frac{\sqrt{3}}{2}$</div>
+    <div class="quiz-option" data-val="c"><span class="radio"></span> $\frac{3}{4}$</div>
+    <div class="quiz-option" data-val="d"><span class="radio"></span> $\frac{1}{4}$</div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q2b','c')">Check Answer</button>
+  <div class="quiz-feedback" id="fb-q2b"></div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SECTION 3 — INNER PRODUCTS                         -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="sec-inner">
+<h2><span class="sec-num">3</span> Inner Products</h2>
+<p class="section-subtitle">Measuring angles, lengths, and probabilities.</p>
+
+<p>The <strong>inner product</strong> of two vectors $|u\rangle, |v\rangle \in \mathbb{C}^n$ is:</p>
+<div class="math-content">
+$$\langle u | v \rangle = \sum_{k=1}^{n} \bar{u}_k v_k$$
+</div>
+
+<div class="concept-box reveal definition">
+  <div class="box-label">Properties</div>
+  <div class="math-content">
+  <ul>
+    <li><strong>Conjugate symmetry:</strong> $\langle u|v\rangle = \overline{\langle v|u\rangle}$</li>
+    <li><strong>Linearity in 2nd argument:</strong> $\langle u|\alpha v + \beta w\rangle = \alpha\langle u|v\rangle + \beta\langle u|w\rangle$</li>
+    <li><strong>Positive definite:</strong> $\langle v|v\rangle \geq 0$, with equality iff $|v\rangle = \mathbf{0}$</li>
+    <li><strong>Norm:</strong> $\||v\rangle\| = \sqrt{\langle v|v\rangle}$</li>
+  </ul>
+  </div>
+</div>
+
+<p>Two vectors are <strong>orthogonal</strong> if $\langle u|v\rangle = 0$. A set of vectors is <strong>orthonormal</strong> if each pair is orthogonal and each vector has norm 1.</p>
+
+<h3>Linear Independence &amp; Bases</h3>
+<p>A set of vectors $\{|v_1\rangle, \ldots, |v_n\rangle\}$ is <strong>linearly independent</strong> if no vector can be written as a combination of the others. Formally: $\sum_i c_i |v_i\rangle = 0$ implies all $c_i = 0$.</p>
+
+<div class="concept-box reveal definition">
+  <div class="box-label">Why Bases Matter</div>
+  <div class="math-content">
+  <ul>
+    <li>A <strong>basis</strong> for $\mathbb{C}^n$ is a set of $n$ linearly independent vectors</li>
+    <li>Any vector can be <strong>uniquely</strong> written as a linear combination of basis vectors</li>
+    <li>An <strong>orthonormal basis</strong> (ONB) makes computations easy: coefficients are just inner products $c_k = \langle e_k|\psi\rangle$</li>
+  </ul>
+  </div>
+</div>
+
+<div class="concept-box reveal quantum">
+  <div class="box-label">Quantum Connection</div>
+  <p>Every measurement in quantum mechanics corresponds to choosing an <strong>orthonormal basis</strong>. The standard Z-measurement uses $\{|0\rangle, |1\rangle\}$; the X-measurement uses $\{|+\rangle, |-\rangle\}$. Changing your measurement basis is equivalent to changing which question you ask the qubit!</p>
+</div>
+
+<div class="concept-box reveal quantum">
+  <div class="box-label">Quantum Connection</div>
+  <p>Orthonormal bases correspond to possible <strong>measurement outcomes</strong>. The computational basis $\{|0\rangle, |1\rangle\}$ is orthonormal: $\langle 0|1\rangle = 0$ and $\langle 0|0\rangle = \langle 1|1\rangle = 1$. The transition amplitude from state $|\psi\rangle$ to $|\phi\rangle$ is $\langle\phi|\psi\rangle$.</p>
+</div>
+
+<details>
+  <summary>Worked Example: Inner product computation</summary>
+  <div class="details-body math-content">
+    <p><strong>Problem:</strong> Compute $\langle u|v\rangle$ where $|u\rangle = \begin{pmatrix} 1 \\ i \end{pmatrix}$ and $|v\rangle = \begin{pmatrix} 2 \\ 1+i \end{pmatrix}$.</p>
+    <p><strong>Step 1:</strong> Form $\langle u| = \begin{pmatrix} \bar{1} & \overline{i} \end{pmatrix} = \begin{pmatrix} 1 & -i \end{pmatrix}$</p>
+    <p><strong>Step 2:</strong> Compute: $\langle u|v\rangle = (1)(2) + (-i)(1+i) = 2 + (-i - i^2) = 2 + (-i + 1) = 3 - i$</p>
+  </div>
+</details>
+
+<!-- Inner Product Calculator -->
+<div class="widget reveal">
+  <div class="widget-title">&#9881; Interactive: Inner Product Calculator (2D)</div>
+  <div class="widget-grid">
+    <div class="widget-col">
+      <label class="widget-label">|u&#10217; (real, imag parts)</label>
+      <div style="display:flex; gap:4px; flex-direction:column;">
+        <div style="display:flex;gap:4px;align-items:center;font-size:.8rem;">u&#8321;: <input type="number" id="ip_u1r" value="1" style="width:50px;height:30px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);text-align:center;font-size:.82rem;"> + <input type="number" id="ip_u1i" value="0" style="width:50px;height:30px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);text-align:center;font-size:.82rem;">i</div>
+        <div style="display:flex;gap:4px;align-items:center;font-size:.8rem;">u&#8322;: <input type="number" id="ip_u2r" value="0" style="width:50px;height:30px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);text-align:center;font-size:.82rem;"> + <input type="number" id="ip_u2i" value="1" style="width:50px;height:30px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);text-align:center;font-size:.82rem;">i</div>
+      </div>
+    </div>
+    <div class="widget-col">
+      <label class="widget-label">|v&#10217; (real, imag parts)</label>
+      <div style="display:flex; gap:4px; flex-direction:column;">
+        <div style="display:flex;gap:4px;align-items:center;font-size:.8rem;">v&#8321;: <input type="number" id="ip_v1r" value="2" style="width:50px;height:30px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);text-align:center;font-size:.82rem;"> + <input type="number" id="ip_v1i" value="0" style="width:50px;height:30px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);text-align:center;font-size:.82rem;">i</div>
+        <div style="display:flex;gap:4px;align-items:center;font-size:.8rem;">v&#8322;: <input type="number" id="ip_v2r" value="1" style="width:50px;height:30px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);text-align:center;font-size:.82rem;"> + <input type="number" id="ip_v2i" value="1" style="width:50px;height:30px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);text-align:center;font-size:.82rem;">i</div>
+      </div>
+    </div>
+  </div>
+  <button class="compute-btn" onclick="computeInnerProduct()">Compute &langle;u|v&rangle;</button>
+  <div class="widget-result" id="ipResult">Click "Compute" to see the inner product.</div>
+</div>
+
+<!-- Fill-in-blank: Inner Product -->
+<div class="fill-blank reveal" data-section="sec-inner">
+  <div class="fb-header">&#9998; Practice: Compute It Yourself</div>
+  <div class="fb-prompt math-content">Compute $\langle u|v\rangle$ where $|u\rangle = \begin{pmatrix}1\\0\end{pmatrix}$ and $|v\rangle = \begin{pmatrix}3\\4\end{pmatrix}$.</div>
+  <div class="fb-row">
+    <span>$\langle u|v\rangle$ =</span>
+    <input type="text" id="fib2_re" placeholder="real"> <span>+</span>
+    <input type="text" id="fib2_im" placeholder="imag"> <span>$i$</span>
+    <button class="compute-btn" style="font-size:.78rem;padding:.3rem .8rem;" onclick="checkFillBlank('fib2', 3, 0)">Check</button>
+  </div>
+  <div class="fb-feedback" id="fib2_fb"></div>
+</div>
+
+<div class="quiz reveal" data-quiz="q3">
+  <div class="quiz-header">&#10004; Check Your Understanding</div>
+  <div class="quiz-question math-content">Are $|+\rangle = \frac{1}{\sqrt{2}}\begin{pmatrix}1\\1\end{pmatrix}$ and $|-\rangle = \frac{1}{\sqrt{2}}\begin{pmatrix}1\\-1\end{pmatrix}$ orthogonal?</div>
+  <div class="quiz-options">
+    <div class="quiz-option" data-val="a"><span class="radio"></span> Yes &mdash; their inner product is 0</div>
+    <div class="quiz-option" data-val="b"><span class="radio"></span> No &mdash; their inner product is 1</div>
+    <div class="quiz-option" data-val="c"><span class="radio"></span> No &mdash; their inner product is $\frac{1}{2}$</div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q3','a')">Check Answer</button>
+  <div class="quiz-feedback" id="fb-q3"></div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SECTION 4 — MATRICES                               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="sec-matrices">
+<h2><span class="sec-num">4</span> Matrices</h2>
+<p class="section-subtitle">Operators that transform quantum states.</p>
+
+<p>A matrix $A \in \mathbb{C}^{m \times n}$ is a rectangular array of complex numbers. Matrices act on vectors via multiplication: $A|v\rangle$ produces a new vector.</p>
+
+<div class="concept-box reveal definition">
+  <div class="box-label">Essential Operations</div>
+  <div class="math-content">
+  <ul>
+    <li><strong>Transpose:</strong> $(A^T)_{ij} = A_{ji}$ &mdash; flip rows and columns</li>
+    <li><strong>Complex conjugate:</strong> $(\bar{A})_{ij} = \overline{A_{ij}}$</li>
+    <li><strong>Conjugate transpose (adjoint):</strong> $A^\dagger = \overline{A^T}$ &mdash; crucial in QC!</li>
+    <li><strong>Matrix product:</strong> $(AB)_{ij} = \sum_k A_{ik}B_{kj}$</li>
+    <li><strong>Trace:</strong> $\text{tr}(A) = \sum_i A_{ii}$</li>
+    <li><strong>Determinant (2&times;2):</strong> $\det\begin{pmatrix}a&b\\c&d\end{pmatrix} = ad-bc$</li>
+  </ul>
+  </div>
+</div>
+
+<div class="concept-box reveal warning">
+  <div class="box-label">Important</div>
+  <p>Matrix multiplication is <strong>not commutative</strong>: in general $AB \neq BA$. This is physically significant in quantum mechanics &mdash; the order in which you apply gates matters!</p>
+</div>
+
+<h3>The 2&times;2 Identity and Pauli Matrices</h3>
+<div class="math-content">
+$$I = \begin{pmatrix}1&0\\0&1\end{pmatrix}, \quad X = \begin{pmatrix}0&1\\1&0\end{pmatrix}, \quad Y = \begin{pmatrix}0&-i\\i&0\end{pmatrix}, \quad Z = \begin{pmatrix}1&0\\0&-1\end{pmatrix}$$
+</div>
+<p>These form a basis for all 2&times;2 matrices and correspond to fundamental single-qubit gates.</p>
+
+<details>
+  <summary>Worked Example: Applying a gate to a qubit</summary>
+  <div class="details-body math-content">
+    <p><strong>Problem:</strong> Apply the Hadamard gate $H = \frac{1}{\sqrt{2}}\begin{pmatrix}1&1\\1&-1\end{pmatrix}$ to $|0\rangle$.</p>
+    <p><strong>Solution:</strong></p>
+    <p>$H|0\rangle = \frac{1}{\sqrt{2}}\begin{pmatrix}1&1\\1&-1\end{pmatrix}\begin{pmatrix}1\\0\end{pmatrix} = \frac{1}{\sqrt{2}}\begin{pmatrix}1\\1\end{pmatrix} = |+\rangle$</p>
+    <p>The Hadamard gate creates an equal superposition from a basis state!</p>
+  </div>
+</details>
+
+<!-- Matrix Multiplier Widget -->
+<div class="widget reveal">
+  <div class="widget-title">&#9881; Interactive: 2&times;2 Matrix &times; Vector</div>
+  <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:.8rem;">Enter a 2&times;2 matrix and a 2D vector (real numbers). Click Compute to see the result.</p>
+  <div class="widget-grid">
+    <div class="widget-col">
+      <label class="widget-label">Matrix A</label>
+      <div class="matrix-input" style="grid-template-columns:60px 60px;">
+        <input type="number" id="m_a" value="0.707" step="0.001"><input type="number" id="m_b" value="0.707" step="0.001">
+        <input type="number" id="m_c" value="0.707" step="0.001"><input type="number" id="m_d" value="-0.707" step="0.001">
+      </div>
+    </div>
+    <div class="widget-col">
+      <label class="widget-label">Vector |v&#10217;</label>
+      <div class="matrix-input" style="grid-template-columns:60px;">
+        <input type="number" id="v_1" value="1" step="0.1">
+        <input type="number" id="v_2" value="0" step="0.1">
+      </div>
+    </div>
+  </div>
+  <button class="compute-btn" onclick="computeMatVec()">Compute A|v&#10217;</button>
+  <div class="widget-result" id="matvecResult">Click "Compute" to see the result.</div>
+</div>
+
+<!-- Matrix Transform Visualizer -->
+<div class="widget reveal">
+  <div class="widget-title">&#127912; Visualize: Matrix as a Transformation</div>
+  <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:.8rem;">See how a 2&times;2 matrix transforms vectors. The <span style="color:#60a5fa">blue</span> vector is the input; the <span style="color:#fbbf24">yellow</span> vector is the output. Click on the canvas to change the input vector, or pick a gate preset.</p>
+  <canvas class="viz" id="matrixViz" width="460" height="340"></canvas>
+  <div class="gate-btns" style="margin-top:.6rem;">
+    <button onclick="setMatVizGate([[1,0],[0,1]],'I')">I</button>
+    <button onclick="setMatVizGate([[0,1],[1,0]],'X')">X</button>
+    <button onclick="setMatVizGate([[0.707,0.707],[0.707,-0.707]],'H')">H</button>
+    <button onclick="setMatVizGate([[1,0],[0,-1]],'Z')">Z</button>
+    <button onclick="setMatVizGate([[0.866,-0.5],[0.5,0.866]],'R(30&deg;)')">R(30&deg;)</button>
+    <button onclick="setMatVizGate([[2,0],[0,0.5]],'Scale')">Scale</button>
+  </div>
+  <div class="widget-result" id="matVizResult" style="margin-top:.6rem;">Gate: I (Identity) &mdash; Click canvas or pick a gate.</div>
+</div>
+
+<div class="quiz reveal" data-quiz="q4">
+  <div class="quiz-header">&#10004; Check Your Understanding</div>
+  <div class="quiz-question math-content">What is the effect of the Pauli $X$ gate on $|0\rangle$?</div>
+  <div class="quiz-options">
+    <div class="quiz-option" data-val="a"><span class="radio"></span> $|0\rangle$ (no change)</div>
+    <div class="quiz-option" data-val="b"><span class="radio"></span> $|1\rangle$</div>
+    <div class="quiz-option" data-val="c"><span class="radio"></span> $|+\rangle$</div>
+    <div class="quiz-option" data-val="d"><span class="radio"></span> $-|0\rangle$</div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q4','b')">Check Answer</button>
+  <div class="quiz-feedback" id="fb-q4"></div>
+</div>
+
+<div class="quiz reveal" data-quiz="q4b">
+  <div class="quiz-header">&#10004; Check Your Understanding</div>
+  <div class="quiz-question math-content">For $A = \begin{pmatrix}1&2i\\-2i&3\end{pmatrix}$, what is $A^\dagger$?</div>
+  <div class="quiz-options">
+    <div class="quiz-option" data-val="a"><span class="radio"></span> $\begin{pmatrix}1&2i\\-2i&3\end{pmatrix}$</div>
+    <div class="quiz-option" data-val="b"><span class="radio"></span> $\begin{pmatrix}1&-2i\\2i&3\end{pmatrix}$</div>
+    <div class="quiz-option" data-val="c"><span class="radio"></span> $\begin{pmatrix}1&2i\\2i&3\end{pmatrix}$</div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q4b','a')">Check Answer</button>
+  <div class="quiz-feedback" id="fb-q4b"></div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SECTION 5 — EIGENVALUES & EIGENVECTORS             -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="sec-eigen">
+<h2><span class="sec-num">5</span> Eigenvalues &amp; Eigenvectors</h2>
+<p class="section-subtitle">The states that survive a transformation (up to scaling).</p>
+
+<p>A non-zero vector $|v\rangle$ is an <strong>eigenvector</strong> of matrix $A$ with <strong>eigenvalue</strong> $\lambda$ if:</p>
+<div class="math-content">
+$$A|v\rangle = \lambda|v\rangle$$
+</div>
+<p>The matrix scales $|v\rangle$ without changing its direction.</p>
+
+<div class="concept-box reveal definition">
+  <div class="box-label">Finding Eigenvalues (2&times;2)</div>
+  <div class="math-content">
+  <p>Solve the <strong>characteristic equation</strong>:</p>
+  $$\det(A - \lambda I) = 0$$
+  <p>For $A = \begin{pmatrix}a&b\\c&d\end{pmatrix}$, this gives:</p>
+  $$\lambda^2 - (a+d)\lambda + (ad-bc) = 0$$
+  <p>Then find eigenvectors by solving $(A-\lambda I)|v\rangle = 0$ for each $\lambda$.</p>
+  </div>
+</div>
+
+<div class="concept-box reveal quantum">
+  <div class="box-label">Quantum Connection</div>
+  <p>Observable quantities in quantum mechanics correspond to <strong>Hermitian matrices</strong>, and their eigenvalues are the possible <strong>measurement outcomes</strong>. After measurement, the system collapses to the corresponding eigenvector. For example, the eigenvalues of $Z$ are $+1$ and $-1$, with eigenvectors $|0\rangle$ and $|1\rangle$.</p>
+</div>
+
+<details>
+  <summary>Worked Example: Eigenvalues of the Pauli Z matrix</summary>
+  <div class="details-body math-content">
+    <p><strong>Problem:</strong> Find the eigenvalues and eigenvectors of $Z = \begin{pmatrix}1&0\\0&-1\end{pmatrix}$.</p>
+    <p><strong>Step 1 &mdash; Characteristic equation:</strong></p>
+    <p>$\det(Z - \lambda I) = (1-\lambda)(-1-\lambda) = 0$</p>
+    <p>$\Rightarrow \lambda_1 = 1, \quad \lambda_2 = -1$</p>
+    <p><strong>Step 2 &mdash; Eigenvectors:</strong></p>
+    <p>For $\lambda_1=1$: $(Z-I)|v\rangle=0 \Rightarrow \begin{pmatrix}0&0\\0&-2\end{pmatrix}\begin{pmatrix}a\\b\end{pmatrix}=0 \Rightarrow b=0 \Rightarrow |v_1\rangle = |0\rangle$</p>
+    <p>For $\lambda_2=-1$: $(Z+I)|v\rangle=0 \Rightarrow \begin{pmatrix}2&0\\0&0\end{pmatrix}\begin{pmatrix}a\\b\end{pmatrix}=0 \Rightarrow a=0 \Rightarrow |v_2\rangle = |1\rangle$</p>
+  </div>
+</details>
+
+<!-- Eigenvalue Calculator -->
+<div class="widget reveal">
+  <div class="widget-title">&#9881; Interactive: 2&times;2 Eigenvalue Calculator</div>
+  <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:.8rem;">Enter a real 2&times;2 matrix to find its eigenvalues.</p>
+  <div class="widget-col">
+    <label class="widget-label">Matrix A</label>
+    <div class="matrix-input" style="grid-template-columns:60px 60px;">
+      <input type="number" id="e_a" value="1" step="0.1"><input type="number" id="e_b" value="0" step="0.1">
+      <input type="number" id="e_c" value="0" step="0.1"><input type="number" id="e_d" value="-1" step="0.1">
+    </div>
+  </div>
+  <button class="compute-btn" onclick="computeEigen()">Find Eigenvalues</button>
+  <div class="widget-result" id="eigenResult">Click "Find Eigenvalues" to compute.</div>
+</div>
+
+<!-- Fill-in-blank: Eigenvalue -->
+<div class="fill-blank reveal" data-section="sec-eigen">
+  <div class="fb-header">&#9998; Practice: Compute It Yourself</div>
+  <div class="fb-prompt math-content">Find the eigenvalues of $A = \begin{pmatrix}3&0\\0&7\end{pmatrix}$. (Hint: it's diagonal!)</div>
+  <div class="fb-row">
+    <span>$\lambda_1$ =</span>
+    <input type="text" id="fib3_l1" placeholder="&lambda;&#8321;" style="width:70px;">
+    <span>$\lambda_2$ =</span>
+    <input type="text" id="fib3_l2" placeholder="&lambda;&#8322;" style="width:70px;">
+    <button class="compute-btn" style="font-size:.78rem;padding:.3rem .8rem;" onclick="checkEigenFib()">Check</button>
+  </div>
+  <div class="fb-feedback" id="fib3_fb"></div>
+</div>
+
+<div class="quiz reveal" data-quiz="q5">
+  <div class="quiz-header">&#10004; Check Your Understanding</div>
+  <div class="quiz-question math-content">What are the eigenvalues of the Pauli $X = \begin{pmatrix}0&1\\1&0\end{pmatrix}$?</div>
+  <div class="quiz-options">
+    <div class="quiz-option" data-val="a"><span class="radio"></span> $0$ and $1$</div>
+    <div class="quiz-option" data-val="b"><span class="radio"></span> $1$ and $-1$</div>
+    <div class="quiz-option" data-val="c"><span class="radio"></span> $i$ and $-i$</div>
+    <div class="quiz-option" data-val="d"><span class="radio"></span> $1$ and $1$</div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q5','b')">Check Answer</button>
+  <div class="quiz-feedback" id="fb-q5"></div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SECTION 6 — TENSOR PRODUCTS                        -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="sec-tensor">
+<h2><span class="sec-num">6</span> Tensor Products</h2>
+<p class="section-subtitle">Combining quantum systems.</p>
+
+<p>The <strong>tensor product</strong> (or Kronecker product) $\otimes$ is how we build multi-qubit state spaces from single-qubit ones. If $|u\rangle \in \mathbb{C}^m$ and $|v\rangle \in \mathbb{C}^n$, then $|u\rangle \otimes |v\rangle \in \mathbb{C}^{mn}$.</p>
+
+<div class="concept-box reveal definition">
+  <div class="box-label">Definition</div>
+  <div class="math-content">
+  <p>For vectors:</p>
+  $$\begin{pmatrix}a_1\\a_2\end{pmatrix} \otimes \begin{pmatrix}b_1\\b_2\end{pmatrix} = \begin{pmatrix}a_1 b_1\\a_1 b_2\\a_2 b_1\\a_2 b_2\end{pmatrix}$$
+  <p>For matrices, $A \otimes B$ replaces each entry $a_{ij}$ with the block $a_{ij}B$.</p>
+  </div>
+</div>
+
+<p>Shorthand: $|0\rangle \otimes |1\rangle = |0\rangle|1\rangle = |01\rangle$.</p>
+
+<h3>Entanglement</h3>
+<p>A state that <strong>cannot</strong> be written as a tensor product of individual qubit states is called <strong>entangled</strong>. The most famous example:</p>
+<div class="math-content">
+$$|\Phi^+\rangle = \frac{1}{\sqrt{2}}(|00\rangle + |11\rangle)$$
+</div>
+<p>You cannot find $|a\rangle, |b\rangle$ such that $|a\rangle \otimes |b\rangle = |\Phi^+\rangle$. This is a uniquely quantum phenomenon!</p>
+
+<details>
+  <summary>Worked Example: Tensor product of two qubits</summary>
+  <div class="details-body math-content">
+    <p><strong>Problem:</strong> Compute $|+\rangle \otimes |0\rangle$.</p>
+    <p><strong>Solution:</strong></p>
+    <p>$|+\rangle \otimes |0\rangle = \frac{1}{\sqrt{2}}\begin{pmatrix}1\\1\end{pmatrix} \otimes \begin{pmatrix}1\\0\end{pmatrix} = \frac{1}{\sqrt{2}}\begin{pmatrix}1 \cdot 1\\1 \cdot 0\\1 \cdot 1\\1 \cdot 0\end{pmatrix} = \frac{1}{\sqrt{2}}\begin{pmatrix}1\\0\\1\\0\end{pmatrix}$</p>
+    <p>In Dirac notation: $\frac{1}{\sqrt{2}}(|00\rangle + |10\rangle)$.</p>
+  </div>
+</details>
+
+<!-- Tensor Product Calculator -->
+<div class="widget reveal">
+  <div class="widget-title">&#9881; Interactive: Tensor Product Calculator</div>
+  <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:.8rem;">Compute |u&#10217; &otimes; |v&#10217; for two 2D real vectors.</p>
+  <div class="widget-grid">
+    <div class="widget-col">
+      <label class="widget-label">|u&#10217;</label>
+      <div class="matrix-input" style="grid-template-columns:60px;">
+        <input type="number" id="t_u1" value="0.707" step="0.001">
+        <input type="number" id="t_u2" value="0.707" step="0.001">
+      </div>
+    </div>
+    <div class="widget-col">
+      <label class="widget-label">|v&#10217;</label>
+      <div class="matrix-input" style="grid-template-columns:60px;">
+        <input type="number" id="t_v1" value="1" step="0.1">
+        <input type="number" id="t_v2" value="0" step="0.1">
+      </div>
+    </div>
+  </div>
+  <button class="compute-btn" onclick="computeTensor()">Compute |u&#10217; &otimes; |v&#10217;</button>
+  <div class="widget-result" id="tensorResult">Click "Compute" to see the tensor product.</div>
+</div>
+
+<div class="quiz reveal" data-quiz="q6">
+  <div class="quiz-header">&#10004; Check Your Understanding</div>
+  <div class="quiz-question math-content">What is the dimension of the state space for a 3-qubit system?</div>
+  <div class="quiz-options">
+    <div class="quiz-option" data-val="a"><span class="radio"></span> 3</div>
+    <div class="quiz-option" data-val="b"><span class="radio"></span> 6</div>
+    <div class="quiz-option" data-val="c"><span class="radio"></span> 8</div>
+    <div class="quiz-option" data-val="d"><span class="radio"></span> 9</div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q6','c')">Check Answer</button>
+  <div class="quiz-feedback" id="fb-q6"></div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SECTION 7 — SPECIAL MATRICES                       -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="sec-special">
+<h2><span class="sec-num">7</span> Special Matrices</h2>
+<p class="section-subtitle">The matrices with physical meaning.</p>
+
+<div class="concept-box reveal definition">
+  <div class="box-label">Key Types</div>
+  <div class="math-content">
+  <table>
+    <tr><th>Type</th><th>Condition</th><th>Quantum Role</th></tr>
+    <tr><td><strong>Hermitian</strong></td><td>$A = A^\dagger$</td><td>Observables (measurements)</td></tr>
+    <tr><td><strong>Unitary</strong></td><td>$UU^\dagger = U^\dagger U = I$</td><td>Quantum gates</td></tr>
+    <tr><td><strong>Normal</strong></td><td>$AA^\dagger = A^\dagger A$</td><td>Diagonalizable</td></tr>
+    <tr><td><strong>Projection</strong></td><td>$P^2 = P = P^\dagger$</td><td>Measurement projectors</td></tr>
+  </table>
+  </div>
+</div>
+
+<h3>Hermitian Matrices</h3>
+<p>A matrix $A$ is <strong>Hermitian</strong> if $A = A^\dagger$. Key properties:</p>
+<ul>
+  <li>All eigenvalues are <strong>real</strong></li>
+  <li>Eigenvectors for distinct eigenvalues are <strong>orthogonal</strong></li>
+  <li>Can always be diagonalized: $A = \sum_i \lambda_i |v_i\rangle\langle v_i|$ (<strong>spectral decomposition</strong>)</li>
+</ul>
+
+<h3>Unitary Matrices</h3>
+<p>A matrix $U$ is <strong>unitary</strong> if $UU^\dagger = I$. Key properties:</p>
+<ul>
+  <li>Preserves inner products: $\langle U\phi|U\psi\rangle = \langle\phi|\psi\rangle$</li>
+  <li>Preserves norms: $\|U|v\rangle\| = \||v\rangle\|$</li>
+  <li>All eigenvalues have $|\lambda| = 1$ (lie on the unit circle)</li>
+</ul>
+
+<div class="concept-box reveal quantum">
+  <div class="box-label">Quantum Connection</div>
+  <p>All quantum gates are <strong>unitary</strong> &mdash; this guarantees that valid quantum states remain valid after a gate is applied ($|\alpha|^2+|\beta|^2$ stays 1). Quantum evolution is <strong>reversible</strong>: applying $U^\dagger$ undoes $U$.</p>
+</div>
+
+<details>
+  <summary>Worked Example: Verifying unitarity of the Hadamard gate</summary>
+  <div class="details-body math-content">
+    <p><strong>Problem:</strong> Verify that $H = \frac{1}{\sqrt{2}}\begin{pmatrix}1&1\\1&-1\end{pmatrix}$ is unitary.</p>
+    <p><strong>Step 1:</strong> Since $H$ is real and symmetric, $H^\dagger = H^T = H$.</p>
+    <p><strong>Step 2:</strong> Compute $HH^\dagger = HH$:</p>
+    <p>$HH = \frac{1}{2}\begin{pmatrix}1&1\\1&-1\end{pmatrix}\begin{pmatrix}1&1\\1&-1\end{pmatrix} = \frac{1}{2}\begin{pmatrix}2&0\\0&2\end{pmatrix} = \begin{pmatrix}1&0\\0&1\end{pmatrix} = I$ &#10004;</p>
+    <p>Therefore $H$ is unitary (and also Hermitian since $H = H^\dagger$).</p>
+  </div>
+</details>
+
+<!-- Unitarity checker widget -->
+<div class="widget reveal">
+  <div class="widget-title">&#9881; Interactive: Is This Matrix Unitary?</div>
+  <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:.8rem;">Enter a real 2&times;2 matrix to check if it is (approximately) unitary.</p>
+  <div class="widget-col">
+    <label class="widget-label">Matrix U</label>
+    <div class="matrix-input" style="grid-template-columns:60px 60px;">
+      <input type="number" id="u_a" value="0.707" step="0.001"><input type="number" id="u_b" value="0.707" step="0.001">
+      <input type="number" id="u_c" value="0.707" step="0.001"><input type="number" id="u_d" value="-0.707" step="0.001">
+    </div>
+  </div>
+  <button class="compute-btn" onclick="checkUnitary()">Check Unitarity</button>
+  <div class="widget-result" id="unitaryResult">Click "Check" to verify.</div>
+</div>
+
+<div class="quiz reveal" data-quiz="q7">
+  <div class="quiz-header">&#10004; Check Your Understanding</div>
+  <div class="quiz-question math-content">Which of the following is true about unitary matrices?</div>
+  <div class="quiz-options">
+    <div class="quiz-option" data-val="a"><span class="radio"></span> All eigenvalues are real</div>
+    <div class="quiz-option" data-val="b"><span class="radio"></span> All eigenvalues have modulus 1</div>
+    <div class="quiz-option" data-val="c"><span class="radio"></span> The determinant is always 1</div>
+    <div class="quiz-option" data-val="d"><span class="radio"></span> They are always symmetric</div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q7','b')">Check Answer</button>
+  <div class="quiz-feedback" id="fb-q7"></div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SECTION 8 — PUTTING IT TOGETHER                    -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="sec-putting">
+<h2><span class="sec-num">8</span> Putting It All Together</h2>
+<p class="section-subtitle">A complete quantum computing example using everything you've learned.</p>
+
+<p>Let's trace through a simple quantum circuit that demonstrates superposition and measurement.</p>
+
+<div class="concept-box reveal example">
+  <div class="box-label">Full Example: Prepare, Evolve, Measure</div>
+  <div class="math-content">
+  <p><strong>Step 1 &mdash; Initialize:</strong> Start with $|0\rangle = \begin{pmatrix}1\\0\end{pmatrix}$</p>
+  <p><strong>Step 2 &mdash; Apply Hadamard:</strong></p>
+  <p>$H|0\rangle = \frac{1}{\sqrt{2}}\begin{pmatrix}1&1\\1&-1\end{pmatrix}\begin{pmatrix}1\\0\end{pmatrix} = \frac{1}{\sqrt{2}}\begin{pmatrix}1\\1\end{pmatrix} = |+\rangle$</p>
+  <p><strong>Step 3 &mdash; Apply Phase gate:</strong> $S = \begin{pmatrix}1&0\\0&i\end{pmatrix}$</p>
+  <p>$S|+\rangle = \begin{pmatrix}1&0\\0&i\end{pmatrix}\frac{1}{\sqrt{2}}\begin{pmatrix}1\\1\end{pmatrix} = \frac{1}{\sqrt{2}}\begin{pmatrix}1\\i\end{pmatrix}$</p>
+  <p><strong>Step 4 &mdash; Measure in Z-basis:</strong></p>
+  <p>$P(|0\rangle) = \left|\frac{1}{\sqrt{2}}\right|^2 = \frac{1}{2}, \qquad P(|1\rangle) = \left|\frac{i}{\sqrt{2}}\right|^2 = \frac{1}{2}$</p>
+  <p>Equal probabilities &mdash; the phase $i$ doesn't affect Z-measurement probabilities!</p>
+  </div>
+</div>
+
+<!-- Interactive Circuit Simulator -->
+<div class="circuit-sim reveal">
+  <div class="widget-title">&#9881; Interactive: Step-Through Circuit Simulator</div>
+  <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:1rem;">Step through a quantum circuit one gate at a time. Watch how the state vector transforms at each step.</p>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+    <label class="widget-label" style="width:100%;">Choose a circuit:</label>
+    <button class="compute-btn" onclick="loadCircuit('hzm')" style="font-size:.78rem;padding:.35rem .8rem;">H &rarr; Z &rarr; Measure</button>
+    <button class="compute-btn" onclick="loadCircuit('hsh')" style="font-size:.78rem;padding:.35rem .8rem;">H &rarr; S &rarr; H</button>
+    <button class="compute-btn" onclick="loadCircuit('xhm')" style="font-size:.78rem;padding:.35rem .8rem;">X &rarr; H &rarr; Measure</button>
+  </div>
+  <div class="circuit-steps" id="circuitSteps"></div>
+  <div class="circuit-controls">
+    <button class="primary" id="circNext" onclick="circuitNext()">Next Step &rarr;</button>
+    <button onclick="circuitReset()">Reset</button>
+  </div>
+</div>
+
+<h3>Linear Algebra Checklist for Quantum Computing</h3>
+<p>You're ready to dive into quantum computing if you can:</p>
+<ul>
+  <li>Multiply complex numbers and find conjugates/moduli</li>
+  <li>Perform matrix-vector multiplication</li>
+  <li>Compute inner products and check orthogonality</li>
+  <li>Find eigenvalues and eigenvectors of 2&times;2 matrices</li>
+  <li>Compute tensor products of small vectors/matrices</li>
+  <li>Verify whether a matrix is unitary or Hermitian</li>
+  <li>Read and write in Dirac bra-ket notation</li>
+</ul>
+
+<!-- Final Challenge Quizzes -->
+<div class="quiz reveal" data-quiz="q8">
+  <div class="quiz-header">&#127942; Challenge Question</div>
+  <div class="quiz-question math-content">Apply the circuit $Z \cdot H$ to $|0\rangle$. What state do you get?</div>
+  <div class="quiz-options">
+    <div class="quiz-option" data-val="a"><span class="radio"></span> $|+\rangle$</div>
+    <div class="quiz-option" data-val="b"><span class="radio"></span> $|-\rangle$</div>
+    <div class="quiz-option" data-val="c"><span class="radio"></span> $|0\rangle$</div>
+    <div class="quiz-option" data-val="d"><span class="radio"></span> $|1\rangle$</div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q8','b')">Check Answer</button>
+  <div class="quiz-feedback" id="fb-q8"></div>
+</div>
+
+<div class="quiz reveal" data-quiz="q8b">
+  <div class="quiz-header">&#127942; Challenge Question</div>
+  <div class="quiz-question math-content">Which of these 2-qubit states is entangled?</div>
+  <div class="quiz-options">
+    <div class="quiz-option" data-val="a"><span class="radio"></span> $|00\rangle$</div>
+    <div class="quiz-option" data-val="b"><span class="radio"></span> $\frac{1}{\sqrt{2}}(|00\rangle + |01\rangle)$</div>
+    <div class="quiz-option" data-val="c"><span class="radio"></span> $\frac{1}{\sqrt{2}}(|00\rangle + |11\rangle)$</div>
+    <div class="quiz-option" data-val="d"><span class="radio"></span> $|+\rangle \otimes |0\rangle$</div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q8b','c')">Check Answer</button>
+  <div class="quiz-feedback" id="fb-q8b"></div>
+</div>
+
+<div class="quiz reveal" data-quiz="q8c">
+  <div class="quiz-header">&#127942; Challenge Question</div>
+  <div class="quiz-question math-content">If $U$ is unitary and $|\psi\rangle$ is a valid quantum state, is $U|\psi\rangle$ always a valid quantum state?</div>
+  <div class="quiz-options">
+    <div class="quiz-option" data-val="a"><span class="radio"></span> Yes &mdash; unitary matrices preserve norms</div>
+    <div class="quiz-option" data-val="b"><span class="radio"></span> Only if $U$ is also Hermitian</div>
+    <div class="quiz-option" data-val="c"><span class="radio"></span> Only for real-valued states</div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q8c','a')">Check Answer</button>
+  <div class="quiz-feedback" id="fb-q8c"></div>
+</div>
+
+</section>
+
+</main>
+</div>
+
+<!-- Score Badge -->
+<div class="score-badge">
+  Score: <span class="score-num" id="scoreDisplay">0</span> / <span id="totalDisplay">0</span>
+</div>
+
+<script>
+// ─── Quiz Engine ───
+const quizState = {};
+let score = 0;
+let answered = 0;
+
+const explanations = {
+  q1:  { correct: '|z| = sqrt(3&sup2; + 4&sup2;) = sqrt(9+16) = sqrt(25) = 5.', incorrect: 'The modulus is |z| = sqrt(a&sup2; + b&sup2;) = sqrt(9+16) = 5.' },
+  q1b: { correct: 'The conjugate flips the sign of the imaginary part: (2-3i)* = 2+3i.', incorrect: 'To find the conjugate, flip the sign of the imaginary part only.' },
+  q2:  { correct: 'The bra &langle;0| is the conjugate transpose of |0&rangle; = (1,0)&#7488;, giving the row vector (1, 0).', incorrect: 'The bra is the conjugate transpose of the ket column vector.' },
+  q2b: { correct: 'P(|1&rangle;) = |&beta;|&sup2; = (&radic;3/2)&sup2; = 3/4.', incorrect: 'The probability is the modulus squared of the amplitude: |&radic;3/2|&sup2; = 3/4.' },
+  q3:  { correct: '&langle;+|-&rangle; = &frac12;(1&middot;1 + 1&middot;(-1)) = 0. They are orthogonal!', incorrect: 'Compute the inner product: &frac12;(1)(1) + &frac12;(1)(-1) = 0.' },
+  q4:  { correct: 'X|0&rangle; = (0,1;1,0)(1,0)&#7488; = (0,1)&#7488; = |1&rangle;. The X gate is the quantum NOT gate.', incorrect: 'X swaps |0&rangle; and |1&rangle;, acting like a classical NOT gate.' },
+  q4b: { correct: 'A&dagger; = conjugate transpose. Conjugating: 2i&rarr;-2i and -2i&rarr;2i. Transposing swaps off-diag. Here A is Hermitian (A=A&dagger;)!', incorrect: 'To find A&dagger;, take the complex conjugate of each entry AND transpose the matrix.' },
+  q5:  { correct: 'det(X-&lambda;I) = -&lambda;&sup2; + 1 = 0 gives &lambda; = &plusmn;1. The eigenvectors are |+&rangle; and |-&rangle;.', incorrect: 'Solve det(X - &lambda;I) = 0: (0-&lambda;)(0-&lambda;) - 1 = &lambda;&sup2; - 1 = 0, so &lambda; = &plusmn;1.' },
+  q6:  { correct: '3 qubits live in C&sup2; &otimes; C&sup2; &otimes; C&sup2; = C&#8312;, which is 2&sup3; = 8 dimensional.', incorrect: 'For n qubits, the state space dimension is 2&#8319;. For n=3: 2&sup3; = 8.' },
+  q7:  { correct: 'Unitary eigenvalues satisfy |&lambda;| = 1. They lie on the unit circle in C.', incorrect: 'For unitary U, if U|v&rangle; = &lambda;|v&rangle;, then |&lambda;|&sup2; = &langle;v|U&dagger;U|v&rangle; = &langle;v|v&rangle; = 1.' },
+  q8:  { correct: 'H|0&rangle; = |+&rangle;, then Z|+&rangle; = Z &middot; (|0&rangle;+|1&rangle;)/&radic;2 = (|0&rangle;-|1&rangle;)/&radic;2 = |-&rangle;.', incorrect: 'First apply H to get |+&rangle;, then Z flips the phase of the |1&rangle; component.' },
+  q8b: { correct: 'The Bell state (|00&rangle;+|11&rangle;)/&radic;2 cannot be factored as |a&rangle;&otimes;|b&rangle;. It is maximally entangled!', incorrect: 'A state is entangled if it cannot be written as a tensor product of individual qubit states.' },
+  q8c: { correct: 'Unitary matrices preserve inner products and norms, so ||U|&psi;&rangle;|| = |||&psi;&rangle;|| = 1.', incorrect: 'Unitary transformations preserve the norm of vectors, which is what keeps states valid.' }
+};
+
+document.querySelectorAll('.quiz-option').forEach(opt => {
+  opt.addEventListener('click', function() {
+    const quiz = this.closest('.quiz');
+    if (quiz.dataset.answered) return;
+    quiz.querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
+    this.classList.add('selected');
+    quizState[quiz.dataset.quiz] = this.dataset.val;
+  });
+});
+
+function checkQuiz(qid, correct) {
+  const quiz = document.querySelector(`[data-quiz="${qid}"]`);
+  if (quiz.dataset.answered) return;
+  const selected = quizState[qid];
+  if (!selected) return;
+
+  quiz.dataset.answered = 'true';
+  const fb = document.getElementById(`fb-${qid}`);
+  const isCorrect = selected === correct;
+
+  quiz.querySelectorAll('.quiz-option').forEach(o => {
+    if (o.dataset.val === correct) o.classList.add('correct');
+    else if (o.dataset.val === selected && !isCorrect) o.classList.add('incorrect');
+    o.style.pointerEvents = 'none';
+  });
+
+  const exp = explanations[qid] || { correct: 'Correct!', incorrect: 'Not quite.' };
+  fb.innerHTML = isCorrect ? exp.correct : exp.incorrect;
+  fb.className = `quiz-feedback show ${isCorrect ? 'correct' : 'incorrect'}`;
+
+  answered++;
+  if (isCorrect) score++;
+  updateScore();
+}
+
+function updateScore() {
+  document.getElementById('scoreDisplay').textContent = score;
+  document.getElementById('totalDisplay').textContent = answered;
+}
+updateScore();
+
+// ─── Complex Number Calculator ───
+function computeComplex() {
+  const a1 = +document.getElementById('c1a').value, b1 = +document.getElementById('c1b').value;
+  const a2 = +document.getElementById('c2a').value, b2 = +document.getElementById('c2b').value;
+  const fmt = (r, i) => {
+    if (Math.abs(i) < 1e-10) return r.toFixed(4);
+    const sign = i >= 0 ? '+' : '-';
+    return `${r.toFixed(4)} ${sign} ${Math.abs(i).toFixed(4)}i`;
+  };
+  const sumR = a1+a2, sumI = b1+b2;
+  const prodR = a1*a2 - b1*b2, prodI = a1*b2 + b1*a2;
+  const mod1 = Math.sqrt(a1*a1 + b1*b1), mod2 = Math.sqrt(a2*a2 + b2*b2);
+  document.getElementById('complexResult').innerHTML =
+    `<b>z₁ + z₂</b> = ${fmt(sumR,sumI)}<br>` +
+    `<b>z₁ × z₂</b> = ${fmt(prodR,prodI)}<br>` +
+    `<b>|z₁|</b> = ${mod1.toFixed(4)}, <b>|z₂|</b> = ${mod2.toFixed(4)}<br>` +
+    `<b>z₁*</b> = ${fmt(a1,-b1)}, <b>z₂*</b> = ${fmt(a2,-b2)}`;
+  flashResult('complexResult');
+}
+
+// ─── Inner Product Calculator ───
+function computeInnerProduct() {
+  const u1r = +document.getElementById('ip_u1r').value, u1i = +document.getElementById('ip_u1i').value;
+  const u2r = +document.getElementById('ip_u2r').value, u2i = +document.getElementById('ip_u2i').value;
+  const v1r = +document.getElementById('ip_v1r').value, v1i = +document.getElementById('ip_v1i').value;
+  const v2r = +document.getElementById('ip_v2r').value, v2i = +document.getElementById('ip_v2i').value;
+  // <u|v> = conj(u1)*v1 + conj(u2)*v2
+  const r1 = u1r*v1r + u1i*v1i, i1 = u1r*v1i - u1i*v1r;
+  const r2 = u2r*v2r + u2i*v2i, i2 = u2r*v2i - u2i*v2r;
+  const rr = r1+r2, ri = i1+i2;
+  const fmt = (r, i) => {
+    if (Math.abs(i) < 1e-10) return r.toFixed(4);
+    const sign = i >= 0 ? '+' : '-';
+    return `${r.toFixed(4)} ${sign} ${Math.abs(i).toFixed(4)}i`;
+  };
+  const norm_u = Math.sqrt(u1r*u1r+u1i*u1i+u2r*u2r+u2i*u2i);
+  const norm_v = Math.sqrt(v1r*v1r+v1i*v1i+v2r*v2r+v2i*v2i);
+  const orth = Math.abs(rr) < 1e-6 && Math.abs(ri) < 1e-6;
+  document.getElementById('ipResult').innerHTML =
+    `<b>⟨u|v⟩</b> = ${fmt(rr,ri)}<br>` +
+    `<b>‖u‖</b> = ${norm_u.toFixed(4)}, <b>‖v‖</b> = ${norm_v.toFixed(4)}<br>` +
+    `<b>Orthogonal?</b> ${orth ? 'Yes ✓' : 'No'}`;
+}
+
+// ─── Matrix × Vector ───
+function computeMatVec() {
+  const a=+document.getElementById('m_a').value, b=+document.getElementById('m_b').value;
+  const c=+document.getElementById('m_c').value, d=+document.getElementById('m_d').value;
+  const v1=+document.getElementById('v_1').value, v2=+document.getElementById('v_2').value;
+  const r1 = a*v1+b*v2, r2 = c*v1+d*v2;
+  const norm = Math.sqrt(r1*r1 + r2*r2);
+  document.getElementById('matvecResult').innerHTML =
+    `<b>A|v⟩</b> = (${r1.toFixed(4)}, ${r2.toFixed(4)})ᵀ<br>` +
+    `<b>‖A|v⟩‖</b> = ${norm.toFixed(4)}`;
+}
+
+// ─── Eigenvalue Calculator ───
+function computeEigen() {
+  const a=+document.getElementById('e_a').value, b=+document.getElementById('e_b').value;
+  const c=+document.getElementById('e_c').value, d=+document.getElementById('e_d').value;
+  const tr = a+d, det = a*d - b*c;
+  const disc = tr*tr - 4*det;
+  let html = `<b>Trace</b> = ${tr.toFixed(4)}, <b>Det</b> = ${det.toFixed(4)}<br>`;
+  html += `<b>Characteristic eq:</b> λ² - ${tr.toFixed(2)}λ + ${det.toFixed(2)} = 0<br>`;
+  if (disc >= 0) {
+    const l1 = (tr + Math.sqrt(disc))/2, l2 = (tr - Math.sqrt(disc))/2;
+    html += `<b>λ₁</b> = ${l1.toFixed(4)}, <b>λ₂</b> = ${l2.toFixed(4)}`;
+  } else {
+    const re = tr/2, im = Math.sqrt(-disc)/2;
+    html += `<b>λ₁</b> = ${re.toFixed(4)} + ${im.toFixed(4)}i<br>`;
+    html += `<b>λ₂</b> = ${re.toFixed(4)} - ${im.toFixed(4)}i`;
+  }
+  document.getElementById('eigenResult').innerHTML = html;
+}
+
+// ─── Tensor Product ───
+function computeTensor() {
+  const u1=+document.getElementById('t_u1').value, u2=+document.getElementById('t_u2').value;
+  const v1=+document.getElementById('t_v1').value, v2=+document.getElementById('t_v2').value;
+  const r = [u1*v1, u1*v2, u2*v1, u2*v2];
+  const norm = Math.sqrt(r.reduce((s,x)=>s+x*x,0));
+  document.getElementById('tensorResult').innerHTML =
+    `<b>|u⟩ ⊗ |v⟩</b> = (${r.map(x=>x.toFixed(4)).join(', ')})ᵀ<br>` +
+    `<b>Norm</b> = ${norm.toFixed(4)}`;
+}
+
+// ─── Unitarity Check ───
+function checkUnitary() {
+  const a=+document.getElementById('u_a').value, b=+document.getElementById('u_b').value;
+  const c=+document.getElementById('u_c').value, d=+document.getElementById('u_d').value;
+  // UU^T for real matrices
+  const r00=a*a+b*b, r01=a*c+b*d, r10=c*a+d*b, r11=c*c+d*d;
+  const isU = Math.abs(r00-1)<0.01 && Math.abs(r11-1)<0.01 && Math.abs(r01)<0.01 && Math.abs(r10)<0.01;
+  const det = a*d - b*c;
+  document.getElementById('unitaryResult').innerHTML =
+    `<b>UUᵀ</b> = ((${r00.toFixed(3)}, ${r01.toFixed(3)}), (${r10.toFixed(3)}, ${r11.toFixed(3)}))<br>` +
+    `<b>det(U)</b> = ${det.toFixed(4)}<br>` +
+    `<b>Unitary?</b> ${isU ? '✓ Yes (UUᵀ ≈ I)' : '✗ No (UUᵀ ≠ I)'}`;
+}
+
+// ─── Scroll Progress + Active Nav ───
+const sections = document.querySelectorAll('section');
+const navLinks = document.querySelectorAll('nav a');
+window.addEventListener('scroll', () => {
+  const total = document.documentElement.scrollHeight - window.innerHeight;
+  document.getElementById('progressFill').style.width = ((window.scrollY / total) * 100) + '%';
+
+  let current = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) current = s.id; });
+  navLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+});
+
+// ─── Scroll Reveal (IntersectionObserver) ───
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); revealObs.unobserve(e.target); }});
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+// ─── Widget result flash ───
+function flashResult(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
+}
+
+// ─── Mobile Nav Toggle ───
+function toggleNav() {
+  const nav = document.getElementById('sideNav');
+  const ham = document.getElementById('hamburger');
+  const overlay = document.getElementById('navOverlay');
+  nav.classList.toggle('open');
+  ham.classList.toggle('open');
+  overlay.classList.toggle('show');
+}
+// Close nav when clicking a link on mobile
+document.querySelectorAll('nav a').forEach(a => {
+  a.addEventListener('click', () => {
+    if (window.innerWidth <= 900) toggleNav();
+  });
+});
+
+// ─── Complex Plane Canvas ───
+(function() {
+  const canvas = document.getElementById('complexPlane');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+  const scale = 60; // pixels per unit
+
+  let points = [];
+
+  function getColors() {
+    const isLight = document.body.classList.contains('light');
+    return {
+      grid: isLight ? '#d4d7e5' : '#1e2140',
+      axes: isLight ? '#9ba0bd' : '#3a3f6a',
+      label: isLight ? '#6b7094' : '#8b8fa8',
+      pointLabel: isLight ? '#2d3154' : '#e2e4f0'
+    };
+  }
+
+  function draw() {
+    const cl = getColors();
+    ctx.clearRect(0, 0, W, H);
+    // Grid
+    ctx.strokeStyle = cl.grid;
+    ctx.lineWidth = 1;
+    for (let i = -5; i <= 5; i++) {
+      const x = cx + i * scale, y = cy - i * scale;
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    // Axes
+    ctx.strokeStyle = cl.axes;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+    // Labels
+    ctx.fillStyle = cl.label;
+    ctx.font = '12px system-ui';
+    ctx.fillText('Re', W - 22, cy - 8);
+    ctx.fillText('Im', cx + 8, 16);
+    // Unit circle
+    ctx.strokeStyle = 'rgba(124,106,239,0.25)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.arc(cx, cy, scale, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+    // Points
+    points.forEach((p, i) => {
+      const px = cx + p.re * scale, py = cy - p.im * scale;
+      // Line from origin
+      ctx.strokeStyle = i === points.length - 1 ? '#7c6aef' : 'rgba(124,106,239,0.3)';
+      ctx.lineWidth = i === points.length - 1 ? 2 : 1;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.stroke();
+      // Dot
+      ctx.fillStyle = i === points.length - 1 ? '#7c6aef' : 'rgba(124,106,239,0.4)';
+      ctx.beginPath(); ctx.arc(px, py, i === points.length - 1 ? 6 : 4, 0, Math.PI * 2); ctx.fill();
+      // Angle arc for latest
+      if (i === points.length - 1 && (p.re !== 0 || p.im !== 0)) {
+        const angle = Math.atan2(p.im, p.re);
+        ctx.strokeStyle = '#22d3ee';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 25, 0, -angle, angle > 0);
+        ctx.stroke();
+        // Dashed projections
+        ctx.strokeStyle = 'rgba(96,165,250,0.4)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, cy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(cx, py); ctx.stroke();
+        ctx.setLineDash([]);
+        // Label
+        ctx.fillStyle = cl.pointLabel;
+        ctx.font = 'bold 12px system-ui';
+        const label = `${p.re >= 0 ? '' : '-'}${Math.abs(p.re).toFixed(1)} ${p.im >= 0 ? '+' : '-'} ${Math.abs(p.im).toFixed(1)}i`;
+        ctx.fillText(label, px + 10, py - 10);
+      }
+    });
+  }
+
+  draw();
+
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleX;
+    const re = (mx - cx) / scale;
+    const im = -(my - cy) / scale;
+    points.push({ re, im });
+    if (points.length > 5) points.shift();
+    draw();
+    const mod = Math.sqrt(re*re + im*im);
+    const arg = Math.atan2(im, re) * 180 / Math.PI;
+    const sign = im >= 0 ? '+' : '-';
+    document.getElementById('cpResult').innerHTML =
+      `<b>z</b> = ${re.toFixed(2)} ${sign} ${Math.abs(im).toFixed(2)}i &nbsp;|&nbsp; ` +
+      `<b>|z|</b> = ${mod.toFixed(3)} &nbsp;|&nbsp; ` +
+      `<b>arg(z)</b> = ${arg.toFixed(1)}&deg; &nbsp;|&nbsp; ` +
+      `<b>z*</b> = ${re.toFixed(2)} ${im >= 0 ? '-' : '+'} ${Math.abs(im).toFixed(2)}i`;
+  });
+
+  window.drawComplexPlane = draw;
+})();
+
+// ─── Bloch Sphere Canvas ───
+(function() {
+  const canvas = document.getElementById('blochSphere');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2, R = 150;
+
+  let theta = 0, phi = 0; // state angles
+  let camTheta = 0.4, camPhi = -0.3; // camera angles
+  let dragging = false, lastX, lastY;
+
+  function project(x, y, z) {
+    // Rotate by camera
+    const ct = Math.cos(camTheta), st = Math.sin(camTheta);
+    const cp = Math.cos(camPhi), sp = Math.sin(camPhi);
+    const x1 = x * ct + z * st;
+    const z1 = -x * st + z * ct;
+    const y1 = y * cp - z1 * sp;
+    const z2 = y * sp + z1 * cp;
+    return { x: cx + x1 * R, y: cy - y1 * R, z: z2 };
+  }
+
+  function drawCircle(axis, color, dash) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    if (dash) ctx.setLineDash(dash);
+    ctx.beginPath();
+    for (let i = 0; i <= 64; i++) {
+      const t = (i / 64) * Math.PI * 2;
+      let x, y, z;
+      if (axis === 'xy') { x = Math.cos(t); y = Math.sin(t); z = 0; }
+      else if (axis === 'xz') { x = Math.cos(t); y = 0; z = Math.sin(t); }
+      else { x = 0; y = Math.cos(t); z = Math.sin(t); }
+      const p = project(x, y, z);
+      i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function drawAxis(x1,y1,z1, x2,y2,z2, color, label) {
+    const a = project(x1,y1,z1), b = project(x2,y2,z2);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = 'bold 14px system-ui';
+    ctx.fillText(label, b.x + 5, b.y - 5);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Great circles
+    drawCircle('xy', 'rgba(124,106,239,0.2)', [3,3]);
+    drawCircle('xz', 'rgba(96,165,250,0.2)', [3,3]);
+    drawCircle('yz', 'rgba(52,211,153,0.15)', [3,3]);
+
+    // Axes
+    drawAxis(-1.2,0,0, 1.2,0,0, '#60a5fa', 'X');
+    drawAxis(0,-1.2,0, 0,1.2,0, '#34d399', 'Y');
+    drawAxis(0,0,-1.2, 0,0,1.2, '#f87171', 'Z');
+
+    // Axis labels at poles
+    const p0 = project(0, 0, 1.3), p1 = project(0, 0, -1.3);
+    ctx.fillStyle = document.body.classList.contains('light') ? '#2d3154' : '#e2e4f0';
+    ctx.font = 'bold 13px system-ui';
+    ctx.fillText('|0\u27E9', p0.x - 10, p0.y - 5);
+    ctx.fillText('|1\u27E9', p1.x - 10, p1.y + 15);
+
+    // State vector (Bloch coordinates)
+    const sx = Math.sin(theta) * Math.cos(phi);
+    const sy = Math.sin(theta) * Math.sin(phi);
+    const sz = Math.cos(theta);
+    const sp = project(sx, sy, sz);
+    const o = project(0, 0, 0);
+
+    // Arrow line
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(sp.x, sp.y); ctx.stroke();
+
+    // Arrowhead
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath(); ctx.arc(sp.x, sp.y, 6, 0, Math.PI * 2); ctx.fill();
+
+    // Shadow on equator
+    const eqp = project(sx, sy, 0);
+    ctx.strokeStyle = 'rgba(251,191,36,0.3)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(eqp.x, eqp.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(eqp.x, eqp.y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(251,191,36,0.5)';
+    ctx.beginPath(); ctx.arc(eqp.x, eqp.y, 3, 0, Math.PI * 2); ctx.fill();
+  }
+
+  draw();
+
+  canvas.addEventListener('mousedown', (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
+  canvas.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    camTheta += (e.clientX - lastX) * 0.01;
+    camPhi += (e.clientY - lastY) * 0.01;
+    camPhi = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, camPhi));
+    lastX = e.clientX; lastY = e.clientY;
+    draw();
+  });
+  canvas.addEventListener('mouseup', () => dragging = false);
+  canvas.addEventListener('mouseleave', () => dragging = false);
+
+  // Touch support
+  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); dragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; }, { passive: false });
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (!dragging) return;
+    camTheta += (e.touches[0].clientX - lastX) * 0.01;
+    camPhi += (e.touches[0].clientY - lastY) * 0.01;
+    camPhi = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, camPhi));
+    lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+    draw();
+  }, { passive: false });
+  canvas.addEventListener('touchend', () => dragging = false);
+
+  window.setBlochState = function(t, p) {
+    theta = t; phi = p;
+    draw();
+    // Compute state label
+    const sx = Math.sin(theta)*Math.cos(phi), sy = Math.sin(theta)*Math.sin(phi), sz = Math.cos(theta);
+    let label = '';
+    if (Math.abs(theta) < 0.01) label = '|0\u27E9';
+    else if (Math.abs(theta - Math.PI) < 0.01) label = '|1\u27E9';
+    else if (Math.abs(theta - Math.PI/2) < 0.01 && Math.abs(phi) < 0.01) label = '|+\u27E9';
+    else if (Math.abs(theta - Math.PI/2) < 0.01 && Math.abs(phi - Math.PI) < 0.01) label = '|-\u27E9';
+    else if (Math.abs(theta - Math.PI/2) < 0.01 && Math.abs(phi - Math.PI/2) < 0.01) label = '|+i\u27E9';
+    else if (Math.abs(theta - Math.PI/2) < 0.01 && Math.abs(phi + Math.PI/2) < 0.01) label = '|-i\u27E9';
+    else label = `cos(${(theta/Math.PI*180).toFixed(0)}\u00B0/2)|0\u27E9 + e^{i${(phi/Math.PI*180).toFixed(0)}\u00B0}sin(${(theta/Math.PI*180).toFixed(0)}\u00B0/2)|1\u27E9`;
+    document.getElementById('blochResult').innerHTML =
+      `<b>State:</b> ${label} &nbsp;&mdash;&nbsp; <b>\u03B8</b> = ${(theta/Math.PI*180).toFixed(0)}\u00B0, <b>\u03C6</b> = ${(phi/Math.PI*180).toFixed(0)}\u00B0<br>` +
+      `<span style="font-size:.8rem;color:var(--text-dim);">Bloch coords: (${sx.toFixed(3)}, ${sy.toFixed(3)}, ${sz.toFixed(3)})</span>`;
+  };
+
+  // Expose for theme toggle and gate application
+  window.drawBloch = draw;
+  window.getBlochTheta = function() { return theta; };
+  window.getBlochPhi = function() { return phi; };
+  window.setBlochTheta = function(v) { theta = v; };
+  window.setBlochPhi = function(v) { phi = v; };
+})();
+
+// ─── Circuit Simulator ───
+const circuits = {
+  hzm: {
+    name: 'H \u2192 Z \u2192 Measure',
+    steps: [
+      { gate: 'Init', desc: 'Initialize qubit in |0\u27E9', state: [1, 0, 0, 0], label: '|0\u27E9 = (1, 0)\u1D40' },
+      { gate: 'H', desc: 'Apply Hadamard gate', state: [0.7071, 0, 0.7071, 0], label: '|+\u27E9 = (1/\u221A2, 1/\u221A2)\u1D40' },
+      { gate: 'Z', desc: 'Apply Pauli-Z gate', state: [0.7071, 0, -0.7071, 0], label: '|-\u27E9 = (1/\u221A2, -1/\u221A2)\u1D40' },
+      { gate: 'Measure', desc: 'Measure in Z-basis', state: [0.7071, 0, -0.7071, 0], label: 'P(|0\u27E9) = 50%, P(|1\u27E9) = 50%' }
+    ]
+  },
+  hsh: {
+    name: 'H \u2192 S \u2192 H',
+    steps: [
+      { gate: 'Init', desc: 'Initialize qubit in |0\u27E9', state: [1, 0, 0, 0], label: '|0\u27E9 = (1, 0)\u1D40' },
+      { gate: 'H', desc: 'Apply Hadamard gate', state: [0.7071, 0, 0.7071, 0], label: '|+\u27E9 = (1/\u221A2, 1/\u221A2)\u1D40' },
+      { gate: 'S', desc: 'Apply Phase gate (S)', state: [0.7071, 0, 0, 0.7071], label: '(1/\u221A2)(|0\u27E9 + i|1\u27E9) = (1/\u221A2, i/\u221A2)\u1D40' },
+      { gate: 'H', desc: 'Apply Hadamard again', state: [0.5, 0.5, 0.5, -0.5], label: '\u00BD(1+i)|0\u27E9 + \u00BD(1-i)|1\u27E9' }
+    ]
+  },
+  xhm: {
+    name: 'X \u2192 H \u2192 Measure',
+    steps: [
+      { gate: 'Init', desc: 'Initialize qubit in |0\u27E9', state: [1, 0, 0, 0], label: '|0\u27E9 = (1, 0)\u1D40' },
+      { gate: 'X', desc: 'Apply Pauli-X (NOT) gate', state: [0, 0, 1, 0], label: '|1\u27E9 = (0, 1)\u1D40' },
+      { gate: 'H', desc: 'Apply Hadamard gate', state: [0.7071, 0, -0.7071, 0], label: '|-\u27E9 = (1/\u221A2, -1/\u221A2)\u1D40' },
+      { gate: 'Measure', desc: 'Measure in Z-basis', state: [0.7071, 0, -0.7071, 0], label: 'P(|0\u27E9) = 50%, P(|1\u27E9) = 50%' }
+    ]
+  }
+};
+
+let currentCircuit = null, currentStep = -1;
+
+function loadCircuit(id) {
+  currentCircuit = circuits[id];
+  currentStep = -1;
+  const container = document.getElementById('circuitSteps');
+  container.innerHTML = currentCircuit.steps.map((s, i) =>
+    `<div class="circuit-step" id="cstep-${i}">` +
+    `<span class="step-num">${i + 1}</span>` +
+    `<div><b>${s.gate}</b>: ${s.desc}<br><span style="color:var(--cyan);font-family:monospace;font-size:.82rem;">${s.label}</span></div>` +
+    `</div>`
+  ).join('');
+  document.getElementById('circNext').textContent = 'Next Step \u2192';
+  circuitNext();
+}
+
+function circuitNext() {
+  if (!currentCircuit) { loadCircuit('hzm'); return; }
+  if (currentStep >= currentCircuit.steps.length - 1) return;
+  currentStep++;
+  currentCircuit.steps.forEach((_, i) => {
+    const el = document.getElementById(`cstep-${i}`);
+    el.className = 'circuit-step' + (i < currentStep ? ' done' : i === currentStep ? ' active' : '');
+  });
+  if (currentStep >= currentCircuit.steps.length - 1) {
+    document.getElementById('circNext').textContent = 'Done \u2713';
+  }
+}
+
+function circuitReset() {
+  if (!currentCircuit) return;
+  currentStep = -1;
+  currentCircuit.steps.forEach((_, i) => {
+    document.getElementById(`cstep-${i}`).className = 'circuit-step';
+  });
+  document.getElementById('circNext').textContent = 'Next Step \u2192';
+}
+
+// Load default circuit
+loadCircuit('hzm');
+circuitReset();
+
+// ─── Theme Toggle ───
+function toggleTheme() {
+  document.body.classList.toggle('light');
+  const isLight = document.body.classList.contains('light');
+  document.getElementById('themeToggle').innerHTML = isLight ? '&#9728;' : '&#9790;';
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  // Redraw canvases
+  if (typeof drawComplexPlane === 'function') drawComplexPlane();
+  if (typeof drawBloch === 'function') drawBloch();
+  if (typeof drawMatViz === 'function') drawMatViz();
+}
+// Restore saved theme
+if (localStorage.getItem('theme') === 'light') toggleTheme();
+
+// ─── Fill-in-the-Blank Checker ───
+function checkFillBlank(id, expectedRe, expectedIm) {
+  const reInput = document.getElementById(id + '_re');
+  const imInput = document.getElementById(id + '_im');
+  const fb = document.getElementById(id + '_fb');
+  const re = parseFloat(reInput.value);
+  const im = parseFloat(imInput.value);
+  if (isNaN(re) || isNaN(im)) {
+    fb.innerHTML = '<span style="color:var(--yellow)">Please enter numbers in both fields.</span>';
+    return;
+  }
+  const correct = Math.abs(re - expectedRe) < 0.1 && Math.abs(im - expectedIm) < 0.1;
+  reInput.className = correct ? 'correct-input' : (Math.abs(re - expectedRe) < 0.1 ? 'correct-input' : 'incorrect-input');
+  imInput.className = correct ? 'correct-input' : (Math.abs(im - expectedIm) < 0.1 ? 'correct-input' : 'incorrect-input');
+  if (correct) {
+    fb.innerHTML = '<span style="color:var(--green)">&#10003; Correct!</span>';
+    updateSectionCompletion();
+  } else {
+    fb.innerHTML = '<span style="color:var(--red)">Not quite. Try again! Remember: (a+bi)(c+di) = (ac-bd) + (ad+bc)i</span>';
+  }
+}
+
+function checkEigenFib() {
+  const l1 = parseFloat(document.getElementById('fib3_l1').value);
+  const l2 = parseFloat(document.getElementById('fib3_l2').value);
+  const fb = document.getElementById('fib3_fb');
+  if (isNaN(l1) || isNaN(l2)) {
+    fb.innerHTML = '<span style="color:var(--yellow)">Please enter both eigenvalues.</span>';
+    return;
+  }
+  const correct = (Math.abs(l1-3)<0.1 && Math.abs(l2-7)<0.1) || (Math.abs(l1-7)<0.1 && Math.abs(l2-3)<0.1);
+  document.getElementById('fib3_l1').className = correct ? 'correct-input' : 'incorrect-input';
+  document.getElementById('fib3_l2').className = correct ? 'correct-input' : 'incorrect-input';
+  if (correct) {
+    fb.innerHTML = '<span style="color:var(--green)">&#10003; Correct! For a diagonal matrix, eigenvalues are just the diagonal entries.</span>';
+    updateSectionCompletion();
+  } else {
+    fb.innerHTML = '<span style="color:var(--red)">Not quite. For a diagonal matrix, the eigenvalues are simply the diagonal entries!</span>';
+  }
+}
+
+// ─── Section Completion Tracking ───
+const sectionQuizMap = {
+  'sec-complex': ['q1','q1b'],
+  'sec-vectors': ['q2','q2b'],
+  'sec-inner': ['q3'],
+  'sec-matrices': ['q4','q4b'],
+  'sec-eigen': ['q5'],
+  'sec-tensor': ['q6'],
+  'sec-special': ['q7'],
+  'sec-putting': ['q8','q8b','q8c']
+};
+
+function updateSectionCompletion() {
+  Object.entries(sectionQuizMap).forEach(([sec, quizIds]) => {
+    const allDone = quizIds.every(qid => {
+      const quiz = document.querySelector(`[data-quiz="${qid}"]`);
+      return quiz && quiz.dataset.answered === 'true';
+    });
+    const checkEl = document.querySelector(`[data-check="${sec}"]`);
+    if (checkEl) checkEl.classList.toggle('done', allDone);
+  });
+}
+
+// Patch checkQuiz to also update completion
+const origCheckQuiz = checkQuiz;
+checkQuiz = function(qid, correct) {
+  origCheckQuiz(qid, correct);
+  updateSectionCompletion();
+};
+
+// ─── Matrix Transform Visualizer ───
+(function() {
+  const canvas = document.getElementById('matrixViz');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2, scale = 80;
+
+  let mat = [[1,0],[0,1]];
+  let gateName = 'I';
+  let inputVec = [1, 0.5];
+
+  function getColors() {
+    const isLight = document.body.classList.contains('light');
+    return {
+      grid: isLight ? '#d4d7e5' : '#1e2140',
+      axes: isLight ? '#9ba0bd' : '#3a3f6a',
+      label: isLight ? '#6b7094' : '#8b8fa8',
+      unit: isLight ? 'rgba(124,106,239,0.2)' : 'rgba(124,106,239,0.25)',
+      inputVec: '#60a5fa',
+      outputVec: '#fbbf24',
+      ghost: 'rgba(96,165,250,0.15)'
+    };
+  }
+
+  window.drawMatViz = function() {
+    const c = getColors();
+    ctx.clearRect(0, 0, W, H);
+    // Grid
+    ctx.strokeStyle = c.grid; ctx.lineWidth = 1;
+    for (let i = -5; i <= 5; i++) {
+      ctx.beginPath(); ctx.moveTo(cx+i*scale,0); ctx.lineTo(cx+i*scale,H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,cy-i*scale); ctx.lineTo(W,cy-i*scale); ctx.stroke();
+    }
+    // Axes
+    ctx.strokeStyle = c.axes; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W,cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke();
+    // Unit circle
+    ctx.strokeStyle = c.unit; ctx.lineWidth = 1.5;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.arc(cx,cy,scale,0,Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+    // Show where basis vectors go (ghost)
+    const e1out = [mat[0][0], mat[1][0]], e2out = [mat[0][1], mat[1][1]];
+    ctx.strokeStyle = c.ghost; ctx.lineWidth = 1.5;
+    [[1,0,e1out],[0,1,e2out]].forEach(([ix,iy,out]) => {
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(cx+ix*scale,cy-iy*scale); ctx.lineTo(cx+out[0]*scale,cy-out[1]*scale); ctx.stroke();
+      ctx.setLineDash([]);
+    });
+    // Input vector
+    const ix = cx + inputVec[0]*scale, iy = cy - inputVec[1]*scale;
+    ctx.strokeStyle = c.inputVec; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ix,iy); ctx.stroke();
+    ctx.fillStyle = c.inputVec;
+    ctx.beginPath(); ctx.arc(ix,iy,5,0,Math.PI*2); ctx.fill();
+    // Output vector
+    const ox = mat[0][0]*inputVec[0]+mat[0][1]*inputVec[1];
+    const oy = mat[1][0]*inputVec[0]+mat[1][1]*inputVec[1];
+    const opx = cx + ox*scale, opy = cy - oy*scale;
+    ctx.strokeStyle = c.outputVec; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(opx,opy); ctx.stroke();
+    ctx.fillStyle = c.outputVec;
+    ctx.beginPath(); ctx.arc(opx,opy,5,0,Math.PI*2); ctx.fill();
+    // Labels
+    ctx.font = 'bold 12px system-ui';
+    ctx.fillStyle = c.inputVec;
+    ctx.fillText(`v = (${inputVec[0].toFixed(2)}, ${inputVec[1].toFixed(2)})`, ix+8, iy-8);
+    ctx.fillStyle = c.outputVec;
+    ctx.fillText(`Av = (${ox.toFixed(2)}, ${oy.toFixed(2)})`, opx+8, opy-8);
+  };
+
+  drawMatViz();
+
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const sx = W / rect.width;
+    inputVec = [(e.clientX-rect.left)*sx - cx, cy - (e.clientY-rect.top)*sx].map(v => v/scale);
+    // Normalize to reasonable length
+    const len = Math.sqrt(inputVec[0]**2 + inputVec[1]**2);
+    if (len > 2) { inputVec[0] *= 2/len; inputVec[1] *= 2/len; }
+    drawMatViz();
+    updateMatVizResult();
+  });
+
+  window.setMatVizGate = function(m, name) {
+    mat = m; gateName = name;
+    drawMatViz();
+    updateMatVizResult();
+  };
+
+  function updateMatVizResult() {
+    const ox = mat[0][0]*inputVec[0]+mat[0][1]*inputVec[1];
+    const oy = mat[1][0]*inputVec[0]+mat[1][1]*inputVec[1];
+    const inLen = Math.sqrt(inputVec[0]**2 + inputVec[1]**2).toFixed(3);
+    const outLen = Math.sqrt(ox**2 + oy**2).toFixed(3);
+    document.getElementById('matVizResult').innerHTML =
+      `<b>Gate:</b> ${gateName} &nbsp;|&nbsp; ` +
+      `<b>|v|</b> = ${inLen} &rarr; <b>|Av|</b> = ${outLen} &nbsp;` +
+      (Math.abs(inLen - outLen) < 0.01 ? '<span style="color:var(--green);">(norm preserved \u2713)</span>' : '<span style="color:var(--yellow);">(norm changed)</span>');
+  }
+})();
+
+// ─── Bloch Sphere Gate Application ───
+window.applyBlochGate = function(gate) {
+  // Read current state from Bloch IIFE via accessors
+  const curTheta = window.getBlochTheta();
+  const curPhi = window.getBlochPhi();
+
+  // Current state in terms of alpha, beta
+  const ct = Math.cos(curTheta/2), st = Math.sin(curTheta/2);
+  let a_re = ct, a_im = 0; // alpha
+  let b_re = st * Math.cos(curPhi), b_im = st * Math.sin(curPhi); // beta
+
+  let na_re, na_im, nb_re, nb_im;
+  const s2 = 1/Math.sqrt(2);
+
+  switch(gate) {
+    case 'X': // swap alpha and beta
+      na_re = b_re; na_im = b_im; nb_re = a_re; nb_im = a_im; break;
+    case 'Y': // Y = [[0,-i],[i,0]]
+      na_re = b_im; na_im = -b_re; nb_re = -a_im; nb_im = a_re; break;
+    case 'Z': // Z = [[1,0],[0,-1]]
+      na_re = a_re; na_im = a_im; nb_re = -b_re; nb_im = -b_im; break;
+    case 'H': // H = (1/sqrt(2))[[1,1],[1,-1]]
+      na_re = s2*(a_re+b_re); na_im = s2*(a_im+b_im);
+      nb_re = s2*(a_re-b_re); nb_im = s2*(a_im-b_im); break;
+    case 'S': // S = [[1,0],[0,i]]
+      na_re = a_re; na_im = a_im; nb_re = -b_im; nb_im = b_re; break;
+    case 'T': { // T = [[1,0],[0,e^(iπ/4)]]
+      na_re = a_re; na_im = a_im;
+      const tAngle = Math.PI/4;
+      nb_re = b_re*Math.cos(tAngle) - b_im*Math.sin(tAngle);
+      nb_im = b_re*Math.sin(tAngle) + b_im*Math.cos(tAngle); break;
+    }
+    default: return;
+  }
+
+  // Convert back to theta, phi (with global phase removal)
+  const norm_a = Math.sqrt(na_re**2 + na_im**2);
+  const norm_b = Math.sqrt(nb_re**2 + nb_im**2);
+
+  // New theta
+  const newTheta = 2 * Math.acos(Math.min(1, norm_a));
+
+  // New phi: phase of beta relative to alpha
+  let newPhi = 0;
+  if (norm_b > 1e-10) {
+    // Remove global phase (make alpha real and positive)
+    if (norm_a > 1e-10) {
+      const phase_a = Math.atan2(na_im, na_re);
+      // Rotate beta by -phase_a
+      const rb_re = nb_re*Math.cos(-phase_a) - nb_im*Math.sin(-phase_a);
+      const rb_im = nb_re*Math.sin(-phase_a) + nb_im*Math.cos(-phase_a);
+      newPhi = Math.atan2(rb_im, rb_re);
+    } else {
+      newPhi = Math.atan2(nb_im, nb_re);
+    }
+  }
+
+  // Animate transition
+  const startTheta = curTheta, startPhi = curPhi;
+  const dTheta = newTheta - startTheta;
+  // Handle phi wrapping
+  let dPhi = newPhi - startPhi;
+  if (dPhi > Math.PI) dPhi -= 2*Math.PI;
+  if (dPhi < -Math.PI) dPhi += 2*Math.PI;
+  const duration = 400;
+  const frames = 24;
+  let frame = 0;
+
+  function animateStep() {
+    frame++;
+    const progress = Math.min(1, frame / frames);
+    const ease = progress < 0.5 ? 2*progress*progress : -1+(4-2*progress)*progress; // ease in-out
+    window.setBlochTheta(startTheta + dTheta * ease);
+    window.setBlochPhi(startPhi + dPhi * ease);
+    window.drawBloch();
+    if (progress < 1) {
+      setTimeout(animateStep, duration / frames);
+    } else {
+      window.setBlochTheta(newTheta);
+      window.setBlochPhi(newPhi);
+      window.drawBloch();
+      window.setBlochState(newTheta, newPhi);
+    }
+  }
+  animateStep();
+};
+</script>
+</body>
+</html>
