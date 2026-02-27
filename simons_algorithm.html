@@ -1,0 +1,1941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simon's Algorithm — Quantum Visualization</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Particle background canvas */
+  #particleBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+  }
+
+  header::after {
+    content: '';
+    display: block;
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), transparent);
+    margin: 1.5rem auto 0;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--cyan), var(--pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    font-weight: 300;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .card:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+
+  .card-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .card-title .icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  /* Controls */
+  .controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: end;
+    margin-bottom: 1rem;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .control-group label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  select, input[type="text"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  select:focus, input[type="text"]:focus {
+    border-color: var(--accent);
+  }
+
+  button {
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.55rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+  }
+
+  button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+
+  button:active { transform: translateY(0); }
+
+  button.secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+  }
+
+  button.secondary:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.1);
+  }
+
+  /* Speed control */
+  .speed-control {
+    display: inline-flex;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .speed-btn {
+    background: var(--surface2);
+    border: none;
+    border-right: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.45rem 0.65rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 0;
+    letter-spacing: 0;
+  }
+
+  .speed-btn:last-child { border-right: none; }
+
+  .speed-btn:hover { background: rgba(99, 102, 241, 0.1); color: var(--text); }
+
+  .speed-btn.active {
+    background: rgba(99, 102, 241, 0.2);
+    color: var(--accent);
+  }
+
+  /* Secret string display */
+  .secret-display {
+    display: inline-flex;
+    gap: 3px;
+    margin-left: 0.5rem;
+  }
+
+  .secret-bit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .secret-bit.one {
+    background: rgba(99, 102, 241, 0.2);
+    color: var(--accent);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+  }
+
+  .secret-bit.zero {
+    background: rgba(100, 116, 139, 0.15);
+    color: var(--text-dim);
+    border: 1px solid rgba(100, 116, 139, 0.3);
+  }
+
+  /* Circuit Canvas */
+  .circuit-container {
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(42, 53, 80, 0.5);
+  }
+
+  canvas#circuitCanvas {
+    display: block;
+    margin: 0 auto;
+  }
+
+  /* State vector display */
+  .state-display {
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem;
+    line-height: 2;
+    overflow-x: auto;
+    border: 1px solid rgba(42, 53, 80, 0.5);
+    margin-top: 1rem;
+    transition: opacity 0.25s ease;
+  }
+
+  .ket { color: var(--cyan); }
+  .amplitude { color: var(--pink); }
+  .operator { color: var(--orange); }
+  .math-text { color: var(--text-dim); }
+
+  /* Steps timeline */
+  .steps-timeline {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .step-btn {
+    flex: 1;
+    min-width: 110px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 0.65rem 0.5rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    text-align: center;
+  }
+
+  .step-btn:first-child { border-radius: 8px 0 0 8px; }
+  .step-btn:last-child { border-radius: 0 8px 8px 0; }
+
+  .step-btn.active {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(34, 211, 238, 0.1));
+    border-color: var(--accent);
+    color: var(--text);
+    z-index: 1;
+  }
+
+  .step-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
+  }
+
+  .step-btn.completed {
+    background: rgba(52, 211, 153, 0.08);
+    color: var(--green);
+    border-color: rgba(52, 211, 153, 0.3);
+  }
+
+  .step-num {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    margin-bottom: 2px;
+    opacity: 0.6;
+  }
+
+  /* Function table */
+  .fn-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    margin-top: 0.75rem;
+    width: 100%;
+  }
+
+  .fn-table th, .fn-table td {
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .fn-table th {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .fn-table td {
+    background: var(--surface2);
+    transition: background 0.3s;
+  }
+
+  .fn-table tr:hover td {
+    background: rgba(99, 102, 241, 0.05);
+  }
+
+  .fn-table tr.match-highlight td {
+    background: rgba(244, 114, 182, 0.18) !important;
+    border-color: rgba(244, 114, 182, 0.3) !important;
+  }
+
+  .fn-table tr.match-highlight td:first-child {
+    border-left: 3px solid var(--pink) !important;
+    box-shadow: inset 3px 0 8px rgba(244, 114, 182, 0.15);
+  }
+
+  .fn-table tr.match-highlight:hover td {
+    background: rgba(244, 114, 182, 0.25) !important;
+  }
+
+  .pair-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    color: var(--pink);
+    background: rgba(244, 114, 182, 0.12);
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+  }
+
+  /* Measurement results */
+  .measurements {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .measurement-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface2);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    border: 1px solid var(--border);
+    animation: slideIn 0.4s ease-out both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .measurement-label {
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    min-width: 40px;
+  }
+
+  .measurement-bits {
+    display: flex;
+    gap: 2px;
+  }
+
+  .measurement-bits .bit {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .bit.one {
+    background: rgba(34, 211, 238, 0.2);
+    color: var(--cyan);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+  }
+
+  .bit.zero {
+    background: rgba(100, 116, 139, 0.12);
+    color: var(--text-dim);
+    border: 1px solid rgba(100, 116, 139, 0.25);
+  }
+
+  .dot-product {
+    color: var(--text-dim);
+    font-size: 0.82rem;
+  }
+
+  .dot-result {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  /* Equation system */
+  .equation-system {
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface2);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .equation {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem;
+    padding: 0.3rem 0;
+    animation: slideIn 0.3s ease-out both;
+  }
+
+  .eq-var { color: var(--cyan); }
+  .eq-op { color: var(--text-dim); margin: 0 0.1rem; }
+  .eq-result { color: var(--green); font-weight: 600; }
+
+  /* Solution */
+  .solution-box {
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), rgba(99, 102, 241, 0.08));
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    border-radius: 10px;
+    text-align: center;
+    animation: solutionReveal 0.6s ease-out;
+  }
+
+  @keyframes solutionReveal {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .solution-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--green);
+    margin-bottom: 0.5rem;
+  }
+
+  .solution-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.15em;
+  }
+
+  /* Layout grid */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    h1 { font-size: 1.8rem; }
+    .container { padding: 1rem; }
+  }
+
+  /* Description text */
+  .desc {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    line-height: 1.65;
+    margin-bottom: 1rem;
+  }
+
+  .desc strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+  }
+
+  /* Qubit visualization with stable DOM for transitions */
+  .qubit-viz {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    position: relative;
+  }
+
+  .qubit-orb {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .qubit-orb.state-zero {
+    background: radial-gradient(circle at 35% 35%, #374151, #1f2937);
+    border: 2px solid #4b5563;
+    color: #9ca3af;
+    box-shadow: 0 0 12px rgba(75, 85, 99, 0.3);
+  }
+
+  .qubit-orb.state-super {
+    background: radial-gradient(circle at 35% 35%, #4338ca, #312e81);
+    border: 2px solid var(--accent);
+    color: #c7d2fe;
+    box-shadow: 0 0 20px var(--accent-glow);
+    animation: orbPulse 2s ease-in-out infinite;
+  }
+
+  .qubit-orb.state-entangled {
+    background: radial-gradient(circle at 35% 35%, #0e7490, #164e63);
+    border: 2px solid var(--cyan);
+    color: #a5f3fc;
+    box-shadow: 0 0 20px var(--cyan-glow);
+    animation: orbPulse 1.5s ease-in-out infinite;
+  }
+
+  .qubit-orb.state-measured {
+    background: radial-gradient(circle at 35% 35%, #065f46, #064e3b);
+    border: 2px solid var(--green);
+    color: #a7f3d0;
+    box-shadow: 0 0 16px var(--green-glow);
+  }
+
+  @keyframes orbPulse {
+    0%, 100% { box-shadow: 0 0 16px var(--accent-glow); }
+    50% { box-shadow: 0 0 28px var(--accent-glow); }
+  }
+
+  .qubit-label {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  .qubit-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Entanglement arcs SVG */
+  .entanglement-svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .entanglement-arc {
+    fill: none;
+    stroke: var(--cyan);
+    stroke-width: 1.5;
+    stroke-dasharray: 6 4;
+    opacity: 0;
+    filter: drop-shadow(0 0 4px var(--cyan-glow));
+    transition: opacity 0.6s ease;
+  }
+
+  .entanglement-arc.visible {
+    opacity: 0.6;
+    animation: arcFlow 1.5s linear infinite;
+  }
+
+  @keyframes arcFlow {
+    to { stroke-dashoffset: -20; }
+  }
+
+  /* Amplitude bar chart */
+  .amp-chart-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 140px;
+    padding: 0 0.5rem;
+    margin-top: 0.5rem;
+    position: relative;
+  }
+
+  .amp-chart-container::before {
+    content: '';
+    position: absolute;
+    bottom: 22px;
+    left: 0; right: 0;
+    height: 1px;
+    background: rgba(100, 116, 139, 0.2);
+  }
+
+  .amp-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .amp-bar-wrapper {
+    width: 100%;
+    height: 100px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .amp-bar {
+    width: 70%;
+    max-width: 40px;
+    min-height: 0;
+    border-radius: 3px 3px 0 0;
+    transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1), background 0.5s ease, box-shadow 0.5s ease;
+    position: relative;
+  }
+
+  .amp-bar.constructive {
+    background: linear-gradient(180deg, var(--cyan), var(--accent));
+    box-shadow: 0 0 10px var(--cyan-glow);
+  }
+
+  .amp-bar.destructive {
+    background: linear-gradient(180deg, var(--red), #991b1b);
+    box-shadow: 0 0 6px rgba(248, 113, 113, 0.2);
+  }
+
+  .amp-bar.neutral {
+    background: linear-gradient(180deg, var(--accent), #4338ca);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  .amp-bar.measured {
+    background: linear-gradient(180deg, var(--green), #059669);
+    box-shadow: 0 0 12px var(--green-glow);
+  }
+
+  .amp-bar.zero-amp {
+    background: rgba(100, 116, 139, 0.15);
+    box-shadow: none;
+  }
+
+  .amp-bar-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .amp-bar-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+    text-align: center;
+    transition: opacity 0.3s;
+    height: 14px;
+  }
+
+  .amp-legend {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .amp-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+  }
+
+  .amp-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  /* Nav buttons row */
+  .nav-row {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .progress-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  .progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.3s;
+  }
+
+  .progress-dot.active {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  .progress-dot.done {
+    background: var(--green);
+  }
+
+  /* Complexity comparison */
+  .complexity-bar {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .complexity-track {
+    flex: 1;
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .complexity-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease-out;
+  }
+
+  .complexity-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    min-width: 80px;
+  }
+
+  /* Keyboard hint */
+  .kbd-hint {
+    text-align: center;
+    margin-top: 0.5rem;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    opacity: 0.6;
+  }
+
+  .kbd-hint kbd {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.1rem 0.35rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    margin: 0 0.1rem;
+  }
+
+  .hidden { display: none !important; }
+
+  /* Fade transition helper */
+  .fade-content {
+    transition: opacity 0.25s ease;
+  }
+  .fade-content.fading {
+    opacity: 0;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="particleBg"></canvas>
+
+<div class="container">
+  <header>
+    <h1>Simon's Algorithm</h1>
+    <p class="subtitle">A quantum algorithm for finding hidden periodicities — exponential speedup over classical</p>
+  </header>
+
+  <!-- Overview card -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(99,102,241,0.15); color: var(--accent);">?</span>
+      The Problem
+    </div>
+    <p class="desc">
+      Given a black-box function <span class="tag">f : {0,1}ⁿ → {0,1}ⁿ</span> with the promise that there exists a secret string
+      <strong>s</strong> such that <strong>f(x) = f(y)</strong> if and only if <strong>x ⊕ y ∈ {0ⁿ, s}</strong>,
+      find <strong>s</strong>. Classically this requires <strong>O(2<sup>n/2</sup>)</strong> queries; Simon's quantum algorithm solves it in <strong>O(n)</strong> queries.
+    </p>
+    <div style="margin-top: 0.75rem;">
+      <div class="complexity-bar">
+        <span class="complexity-label" style="color: var(--red);">Classical</span>
+        <div class="complexity-track">
+          <div class="complexity-fill" style="width: 95%; background: linear-gradient(90deg, var(--red), var(--orange));"></div>
+        </div>
+        <span class="complexity-label" style="color: var(--red);">O(2<sup>n/2</sup>)</span>
+      </div>
+      <div class="complexity-bar">
+        <span class="complexity-label" style="color: var(--green);">Quantum</span>
+        <div class="complexity-track">
+          <div class="complexity-fill" style="width: 12%; background: linear-gradient(90deg, var(--green), var(--cyan));"></div>
+        </div>
+        <span class="complexity-label" style="color: var(--green);">O(n)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuration -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(34,211,238,0.15); color: var(--cyan);">⚙</span>
+      Configuration
+    </div>
+    <div class="controls-row">
+      <div class="control-group">
+        <label>Qubits (n)</label>
+        <select id="nSelect">
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+          <option value="4">4</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Secret string s</label>
+        <select id="sSelect"></select>
+      </div>
+      <button id="runBtn">Run Algorithm</button>
+      <div class="control-group">
+        <label>Speed</label>
+        <div class="speed-control">
+          <button class="speed-btn" data-speed="2400">0.5x</button>
+          <button class="speed-btn active" data-speed="1200">1x</button>
+          <button class="speed-btn" data-speed="600">2x</button>
+        </div>
+      </div>
+      <button id="resetBtn" class="secondary">Reset</button>
+    </div>
+    <div style="display: flex; align-items: center; margin-top: 0.5rem;">
+      <span class="desc" style="margin-bottom: 0;">Secret string: </span>
+      <div class="secret-display" id="secretDisplay"></div>
+    </div>
+  </div>
+
+  <!-- Steps timeline -->
+  <div class="steps-timeline" id="stepsTimeline">
+    <button class="step-btn active" data-step="0"><span class="step-num">Step 0</span>Initialize</button>
+    <button class="step-btn" data-step="1"><span class="step-num">Step 1</span>Hadamard</button>
+    <button class="step-btn" data-step="2"><span class="step-num">Step 2</span>Oracle Uf</button>
+    <button class="step-btn" data-step="3"><span class="step-num">Step 3</span>Hadamard</button>
+    <button class="step-btn" data-step="4"><span class="step-num">Step 4</span>Measure</button>
+    <button class="step-btn" data-step="5"><span class="step-num">Step 5</span>Solve</button>
+  </div>
+
+  <!-- Circuit visualization -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(244,114,182,0.15); color: var(--pink);">◈</span>
+      Quantum Circuit
+    </div>
+    <div class="circuit-container">
+      <canvas id="circuitCanvas"></canvas>
+    </div>
+    <div id="stepDescription" class="desc" style="margin-bottom: 0;"></div>
+  </div>
+
+  <!-- Amplitude bar chart -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(34,211,238,0.15); color: var(--cyan);">▊</span>
+      Probability Amplitudes
+      <span id="ampStepLabel" style="margin-left: auto; font-size: 0.75rem; font-weight: 400; color: var(--text-dim);"></span>
+    </div>
+    <div id="ampChart" class="amp-chart-container"></div>
+    <div id="ampLegend" class="amp-legend"></div>
+    <p id="ampDesc" class="desc" style="margin-top: 0.75rem; margin-bottom: 0;"></p>
+  </div>
+
+  <div class="grid-2">
+    <!-- Qubit state visualization -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon" style="background: rgba(99,102,241,0.15); color: var(--accent);">⊛</span>
+        Qubit States
+      </div>
+      <div id="qubitViz" class="qubit-viz"></div>
+      <div id="stateVector" class="state-display fade-content"></div>
+    </div>
+
+    <!-- Function table / Measurements -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon" style="background: rgba(52,211,153,0.15); color: var(--green);">f</span>
+        <span id="rightPanelTitle">Oracle Function Table</span>
+      </div>
+      <div id="fnTableContainer" class="fade-content"></div>
+      <div id="measureContainer" class="hidden fade-content"></div>
+      <div id="solveContainer" class="hidden fade-content"></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-row">
+    <button id="prevBtn" class="secondary" disabled>← Previous</button>
+    <button id="nextBtn">Next Step →</button>
+  </div>
+  <div class="progress-dots" id="progressDots"></div>
+  <div class="kbd-hint">
+    <kbd>←</kbd><kbd>→</kbd> navigate &nbsp;
+    <kbd>Space</kbd> auto-play &nbsp;
+    <kbd>R</kbd> reset
+  </div>
+</div>
+
+<script>
+// ——————————————————— Particle Background ———————————————————
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 45;
+  const CONNECT_DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw connections
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw & move particles
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+
+// ——————————————————— Algorithm Core ———————————————————
+let N = 3;
+let secret = '110';
+let currentStep = 0;
+let fnMap = {};
+let measurements = [];
+let running = false;
+let playSpeed = 1200;
+let selectedMeasurement = null;
+
+function xor(a, b) {
+  return a.split('').map((c, i) => c ^ b[i]).join('');
+}
+
+function dot(a, b) {
+  let s = 0;
+  for (let i = 0; i < a.length; i++) s ^= (a[i] & b[i]);
+  return s;
+}
+
+function allBinaryStrings(n) {
+  const res = [];
+  for (let i = 0; i < (1 << n); i++) res.push(i.toString(2).padStart(n, '0'));
+  return res;
+}
+
+function generateFunction(n, s) {
+  const all = allBinaryStrings(n);
+  const map = {};
+  let nextOutput = 0;
+  for (const x of all) {
+    if (map[x] !== undefined) continue;
+    const y = xor(x, s);
+    const outBits = nextOutput.toString(2).padStart(n, '0');
+    map[x] = outBits;
+    if (x !== y) map[y] = outBits;
+    nextOutput++;
+  }
+  return map;
+}
+
+function getValidSecrets(n) {
+  const secrets = [];
+  for (let i = 1; i < (1 << n); i++) {
+    secrets.push(i.toString(2).padStart(n, '0'));
+  }
+  return secrets;
+}
+
+// ——————————————————— UI Setup ———————————————————
+const nSelect = document.getElementById('nSelect');
+const sSelect = document.getElementById('sSelect');
+const runBtn = document.getElementById('runBtn');
+const resetBtn = document.getElementById('resetBtn');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+function populateSecrets() {
+  N = parseInt(nSelect.value);
+  const secrets = getValidSecrets(N);
+  sSelect.innerHTML = '';
+  for (const s of secrets) {
+    const opt = document.createElement('option');
+    opt.value = s;
+    opt.textContent = s;
+    sSelect.appendChild(opt);
+  }
+  sSelect.value = secrets[0];
+  secret = secrets[0];
+  updateSecretDisplay();
+}
+
+function updateSecretDisplay() {
+  const disp = document.getElementById('secretDisplay');
+  disp.innerHTML = secret.split('').map(b =>
+    `<span class="secret-bit ${b === '1' ? 'one' : 'zero'}">${b}</span>`
+  ).join('');
+}
+
+nSelect.addEventListener('change', () => { populateSecrets(); resetAlgorithm(); });
+sSelect.addEventListener('change', () => { secret = sSelect.value; updateSecretDisplay(); resetAlgorithm(); });
+
+// Speed control
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    playSpeed = parseInt(btn.dataset.speed);
+  });
+});
+
+function buildProgressDots() {
+  const dots = document.getElementById('progressDots');
+  dots.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const d = document.createElement('div');
+    d.className = 'progress-dot' + (i === 0 ? ' active' : '');
+    dots.appendChild(d);
+  }
+}
+
+function updateProgressDots() {
+  const dots = document.querySelectorAll('.progress-dot');
+  dots.forEach((d, i) => {
+    d.className = 'progress-dot';
+    if (i < currentStep) d.classList.add('done');
+    if (i === currentStep) d.classList.add('active');
+  });
+}
+
+// ——————————————————— Circuit Drawing ———————————————————
+function drawCircuit() {
+  const canvas = document.getElementById('circuitCanvas');
+  const ctx = canvas.getContext('2d');
+  const totalQubits = N * 2;
+  const rowH = 48;
+  const padding = { top: 40, bottom: 20, left: 80, right: 40 };
+  const gateW = 46;
+  const gateGap = 70;
+  const stages = 5;
+
+  canvas.width = padding.left + stages * gateGap + padding.right + 40;
+  canvas.height = padding.top + totalQubits * rowH + padding.bottom;
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = canvas.width + 'px';
+  canvas.style.height = canvas.height + 'px';
+  canvas.width *= dpr;
+  canvas.height *= dpr;
+  ctx.scale(dpr, dpr);
+
+  const W = canvas.width / dpr;
+  const H = canvas.height / dpr;
+  ctx.clearRect(0, 0, W, H);
+
+  const wireY = [];
+  for (let i = 0; i < totalQubits; i++) wireY.push(padding.top + i * rowH + rowH / 2);
+
+  const stageX = [];
+  for (let i = 0; i < stages; i++) stageX.push(padding.left + i * gateGap + gateGap / 2);
+
+  // Register separator
+  const sepY = wireY[N - 1] + rowH / 2;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(100,116,139,0.2)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(20, sepY);
+  ctx.lineTo(W - 10, sepY);
+  ctx.stroke();
+  ctx.restore();
+
+  // Register labels
+  ctx.font = '500 11px Inter, sans-serif';
+  ctx.fillStyle = '#6366f1';
+  ctx.textAlign = 'right';
+  ctx.fillText('1st register', padding.left - 14, wireY[0] - 2);
+  ctx.fillStyle = '#22d3ee';
+  ctx.fillText('2nd register', padding.left - 14, wireY[N] - 2);
+
+  // Draw wires
+  for (let i = 0; i < totalQubits; i++) {
+    const pastSteps = Math.min(currentStep + 1, stages);
+    const endX = stageX[Math.min(pastSteps, stages - 1)] + gateW / 2 + 10;
+
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(100,116,139,0.15)';
+    ctx.lineWidth = 1.5;
+    ctx.moveTo(padding.left - 10, wireY[i]);
+    ctx.lineTo(W - 10, wireY[i]);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.strokeStyle = i < N ? 'rgba(99,102,241,0.4)' : 'rgba(34,211,238,0.35)';
+    ctx.lineWidth = 2;
+    ctx.moveTo(padding.left - 10, wireY[i]);
+    ctx.lineTo(Math.min(endX, W - 10), wireY[i]);
+    ctx.stroke();
+
+    ctx.font = '500 12px JetBrains Mono, sans-serif';
+    ctx.fillStyle = i < N ? '#818cf8' : '#67e8f9';
+    ctx.textAlign = 'right';
+    ctx.fillText('|0⟩', padding.left - 16, wireY[i] + 4);
+  }
+
+  function drawGate(x, y, w, h, label, color, bgAlpha, active) {
+    const bg = active ? bgAlpha : 0.03;
+    ctx.fillStyle = color.replace('1)', `${bg})`);
+    ctx.strokeStyle = active ? color : 'rgba(100,116,139,0.2)';
+    ctx.lineWidth = active ? 2 : 1;
+    const r = 6;
+    ctx.beginPath();
+    ctx.roundRect(x - w/2, y - h/2, w, h, r);
+    ctx.fill();
+    ctx.stroke();
+    if (active) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.roundRect(x - w/2, y - h/2, w, h, r);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    ctx.font = '600 13px JetBrains Mono, sans-serif';
+    ctx.fillStyle = active ? '#fff' : 'rgba(100,116,139,0.4)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x, y);
+  }
+
+  function drawMultiGate(x, yStart, yEnd, label, color, active) {
+    const h = yEnd - yStart + 36;
+    const w = gateW;
+    const y = (yStart + yEnd) / 2;
+    const bg = active ? 0.15 : 0.03;
+    ctx.fillStyle = color.replace('1)', `${bg})`);
+    ctx.strokeStyle = active ? color : 'rgba(100,116,139,0.2)';
+    ctx.lineWidth = active ? 2 : 1;
+    const r = 8;
+    ctx.beginPath();
+    ctx.roundRect(x - w/2, y - h/2, w, h, r);
+    ctx.fill();
+    ctx.stroke();
+    if (active) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.roundRect(x - w/2, y - h/2, w, h, r);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    ctx.font = '600 14px JetBrains Mono, sans-serif';
+    ctx.fillStyle = active ? '#fff' : 'rgba(100,116,139,0.4)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x, y);
+  }
+
+  // Gates
+  for (let i = 0; i < N; i++)
+    drawGate(stageX[1], wireY[i], 36, 32, 'H', 'rgba(99,102,241,1)', 0.15, currentStep >= 1);
+
+  drawMultiGate(stageX[2], wireY[0], wireY[totalQubits - 1], 'Uf', 'rgba(244,114,182,1)', currentStep >= 2);
+
+  for (let i = 0; i < N; i++)
+    drawGate(stageX[3], wireY[i], 36, 32, 'H', 'rgba(99,102,241,1)', 0.15, currentStep >= 3);
+
+  // Measurement meters
+  const active4 = currentStep >= 4;
+  for (let i = 0; i < N; i++) {
+    const mx = stageX[4], my = wireY[i], mw = 36, mh = 32;
+    ctx.fillStyle = active4 ? 'rgba(52,211,153,0.15)' : 'rgba(100,116,139,0.03)';
+    ctx.strokeStyle = active4 ? 'rgba(52,211,153,1)' : 'rgba(100,116,139,0.2)';
+    ctx.lineWidth = active4 ? 2 : 1;
+    ctx.beginPath();
+    ctx.roundRect(mx - mw/2, my - mh/2, mw, mh, 6);
+    ctx.fill();
+    ctx.stroke();
+    if (active4) {
+      ctx.shadowColor = 'rgba(52,211,153,1)';
+      ctx.shadowBlur = 10;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    ctx.beginPath();
+    ctx.strokeStyle = active4 ? '#a7f3d0' : 'rgba(100,116,139,0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.arc(mx, my + 4, 8, Math.PI, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(mx, my + 4);
+    ctx.lineTo(mx + 5, my - 7);
+    ctx.stroke();
+  }
+
+  // Stage labels
+  ctx.font = '500 10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const labels = ['Init', 'H⊗ⁿ', 'Uf', 'H⊗ⁿ', 'Measure'];
+  for (let i = 0; i < stages; i++) {
+    ctx.fillStyle = i <= currentStep ? 'rgba(226,232,240,0.7)' : 'rgba(100,116,139,0.3)';
+    ctx.fillText(labels[i], stageX[i], padding.top - 22);
+  }
+
+  if (currentStep < stages) {
+    ctx.beginPath();
+    ctx.arc(stageX[Math.min(currentStep, stages-1)], padding.top - 30, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#6366f1';
+    ctx.fill();
+  }
+}
+
+// ——————————————————— Amplitude Bar Chart ———————————————————
+let ampChartBuilt = false;
+
+function buildAmplitudeChart() {
+  const container = document.getElementById('ampChart');
+  const all = allBinaryStrings(N);
+  container.innerHTML = '';
+
+  for (const state of all) {
+    const col = document.createElement('div');
+    col.className = 'amp-bar-col';
+    col.dataset.state = state;
+
+    const valEl = document.createElement('div');
+    valEl.className = 'amp-bar-value';
+    col.appendChild(valEl);
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'amp-bar-wrapper';
+    const bar = document.createElement('div');
+    bar.className = 'amp-bar neutral';
+    bar.style.height = '0px';
+    wrapper.appendChild(bar);
+    col.appendChild(wrapper);
+
+    const label = document.createElement('div');
+    label.className = 'amp-bar-label';
+    label.textContent = `|${state}⟩`;
+    col.appendChild(label);
+
+    container.appendChild(col);
+  }
+  ampChartBuilt = true;
+}
+
+function updateAmplitudeChart() {
+  if (!ampChartBuilt) buildAmplitudeChart();
+
+  const all = allBinaryStrings(N);
+  const dim = 1 << N;
+  const container = document.getElementById('ampChart');
+  const cols = container.querySelectorAll('.amp-bar-col');
+  const labelEl = document.getElementById('ampStepLabel');
+  const descEl = document.getElementById('ampDesc');
+  const legendEl = document.getElementById('ampLegend');
+
+  // Compute amplitudes per state
+  const amps = {};
+  const validYs = all.filter(y => dot(y.split(''), secret.split('')) === 0);
+  const numValid = validYs.length;
+
+  if (currentStep === 0) {
+    // Only |0...0⟩ has amplitude 1
+    for (const s of all) amps[s] = s === '0'.repeat(N) ? 1 : 0;
+    labelEl.textContent = 'Initial state';
+    descEl.innerHTML = 'Only <span class="ket">|' + '0'.repeat(N) + '⟩</span> has non-zero amplitude.';
+    legendEl.innerHTML = '';
+  } else if (currentStep === 1 || currentStep === 2) {
+    // Uniform superposition: 1/sqrt(2^n) each
+    const amp = 1 / Math.sqrt(dim);
+    for (const s of all) amps[s] = amp;
+    labelEl.textContent = currentStep === 1 ? 'After H⊗ⁿ' : 'After Oracle';
+    descEl.innerHTML = `All ${dim} states have equal amplitude <span class="amplitude">1/√${dim} ≈ ${amp.toFixed(3)}</span>. ${currentStep === 2 ? 'The oracle entangles registers but doesn\'t change first-register amplitudes.' : 'Quantum parallelism — all inputs in superposition.'}`;
+    legendEl.innerHTML = '';
+  } else if (currentStep === 3) {
+    // After second Hadamard: interference!
+    // States with y·s=0 get amplitude 2/2^n * 2^(n-1) = 1/sqrt(numValid)
+    // States with y·s≠0 get amplitude 0
+    const ampVal = 1 / Math.sqrt(numValid);
+    for (const s of all) {
+      amps[s] = dot(s.split(''), secret.split('')) === 0 ? ampVal : 0;
+    }
+    labelEl.textContent = 'After 2nd H⊗ⁿ — Interference!';
+    descEl.innerHTML = `<strong>Key insight:</strong> Destructive interference cancels states where <span class="operator">y · s ≠ 0</span> (red → zero). Constructive interference amplifies the ${numValid} states where <span class="operator">y · s = 0</span>.`;
+    legendEl.innerHTML = `
+      <div class="amp-legend-item"><div class="amp-legend-dot" style="background: linear-gradient(135deg, var(--cyan), var(--accent));"></div> y · s = 0 (constructive)</div>
+      <div class="amp-legend-item"><div class="amp-legend-dot" style="background: linear-gradient(135deg, var(--red), #991b1b);"></div> y · s ≠ 0 (destructive → 0)</div>
+    `;
+  } else if (currentStep >= 4) {
+    // After measurement: one state selected
+    if (!selectedMeasurement) {
+      selectedMeasurement = validYs[Math.floor(Math.random() * validYs.length)];
+    }
+    for (const s of all) amps[s] = s === selectedMeasurement ? 1 : 0;
+    labelEl.textContent = currentStep === 4 ? 'After Measurement' : 'Result';
+    descEl.innerHTML = `Measurement collapses to <span class="ket">|${selectedMeasurement}⟩</span> — one of the ${numValid} valid outcomes satisfying y · s = 0.`;
+    legendEl.innerHTML = `<div class="amp-legend-item"><div class="amp-legend-dot" style="background: linear-gradient(135deg, var(--green), #059669);"></div> Measured outcome</div>`;
+  }
+
+  const maxAmp = Math.max(...Object.values(amps), 0.001);
+  const maxBarH = 90;
+
+  cols.forEach((col, i) => {
+    const state = all[i];
+    const amp = amps[state];
+    const bar = col.querySelector('.amp-bar');
+    const valDisplay = col.querySelector('.amp-bar-value');
+    const h = (amp / maxAmp) * maxBarH;
+
+    bar.style.height = Math.max(h, amp > 0 ? 4 : 0) + 'px';
+
+    // Assign class
+    bar.className = 'amp-bar';
+    if (currentStep === 3) {
+      if (amp > 0) bar.classList.add('constructive');
+      else bar.classList.add('destructive');
+      // Show destructive bars briefly at small height before going to 0
+    } else if (currentStep >= 4 && amp > 0) {
+      bar.classList.add('measured');
+    } else if (amp > 0) {
+      bar.classList.add('neutral');
+    } else {
+      bar.classList.add('zero-amp');
+    }
+
+    valDisplay.textContent = amp > 0 ? amp.toFixed(2) : '';
+  });
+
+  // For step 3, animate destructive bars: first show them, then collapse
+  if (currentStep === 3) {
+    cols.forEach((col, i) => {
+      const state = all[i];
+      const isDestructive = dot(state.split(''), secret.split('')) !== 0;
+      const bar = col.querySelector('.amp-bar');
+      if (isDestructive) {
+        // Start at previous height, then animate to 0
+        bar.style.height = ((1/Math.sqrt(dim)) / maxAmp) * maxBarH + 'px';
+        bar.classList.remove('zero-amp');
+        bar.classList.add('destructive');
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            bar.style.height = '0px';
+          });
+        });
+      }
+    });
+  }
+}
+
+// ——————————————————— Qubit Visualization (stable DOM) ———————————————————
+let qubitVizBuilt = false;
+
+function buildQubitViz() {
+  const viz = document.getElementById('qubitViz');
+  const totalQubits = N * 2;
+  viz.innerHTML = '';
+
+  for (let i = 0; i < totalQubits; i++) {
+    const col = document.createElement('div');
+    col.className = 'qubit-col';
+
+    const orb = document.createElement('div');
+    orb.className = 'qubit-orb state-zero';
+    orb.textContent = '|0⟩';
+    orb.dataset.index = i;
+    col.appendChild(orb);
+
+    const label = document.createElement('div');
+    label.className = 'qubit-label';
+    label.textContent = `q${i}`;
+    col.appendChild(label);
+
+    viz.appendChild(col);
+  }
+
+  // Add entanglement SVG
+  let svg = viz.querySelector('.entanglement-svg');
+  if (!svg) {
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('entanglement-svg');
+    viz.appendChild(svg);
+  }
+
+  qubitVizBuilt = true;
+}
+
+function updateQubitViz() {
+  if (!qubitVizBuilt) buildQubitViz();
+
+  const totalQubits = N * 2;
+  const orbs = document.querySelectorAll('.qubit-orb');
+
+  orbs.forEach((orb, i) => {
+    let stateClass = 'state-zero';
+    let label = '|0⟩';
+
+    if (currentStep === 0) {
+      stateClass = 'state-zero'; label = '|0⟩';
+    } else if (currentStep === 1) {
+      if (i < N) { stateClass = 'state-super'; label = '|+⟩'; }
+      else { stateClass = 'state-zero'; label = '|0⟩'; }
+    } else if (currentStep === 2) {
+      stateClass = 'state-entangled';
+      label = i < N ? '|ψ⟩' : '|f⟩';
+    } else if (currentStep === 3) {
+      if (i < N) { stateClass = 'state-super'; label = '|φ⟩'; }
+      else { stateClass = 'state-entangled'; label = '|f⟩'; }
+    } else if (currentStep >= 4) {
+      if (i < N) { stateClass = 'state-measured'; label = '|y⟩'; }
+      else { stateClass = 'state-entangled'; label = '|f⟩'; }
+    }
+
+    // Remove old state classes, add new one (CSS transition handles the rest)
+    orb.classList.remove('state-zero', 'state-super', 'state-entangled', 'state-measured');
+    orb.classList.add(stateClass);
+    orb.textContent = label;
+  });
+
+  updateEntanglementArcs();
+}
+
+function updateEntanglementArcs() {
+  const viz = document.getElementById('qubitViz');
+  let svg = viz.querySelector('.entanglement-svg');
+  if (!svg) return;
+
+  // Clear old arcs
+  svg.innerHTML = '';
+
+  if (currentStep < 2) return;
+
+  // Get orb positions
+  const vizRect = viz.getBoundingClientRect();
+  const orbs = viz.querySelectorAll('.qubit-orb');
+
+  for (let i = 0; i < N; i++) {
+    const orbA = orbs[i];
+    const orbB = orbs[i + N];
+    if (!orbA || !orbB) continue;
+
+    const rectA = orbA.getBoundingClientRect();
+    const rectB = orbB.getBoundingClientRect();
+
+    const x1 = rectA.left - vizRect.left + rectA.width / 2;
+    const y1 = rectA.top - vizRect.top + rectA.height;
+    const x2 = rectB.left - vizRect.left + rectB.width / 2;
+    const y2 = rectB.top - vizRect.top;
+
+    const midX = (x1 + x2) / 2;
+    const midY = Math.max(y1, y2) + 20;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${x1} ${y1} Q ${midX} ${midY} ${x2} ${y2}`);
+    path.classList.add('entanglement-arc', 'visible');
+    path.style.animationDelay = `${i * 0.2}s`;
+    svg.appendChild(path);
+  }
+}
+
+// ——————————————————— State Vector (with fade) ———————————————————
+function updateStateVector() {
+  const sv = document.getElementById('stateVector');
+  const all = allBinaryStrings(N);
+  const dim = 1 << N;
+
+  sv.classList.add('fading');
+
+  setTimeout(() => {
+    if (currentStep === 0) {
+      sv.innerHTML = `<span class="ket">|${'0'.repeat(N)}⟩</span><span class="ket">|${'0'.repeat(N)}⟩</span>`;
+    } else if (currentStep === 1) {
+      const amp = `1/√${dim}`;
+      sv.innerHTML = `<span class="amplitude">${amp}</span> <span class="math-text">Σ<sub>x</sub></span> <span class="ket">|x⟩</span><span class="ket">|${'0'.repeat(N)}⟩</span>
+      <br><span class="math-text">= </span><span class="amplitude">${amp}</span><span class="math-text"> ( </span>${all.map(x => `<span class="ket">|${x}⟩</span>`).join(' + ')}<span class="math-text"> )</span> <span class="ket">|${'0'.repeat(N)}⟩</span>`;
+    } else if (currentStep === 2) {
+      const amp = `1/√${dim}`;
+      sv.innerHTML = `<span class="amplitude">${amp}</span> <span class="math-text">Σ<sub>x</sub></span> <span class="ket">|x⟩</span><span class="ket">|f(x)⟩</span>
+      <br><span class="math-text">= </span><span class="amplitude">${amp}</span><span class="math-text"> ( </span>${all.map(x => `<span class="ket">|${x}⟩</span><span class="ket">|${fnMap[x]}⟩</span>`).join(' + ')}<span class="math-text"> )</span>`;
+    } else if (currentStep === 3) {
+      sv.innerHTML = `<span class="amplitude">1/${dim}</span> <span class="math-text">Σ<sub>x</sub> Σ<sub>y</sub></span> <span class="amplitude">(-1)<sup>x·y</sup></span> <span class="ket">|y⟩</span><span class="ket">|f(x)⟩</span>
+      <br><br><span class="math-text">After simplification, only </span><span class="ket">|y⟩</span><span class="math-text"> with </span><span class="operator">y · s = 0</span><span class="math-text"> survive (constructive interference)</span>`;
+    } else if (currentStep >= 4) {
+      const validYs = all.filter(y => dot(y.split(''), secret.split('')) === 0);
+      sv.innerHTML = `<span class="math-text">Measure 1st register → </span><span class="ket">|y⟩</span><span class="math-text"> where </span><span class="operator">y · s = 0</span>
+      <br><span class="math-text">Possible outcomes: </span>${validYs.map(y => `<span class="ket">|${y}⟩</span>`).join(', ')}`;
+    }
+    sv.classList.remove('fading');
+  }, 150);
+}
+
+// ——————————————————— Function Table ———————————————————
+function updateFnTable() {
+  const container = document.getElementById('fnTableContainer');
+  const all = allBinaryStrings(N);
+
+  // Track pair numbers for badges
+  let pairNum = 0;
+  const pairMap = {};
+  for (const x of all) {
+    const xs = xor(x, secret);
+    if (x < xs && secret !== '0'.repeat(N)) {
+      pairNum++;
+      pairMap[x] = pairNum;
+      pairMap[xs] = pairNum;
+    }
+  }
+
+  let html = '<table class="fn-table"><thead><tr><th>x</th><th>f(x)</th><th>x ⊕ s</th></tr></thead><tbody>';
+  for (const x of all) {
+    const xs = xor(x, secret);
+    const isMatch = x < xs && secret !== '0'.repeat(N);
+    const isPartner = xs < x && secret !== '0'.repeat(N);
+    const showHighlight = isMatch || isPartner;
+    const badge = pairMap[x] ? `<span class="pair-badge">pair ${pairMap[x]}</span>` : '';
+    html += `<tr class="${showHighlight ? 'match-highlight' : ''}">
+      <td>${x}${badge}</td>
+      <td>${fnMap[x]}</td>
+      <td>${xs}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  html += `<p class="desc" style="margin-top: 0.75rem; margin-bottom: 0;">
+    <span style="color: var(--pink);">Highlighted rows</span> show collision pairs where <strong>f(x) = f(x ⊕ s)</strong>
+  </p>`;
+  container.innerHTML = html;
+}
+
+// ——————————————————— Measurement Simulation ———————————————————
+function simulateMeasurements() {
+  const all = allBinaryStrings(N);
+  const validYs = all.filter(y => dot(y.split(''), secret.split('')) === 0);
+  measurements = [];
+  const needed = N - 1;
+  let attempts = 0;
+
+  while (measurements.length < needed && attempts < 50) {
+    const y = validYs[Math.floor(Math.random() * validYs.length)];
+    if (y === '0'.repeat(N)) { attempts++; continue; }
+    if (!measurements.includes(y)) measurements.push(y);
+    attempts++;
+  }
+
+  for (const y of validYs) {
+    if (measurements.length >= needed) break;
+    if (y !== '0'.repeat(N) && !measurements.includes(y)) measurements.push(y);
+  }
+}
+
+function showMeasurements() {
+  const container = document.getElementById('measureContainer');
+  container.classList.remove('hidden');
+  document.getElementById('fnTableContainer').classList.add('hidden');
+  document.getElementById('solveContainer').classList.add('hidden');
+  document.getElementById('rightPanelTitle').textContent = 'Measurement Results';
+
+  let html = '<p class="desc">Each run measures a random <strong>y</strong> satisfying y · s = 0:</p><div class="measurements">';
+  for (let i = 0; i < measurements.length; i++) {
+    const y = measurements[i];
+    const bits = y.split('').map(b => `<span class="bit ${b === '1' ? 'one' : 'zero'}">${b}</span>`).join('');
+    const dotProd = y.split('').map((b, j) =>
+      `<span class="eq-var">${b}</span><span class="eq-op">·</span><span class="eq-var">s<sub>${j}</sub></span>`
+    ).join('<span class="eq-op"> ⊕ </span>');
+
+    html += `<div class="measurement-row" style="animation-delay: ${i * 0.15}s">
+      <span class="measurement-label">y${i+1} =</span>
+      <div class="measurement-bits">${bits}</div>
+      <span class="dot-product" style="margin-left: auto;">${dotProd} = <span class="dot-result">0</span></span>
+    </div>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function showSolve() {
+  const container = document.getElementById('solveContainer');
+  container.classList.remove('hidden');
+  document.getElementById('measureContainer').classList.add('hidden');
+  document.getElementById('fnTableContainer').classList.add('hidden');
+  document.getElementById('rightPanelTitle').textContent = 'Classical Post-Processing';
+
+  let html = '<p class="desc">Solve the system of linear equations over GF(2) to find <strong>s</strong>:</p>';
+  html += '<div class="equation-system">';
+  for (let i = 0; i < measurements.length; i++) {
+    const y = measurements[i];
+    const terms = y.split('').map((b, j) => {
+      if (b === '1') return `<span class="eq-var">s<sub>${j}</sub></span>`;
+      return null;
+    }).filter(Boolean).join(' <span class="eq-op">⊕</span> ');
+
+    html += `<div class="equation" style="animation-delay: ${i * 0.1}s">
+      ${terms} <span class="eq-op">=</span> <span class="eq-result">0</span>
+      <span class="math-text" style="margin-left: 1rem;">(from y<sub>${i+1}</sub> = ${measurements[i]})</span>
+    </div>`;
+  }
+  html += '</div>';
+
+  html += `<div class="solution-box">
+    <div class="solution-label">Secret String Found</div>
+    <div class="solution-value">s = ${secret}</div>
+  </div>`;
+
+  html += `<p class="desc" style="margin-top: 0.75rem; margin-bottom: 0;">
+    After <strong>${measurements.length}</strong> quantum queries and Gaussian elimination, we recover <strong>s = ${secret}</strong>.
+    A classical algorithm would need <strong>O(2<sup>${Math.floor(N/2)}</sup>) = O(${Math.pow(2, Math.floor(N/2))})</strong> queries.
+  </p>`;
+
+  container.innerHTML = html;
+}
+
+// ——————————————————— Step Descriptions ———————————————————
+const stepDescs = [
+  () => `<strong>Initialization:</strong> Prepare ${N*2} qubits — two registers of ${N} qubits each, all initialized to |0⟩. The first register will hold superposition inputs; the second will store f(x).`,
+  () => `<strong>Hadamard Transform (1st register):</strong> Apply H⊗ⁿ to the first register, creating an equal superposition of all 2<sup>${N}</sup> = ${1 << N} possible inputs simultaneously. This is the key to quantum parallelism.`,
+  () => `<strong>Oracle Query:</strong> Apply the unitary U<sub>f</sub> that maps |x⟩|0⟩ → |x⟩|f(x)⟩. The oracle evaluates f on all inputs in superposition simultaneously — all ${1 << N} evaluations happen in a single query.`,
+  () => `<strong>Hadamard Transform (1st register):</strong> Apply H⊗ⁿ to the first register again. Due to interference, states |y⟩ with y · s ≠ 0 cancel out, and only states satisfying <span class="tag">y · s = 0</span> have non-zero amplitude.`,
+  () => `<strong>Measurement:</strong> Measure the first register to obtain a random y satisfying y · s = 0. Repeat this process O(n) = O(${N}) times to collect enough linear constraints.`,
+  () => `<strong>Classical Post-Processing:</strong> Use Gaussian elimination to solve the system of linear equations y<sub>i</sub> · s = 0 over GF(2). With ${N - 1} linearly independent equations, we uniquely determine s.`
+];
+
+// ——————————————————— Step Navigation ———————————————————
+function goToStep(step) {
+  currentStep = Math.max(0, Math.min(5, step));
+
+  document.querySelectorAll('.step-btn').forEach((btn, i) => {
+    btn.classList.remove('active', 'completed');
+    if (i < currentStep) btn.classList.add('completed');
+    if (i === currentStep) btn.classList.add('active');
+  });
+
+  prevBtn.disabled = currentStep === 0;
+  nextBtn.disabled = currentStep === 5;
+
+  if (currentStep < 4) selectedMeasurement = null;
+
+  drawCircuit();
+  updateQubitViz();
+  updateStateVector();
+  updateAmplitudeChart();
+  updateProgressDots();
+
+  document.getElementById('stepDescription').innerHTML = stepDescs[currentStep]();
+
+  if (currentStep < 4) {
+    document.getElementById('fnTableContainer').classList.remove('hidden');
+    document.getElementById('measureContainer').classList.add('hidden');
+    document.getElementById('solveContainer').classList.add('hidden');
+    document.getElementById('rightPanelTitle').textContent = 'Oracle Function Table';
+    updateFnTable();
+  } else if (currentStep === 4) {
+    showMeasurements();
+  } else if (currentStep === 5) {
+    showSolve();
+  }
+}
+
+prevBtn.addEventListener('click', () => goToStep(currentStep - 1));
+nextBtn.addEventListener('click', () => goToStep(currentStep + 1));
+
+document.querySelectorAll('.step-btn').forEach(btn => {
+  btn.addEventListener('click', () => goToStep(parseInt(btn.dataset.step)));
+});
+
+// ——————————————————— Keyboard Navigation ———————————————————
+document.addEventListener('keydown', (e) => {
+  // Don't capture if user is in a select/input
+  if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+
+  switch (e.key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+      e.preventDefault();
+      if (currentStep < 5) goToStep(currentStep + 1);
+      break;
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      e.preventDefault();
+      if (currentStep > 0) goToStep(currentStep - 1);
+      break;
+    case ' ':
+      e.preventDefault();
+      if (!running) runBtn.click();
+      break;
+    case 'r':
+    case 'R':
+      e.preventDefault();
+      if (!running) resetAlgorithm();
+      break;
+  }
+});
+
+// ——————————————————— Auto Run ———————————————————
+runBtn.addEventListener('click', async () => {
+  if (running) return;
+  running = true;
+  runBtn.textContent = 'Running...';
+  runBtn.disabled = true;
+
+  resetAlgorithm();
+  await sleep(300);
+
+  for (let i = 0; i <= 5; i++) {
+    goToStep(i);
+    await sleep(playSpeed);
+  }
+
+  running = false;
+  runBtn.textContent = 'Run Algorithm';
+  runBtn.disabled = false;
+});
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ——————————————————— Reset ———————————————————
+function resetAlgorithm() {
+  N = parseInt(nSelect.value);
+  secret = sSelect.value;
+  fnMap = generateFunction(N, secret);
+  simulateMeasurements();
+  updateSecretDisplay();
+  buildProgressDots();
+  selectedMeasurement = null;
+
+  // Rebuild dynamic elements for new N
+  qubitVizBuilt = false;
+  ampChartBuilt = false;
+  buildQubitViz();
+  buildAmplitudeChart();
+
+  goToStep(0);
+}
+
+resetBtn.addEventListener('click', resetAlgorithm);
+
+// Recalculate entanglement arcs on resize
+window.addEventListener('resize', () => {
+  if (currentStep >= 2) {
+    requestAnimationFrame(updateEntanglementArcs);
+  }
+});
+
+// ——————————————————— Init ———————————————————
+populateSecrets();
+resetAlgorithm();
+</script>
+</body>
+</html>
