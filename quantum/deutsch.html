@@ -1,0 +1,2417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Deutsch Algorithm — Phase Kickback & Quantum Speedup</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  #particleBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+  }
+
+  header::after {
+    content: '';
+    display: block;
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), transparent);
+    margin: 1.5rem auto 0;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--cyan), var(--pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    font-weight: 300;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .card:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+
+  .card-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .card-title .icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  /* Description text */
+  .desc {
+    color: var(--text-dim);
+    font-size: 0.92rem;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+
+  .desc strong { color: var(--text); font-weight: 500; }
+
+  /* Function cards grid */
+  .fn-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+
+  .fn-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: center;
+  }
+
+  .fn-card:hover { border-color: rgba(99, 102, 241, 0.5); }
+
+  .fn-card.selected {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(34, 211, 238, 0.05));
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  .fn-card.constant .fn-type { color: var(--green); }
+  .fn-card.balanced .fn-type { color: var(--pink); }
+
+  .fn-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+
+  .fn-type {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+  }
+
+  .fn-truth {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  /* State display */
+  .state-display {
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    line-height: 2;
+    overflow-x: auto;
+    border: 1px solid rgba(42, 53, 80, 0.5);
+    margin: 0.75rem 0;
+    text-align: center;
+    min-height: 3rem;
+  }
+
+  .ket { color: var(--cyan); }
+  .amplitude { color: var(--pink); }
+  .operator { color: var(--orange); }
+  .math-text { color: var(--text-dim); }
+  .phase-pos { color: var(--green); font-weight: 600; }
+  .phase-neg { color: var(--red); font-weight: 600; }
+
+  /* Buttons */
+  button {
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.55rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+  }
+
+  button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+
+  button:active { transform: translateY(0); }
+
+  button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  button.secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+  }
+
+  button.secondary:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.1);
+  }
+
+  button.step-nav {
+    min-width: 110px;
+    height: 38px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Controls */
+  select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  select:focus { border-color: var(--accent); }
+
+  /* Steps timeline */
+  .steps-timeline {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .step-btn {
+    flex: 1;
+    min-width: 90px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.6rem 0.4rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    text-align: center;
+  }
+
+  .step-btn:first-child { border-radius: 8px 0 0 8px; }
+  .step-btn:last-child { border-radius: 0 8px 8px 0; }
+
+  .step-btn.active {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(34, 211, 238, 0.1));
+    border-color: var(--accent);
+    color: var(--text);
+    z-index: 1;
+  }
+
+  .step-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
+  }
+
+  .step-btn.completed {
+    background: rgba(52, 211, 153, 0.08);
+    color: var(--green);
+    border-color: rgba(52, 211, 153, 0.3);
+  }
+
+  .step-num {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    margin-bottom: 2px;
+    opacity: 0.6;
+  }
+
+  /* Circuit container */
+  .circuit-container {
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(42, 53, 80, 0.5);
+  }
+
+  .circuit-container svg { display: block; margin: 0 auto; }
+
+  /* Step info box */
+  .step-info {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin: 0.75rem 0;
+    border: 1px solid rgba(42, 53, 80, 0.5);
+  }
+
+  .step-info strong { color: var(--accent); }
+
+  /* Probability bars */
+  .prob-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 2rem;
+    justify-content: center;
+    height: 170px;
+    padding: 1rem 0;
+    overflow: visible;
+  }
+
+  .prob-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 0 0 100px;
+  }
+
+  .prob-bar-wrap {
+    width: 60px;
+    height: 100px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .prob-bar {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 2px;
+  }
+
+  .prob-bar.high {
+    background: linear-gradient(180deg, var(--cyan), var(--accent));
+    box-shadow: 0 0 12px var(--cyan-glow);
+  }
+
+  .prob-bar.low {
+    background: rgba(100, 116, 139, 0.2);
+  }
+
+  .prob-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--cyan);
+  }
+
+  .prob-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  /* Verdict badge */
+  .verdict {
+    text-align: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-top: 0.75rem;
+    animation: solutionReveal 0.5s ease-out;
+  }
+
+  .verdict.constant {
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.12), rgba(99, 102, 241, 0.08));
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    color: var(--green);
+  }
+
+  .verdict.balanced {
+    background: linear-gradient(135deg, rgba(244, 114, 182, 0.12), rgba(99, 102, 241, 0.08));
+    border: 1px solid rgba(244, 114, 182, 0.3);
+    color: var(--pink);
+  }
+
+  @keyframes solutionReveal {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* Callout box */
+  .callout {
+    background: rgba(99, 102, 241, 0.06);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .callout strong { color: var(--text); }
+  .callout.green { border-color: var(--green); background: rgba(52, 211, 153, 0.06); }
+  .callout.pink { border-color: var(--pink); background: rgba(244, 114, 182, 0.06); }
+
+  /* Nav row */
+  .nav-row {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  /* Grid layout */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  /* Derivation steps */
+  .deriv-step {
+    padding: 0;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transform: translateY(8px);
+    transition: all 0.5s ease-out;
+  }
+
+  .deriv-step.visible {
+    opacity: 1;
+    max-height: 200px;
+    padding: 0.6rem 0;
+    transform: translateY(0);
+  }
+
+  .deriv-step .step-label {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.3rem;
+  }
+
+  .deriv-step .math-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 0.4rem;
+  }
+
+  /* Kickback demo */
+  .kickback-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: end;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+  }
+
+  .kickback-controls .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .kickback-controls label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* Oracle explorer comparison table */
+  .compare-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    margin-top: 1rem;
+  }
+
+  .compare-table th, .compare-table td {
+    padding: 0.5rem 0.5rem;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .compare-table th {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .compare-table td {
+    background: var(--surface2);
+    transition: background 0.3s;
+    white-space: nowrap;
+  }
+
+  .compare-table tr:hover td {
+    background: rgba(99, 102, 241, 0.05);
+  }
+
+  .compare-table .type-constant { color: var(--green); font-weight: 600; }
+  .compare-table .type-balanced { color: var(--pink); font-weight: 600; }
+
+  /* Quiz */
+  .quiz-question {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
+    transition: border-color 0.3s;
+  }
+
+  .quiz-question.correct { border-color: var(--green); }
+  .quiz-question.wrong { border-color: var(--red); }
+
+  .quiz-q-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+  }
+
+  .quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .quiz-opt {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.85rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    text-align: left;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+  }
+
+  .quiz-opt:hover:not(.locked) {
+    border-color: var(--accent);
+    background: rgba(99, 102, 241, 0.08);
+  }
+
+  .quiz-opt.chosen-correct {
+    border-color: var(--green);
+    background: rgba(52, 211, 153, 0.12);
+    color: var(--green);
+  }
+
+  .quiz-opt.chosen-wrong {
+    border-color: var(--red);
+    background: rgba(248, 113, 113, 0.12);
+    color: var(--red);
+  }
+
+  .quiz-opt.reveal-correct {
+    border-color: var(--green);
+    background: rgba(52, 211, 153, 0.08);
+  }
+
+  .quiz-explain {
+    margin-top: 0.6rem;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+    padding: 0.6rem 0.75rem;
+    background: rgba(99, 102, 241, 0.05);
+    border-radius: 8px;
+  }
+
+  .quiz-score {
+    text-align: center;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .quiz-score.great {
+    background: rgba(52, 211, 153, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    color: var(--green);
+  }
+
+  .quiz-score.ok {
+    background: rgba(251, 146, 60, 0.1);
+    border: 1px solid rgba(251, 146, 60, 0.3);
+    color: var(--orange);
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+  }
+
+  /* Challenge mode */
+  .challenge-box {
+    background: linear-gradient(135deg, rgba(244, 114, 182, 0.08), rgba(99, 102, 241, 0.08));
+    border: 1px solid rgba(244, 114, 182, 0.2);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-top: 1rem;
+    text-align: center;
+  }
+
+  .challenge-box h4 {
+    color: var(--pink);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Animations */
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .hidden { display: none !important; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .fn-grid { grid-template-columns: 1fr 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    h1 { font-size: 1.8rem; }
+    .container { padding: 1rem; }
+    .card { padding: 1.25rem; }
+  }
+
+  @media (max-width: 480px) {
+    .fn-grid { grid-template-columns: 1fr; }
+  }
+
+  /* KaTeX overrides for dark theme */
+  .katex { color: var(--text); }
+  .katex .mord.text { color: var(--text); }
+
+  /* ──── Qubit Orb Visualizations ──── */
+  .qubit-viz {
+    display: flex;
+    gap: 2.5rem;
+    justify-content: center;
+    margin: 1rem 0 0.5rem;
+  }
+
+  .qubit-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .qubit-orb {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .qubit-orb.state-zero {
+    background: radial-gradient(circle at 35% 35%, #374151, #1f2937);
+    border: 2px solid #4b5563;
+    color: #9ca3af;
+    box-shadow: 0 0 12px rgba(75, 85, 99, 0.3);
+  }
+
+  .qubit-orb.state-one {
+    background: radial-gradient(circle at 35% 35%, #164e63, #0c4a6e);
+    border: 2px solid var(--cyan);
+    color: #a5f3fc;
+    box-shadow: 0 0 16px var(--cyan-glow);
+  }
+
+  .qubit-orb.state-super {
+    background: radial-gradient(circle at 35% 35%, #4338ca, #312e81);
+    border: 2px solid var(--accent);
+    color: #c7d2fe;
+    box-shadow: 0 0 20px var(--accent-glow);
+    animation: orbPulse 2s ease-in-out infinite;
+  }
+
+  .qubit-orb.state-kicked {
+    background: radial-gradient(circle at 35% 35%, #0e7490, #164e63);
+    border: 2px solid var(--cyan);
+    color: #a5f3fc;
+    box-shadow: 0 0 20px var(--cyan-glow);
+    animation: orbPulse 1.5s ease-in-out infinite;
+  }
+
+  .qubit-orb.state-measured {
+    background: radial-gradient(circle at 35% 35%, #065f46, #064e3b);
+    border: 2px solid var(--green);
+    color: #a7f3d0;
+    box-shadow: 0 0 16px var(--green-glow);
+  }
+
+  @keyframes orbPulse {
+    0%, 100% { box-shadow: 0 0 16px var(--accent-glow); }
+    50% { box-shadow: 0 0 28px var(--accent-glow); }
+  }
+
+  .qubit-label {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 6px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ──── Amplitude Bar Chart ──── */
+  .amp-chart-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 170px;
+    padding: 0.75rem 0.5rem;
+    margin: 0.75rem 0;
+    background: var(--surface2);
+    border-radius: 12px;
+    border: 1px solid rgba(42, 53, 80, 0.5);
+    position: relative;
+    overflow: visible;
+  }
+
+  .amp-chart-container::before {
+    content: '';
+    position: absolute;
+    bottom: 32px;
+    left: 0.5rem; right: 0.5rem;
+    height: 1px;
+    background: rgba(100, 116, 139, 0.15);
+  }
+
+  .amp-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .amp-bar-wrapper {
+    width: 100%;
+    height: 100px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .amp-bar {
+    width: 65%;
+    max-width: 50px;
+    min-height: 0;
+    border-radius: 3px 3px 0 0;
+    transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1), background 0.5s ease;
+    position: relative;
+  }
+
+  .amp-bar.nonzero {
+    background: linear-gradient(180deg, var(--cyan), var(--accent));
+    box-shadow: 0 0 10px var(--cyan-glow);
+  }
+
+  .amp-bar.zero-amp {
+    background: rgba(100, 116, 139, 0.15);
+    box-shadow: none;
+  }
+
+  .amp-bar.measured {
+    background: linear-gradient(180deg, var(--green), #059669);
+    box-shadow: 0 0 12px var(--green-glow);
+  }
+
+  .amp-bar-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .amp-bar-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+    text-align: center;
+    height: 14px;
+    transition: opacity 0.3s;
+  }
+
+  /* ──── Speedup Comparison ──── */
+  .speedup-compare {
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface2);
+    border-radius: 10px;
+    border: 1px solid rgba(42, 53, 80, 0.5);
+  }
+
+  .speedup-compare h4 {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.75rem;
+  }
+
+  .speedup-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .speedup-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    min-width: 120px;
+    color: var(--text-dim);
+  }
+
+  .speedup-track {
+    flex: 1;
+    height: 10px;
+    background: rgba(42, 53, 80, 0.5);
+    border-radius: 5px;
+    overflow: visible;
+  }
+
+  .speedup-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 1.5s ease-out;
+  }
+
+  .speedup-fill.classical {
+    background: linear-gradient(90deg, var(--orange), #f59e0b);
+    box-shadow: 0 0 8px rgba(251, 146, 60, 0.3);
+  }
+
+  .speedup-fill.quantum {
+    background: linear-gradient(90deg, var(--cyan), var(--accent));
+    box-shadow: 0 0 8px var(--cyan-glow);
+  }
+
+  .speedup-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    min-width: 20px;
+  }
+
+  .speedup-note {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 0.5rem;
+    font-style: italic;
+  }
+
+  /* ──── Keyboard Hints ──── */
+  .kbd-hint {
+    text-align: center;
+    margin-top: 0.5rem;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    opacity: 0.6;
+  }
+
+  .kbd-hint kbd {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.1rem 0.35rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    margin: 0 0.1rem;
+  }
+
+  /* ──── Fade Transitions ──── */
+  .fade-content {
+    transition: opacity 0.2s ease;
+  }
+
+  .fade-content.fading {
+    opacity: 0;
+  }
+
+  /* ──── Derivation Nav ──── */
+  .deriv-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    justify-content: center;
+  }
+
+  .deriv-nav .step-count {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .deriv-nav button {
+    padding: 0.4rem 1rem;
+    font-size: 0.82rem;
+  }
+
+  .show-all-link {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    cursor: pointer;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    padding: 0;
+  }
+
+  .show-all-link:hover {
+    color: var(--accent);
+    transform: none;
+    box-shadow: none;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="particleBg"></canvas>
+
+<div class="container">
+  <header>
+    <h1>The Deutsch Algorithm</h1>
+    <p class="subtitle">Understanding quantum speedup through phase kickback — one qubit at a time</p>
+  </header>
+
+  <!-- ========== SECTION 1: THE PROBLEM ========== -->
+  <div class="card" id="problemCard">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(99,102,241,0.15); color: var(--accent);">?</span>
+      The Problem
+    </div>
+    <p class="desc">
+      Consider a function <strong>f : {0, 1} → {0, 1}</strong> — it takes a single bit as input and outputs a single bit.
+      There are exactly <strong>4 possible</strong> such functions. Two are <strong>constant</strong> (same output for all inputs)
+      and two are <strong>balanced</strong> (different outputs). <em>Click any function below to inspect it.</em>
+    </p>
+
+    <div class="fn-grid" id="fnGrid"></div>
+
+    <div id="fnDetail" class="state-display" style="display:none;"></div>
+
+    <div class="callout">
+      <strong>The question:</strong> given a black-box oracle for <em>f</em>, determine whether <em>f</em> is constant or balanced.<br>
+      <strong>Classically</strong> you need <strong>2 queries</strong> — evaluate f(0) and f(1) then compare.<br>
+      <strong>Quantum</strong> Deutsch's algorithm does it in <strong>just 1 query</strong>.
+    </div>
+
+    <div class="speedup-compare" id="speedupViz">
+      <h4>Query Complexity</h4>
+      <div class="speedup-row">
+        <span class="speedup-label" style="color: var(--orange);">Classical</span>
+        <div class="speedup-track">
+          <div class="speedup-fill classical" id="classicalBar" style="width: 0%"></div>
+        </div>
+        <span class="speedup-count" style="color: var(--orange);">2</span>
+      </div>
+      <div class="speedup-row">
+        <span class="speedup-label" style="color: var(--cyan);">Quantum</span>
+        <div class="speedup-track">
+          <div class="speedup-fill quantum" id="quantumBar" style="width: 0%"></div>
+        </div>
+        <span class="speedup-count" style="color: var(--cyan);">1</span>
+      </div>
+      <div class="speedup-note">2× speedup — extends to exponential for the n-bit Deutsch-Jozsa generalization</div>
+    </div>
+  </div>
+
+  <!-- ========== SECTION 2: PHASE KICKBACK ========== -->
+  <div class="card" id="kickbackCard">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(34,211,238,0.15); color: var(--cyan);">⟨</span>
+      Phase Kickback — The Key Idea
+    </div>
+
+    <p class="desc">
+      Before diving into the full algorithm, let's understand the crucial mechanism that makes it work:
+      <strong>phase kickback</strong>. This is the trick at the heart of most quantum algorithms.
+    </p>
+
+    <!-- 2a: Setup -->
+    <h3 style="color: var(--cyan); font-size: 0.95rem; margin: 1.2rem 0 0.5rem;">Step 1 — Prepare the ancilla in |−⟩</h3>
+    <p class="desc">
+      We prepare a special "ancilla" qubit in the state |−⟩ = (|0⟩ − |1⟩)/√2. Start with |0⟩,
+      apply X to flip it to |1⟩, then apply H:
+    </p>
+    <div class="state-display" id="ancillaSetup"></div>
+
+    <!-- 2b: What U_f does -->
+    <h3 style="color: var(--cyan); font-size: 0.95rem; margin: 1.2rem 0 0.5rem;">Step 2 — What happens when U<sub>f</sub> acts on |x⟩|−⟩?</h3>
+    <p class="desc">
+      The oracle U<sub>f</sub> maps |x⟩|y⟩ → |x⟩|y ⊕ f(x)⟩. Let's see what happens when the ancilla is in |−⟩:
+    </p>
+
+    <div id="derivation">
+      <div class="deriv-step visible" data-deriv="0">
+        <div class="step-label">Start with</div>
+        <div class="math-line" id="deriv0"></div>
+      </div>
+      <div class="deriv-step" data-deriv="1">
+        <div class="step-label">Expand |−⟩</div>
+        <div class="math-line" id="deriv1"></div>
+      </div>
+      <div class="deriv-step" data-deriv="2">
+        <div class="step-label">Apply U<sub>f</sub></div>
+        <div class="math-line" id="deriv2"></div>
+      </div>
+      <div class="deriv-step" data-deriv="3">
+        <div class="step-label">Case f(x) = 0</div>
+        <div class="math-line" id="deriv3"></div>
+      </div>
+      <div class="deriv-step" data-deriv="4">
+        <div class="step-label">Case f(x) = 1</div>
+        <div class="math-line" id="deriv4"></div>
+      </div>
+      <div class="deriv-step" data-deriv="5">
+        <div class="step-label" style="color: var(--green);">✦ Key Result</div>
+        <div class="math-line" id="deriv5"></div>
+      </div>
+    </div>
+    <div class="deriv-nav" id="derivNav">
+      <button onclick="nextDerivStep()" id="derivNextBtn">Next Step →</button>
+      <span class="step-count" id="derivCount">1 / 6</span>
+      <button class="show-all-link" onclick="showAllDeriv()">Show all</button>
+    </div>
+
+    <div class="callout green">
+      <strong>The ancilla is unchanged!</strong> The phase (−1)<sup>f(x)</sup> has "kicked back" onto the input register.
+      The ancilla is just a catalyst — it enables the phase but stays in |−⟩ throughout.
+    </div>
+
+    <!-- 2c: Interactive demo -->
+    <h3 style="color: var(--cyan); font-size: 0.95rem; margin: 1.2rem 0 0.5rem;">Step 3 — Interactive Phase Kickback Demo</h3>
+    <p class="desc">Pick a function and an input state to see the phase kickback in action:</p>
+
+    <div class="kickback-controls">
+      <div class="control-group">
+        <label>Function</label>
+        <select id="kbFnSelect">
+          <option value="0">f₀: f(x) = 0 (constant)</option>
+          <option value="1">f₁: f(x) = 1 (constant)</option>
+          <option value="2">f₂: f(x) = x (balanced)</option>
+          <option value="3">f₃: f(x) = 1−x (balanced)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Input |x⟩</label>
+        <select id="kbInputSelect">
+          <option value="0">|0⟩</option>
+          <option value="1">|1⟩</option>
+        </select>
+      </div>
+      <button onclick="runKickbackDemo()">Apply U<sub>f</sub></button>
+    </div>
+
+    <div id="kbResult" class="state-display"></div>
+
+    <!-- 2d: The punchline -->
+    <h3 style="color: var(--cyan); font-size: 0.95rem; margin: 1.2rem 0 0.5rem;">Step 4 — Superposition + Kickback = Interference</h3>
+    <p class="desc">
+      Now the magic: if the input is in <strong>superposition</strong> (|0⟩ + |1⟩)/√2 instead of a single basis state,
+      phase kickback creates <strong>different phases on each branch</strong>. Then a final Hadamard gate
+      creates <strong>interference</strong> that reveals the answer.
+    </p>
+
+    <div class="kickback-controls">
+      <div class="control-group">
+        <label>Function</label>
+        <select id="kbSuperFn">
+          <option value="0">f₀: f(x) = 0 (constant)</option>
+          <option value="1">f₁: f(x) = 1 (constant)</option>
+          <option value="2">f₂: f(x) = x (balanced)</option>
+          <option value="3">f₃: f(x) = 1−x (balanced)</option>
+        </select>
+      </div>
+      <button onclick="runSuperKickback()">Run</button>
+    </div>
+
+    <div id="kbSuperResult"></div>
+  </div>
+
+  <!-- ========== SECTION 3: THE FULL ALGORITHM ========== -->
+  <div class="card" id="algorithmCard">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(251,146,60,0.15); color: var(--orange);">▶</span>
+      The Full Algorithm — Step by Step
+    </div>
+
+    <p class="desc">
+      Now let's see the complete Deutsch algorithm. Select an oracle and step through each stage to see the quantum state evolve.
+    </p>
+
+    <div class="kickback-controls" style="margin-bottom:0.5rem;">
+      <div class="control-group">
+        <label>Oracle</label>
+        <select id="algoOracle" onchange="algoReset()">
+          <option value="0">f₀: f(x) = 0</option>
+          <option value="1">f₁: f(x) = 1</option>
+          <option value="2">f₂: f(x) = x</option>
+          <option value="3">f₃: f(x) = 1−x</option>
+        </select>
+      </div>
+      <button class="secondary" onclick="algoReset()">↻ Reset</button>
+    </div>
+    <div class="kickback-controls" style="margin-bottom:1rem; align-items:center;">
+      <button class="secondary step-nav" id="algoPrevBtn" onclick="algoGoTo(algoStep - 1)" disabled>◀ Prev</button>
+      <button class="secondary step-nav" id="algoNextBtn" onclick="algoGoTo(algoStep + 1)">Next ▶</button>
+      <span style="color:var(--text-dim); margin: 0 0.25rem;">or</span>
+      <button onclick="algoRun()" id="algoRunBtn">▶ Auto-Play</button>
+    </div>
+
+    <!-- Qubit orbs -->
+    <div class="qubit-viz" id="qubitViz">
+      <div class="qubit-col">
+        <div class="qubit-orb state-zero" id="orbInput">|0⟩</div>
+        <div class="qubit-label">Input</div>
+      </div>
+      <div class="qubit-col">
+        <div class="qubit-orb state-zero" id="orbAncilla">|0⟩</div>
+        <div class="qubit-label">Ancilla</div>
+      </div>
+    </div>
+
+    <!-- Steps timeline -->
+    <div class="steps-timeline" id="algoTimeline">
+      <button class="step-btn active" data-step="0" onclick="algoGoTo(0)">
+        <span class="step-num">0</span>Init
+      </button>
+      <button class="step-btn" data-step="1" onclick="algoGoTo(1)">
+        <span class="step-num">1</span>X gate
+      </button>
+      <button class="step-btn" data-step="2" onclick="algoGoTo(2)">
+        <span class="step-num">2</span>H ⊗ H
+      </button>
+      <button class="step-btn" data-step="3" onclick="algoGoTo(3)">
+        <span class="step-num">3</span>U<sub>f</sub>
+      </button>
+      <button class="step-btn" data-step="4" onclick="algoGoTo(4)">
+        <span class="step-num">4</span>H (input)
+      </button>
+      <button class="step-btn" data-step="5" onclick="algoGoTo(5)">
+        <span class="step-num">5</span>Measure
+      </button>
+    </div>
+    <div class="kbd-hint">
+      <kbd>←</kbd><kbd>→</kbd> navigate &nbsp;·&nbsp;
+      <kbd>Space</kbd> auto-play &nbsp;·&nbsp;
+      <kbd>R</kbd> reset
+    </div>
+
+    <!-- Circuit diagram -->
+    <div class="circuit-container" id="circuitContainer"></div>
+
+    <!-- Step info -->
+    <div class="step-info fade-content" id="algoStepInfo"></div>
+
+    <!-- State vector -->
+    <div class="state-display fade-content" id="algoState"></div>
+
+    <!-- Amplitude bar chart (visible at all steps) -->
+    <div class="amp-chart-container" id="algoAmpChart"></div>
+
+    <!-- Probability bars + verdict (step 5 only) -->
+    <div id="algoProbWrap" class="hidden">
+      <div class="prob-container" id="algoProbBars"></div>
+      <div id="algoVerdict"></div>
+    </div>
+  </div>
+
+  <!-- ========== SECTION 4: ORACLE EXPLORER ========== -->
+  <div class="card" id="explorerCard">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(244,114,182,0.15); color: var(--pink);">⊕</span>
+      Oracle Explorer
+    </div>
+
+    <p class="desc">
+      Compare all four oracles side by side. Click any function to auto-run the algorithm and see the result,
+      or try the "Surprise Me" challenge!
+    </p>
+
+    <div class="fn-grid" id="explorerGrid"></div>
+
+    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 1rem 0;">
+    <table class="compare-table" id="compareTable">
+      <thead>
+        <tr>
+          <th>Oracle</th>
+          <th>f(0)</th>
+          <th>f(1)</th>
+          <th>After U<sub>f</sub></th>
+          <th>After H (input)</th>
+          <th>Measure</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody id="compareBody"></tbody>
+    </table>
+    </div>
+
+    <div class="challenge-box" id="challengeBox">
+      <h4>🎲 Surprise Me Challenge</h4>
+      <p class="desc" style="margin-bottom: 0.75rem;">A hidden function is loaded. Run the algorithm and predict whether it's constant or balanced!</p>
+      <button onclick="startChallenge()">Surprise Me!</button>
+      <div id="challengeResult" style="margin-top: 0.75rem;"></div>
+    </div>
+  </div>
+
+  <!-- ========== SECTION 5: QUIZ ========== -->
+  <div class="card" id="quizCard">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(52,211,153,0.15); color: var(--green);">✓</span>
+      Test Your Understanding
+    </div>
+
+    <div id="quizContainer"></div>
+    <div id="quizScore" class="hidden"></div>
+    <div style="text-align: center; margin-top: 1rem;">
+      <button onclick="resetQuiz()">Try Again</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer style="text-align: center; padding: 2rem 0; color: var(--text-dim); font-size: 0.8rem;">
+    Deutsch's Algorithm — Interactive Quantum Computing Education
+  </footer>
+</div>
+
+<!-- KaTeX JS -->
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════
+// PARTICLE BACKGROUND
+// ═══════════════════════════════════════════════════
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let paused = false;
+  const COUNT = 45;
+  const DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+
+  function create() {
+    particles = [];
+    for (let i = 0; i < COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < DIST) {
+          ctx.strokeStyle = `rgba(99, 102, 241, ${(1 - d / DIST) * 0.15})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); create(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+  resize(); create(); draw();
+})();
+
+// ═══════════════════════════════════════════════════
+// QUANTUM ENGINE (n=1, 2 qubits, 4 amplitudes)
+// ═══════════════════════════════════════════════════
+const FUNCS = [
+  { name: 'f₀', label: 'f(x) = 0',   values: [0, 0], type: 'constant' },
+  { name: 'f₁', label: 'f(x) = 1',   values: [1, 1], type: 'constant' },
+  { name: 'f₂', label: 'f(x) = x',   values: [0, 1], type: 'balanced' },
+  { name: 'f₃', label: 'f(x) = 1−x', values: [1, 0], type: 'balanced' },
+];
+
+// State: array of 4 complex numbers [re, im] indexed as |input⟩|ancilla⟩
+// Qubit 0 = ancilla (LSB), Qubit 1 = input
+function newState() {
+  return [[1,0],[0,0],[0,0],[0,0]]; // |00⟩
+}
+
+function copyState(s) { return s.map(a => [...a]); }
+
+const S2 = 1 / Math.SQRT2;
+const H = [[S2, S2], [S2, -S2]];
+
+// Single-qubit gate: iterate over pairs of amplitudes differing in qubit qi
+function applyGateG(state, qi, g) {
+  const out = state.map(a => [...a]);
+  for (let i = 0; i < 4; i++) {
+    if ((i >> qi) & 1) continue;
+    const j = i | (1 << qi);
+    const a0 = state[i], a1 = state[j];
+    out[i] = [g[0][0]*a0[0] + g[0][1]*a1[0], g[0][0]*a0[1] + g[0][1]*a1[1]];
+    out[j] = [g[1][0]*a0[0] + g[1][1]*a1[0], g[1][0]*a0[1] + g[1][1]*a1[1]];
+  }
+  return out;
+}
+
+// X gate matrix
+const XGATE = [[0, 1], [1, 0]];
+const HGATE = [[S2, S2], [S2, -S2]];
+
+function applyX(state, qi) { return applyGateG(state, qi, XGATE); }
+function applyH(state, qi) { return applyGateG(state, qi, HGATE); }
+
+// Oracle U_f: |x⟩|y⟩ → |x⟩|y ⊕ f(x)⟩
+function applyOracle(state, fv) {
+  const out = state.map(a => [...a]);
+  // For each input x (qubit 1), if f(x)=1, swap ancilla bits
+  for (let x = 0; x < 2; x++) {
+    if (fv[x] === 1) {
+      const i0 = (x << 1) | 0; // |x⟩|0⟩
+      const i1 = (x << 1) | 1; // |x⟩|1⟩
+      out[i0] = [...state[i1]];
+      out[i1] = [...state[i0]];
+    }
+  }
+  return out;
+}
+
+// Simulate full algorithm, returns state at each stage
+function simulateAll(fi) {
+  const fv = FUNCS[fi].values;
+  const stages = [];
+
+  let s = newState();              // Stage 0: |00⟩
+  stages.push(copyState(s));
+
+  s = applyX(s, 0);               // Stage 1: X on ancilla → |01⟩
+  stages.push(copyState(s));
+
+  s = applyH(s, 0);               // Stage 2: H on both
+  s = applyH(s, 1);
+  stages.push(copyState(s));
+
+  s = applyOracle(s, fv);         // Stage 3: U_f
+  stages.push(copyState(s));
+
+  s = applyH(s, 1);               // Stage 4: H on input only
+  stages.push(copyState(s));
+
+  // Stage 5: measurement (state unchanged, just read probabilities)
+  stages.push(copyState(s));
+
+  return stages;
+}
+
+// Get measurement probabilities for input qubit
+function measureInput(state) {
+  // P(input=0) = |a_{00}|^2 + |a_{01}|^2
+  // P(input=1) = |a_{10}|^2 + |a_{11}|^2
+  const p0 = state[0][0]**2 + state[0][1]**2 + state[1][0]**2 + state[1][1]**2;
+  const p1 = state[2][0]**2 + state[2][1]**2 + state[3][0]**2 + state[3][1]**2;
+  return [p0, p1];
+}
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+function renderMathIn(el) {
+  renderMathInElement(el, {
+    delimiters: [
+      { left: '$$', right: '$$', display: true },
+      { left: '$', right: '$', display: false },
+    ],
+    throwOnError: false,
+  });
+}
+
+function fmtAmp(re, im) {
+  const eps = 1e-10;
+  const ar = Math.abs(re) < eps ? 0 : re;
+  const ai = Math.abs(im) < eps ? 0 : im;
+  if (ai === 0) {
+    if (ar === 0) return '0';
+    if (Math.abs(ar - 1) < eps) return '1';
+    if (Math.abs(ar + 1) < eps) return '−1';
+    if (Math.abs(ar - S2) < eps) return '1/√2';
+    if (Math.abs(ar + S2) < eps) return '−1/√2';
+    if (Math.abs(ar - 0.5) < eps) return '1/2';
+    if (Math.abs(ar + 0.5) < eps) return '−1/2';
+    return ar.toFixed(3);
+  }
+  return `${ar.toFixed(2)}+${ai.toFixed(2)}i`;
+}
+
+function stateToHTML(state) {
+  const eps = 1e-10;
+  const labels = ['|00⟩', '|01⟩', '|10⟩', '|11⟩'];
+  const parts = [];
+  for (let i = 0; i < 4; i++) {
+    const re = state[i][0], im = state[i][1];
+    const mag = Math.sqrt(re * re + im * im);
+    if (mag < eps) continue;
+
+    let amp = fmtAmp(re, im);
+    let sign = '';
+    if (parts.length > 0) {
+      if (amp.startsWith('−')) {
+        sign = ' − ';
+        amp = amp.substring(1);
+      } else {
+        sign = ' + ';
+      }
+    } else {
+      if (amp.startsWith('−')) {
+        sign = '−';
+        amp = amp.substring(1);
+      }
+    }
+
+    if (amp === '1') amp = '';
+    parts.push(`${sign}<span class="amplitude">${amp}</span><span class="ket">${labels[i]}</span>`);
+  }
+  return parts.join('') || '<span class="math-text">0</span>';
+}
+
+// Format state with input/ancilla labels
+function stateToHTMLLabeled(state) {
+  const eps = 1e-10;
+  const parts = [];
+  for (let i = 0; i < 4; i++) {
+    const re = state[i][0], im = state[i][1];
+    const mag = Math.sqrt(re * re + im * im);
+    if (mag < eps) continue;
+
+    const inp = (i >> 1) & 1;
+    const anc = i & 1;
+    const label = `|${inp}⟩|${anc}⟩`;
+
+    let amp = fmtAmp(re, im);
+    let sign = '';
+    if (parts.length > 0) {
+      if (amp.startsWith('−')) {
+        sign = ' − ';
+        amp = amp.substring(1);
+      } else {
+        sign = ' + ';
+      }
+    } else {
+      if (amp.startsWith('−')) {
+        sign = '−';
+        amp = amp.substring(1);
+      }
+    }
+
+    if (amp === '1') amp = '';
+    parts.push(`${sign}<span class="amplitude">${amp}</span><span class="ket">${label}</span>`);
+  }
+  return parts.join('') || '<span class="math-text">0</span>';
+}
+
+// Format state factoring out |−⟩ in the ancilla register
+// After X+H on ancilla and any further ops, the ancilla stays in |−⟩.
+// We detect this (a[x,0] = −a[x,1] for each input x) and show α|0⟩|−⟩ + β|1⟩|−⟩
+function stateToHTMLFactored(state) {
+  const eps = 1e-10;
+  const sq2 = Math.sqrt(2);
+
+  // Check if ancilla factors as |−⟩ = (|0⟩−|1⟩)/√2
+  const canFactor =
+    Math.abs(state[0][0] + state[1][0]) < eps &&
+    Math.abs(state[0][1] + state[1][1]) < eps &&
+    Math.abs(state[2][0] + state[3][0]) < eps &&
+    Math.abs(state[2][1] + state[3][1]) < eps;
+
+  if (!canFactor) return stateToHTML(state);
+
+  // Extract effective input-qubit amplitudes: α = a₀₀·√2, β = a₁₀·√2
+  const alpha = [state[0][0] * sq2, state[0][1] * sq2];
+  const beta  = [state[2][0] * sq2, state[2][1] * sq2];
+
+  const coeffs = [alpha, beta];
+  const labels = ['|0⟩', '|1⟩'];
+  const parts = [];
+
+  for (let k = 0; k < 2; k++) {
+    const re = coeffs[k][0], im = coeffs[k][1];
+    const mag = Math.sqrt(re * re + im * im);
+    if (mag < eps) continue;
+
+    let amp = fmtAmp(re, im);
+    let sign = '';
+    if (parts.length > 0) {
+      if (amp.startsWith('−')) { sign = ' − '; amp = amp.substring(1); }
+      else { sign = ' + '; }
+    } else {
+      if (amp.startsWith('−')) { sign = '−'; amp = amp.substring(1); }
+    }
+
+    if (amp === '1') amp = '';
+    parts.push(`${sign}<span class="amplitude">${amp}</span><span class="ket">${labels[k]}|−⟩</span>`);
+  }
+  return parts.join('') || '<span class="math-text">0</span>';
+}
+
+// ═══════════════════════════════════════════════════
+// SECTION 1: THE PROBLEM
+// ═══════════════════════════════════════════════════
+function buildFnGrid() {
+  const grid = document.getElementById('fnGrid');
+  grid.innerHTML = '';
+  FUNCS.forEach((f, i) => {
+    const card = document.createElement('div');
+    card.className = `fn-card ${f.type}`;
+    card.onclick = () => selectFn(i);
+    card.innerHTML = `
+      <div class="fn-name">${f.name}</div>
+      <div class="fn-type">${f.type}</div>
+      <div class="fn-truth">f(0)=${f.values[0]}, f(1)=${f.values[1]}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function selectFn(i) {
+  document.querySelectorAll('#fnGrid .fn-card').forEach((c, j) => {
+    c.classList.toggle('selected', j === i);
+  });
+  const f = FUNCS[i];
+  const detail = document.getElementById('fnDetail');
+  detail.style.display = 'block';
+  detail.innerHTML = `
+    <strong style="color: var(--accent)">${f.name}: ${f.label}</strong><br>
+    <span class="math-text">Truth table:</span>
+    <span class="ket">f(0) = ${f.values[0]}</span>,
+    <span class="ket">f(1) = ${f.values[1]}</span>
+    — <span style="color: ${f.type === 'constant' ? 'var(--green)' : 'var(--pink)'}; font-weight: 600;">${f.type}</span>
+  `;
+}
+
+// ═══════════════════════════════════════════════════
+// SECTION 2: PHASE KICKBACK
+// ═══════════════════════════════════════════════════
+function buildKickbackSection() {
+  // Ancilla setup display
+  const el = document.getElementById('ancillaSetup');
+  el.innerHTML = `<span class="ket">|0⟩</span> <span class="operator">→ X →</span> <span class="ket">|1⟩</span> <span class="operator">→ H →</span> <span class="amplitude">1/√2</span>(<span class="ket">|0⟩</span> − <span class="ket">|1⟩</span>) = <span class="ket">|−⟩</span>`;
+
+  // Derivation with KaTeX
+  const derivs = [
+    'U_f |x\\rangle |{-}\\rangle',
+    'U_f |x\\rangle \\cdot \\frac{1}{\\sqrt{2}}(|0\\rangle - |1\\rangle)',
+    '\\frac{1}{\\sqrt{2}}(|x\\rangle|0 \\oplus f(x)\\rangle - |x\\rangle|1 \\oplus f(x)\\rangle)',
+    '\\frac{1}{\\sqrt{2}}(|x\\rangle|f(x)\\rangle - |x\\rangle|1-f(x)\\rangle) = |x\\rangle \\cdot \\frac{1}{\\sqrt{2}}(|0\\rangle - |1\\rangle) = |x\\rangle|{-}\\rangle',
+    '\\frac{1}{\\sqrt{2}}(|x\\rangle|1-f(x)\\rangle - |x\\rangle|f(x)\\rangle) = -|x\\rangle \\cdot \\frac{1}{\\sqrt{2}}(|0\\rangle - |1\\rangle) = -|x\\rangle|{-}\\rangle',
+    '\\boxed{U_f|x\\rangle|{-}\\rangle = (-1)^{f(x)} |x\\rangle |{-}\\rangle}',
+  ];
+
+  derivs.forEach((tex, i) => {
+    const el = document.getElementById('deriv' + i);
+    katex.render(tex, el, { displayMode: true, throwOnError: false });
+  });
+
+  // Init kickback demo
+  updateKickbackDemo();
+
+  // Init progressive derivation
+  derivStep = 0;
+  updateDerivNav();
+}
+
+function runKickbackDemo() {
+  const fi = parseInt(document.getElementById('kbFnSelect').value);
+  const x = parseInt(document.getElementById('kbInputSelect').value);
+  const f = FUNCS[fi];
+  const fx = f.values[x];
+  const phase = fx === 0 ? '+1' : '−1';
+  const phaseClass = fx === 0 ? 'phase-pos' : 'phase-neg';
+
+  const el = document.getElementById('kbResult');
+  el.innerHTML = `
+    U<sub>f</sub><span class="ket">|${x}⟩</span><span class="ket">|−⟩</span>
+    = <span class="${phaseClass}">(${phase})</span>
+    <span class="ket">|${x}⟩</span><span class="ket">|−⟩</span>
+    <br><span class="math-text" style="font-size: 0.8rem;">because f(${x}) = ${fx}, so (−1)<sup>${fx}</sup> = ${phase}</span>
+  `;
+}
+
+function updateKickbackDemo() {
+  document.getElementById('kbResult').innerHTML = '<span class="math-text">Select a function and input, then click Apply U<sub>f</sub></span>';
+}
+
+// ═══════════════════════════════════════════════════
+// PROGRESSIVE DERIVATION
+// ═══════════════════════════════════════════════════
+let derivStep = 0;
+const DERIV_TOTAL = 6;
+
+function nextDerivStep() {
+  if (derivStep >= DERIV_TOTAL - 1) return;
+  derivStep++;
+  const el = document.querySelector(`[data-deriv="${derivStep}"]`);
+  if (el) el.classList.add('visible');
+  updateDerivNav();
+}
+
+function showAllDeriv() {
+  document.querySelectorAll('.deriv-step').forEach(el => el.classList.add('visible'));
+  derivStep = DERIV_TOTAL - 1;
+  updateDerivNav();
+}
+
+function updateDerivNav() {
+  const btn = document.getElementById('derivNextBtn');
+  const count = document.getElementById('derivCount');
+  count.textContent = `${derivStep + 1} / ${DERIV_TOTAL}`;
+  if (derivStep >= DERIV_TOTAL - 1) {
+    btn.textContent = '✓ Complete';
+    btn.disabled = true;
+  } else {
+    btn.textContent = 'Next Step →';
+    btn.disabled = false;
+  }
+}
+
+function runSuperKickback() {
+  const fi = parseInt(document.getElementById('kbSuperFn').value);
+  const f = FUNCS[fi];
+  const f0 = f.values[0], f1 = f.values[1];
+  const p0 = f0 === 0 ? '+' : '−';
+  const p1 = f1 === 0 ? '+' : '−';
+
+  let afterUf, afterH, measurement, measureColor;
+
+  if (f.type === 'constant') {
+    const globalSign = f0 === 0 ? '' : '−';
+    afterUf = `<span class="amplitude">${globalSign}1/√2</span>(<span class="ket">|0⟩</span> + <span class="ket">|1⟩</span>)<span class="ket">|−⟩</span>`;
+    afterH = `<span class="amplitude">${globalSign}1</span><span class="ket">|0⟩</span><span class="ket">|−⟩</span>`;
+    measurement = 'Measure input qubit → <span class="phase-pos">|0⟩</span> with probability 1 → <strong style="color:var(--green)">CONSTANT</strong>';
+  } else {
+    const sign1 = (f0 === 0) ? '+' : '−';
+    const sign2 = (f1 === 0) ? '+' : '−';
+    // For balanced: phases are opposite
+    const globalSign = f0 === 0 ? '' : '−';
+    afterUf = `<span class="amplitude">1/√2</span>(<span class="${f0===0?'phase-pos':'phase-neg'}">${p0}</span><span class="ket">|0⟩</span> + <span class="${f1===0?'phase-pos':'phase-neg'}">${p1}</span><span class="ket">|1⟩</span>)<span class="ket">|−⟩</span>`;
+    afterH = `<span class="amplitude">${globalSign}1</span><span class="ket">|1⟩</span><span class="ket">|−⟩</span>`;
+    measurement = 'Measure input qubit → <span class="phase-neg">|1⟩</span> with probability 1 → <strong style="color:var(--pink)">BALANCED</strong>';
+  }
+
+  const el = document.getElementById('kbSuperResult');
+  el.innerHTML = `
+    <div class="state-display">
+      <span class="math-text" style="font-size: 0.78rem; display:block; margin-bottom:0.3rem;">Input in superposition: (|0⟩+|1⟩)/√2</span>
+      <strong style="color: var(--orange); font-size: 0.78rem;">After U<sub>f</sub> (phase kickback):</strong><br>
+      ${afterUf}
+    </div>
+    <div class="state-display" style="margin-top: 0.5rem;">
+      <strong style="color: var(--orange); font-size: 0.78rem;">After final H on input:</strong><br>
+      ${afterH}
+    </div>
+    <div class="state-display" style="margin-top: 0.5rem;">
+      ${measurement}
+    </div>
+    <div class="callout ${f.type === 'constant' ? 'green' : 'pink'}" style="margin-top: 0.75rem;">
+      ${f.type === 'constant'
+        ? '<strong>Both phases are equal</strong> → constructive interference at |0⟩ → we measure 0 → constant!'
+        : '<strong>Phases are opposite</strong> → destructive interference at |0⟩, constructive at |1⟩ → we measure 1 → balanced!'}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════
+// SECTION 3: FULL ALGORITHM
+// ═══════════════════════════════════════════════════
+let algoStep = 0;
+let algoStages = null;
+let algoRunning = false;
+
+function algoReset() {
+  algoStep = 0;
+  const fi = parseInt(document.getElementById('algoOracle').value);
+  algoStages = simulateAll(fi);
+  algoRunning = false;
+  document.getElementById('algoRunBtn').textContent = '▶ Auto-Play';
+  document.getElementById('algoRunBtn').disabled = false;
+  algoRender();
+}
+
+function algoGoTo(step) {
+  if (!algoStages) algoReset();
+  algoStep = Math.max(0, Math.min(5, step));
+  algoRender();
+}
+
+async function algoRun() {
+  if (algoRunning) return;
+  algoRunning = true;
+  const btn = document.getElementById('algoRunBtn');
+  btn.textContent = 'Running...';
+  btn.disabled = true;
+  algoReset();
+  await sleep(300);
+  for (let i = 0; i <= 5; i++) {
+    algoStep = i;
+    algoRender();
+    await sleep(800);
+  }
+  algoRunning = false;
+  btn.textContent = '▶ Auto-Play';
+  btn.disabled = false;
+  // Re-enable prev/next now that auto-play is done
+  document.getElementById('algoPrevBtn').disabled = algoStep <= 0;
+  document.getElementById('algoNextBtn').disabled = algoStep >= 5;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function algoRender() {
+  if (!algoStages) return;
+
+  // Update prev/next button state
+  document.getElementById('algoPrevBtn').disabled = algoStep <= 0 || algoRunning;
+  document.getElementById('algoNextBtn').disabled = algoStep >= 5 || algoRunning;
+
+  // Update timeline
+  document.querySelectorAll('#algoTimeline .step-btn').forEach((btn, i) => {
+    btn.classList.remove('active', 'completed');
+    if (i < algoStep) btn.classList.add('completed');
+    if (i === algoStep) btn.classList.add('active');
+  });
+
+  // Draw circuit
+  drawCircuit(algoStep);
+
+  // Fade transition helper
+  const fadeEls = document.querySelectorAll('#algorithmCard .fade-content');
+  fadeEls.forEach(el => el.classList.add('fading'));
+
+  setTimeout(() => {
+    // Step info
+    const fi = parseInt(document.getElementById('algoOracle').value);
+    const f = FUNCS[fi];
+    const infos = [
+      `<strong>Initialization:</strong> Both qubits start in |0⟩. The top wire is the input qubit, the bottom is the ancilla.`,
+      `<strong>X gate on ancilla:</strong> Flip the ancilla from |0⟩ to |1⟩. This prepares it for the next step where H will create |−⟩.`,
+      `<strong>Hadamard on both qubits:</strong> H on the ancilla creates |−⟩ = (|0⟩−|1⟩)/√2. H on the input creates (|0⟩+|1⟩)/√2. Now the input is in superposition, ready for phase kickback.`,
+      `<strong>Oracle U<sub>f</sub> (${f.name}: ${f.label}):</strong> The oracle applies phase kickback — each input branch |x⟩ picks up phase (−1)<sup>f(x)</sup>. The ancilla is unchanged.`,
+      `<strong>Hadamard on input:</strong> H maps the phase-encoded superposition back. If phases were equal (constant), we get |0⟩. If opposite (balanced), we get |1⟩. This is interference in action!`,
+      `<strong>Measurement:</strong> Measure the input qubit. Outcome |0⟩ → <span style="color:var(--green)">constant</span>. Outcome |1⟩ → <span style="color:var(--pink)">balanced</span>. <strong>One query, deterministic answer.</strong>`,
+    ];
+    document.getElementById('algoStepInfo').innerHTML = infos[algoStep];
+
+    // State display
+    const state = algoStages[algoStep];
+    document.getElementById('algoState').innerHTML = stateToHTMLLabeled(state);
+
+    // Remove fading
+    fadeEls.forEach(el => el.classList.remove('fading'));
+  }, 150);
+
+  // Update qubit orbs
+  updateQubitOrbs();
+
+  // Update amplitude chart
+  updateAmplitudeChart();
+
+  // Probability bars + verdict (only at step 5)
+  const probWrap = document.getElementById('algoProbWrap');
+  if (algoStep === 5) {
+    probWrap.classList.remove('hidden');
+    const state = algoStages[algoStep];
+    const probs = measureInput(state);
+    const barsEl = document.getElementById('algoProbBars');
+    barsEl.innerHTML = `
+      <div class="prob-col">
+        <div class="prob-value">${(probs[0]*100).toFixed(0)}%</div>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar ${probs[0] > 0.01 ? 'high' : 'low'}" style="height:${Math.max(2, probs[0]*100)}px"></div>
+        </div>
+        <div class="prob-label">|0⟩</div>
+      </div>
+      <div class="prob-col">
+        <div class="prob-value">${(probs[1]*100).toFixed(0)}%</div>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar ${probs[1] > 0.01 ? 'high' : 'low'}" style="height:${Math.max(2, probs[1]*100)}px"></div>
+        </div>
+        <div class="prob-label">|1⟩</div>
+      </div>
+    `;
+
+    const verdict = document.getElementById('algoVerdict');
+    if (probs[0] > 0.99) {
+      verdict.innerHTML = `<div class="verdict constant">✓ Measurement: |0⟩ → f is <strong>CONSTANT</strong></div>`;
+    } else {
+      verdict.innerHTML = `<div class="verdict balanced">✓ Measurement: |1⟩ → f is <strong>BALANCED</strong></div>`;
+    }
+  } else {
+    probWrap.classList.add('hidden');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// QUBIT ORB VISUALIZATION
+// ═══════════════════════════════════════════════════
+function updateQubitOrbs() {
+  const orbInput = document.getElementById('orbInput');
+  const orbAncilla = document.getElementById('orbAncilla');
+  const fi = parseInt(document.getElementById('algoOracle').value);
+  const isConstant = FUNCS[fi].type === 'constant';
+
+  // Reset classes
+  orbInput.className = 'qubit-orb';
+  orbAncilla.className = 'qubit-orb';
+
+  switch (algoStep) {
+    case 0: // Init: both |0⟩
+      orbInput.classList.add('state-zero');
+      orbAncilla.classList.add('state-zero');
+      orbInput.textContent = '|0⟩';
+      orbAncilla.textContent = '|0⟩';
+      break;
+    case 1: // X on ancilla
+      orbInput.classList.add('state-zero');
+      orbAncilla.classList.add('state-one');
+      orbInput.textContent = '|0⟩';
+      orbAncilla.textContent = '|1⟩';
+      break;
+    case 2: // H on both → superposition
+      orbInput.classList.add('state-super');
+      orbAncilla.classList.add('state-super');
+      orbInput.textContent = '|+⟩';
+      orbAncilla.textContent = '|−⟩';
+      break;
+    case 3: // U_f → phase kickback
+      orbInput.classList.add('state-kicked');
+      orbAncilla.classList.add('state-super');
+      orbInput.textContent = '(−1)ᶠ';
+      orbAncilla.textContent = '|−⟩';
+      break;
+    case 4: // H on input → interference
+      orbInput.classList.add('state-kicked');
+      orbAncilla.classList.add('state-super');
+      orbInput.textContent = isConstant ? '|0⟩' : '|1⟩';
+      orbAncilla.textContent = '|−⟩';
+      break;
+    case 5: // Measurement
+      orbInput.classList.add('state-measured');
+      orbAncilla.classList.add('state-super');
+      orbInput.textContent = isConstant ? '|0⟩' : '|1⟩';
+      orbAncilla.textContent = '|−⟩';
+      break;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// AMPLITUDE BAR CHART
+// ═══════════════════════════════════════════════════
+function updateAmplitudeChart() {
+  if (!algoStages) return;
+  const state = algoStages[algoStep];
+  const container = document.getElementById('algoAmpChart');
+  const labels = ['|0⟩|0⟩', '|0⟩|1⟩', '|1⟩|0⟩', '|1⟩|1⟩'];
+  const eps = 1e-10;
+  const isMeasured = algoStep === 5;
+
+  // Build bars if first time, otherwise update heights
+  if (!container.hasChildNodes() || container.dataset.built !== 'true') {
+    container.innerHTML = '';
+    for (let i = 0; i < 4; i++) {
+      const col = document.createElement('div');
+      col.className = 'amp-bar-col';
+      col.innerHTML = `
+        <div class="amp-bar-value" id="ampVal${i}"></div>
+        <div class="amp-bar-wrapper">
+          <div class="amp-bar" id="ampBar${i}" style="height: 0px;"></div>
+        </div>
+        <div class="amp-bar-label">${labels[i]}</div>
+      `;
+      container.appendChild(col);
+    }
+    container.dataset.built = 'true';
+  }
+
+  // Update bar heights and values
+  for (let i = 0; i < 4; i++) {
+    const re = state[i][0], im = state[i][1];
+    const mag = Math.sqrt(re * re + im * im);
+    const bar = document.getElementById('ampBar' + i);
+    const val = document.getElementById('ampVal' + i);
+
+    const heightPx = Math.max(0, mag * 95); // max height ~95px
+    bar.style.height = heightPx + 'px';
+
+    // Color class
+    bar.className = 'amp-bar';
+    if (mag < eps) {
+      bar.classList.add('zero-amp');
+    } else if (isMeasured) {
+      bar.classList.add('measured');
+    } else {
+      bar.classList.add('nonzero');
+    }
+
+    // Value label
+    val.textContent = mag < eps ? '' : fmtAmp(re, im);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// CIRCUIT DRAWING (SVG)
+// ═══════════════════════════════════════════════════
+function drawCircuit(step) {
+  const container = document.getElementById('circuitContainer');
+  const W = 640, H = 150;
+  const y1 = 50, y2 = 110; // input wire, ancilla wire
+  const gateW = 36, gateH = 36;
+
+  // Gate x positions
+  const xInit = 80;
+  const xX = 170;
+  const xH1 = 255;
+  const xUf = 345;
+  const xH2 = 435;
+  const xM = 520;
+
+  const gateColor = (idx) => {
+    if (idx < step) return { fill: 'rgba(52, 211, 153, 0.15)', stroke: '#34d399', text: '#34d399' };
+    if (idx === step) return { fill: 'rgba(99, 102, 241, 0.2)', stroke: '#6366f1', text: '#e2e8f0' };
+    return { fill: 'rgba(42, 53, 80, 0.5)', stroke: '#2a3550', text: '#8892a8' };
+  };
+
+  // Active wire color
+  const wireColor = (stageIdx) => {
+    if (stageIdx < step) return '#34d399';
+    if (stageIdx === step) return '#6366f1';
+    return '#2a3550';
+  };
+
+  let svg = `<svg width="100%" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="max-width:${W}px;">`;
+
+  // Wire labels on left side
+  svg += `<text x="8" y="${y1-10}" fill="#8892a8" font-family="Inter, sans-serif" font-size="9" font-weight="500" text-anchor="start" letter-spacing="0.05em" text-transform="uppercase">INPUT</text>`;
+  svg += `<text x="8" y="${y2-10}" fill="#8892a8" font-family="Inter, sans-serif" font-size="9" font-weight="500" text-anchor="start" letter-spacing="0.05em" text-transform="uppercase">ANCILLA</text>`;
+
+  // Init kets
+  svg += `<text x="55" y="${y1+5}" fill="#22d3ee" font-family="JetBrains Mono, monospace" font-size="13" text-anchor="middle">|0⟩</text>`;
+  svg += `<text x="55" y="${y2+5}" fill="#22d3ee" font-family="JetBrains Mono, monospace" font-size="13" text-anchor="middle">|0⟩</text>`;
+
+  // Wires
+  svg += `<line x1="68" y1="${y1}" x2="${W-20}" y2="${y1}" stroke="#2a3550" stroke-width="1.5"/>`;
+  svg += `<line x1="68" y1="${y2}" x2="${W-20}" y2="${y2}" stroke="#2a3550" stroke-width="1.5"/>`;
+
+  // Dashed vertical stage separators
+  const separators = [120, 210, 300, 390, 478];
+  separators.forEach(sx => {
+    svg += `<line x1="${sx}" y1="8" x2="${sx}" y2="${H-8}" stroke="rgba(42,53,80,0.3)" stroke-width="0.5" stroke-dasharray="3 4"/>`;
+  });
+
+  // Helper to draw a gate box
+  function gateBox(x, y, label, stageIdx) {
+    const c = gateColor(stageIdx);
+    let glow = '';
+    if (stageIdx === step) glow = `filter="drop-shadow(0 0 6px rgba(99,102,241,0.4))"`;
+    svg += `<rect x="${x - gateW/2}" y="${y - gateH/2}" width="${gateW}" height="${gateH}" rx="6" fill="${c.fill}" stroke="${c.stroke}" stroke-width="1.5" ${glow}/>`;
+    svg += `<text x="${x}" y="${y + 5}" fill="${c.text}" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" text-anchor="middle">${label}</text>`;
+  }
+
+  // Stage 1: X on ancilla
+  gateBox(xX, y2, 'X', 1);
+
+  // Stage 2: H on both
+  gateBox(xH1, y1, 'H', 2);
+  gateBox(xH1, y2, 'H', 2);
+
+  // Stage 3: U_f spanning both wires
+  const ufC = gateColor(3);
+  let ufGlow = step === 3 ? `filter="drop-shadow(0 0 8px rgba(99,102,241,0.4))"` : '';
+  svg += `<rect x="${xUf - gateW/2}" y="${y1 - gateH/2}" width="${gateW}" height="${y2 - y1 + gateH}" rx="8" fill="${ufC.fill}" stroke="${ufC.stroke}" stroke-width="1.5" ${ufGlow}/>`;
+  svg += `<text x="${xUf}" y="${(y1+y2)/2 - 2}" fill="${ufC.text}" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" text-anchor="middle">U</text>`;
+  svg += `<text x="${xUf + 8}" y="${(y1+y2)/2 + 10}" fill="${ufC.text}" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="middle">f</text>`;
+
+  // Stage 4: H on input only
+  gateBox(xH2, y1, 'H', 4);
+
+  // Stage 5: Measurement on input
+  const mC = gateColor(5);
+  let mGlow = step === 5 ? `filter="drop-shadow(0 0 6px rgba(99,102,241,0.4))"` : '';
+  svg += `<rect x="${xM - gateW/2}" y="${y1 - gateH/2}" width="${gateW}" height="${gateH}" rx="6" fill="${mC.fill}" stroke="${mC.stroke}" stroke-width="1.5" ${mGlow}/>`;
+  // Meter symbol
+  svg += `<path d="M${xM-8} ${y1+8} A12 12 0 0 1 ${xM+8} ${y1+8}" fill="none" stroke="${mC.text}" stroke-width="1.5"/>`;
+  svg += `<line x1="${xM}" y1="${y1+8}" x2="${xM+6}" y2="${y1-4}" stroke="${mC.text}" stroke-width="1.5"/>`;
+
+  // Stage indicator glow line
+  const stageXs = [xInit, xX, xH1, xUf, xH2, xM];
+  const cx = stageXs[step];
+  svg += `<line x1="${cx}" y1="8" x2="${cx}" y2="${H-8}" stroke="rgba(99,102,241,0.25)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+
+  // Bright active wire segment highlight
+  if (step > 0 && step <= 5) {
+    const prevX = step === 0 ? 68 : stageXs[step] - gateW/2 - 5;
+    const nextX = stageXs[step] + gateW/2 + 5;
+    const highlight = 'rgba(99, 102, 241, 0.4)';
+    // Only highlight wires that have active gates on them
+    if (step === 1) {
+      svg += `<line x1="${prevX}" y1="${y2}" x2="${nextX}" y2="${y2}" stroke="${highlight}" stroke-width="3"/>`;
+    } else if (step === 2) {
+      svg += `<line x1="${prevX}" y1="${y1}" x2="${nextX}" y2="${y1}" stroke="${highlight}" stroke-width="3"/>`;
+      svg += `<line x1="${prevX}" y1="${y2}" x2="${nextX}" y2="${y2}" stroke="${highlight}" stroke-width="3"/>`;
+    } else if (step === 3) {
+      svg += `<line x1="${prevX}" y1="${y1}" x2="${nextX}" y2="${y1}" stroke="${highlight}" stroke-width="3"/>`;
+      svg += `<line x1="${prevX}" y1="${y2}" x2="${nextX}" y2="${y2}" stroke="${highlight}" stroke-width="3"/>`;
+    } else if (step === 4) {
+      svg += `<line x1="${prevX}" y1="${y1}" x2="${nextX}" y2="${y1}" stroke="${highlight}" stroke-width="3"/>`;
+    } else if (step === 5) {
+      svg += `<line x1="${prevX}" y1="${y1}" x2="${nextX}" y2="${y1}" stroke="${highlight}" stroke-width="3"/>`;
+    }
+  }
+
+  svg += `</svg>`;
+  container.innerHTML = svg;
+}
+
+// ═══════════════════════════════════════════════════
+// SECTION 4: ORACLE EXPLORER
+// ═══════════════════════════════════════════════════
+function buildExplorer() {
+  const grid = document.getElementById('explorerGrid');
+  grid.innerHTML = '';
+  FUNCS.forEach((f, i) => {
+    const card = document.createElement('div');
+    card.className = `fn-card ${f.type}`;
+    card.onclick = () => runExplorerOracle(i);
+    card.innerHTML = `
+      <div class="fn-name">${f.name}</div>
+      <div class="fn-type">${f.type}</div>
+      <div class="fn-truth">f(0)=${f.values[0]}, f(1)=${f.values[1]}</div>
+    `;
+    grid.appendChild(card);
+  });
+
+  buildCompareTable();
+}
+
+function buildCompareTable() {
+  const body = document.getElementById('compareBody');
+  body.innerHTML = '';
+  FUNCS.forEach((f, i) => {
+    const stages = simulateAll(i);
+    const stateAfterUf = stateToHTMLFactored(stages[3]);
+    const stateAfterH  = stateToHTMLFactored(stages[4]);
+    const probs = measureInput(stages[5]);
+    const measured = probs[0] > 0.99 ? '|0⟩' : '|1⟩';
+    const typeClass = f.type === 'constant' ? 'type-constant' : 'type-balanced';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color: var(--accent); font-weight: 600;">${f.name}: ${f.label}</td>
+      <td>${f.values[0]}</td>
+      <td>${f.values[1]}</td>
+      <td style="font-size: 0.78rem;">${stateAfterUf}</td>
+      <td style="font-size: 0.78rem;">${stateAfterH}</td>
+      <td><span class="ket">${measured}</span></td>
+      <td class="${typeClass}">${f.type}</td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+function runExplorerOracle(i) {
+  document.querySelectorAll('#explorerGrid .fn-card').forEach((c, j) => {
+    c.classList.toggle('selected', j === i);
+  });
+  // Set algo oracle and auto-run
+  document.getElementById('algoOracle').value = i;
+  algoReset();
+  // Scroll to algorithm section
+  document.getElementById('algorithmCard').scrollIntoView({ behavior: 'smooth' });
+  setTimeout(() => algoRun(), 500);
+}
+
+// Challenge mode
+let challengeAnswer = null;
+
+function startChallenge() {
+  const fi = Math.floor(Math.random() * 4);
+  challengeAnswer = FUNCS[fi].type;
+
+  // Set oracle and run
+  document.getElementById('algoOracle').value = fi;
+  algoReset();
+  document.getElementById('algorithmCard').scrollIntoView({ behavior: 'smooth' });
+
+  const resultEl = document.getElementById('challengeResult');
+  resultEl.innerHTML = `
+    <p class="desc" style="margin-bottom: 0.5rem;">Algorithm running for a <strong>hidden</strong> function...</p>
+    <button onclick="guessChallenge('constant')" class="secondary" style="margin: 0.25rem;">Guess: Constant</button>
+    <button onclick="guessChallenge('balanced')" class="secondary" style="margin: 0.25rem;">Guess: Balanced</button>
+  `;
+
+  setTimeout(() => algoRun(), 500);
+}
+
+function guessChallenge(guess) {
+  const resultEl = document.getElementById('challengeResult');
+  const fi = parseInt(document.getElementById('algoOracle').value);
+  const f = FUNCS[fi];
+
+  if (guess === challengeAnswer) {
+    resultEl.innerHTML = `<div class="verdict constant" style="margin-top: 0;">🎉 Correct! The function was ${f.name}: ${f.label} (${f.type})</div>`;
+  } else {
+    resultEl.innerHTML = `<div class="verdict balanced" style="margin-top: 0; border-color: var(--red); color: var(--red);">✗ Not quite! The function was ${f.name}: ${f.label} (${f.type})</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// SECTION 5: QUIZ
+// ═══════════════════════════════════════════════════
+const QUIZ = [
+  {
+    q: 'If you measure the input qubit and get |0⟩, what type is the function f?',
+    opts: ['Constant', 'Balanced', 'Could be either', 'Not enough information'],
+    ans: 0,
+    explain: 'In Deutsch\'s algorithm, measuring |0⟩ on the input qubit deterministically tells us f is constant. This is because equal phases lead to constructive interference at |0⟩.'
+  },
+  {
+    q: 'What state is the ancilla qubit in just before the oracle $U_f$ is applied?',
+    opts: ['$|0\\rangle$', '$|1\\rangle$', '$|+\\rangle = (|0\\rangle+|1\\rangle)/\\sqrt{2}$', '$|-\\rangle = (|0\\rangle-|1\\rangle)/\\sqrt{2}$'],
+    ans: 3,
+    explain: 'The ancilla starts in |0⟩, gets flipped to |1⟩ by X, then H creates |−⟩ = (|0⟩−|1⟩)/√2. This |−⟩ state is what enables phase kickback.'
+  },
+  {
+    q: 'What is phase kickback?',
+    opts: [
+      'The oracle modifies the ancilla qubit\'s phase',
+      'The oracle leaves the ancilla unchanged and transfers a phase factor to the input register',
+      'The Hadamard gate reverses the phase of a qubit',
+      'The measurement collapses the phase information'
+    ],
+    ans: 1,
+    explain: 'Phase kickback occurs when U_f acts on |x⟩|−⟩: the ancilla stays in |−⟩ but the input |x⟩ picks up a phase (−1)^{f(x)}. The "kick" goes from ancilla to input.'
+  },
+  {
+    q: 'True or False: The ancilla qubit is measured at the end of Deutsch\'s algorithm.',
+    opts: ['True', 'False'],
+    ans: 1,
+    explain: 'Only the input qubit is measured. The ancilla served its purpose during phase kickback and is not measured — it remains in |−⟩ throughout.'
+  },
+  {
+    q: 'For the balanced function $f(x) = x$, what phase does |1⟩ pick up from phase kickback?',
+    opts: ['+1', '−1', '0', 'i'],
+    ans: 1,
+    explain: 'For f(x) = x, we have f(1) = 1, so |1⟩ picks up phase (−1)^{f(1)} = (−1)^1 = −1. Meanwhile |0⟩ gets (−1)^{f(0)} = (−1)^0 = +1.'
+  },
+  {
+    q: 'Classically, how many queries to f are needed to determine if f is constant or balanced (for a 1-bit function)?',
+    opts: ['1 query', '2 queries', '3 queries', '4 queries'],
+    ans: 1,
+    explain: 'Classically you must evaluate f(0) and f(1) separately and compare them — that\'s 2 queries. Deutsch\'s algorithm achieves this with just 1 quantum query.'
+  },
+];
+
+let quizAnswered = 0;
+let quizCorrect = 0;
+
+function buildQuiz() {
+  const container = document.getElementById('quizContainer');
+  container.innerHTML = '';
+  quizAnswered = 0;
+  quizCorrect = 0;
+  document.getElementById('quizScore').classList.add('hidden');
+
+  QUIZ.forEach((q, qi) => {
+    const div = document.createElement('div');
+    div.className = 'quiz-question';
+    div.id = `qq${qi}`;
+
+    let optsHTML = '';
+    q.opts.forEach((o, oi) => {
+      optsHTML += `<button class="quiz-opt" data-q="${qi}" data-o="${oi}" onclick="answerQuiz(${qi}, ${oi})">${o}</button>`;
+    });
+
+    div.innerHTML = `
+      <div class="quiz-q-text"><strong>Q${qi+1}.</strong> ${q.q}</div>
+      <div class="quiz-options">${optsHTML}</div>
+    `;
+    container.appendChild(div);
+  });
+
+  renderMathIn(container);
+}
+
+function answerQuiz(qi, oi) {
+  const q = QUIZ[qi];
+  const div = document.getElementById(`qq${qi}`);
+  const btns = div.querySelectorAll('.quiz-opt');
+
+  // Lock all buttons
+  btns.forEach(b => b.classList.add('locked'));
+  btns.forEach(b => b.style.pointerEvents = 'none');
+
+  if (oi === q.ans) {
+    btns[oi].classList.add('chosen-correct');
+    div.classList.add('correct');
+    quizCorrect++;
+  } else {
+    btns[oi].classList.add('chosen-wrong');
+    btns[q.ans].classList.add('reveal-correct');
+    div.classList.add('wrong');
+  }
+
+  // Show explanation
+  const explDiv = document.createElement('div');
+  explDiv.className = 'quiz-explain';
+  explDiv.textContent = q.explain;
+  div.appendChild(explDiv);
+
+  quizAnswered++;
+  if (quizAnswered === QUIZ.length) {
+    showQuizScore();
+  }
+}
+
+function showQuizScore() {
+  const el = document.getElementById('quizScore');
+  el.classList.remove('hidden');
+  const pct = Math.round(quizCorrect / QUIZ.length * 100);
+  el.className = `quiz-score ${pct >= 80 ? 'great' : 'ok'}`;
+  el.innerHTML = `Score: ${quizCorrect}/${QUIZ.length} (${pct}%) ${pct === 100 ? '🎉 Perfect!' : pct >= 80 ? '👏 Well done!' : '📚 Review the sections above and try again!'}`;
+}
+
+function resetQuiz() {
+  buildQuiz();
+}
+
+// ═══════════════════════════════════════════════════
+// KEYBOARD NAVIGATION
+// ═══════════════════════════════════════════════════
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+  switch (e.key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+      e.preventDefault();
+      if (algoStep < 5) algoGoTo(algoStep + 1);
+      break;
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      e.preventDefault();
+      if (algoStep > 0) algoGoTo(algoStep - 1);
+      break;
+    case ' ':
+      e.preventDefault();
+      if (!algoRunning) algoRun();
+      break;
+    case 'r':
+    case 'R':
+      e.preventDefault();
+      if (!algoRunning) algoReset();
+      break;
+  }
+});
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  buildFnGrid();
+  buildKickbackSection();
+  algoReset();
+  buildExplorer();
+  buildQuiz();
+
+  // Render KaTeX in static HTML
+  renderMathIn(document.body);
+
+  // Animate speedup bars after a short delay
+  setTimeout(() => {
+    const cb = document.getElementById('classicalBar');
+    const qb = document.getElementById('quantumBar');
+    if (cb) cb.style.width = '100%';
+    if (qb) qb.style.width = '50%';
+  }, 500);
+});
+</script>
+</body>
+</html>
