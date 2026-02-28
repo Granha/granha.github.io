@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The n-Qubit Hadamard Transform — An Interactive Guide</title>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+    :root {
+        --bg: #0a0e1a;
+        --surface: #111827;
+        --surface2: #1a2236;
+        --border: #2a3550;
+        --text: #e2e8f0;
+        --text-dim: #8892a8;
+        --accent: #6366f1;
+        --accent-glow: rgba(99, 102, 241, 0.3);
+        --cyan: #22d3ee;
+        --cyan-glow: rgba(34, 211, 238, 0.25);
+        --pink: #f472b6;
+        --pink-glow: rgba(244, 114, 182, 0.25);
+        --green: #34d399;
+        --green-glow: rgba(52, 211, 153, 0.25);
+        --orange: #fb923c;
+        --yellow: #facc15;
+        --red: #f87171;
+        /* Aliases used by inline styles */
+        --primary: #6366f1;
+        --primary-dark: #818cf8;
+        --positive: #22d3ee;
+        --negative: #f87171;
+        --text-light: #8892a8;
+        --amber: #fb923c;
+        --accent-light: rgba(99, 102, 241, 0.15);
+        --card: #111827;
+        --card-elevated: #1a2236;
+        --radius: 16px;
+        --shadow: 0 4px 24px rgba(0,0,0,0.3);
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+        background: var(--bg); color: var(--text);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.75; font-size: 16px; min-height: 100vh; overflow-x: hidden;
+    }
+
+    /* Header */
+    header {
+        text-align:center; padding:64px 20px 20px;
+        position: relative;
+    }
+    header::after {
+        content: ''; display: block; width: 160px; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), transparent);
+        margin: 1.5rem auto 0;
+    }
+    header h1 {
+        font-size:2.6rem; font-weight:800; letter-spacing:-0.5px;
+        background: linear-gradient(135deg, var(--accent), var(--cyan), var(--pink));
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    header h1 em { font-style:normal; }
+    header .subtitle {
+        color: var(--text-dim); font-size:1.1rem; font-weight:300; margin-top:8px;
+    }
+
+    /* Nav */
+    nav {
+        position:sticky; top:0; z-index:100;
+        background:rgba(17,24,39,0.82);
+        backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+        border-bottom:1px solid var(--border);
+        display:flex; justify-content:center; gap:4px; padding:10px 12px; flex-wrap:wrap;
+    }
+    nav a {
+        text-decoration:none; color:var(--text-dim); padding:5px 14px;
+        border-radius:20px; font-size:0.88rem; transition:all 0.2s; white-space:nowrap;
+        font-weight: 500;
+    }
+    nav a:hover { background:rgba(99,102,241,0.15); color:var(--accent); }
+
+    main { max-width:880px; margin:0 auto; padding:24px 16px; }
+
+    /* Section cards — matches Simon's .card */
+    section {
+        background:var(--surface); border:1px solid var(--border);
+        border-radius:var(--radius); padding:40px; margin-bottom:1.5rem;
+        position:relative; overflow:hidden; transition:border-color 0.3s;
+    }
+    section:hover { border-color: rgba(99,102,241,0.4); }
+    section::before {
+        content:''; position:absolute; top:0; left:0; right:0; height:1px;
+        background:linear-gradient(90deg, transparent, var(--accent), transparent);
+        opacity:0.5;
+    }
+
+    h2 {
+        font-size:1.55rem; margin-bottom:1.1rem; color:var(--text);
+        padding-bottom:8px; display:inline-block; font-weight:700;
+        background-image: linear-gradient(90deg, var(--accent), var(--cyan));
+        background-size: 100% 2px; background-position: bottom; background-repeat: no-repeat;
+    }
+    h3 { font-size:1.15rem; margin:1.6rem 0 0.6rem; color:var(--text); font-weight:600; }
+    p { margin-bottom:1rem; }
+    strong { color: var(--text); }
+
+    .key-insight {
+        background:rgba(34,211,238,0.05);
+        border-left:4px solid var(--cyan); border-radius:0 10px 10px 0;
+        padding:16px 20px; margin:1.2rem 0; font-size:0.97rem;
+    }
+    .key-insight strong { color:var(--cyan); }
+
+    .interactive-panel {
+        background:var(--surface2); border:1px solid var(--border); border-radius:10px;
+        padding:24px; margin:1.5rem 0;
+    }
+    .panel-title {
+        font-weight:600; color:var(--accent); margin-bottom:14px;
+        font-size:0.82rem; text-transform:uppercase; letter-spacing:0.8px;
+    }
+    .controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .controls label { font-size:0.9rem; font-weight:600; color:var(--text-dim); }
+
+    /* Buttons — matches Simon's button.secondary / active */
+    .btn-group { display:flex; gap:3px; }
+    .btn {
+        padding:6px 16px; border:1px solid var(--border); border-radius:8px;
+        background:var(--surface2); cursor:pointer; font-size:0.9rem; transition:all 0.2s;
+        font-family:'Inter',sans-serif; color:var(--text-dim); font-weight:500;
+    }
+    .btn:hover {
+        border-color:var(--accent); color:var(--text);
+        box-shadow:0 4px 20px rgba(99,102,241,0.08);
+    }
+    .btn.active {
+        background:linear-gradient(135deg, var(--accent), #818cf8);
+        color:white; border-color:transparent; font-weight:600;
+    }
+
+    .bit-toggle {
+        display:inline-flex; align-items:center; justify-content:center;
+        width:38px; height:38px; border:1px solid var(--border); border-radius:8px;
+        cursor:pointer; font-family:'JetBrains Mono','Courier New',monospace; font-size:1.1rem;
+        font-weight:600; transition:all 0.2s; user-select:none;
+        background:var(--surface2); color:var(--text-dim);
+    }
+    .bit-toggle:hover { border-color:var(--accent); color:var(--text); }
+    .bit-toggle.active {
+        background:linear-gradient(135deg, var(--accent), #818cf8);
+        color:white; border-color:transparent;
+    }
+
+    /* Matrix */
+    .matrix-container { overflow-x:auto; margin:1rem 0; text-align:center; }
+    .matrix-grid { display:inline-grid; gap:2px; padding:4px; }
+    .matrix-cell {
+        display:flex; align-items:center; justify-content:center;
+        font-family:'JetBrains Mono','Courier New',monospace; font-weight:600; font-size:0.88rem;
+        cursor:default; transition:all 0.15s; border-radius:4px; position:relative;
+    }
+    .matrix-cell.positive { background:rgba(34,211,238,0.14); color:#67e8f9; }
+    .matrix-cell.negative { background:rgba(248,113,113,0.14); color:#fca5a5; }
+    .matrix-cell:hover {
+        transform:scale(1.15);
+        box-shadow:0 0 14px var(--cyan-glow);
+        z-index:2;
+    }
+    .matrix-header {
+        display:flex; align-items:center; justify-content:center;
+        font-family:'JetBrains Mono','Courier New',monospace; font-size:0.72rem; color:var(--text-dim);
+    }
+    .matrix-corner { }
+    .matrix-label-row { font-size:0.85rem; color:var(--text-dim); text-align:center; margin-top:4px; }
+
+    /* Tensor product visual */
+    .tensor-row {
+        display:flex; align-items:center; justify-content:center;
+        gap:16px; flex-wrap:wrap; margin:1.5rem 0;
+    }
+    .tensor-op { font-size:1.4rem; font-weight:700; color:var(--text-dim); padding:0 4px; }
+    .mini-matrix {
+        display:inline-grid; gap:2px; border:1px solid var(--border); border-radius:8px;
+        padding:4px; background:var(--surface);
+    }
+    .mini-matrix .cell {
+        display:flex; align-items:center; justify-content:center;
+        width:36px; height:36px; border-radius:4px;
+        font-family:'JetBrains Mono','Courier New',monospace; font-weight:600; font-size:0.9rem;
+    }
+    .mini-matrix .cell.pos { background:rgba(34,211,238,0.14); color:#67e8f9; }
+    .mini-matrix .cell.neg { background:rgba(248,113,113,0.14); color:#fca5a5; }
+    .mini-matrix.large .cell { width:32px; height:32px; font-size:0.8rem; }
+    .block-border-right { border-right:2.5px solid var(--text-dim) !important; }
+    .block-border-bottom { border-bottom:2.5px solid var(--text-dim) !important; }
+    .mini-matrix .cell.highlight {
+        box-shadow:0 0 0 2px var(--accent);
+        background:rgba(99,102,241,0.18) !important;
+    }
+
+    /* Amplitude chart */
+    .amplitude-chart {
+        display:flex; align-items:stretch; height:180px;
+        position:relative; margin:1rem 0; padding:0 4px;
+    }
+    .amplitude-chart .zero-line {
+        position:absolute; left:0; right:0; top:50%; height:1px;
+        background:var(--text-dim); opacity:0.18; z-index:0;
+    }
+    .bar-group {
+        flex:1; display:flex; flex-direction:column; align-items:center;
+        position:relative; min-width:0;
+    }
+    .bar-top { flex:1; display:flex; align-items:flex-end; justify-content:center; width:100%; }
+    .bar-bottom { flex:1; display:flex; align-items:flex-start; justify-content:center; width:100%; }
+    .bar {
+        width:70%; max-width:38px; min-width:8px;
+        transition:height 0.35s ease; border-radius:3px 3px 0 0;
+    }
+    .bar.positive {
+        background:linear-gradient(180deg, var(--cyan), var(--accent));
+        box-shadow:0 0 10px var(--cyan-glow);
+    }
+    .bar.negative {
+        background:linear-gradient(0deg, var(--red), #991b1b);
+        border-radius:0 0 3px 3px;
+        box-shadow:0 0 8px rgba(248,113,113,0.2);
+    }
+    .bar-label {
+        font-family:'JetBrains Mono','Courier New',monospace; font-size:0.6rem; color:var(--text-dim);
+        text-align:center; padding-top:2px; position:absolute; bottom:-18px;
+        white-space:nowrap; width:100%;
+    }
+    .chart-wrapper { position:relative; padding-bottom:24px; }
+
+    /* GF(2) computation display */
+    .gf2-computation {
+        font-family:'JetBrains Mono','Courier New',monospace; font-size:0.95rem;
+        background:var(--surface); border:1px solid var(--border); border-radius:8px;
+        padding:16px; margin-top:12px; line-height:2;
+    }
+    .gf2-computation .product { color:var(--cyan); font-weight:600; }
+    .gf2-computation .result { font-size:1.1rem; font-weight:700; }
+    .gf2-computation .result.zero { color:var(--cyan); }
+    .gf2-computation .result.one { color:var(--red); }
+
+    /* Basis checkboxes */
+    .basis-options { display:flex; flex-wrap:wrap; gap:4px; margin:8px 0; }
+    .basis-cb {
+        display:inline-flex; align-items:center; gap:4px;
+        padding:5px 12px; border:1px solid var(--border); border-radius:8px;
+        cursor:pointer; transition:all 0.2s; font-family:'JetBrains Mono','Courier New',monospace;
+        font-size:0.88rem; user-select:none; background:var(--surface2); color:var(--text-dim);
+    }
+    .basis-cb:hover { border-color:var(--accent); color:var(--text); }
+    .basis-cb.selected {
+        background:rgba(99,102,241,0.15); border-color:var(--accent);
+        color:#c7d2fe; font-weight:600;
+    }
+
+    /* State pills */
+    .state-set { display:flex; flex-wrap:wrap; gap:3px; margin:6px 0; }
+    .state-pill {
+        display:inline-block; padding:2px 8px; border-radius:6px;
+        font-family:'JetBrains Mono','Courier New',monospace; font-size:0.8rem; font-weight:600;
+    }
+    .pill-sub { background:rgba(99,102,241,0.15); color:#c7d2fe; }
+    .pill-comp { background:rgba(34,211,238,0.15); color:#67e8f9; }
+    .pill-coset { background:rgba(251,146,60,0.15); color:#fdba74; }
+    .pill-phase-pos { background:rgba(34,211,238,0.15); color:#67e8f9; }
+    .pill-phase-neg { background:rgba(248,113,113,0.15); color:#fca5a5; }
+
+    /* Tooltip */
+    .tooltip {
+        position:fixed; background:rgba(10,14,26,0.96); color:#e2e8f0;
+        padding:10px 14px; border-radius:10px; font-size:0.84rem;
+        pointer-events:none; z-index:1000; max-width:320px;
+        line-height:1.5; display:none; font-family:'JetBrains Mono','Courier New',monospace;
+        box-shadow:0 4px 24px rgba(0,0,0,0.5); border:1px solid var(--border);
+    }
+
+    /* Derivation */
+    .derivation {
+        background:rgba(251,146,60,0.04); border:1px solid rgba(251,146,60,0.18);
+        border-radius:10px; padding:20px; margin:1.2rem 0;
+    }
+    .derivation .step { margin:8px 0; padding-left:12px; border-left:3px solid rgba(251,146,60,0.35); }
+
+    /* Two-column layout */
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:1rem 0; }
+    .two-col > div > .panel-title { font-size:0.76rem; }
+
+    /* Responsive */
+    @media (max-width:700px) {
+        section { padding:24px 16px; }
+        header h1 { font-size:1.9rem; }
+        .two-col { grid-template-columns:1fr; }
+        .tensor-row { gap:8px; }
+        .mini-matrix .cell { width:28px; height:28px; font-size:0.7rem; }
+    }
+    </style>
+    <script>
+    MathJax = {
+      tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] },
+      startup: { ready() { MathJax.startup.defaultReady(); } }
+    };
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+<body>
+    <header>
+        <h1>The <em>n</em>-Qubit Hadamard Transform</h1>
+        <p class="subtitle">An Interactive Exploration of Tensor Products, GF(2), and Quantum Superposition</p>
+    </header>
+
+    <nav>
+        <a href="#sec-single">Single Qubit</a>
+        <a href="#sec-tensor">Tensor Products</a>
+        <a href="#sec-gf2">GF(2) Bilinear Form</a>
+        <a href="#sec-nqubit">n-Qubit Formula</a>
+        <a href="#sec-super">Superpositions</a>
+        <a href="#sec-subspace">Subspaces &amp; Cosets</a>
+    </nav>
+
+    <main>
+        <!-- ============ INTRODUCTION ============ -->
+        <section id="sec-intro">
+            <h2>Why the Hadamard Transform?</h2>
+            <p>
+                The Hadamard transform is one of the most fundamental operations in quantum computing.
+                It creates superpositions from definite states, bridges the computational and Hadamard bases,
+                and is at the heart of nearly every quantum algorithm &mdash; from Deutsch-Jozsa to Grover's search to Shor's factoring.
+            </p>
+            <p>
+                This interactive guide builds the <em>n</em>-qubit Hadamard transform from the ground up.
+                Along the way, we will discover how <strong>tensor products</strong> combine single-qubit operations,
+                how the <strong>bilinear form over GF(2)</strong> determines every matrix entry,
+                and how the transform acts on <strong>uniform superpositions over subspaces and cosets</strong>.
+            </p>
+        </section>
+
+        <!-- ============ SINGLE QUBIT ============ -->
+        <section id="sec-single">
+            <h2>The Single-Qubit Hadamard Gate</h2>
+            <p>
+                A single qubit lives in a 2-dimensional space spanned by the computational basis states
+                \(|0\rangle\) and \(|1\rangle\). The Hadamard gate \(H\) is defined by the matrix:
+            </p>
+            \[ H = \frac{1}{\sqrt{2}} \begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix} \]
+            <p>Its action on the basis states is:</p>
+            \[
+                H|0\rangle = \frac{|0\rangle + |1\rangle}{\sqrt{2}} = |{+}\rangle, \qquad
+                H|1\rangle = \frac{|0\rangle - |1\rangle}{\sqrt{2}} = |{-}\rangle
+            \]
+            <p>
+                Notice the pattern: the coefficient of \(|y\rangle\) in \(H|x\rangle\) is
+                \(\frac{1}{\sqrt{2}}(-1)^{x \cdot y}\), where \(x \cdot y\) is just the product of two bits.
+                When \(x=0\), all signs are positive. When \(x=1\), the sign of \(|1\rangle\) flips.
+            </p>
+            \[ H|x\rangle = \frac{1}{\sqrt{2}} \sum_{y \in \{0,1\}} (-1)^{xy}\,|y\rangle \]
+
+            <div class="interactive-panel" id="single-interactive">
+                <div class="panel-title">Interactive: Single-Qubit Hadamard</div>
+                <div class="controls">
+                    <label>Input state:</label>
+                    <div class="btn-group">
+                        <button class="btn active" data-x="0">|0&rang;</button>
+                        <button class="btn" data-x="1">|1&rang;</button>
+                    </div>
+                </div>
+                <div id="single-output"></div>
+                <div class="chart-wrapper"><div class="amplitude-chart" id="single-chart"></div></div>
+            </div>
+        </section>
+
+        <!-- ============ TENSOR PRODUCTS ============ -->
+        <section id="sec-tensor">
+            <h2>Scaling Up: Tensor Products</h2>
+            <p>
+                To apply Hadamard to multiple qubits, we use the <strong>tensor product</strong> (Kronecker product).
+                If \(H\) acts on one qubit, then \(H^{\otimes n} = \underbrace{H \otimes H \otimes \cdots \otimes H}_{n}\)
+                acts on \(n\) qubits independently.
+            </p>
+            <p>
+                The key property of the tensor product for operators is:
+            </p>
+            \[ (A \otimes B)\,(|\psi\rangle \otimes |\phi\rangle) = (A|\psi\rangle) \otimes (B|\phi\rangle) \]
+            <p>
+                As a matrix, \(A \otimes B\) is built by replacing each entry \(a_{ij}\) of \(A\) with the
+                block \(a_{ij} \cdot B\). For \(H \otimes H\):
+            </p>
+
+            <div class="interactive-panel">
+                <div class="panel-title">Visual: Tensor Product Block Structure</div>
+                <div class="tensor-row" id="tensor-visual"></div>
+                <p style="font-size:0.88rem; color:var(--text-dim); margin-top:12px; text-align:center;">
+                    Hover over a block in \(H^{\otimes 2}\) to see which entry of \(H\) it corresponds to.
+                    Each 2&times;2 block is a copy of \(H\) scaled by the corresponding entry of \(H\).
+                </p>
+            </div>
+
+            <div class="key-insight">
+                <strong>Key insight:</strong> Because \(H^{\otimes n}\) applies \(H\) independently to each qubit,
+                we can factor the action on any product state:
+                \(H^{\otimes n}|x_1 x_2 \cdots x_n\rangle = H|x_1\rangle \otimes H|x_2\rangle \otimes \cdots \otimes H|x_n\rangle\).
+            </div>
+        </section>
+
+        <!-- ============ GF(2) ============ -->
+        <section id="sec-gf2">
+            <h2>The GF(2) Bilinear Form</h2>
+            <p>
+                \(\text{GF}(2)\) is the finite field with two elements: \(\{0, 1\}\), where addition is
+                <strong>XOR</strong> (so \(1 + 1 = 0\)) and multiplication is <strong>AND</strong>.
+            </p>
+            <p>
+                An \(n\)-bit string \(x = x_1 x_2 \cdots x_n\) is a vector in \(\text{GF}(2)^n\).
+                The <strong>bilinear form</strong> (dot product) over \(\text{GF}(2)\) is:
+            </p>
+            \[ x \cdot y = x_1 y_1 \oplus x_2 y_2 \oplus \cdots \oplus x_n y_n \]
+            <p>
+                This is computed as: multiply corresponding bits (AND), then XOR all the products.
+                The result is always 0 or 1.
+            </p>
+
+            <div class="interactive-panel" id="gf2-interactive">
+                <div class="panel-title">Interactive: GF(2) Dot Product Calculator</div>
+                <div class="controls">
+                    <label>Bits (n):</label>
+                    <div class="btn-group" id="gf2-n-btns"></div>
+                </div>
+                <div class="controls" style="margin-bottom:8px;">
+                    <label style="width:24px;">x:</label>
+                    <div id="gf2-x-bits" style="display:flex; gap:4px;"></div>
+                </div>
+                <div class="controls" style="margin-bottom:8px;">
+                    <label style="width:24px;">y:</label>
+                    <div id="gf2-y-bits" style="display:flex; gap:4px;"></div>
+                </div>
+                <div class="gf2-computation" id="gf2-result"></div>
+            </div>
+
+            <div class="key-insight">
+                <strong>Key connection:</strong> The sign \((-1)^{x \cdot y}\) is <strong>+1</strong> when \(x \cdot y = 0\)
+                and <strong>&minus;1</strong> when \(x \cdot y = 1\). This single bit completely determines the sign
+                of each entry in the Hadamard matrix.
+            </div>
+        </section>
+
+        <!-- ============ N-QUBIT FORMULA ============ -->
+        <section id="sec-nqubit">
+            <h2>The <em>n</em>-Qubit Hadamard Formula</h2>
+            <p>
+                Combining the tensor product structure with the single-qubit formula, we can derive the
+                action of \(H^{\otimes n}\) on any computational basis state.
+            </p>
+            <div class="derivation">
+                <div class="step">
+                    Start with a basis state \(|x\rangle = |x_1 x_2 \cdots x_n\rangle\). Factor using the tensor product:
+                    \[ H^{\otimes n}|x\rangle = H|x_1\rangle \otimes H|x_2\rangle \otimes \cdots \otimes H|x_n\rangle \]
+                </div>
+                <div class="step">
+                    Substitute the single-qubit formula \(H|x_i\rangle = \frac{1}{\sqrt{2}} \sum_{y_i} (-1)^{x_i y_i}|y_i\rangle\):
+                    \[ = \bigotimes_{i=1}^{n} \frac{1}{\sqrt{2}} \sum_{y_i \in \{0,1\}} (-1)^{x_i y_i}|y_i\rangle \]
+                </div>
+                <div class="step">
+                    Distribute the product over the sums. The exponents add:
+                    \[ = \frac{1}{\sqrt{2^n}} \sum_{y \in \{0,1\}^n} (-1)^{x_1 y_1 + x_2 y_2 + \cdots + x_n y_n}|y\rangle \]
+                </div>
+                <div class="step">
+                    Recognize the GF(2) dot product in the exponent:
+                    \[ \boxed{\;H^{\otimes n}|x\rangle = \frac{1}{\sqrt{2^n}} \sum_{y \in \{0,1\}^n} (-1)^{x \cdot y}\,|y\rangle\;} \]
+                </div>
+            </div>
+            <p>
+                Each matrix entry is therefore \(\bigl(H^{\otimes n}\bigr)_{y,x} = \frac{1}{\sqrt{2^n}}(-1)^{x \cdot y}\).
+                The entire matrix is determined by the GF(2) dot product!
+            </p>
+
+            <h3>Explore the Hadamard Matrix</h3>
+            <div class="interactive-panel">
+                <div class="panel-title">Interactive: H<sup>&otimes;n</sup> Matrix Heatmap</div>
+                <div class="controls">
+                    <label>Qubits (n):</label>
+                    <div class="btn-group" id="matrix-n-btns"></div>
+                </div>
+                <div class="matrix-container" id="matrix-container">
+                    <div class="matrix-grid" id="matrix-grid"></div>
+                </div>
+                <div class="matrix-label-row" id="matrix-scale"></div>
+                <p style="font-size:0.85rem; color:var(--text-dim); margin-top:8px;">
+                    Hover over any cell to see the GF(2) computation. Rows = output \(|y\rangle\), columns = input \(|x\rangle\).
+                    <span style="color:var(--cyan);">Cyan = +1</span>,
+                    <span style="color:var(--red);">Red = &minus;1</span> (before the \(1/\sqrt{2^n}\) factor).
+                </p>
+            </div>
+
+            <h3>Transform a Basis State</h3>
+            <div class="interactive-panel">
+                <div class="panel-title">Interactive: State Transformer</div>
+                <div class="controls">
+                    <label>Qubits (n):</label>
+                    <div class="btn-group" id="state-n-btns"></div>
+                </div>
+                <div class="controls">
+                    <label>Input |x&rang;:</label>
+                    <div id="state-x-bits" style="display:flex; gap:4px;"></div>
+                </div>
+                <div id="state-formula" style="margin:12px 0; font-size:0.95rem;"></div>
+                <div class="chart-wrapper"><div class="amplitude-chart" id="state-chart"></div></div>
+                <p style="font-size:0.85rem; color:var(--text-dim);">
+                    Toggle the input bits to see how \(H^{\otimes n}|x\rangle\) changes.
+                    <span style="color:var(--cyan);">Cyan bars = positive amplitude</span>,
+                    <span style="color:var(--red);">red bars = negative</span>.
+                </p>
+            </div>
+        </section>
+
+        <!-- ============ SUPERPOSITIONS ============ -->
+        <section id="sec-super">
+            <h2>Creating Uniform Superpositions</h2>
+            <p>
+                The most famous application: when the input is \(|0\rangle^{\otimes n}\), <em>all</em> dot products
+                \(0\cdots0 \cdot y = 0\), so every sign is \(+1\):
+            </p>
+            \[ H^{\otimes n}|0\cdots0\rangle = \frac{1}{\sqrt{2^n}} \sum_{y \in \{0,1\}^n} |y\rangle \]
+            <p>
+                This is the <strong>uniform superposition</strong> over all \(2^n\) computational basis states &mdash;
+                the standard starting state for most quantum algorithms.
+            </p>
+
+            <h3>Self-Inverse Property</h3>
+            <p>
+                The Hadamard gate is its own inverse: \(H^2 = I\). This extends to the \(n\)-qubit case:
+                \((H^{\otimes n})^2 = I^{\otimes n} = I\). Applying the Hadamard twice returns to the original state.
+                This is because \(H\) is both <strong>unitary</strong> (\(HH^\dagger = I\)) and
+                <strong>Hermitian</strong> (\(H = H^\dagger\)), so \(H^{-1} = H^\dagger = H\).
+            </p>
+
+            <div class="key-insight">
+                <strong>Crucial observation:</strong> The Hadamard transform converts between the
+                <strong>computational basis</strong> and the <strong>Hadamard basis</strong>.
+                A state that is a single basis vector in one basis becomes a uniform superposition in the other.
+                This duality is what makes Hadamard so powerful in quantum algorithms.
+            </div>
+        </section>
+
+        <!-- ============ SUBSPACES & COSETS ============ -->
+        <section id="sec-subspace">
+            <h2>Subspaces, Cosets &amp; the Hadamard</h2>
+            <p>
+                The deepest structure of the Hadamard transform emerges when we consider its action
+                on uniform superpositions over <strong>subspaces</strong> of \(\text{GF}(2)^n\).
+            </p>
+
+            <h3>Subspaces of GF(2)<sup>n</sup></h3>
+            <p>
+                A <strong>subspace</strong> \(S \subseteq \text{GF}(2)^n\) is a subset that is closed under XOR:
+                if \(s, t \in S\), then \(s \oplus t \in S\). It always contains \(0\cdots0\).
+                A subspace of dimension \(k\) is spanned by \(k\) linearly independent vectors and has
+                \(|S| = 2^k\) elements.
+            </p>
+
+            <h3>Orthogonal Complement</h3>
+            <p>
+                The <strong>orthogonal complement</strong> of \(S\) is:
+                \[ S^\perp = \{y \in \text{GF}(2)^n \;:\; x \cdot y = 0 \;\;\text{for all } x \in S\} \]
+                If \(\dim(S) = k\), then \(\dim(S^\perp) = n - k\), so \(|S| \cdot |S^\perp| = 2^n\).
+            </p>
+
+            <h3>The Subspace Theorem</h3>
+            <p>
+                Let \(|S\rangle = \frac{1}{\sqrt{|S|}}\sum_{s \in S}|s\rangle\) be the uniform superposition over \(S\). Then:
+            </p>
+            \[ \boxed{\; H^{\otimes n}\,|S\rangle = |S^\perp\rangle \;} \]
+            <p>
+                <em>The Hadamard maps the uniform superposition over a subspace to the uniform superposition
+                over its orthogonal complement!</em>
+            </p>
+
+            <div class="derivation">
+                <div class="step">
+                    <strong>Proof sketch:</strong> Expand \(H^{\otimes n}|S\rangle\):
+                    \[ H^{\otimes n}|S\rangle = \frac{1}{\sqrt{|S|}}\sum_{s \in S} \frac{1}{\sqrt{2^n}} \sum_y (-1)^{s \cdot y}|y\rangle = \frac{1}{\sqrt{|S| \cdot 2^n}} \sum_y \Bigl(\sum_{s \in S}(-1)^{s \cdot y}\Bigr)|y\rangle \]
+                </div>
+                <div class="step">
+                    The inner sum \(\sum_{s \in S}(-1)^{s \cdot y}\) equals \(|S|\) if \(y \in S^\perp\) (all terms are \(+1\)),
+                    and <strong>0</strong> otherwise (the terms cancel in pairs). Therefore:
+                    \[ H^{\otimes n}|S\rangle = \frac{|S|}{\sqrt{|S| \cdot 2^n}} \sum_{y \in S^\perp}|y\rangle = \frac{1}{\sqrt{|S^\perp|}} \sum_{y \in S^\perp}|y\rangle = |S^\perp\rangle \]
+                </div>
+            </div>
+
+            <h3>Cosets and Phase Shifts</h3>
+            <p>
+                A <strong>coset</strong> \(a \oplus S = \{a \oplus s \;:\; s \in S\}\) is a "shifted" copy of the subspace.
+                When we apply the Hadamard to a uniform superposition over a coset:
+            </p>
+            \[ \boxed{\; H^{\otimes n} \frac{1}{\sqrt{|S|}}\sum_{s \in S}|a \oplus s\rangle = \frac{1}{\sqrt{|S^\perp|}} \sum_{t \in S^\perp} (-1)^{a \cdot t}\,|t\rangle \;} \]
+            <p>
+                The output still has support on \(S^\perp\), but each amplitude picks up a <strong>phase</strong>
+                \((-1)^{a \cdot t}\) that depends on the shift vector \(a\).
+                This is the mathematical foundation of <strong>Simon's algorithm</strong>, <strong>Bernstein-Vazirani</strong>,
+                and related quantum algorithms.
+            </p>
+
+            <div class="interactive-panel" id="subspace-interactive">
+                <div class="panel-title">Interactive: Subspace &amp; Coset Explorer</div>
+                <div class="controls">
+                    <label>Qubits (n):</label>
+                    <div class="btn-group" id="sub-n-btns"></div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.9rem; font-weight:600; color:var(--text-dim); display:block; margin-bottom:6px;">
+                        Basis vectors for subspace \(S\) <span style="font-weight:400;">(click to toggle)</span>:
+                    </label>
+                    <div class="basis-options" id="sub-basis-options"></div>
+                </div>
+                <div class="controls">
+                    <label>Shift \(a\):</label>
+                    <div id="sub-shift-bits" style="display:flex; gap:4px;"></div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0;">
+                    <div>
+                        <span style="font-size:0.8rem; font-weight:600; color:var(--accent);">
+                            S = span{basis} &nbsp;(dim <span id="sub-dim-s">0</span>, size <span id="sub-size-s">1</span>)
+                        </span>
+                        <div class="state-set" id="sub-s-elements"></div>
+                    </div>
+                    <div>
+                        <span style="font-size:0.8rem; font-weight:600; color:var(--cyan);">
+                            S&perp; &nbsp;(dim <span id="sub-dim-sp">0</span>, size <span id="sub-size-sp">1</span>)
+                        </span>
+                        <div class="state-set" id="sub-sp-elements"></div>
+                    </div>
+                </div>
+                <div style="margin-bottom:8px;">
+                    <span style="font-size:0.8rem; font-weight:600; color:var(--orange);">
+                        Coset a &oplus; S:
+                    </span>
+                    <div class="state-set" id="sub-coset-elements"></div>
+                </div>
+
+                <div class="two-col">
+                    <div>
+                        <div class="panel-title">Input: uniform over a &oplus; S</div>
+                        <div class="chart-wrapper"><div class="amplitude-chart" id="sub-input-chart"></div></div>
+                    </div>
+                    <div>
+                        <div class="panel-title">Output: H<sup>&otimes;n</sup> applied</div>
+                        <div class="chart-wrapper"><div class="amplitude-chart" id="sub-output-chart"></div></div>
+                    </div>
+                </div>
+                <p style="font-size:0.85rem; color:var(--text-dim); margin-top:4px;">
+                    Observe: the output is supported exactly on \(S^\perp\). The shift \(a\) only affects the
+                    <strong>signs</strong> (phases) of the amplitudes, not which basis states appear.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+    // ================================================================
+    //  UTILITIES
+    // ================================================================
+    function toBin(num, n) {
+        return num.toString(2).padStart(n, '0');
+    }
+
+    function gf2Dot(x, y, n) {
+        let r = 0;
+        for (let i = 0; i < n; i++) r ^= ((x >> i) & 1) & ((y >> i) & 1);
+        return r;
+    }
+
+    function applyHadamard(state, n) {
+        const size = 1 << n;
+        const result = new Array(size).fill(0);
+        const norm = 1 / Math.sqrt(size);
+        for (let y = 0; y < size; y++) {
+            let sum = 0;
+            for (let x = 0; x < size; x++) {
+                sum += state[x] * (gf2Dot(x, y, n) === 0 ? 1 : -1);
+            }
+            result[y] = sum * norm;
+        }
+        return result;
+    }
+
+    function generateSubspace(basis) {
+        const k = basis.length;
+        const elements = new Set();
+        for (let mask = 0; mask < (1 << k); mask++) {
+            let el = 0;
+            for (let i = 0; i < k; i++) if ((mask >> i) & 1) el ^= basis[i];
+            elements.add(el);
+        }
+        return [...elements].sort((a, b) => a - b);
+    }
+
+    function orthComplement(basis, n) {
+        const size = 1 << n;
+        const result = [];
+        for (let y = 0; y < size; y++) {
+            let ok = true;
+            for (const b of basis) { if (gf2Dot(b, y, n) !== 0) { ok = false; break; } }
+            if (ok) result.push(y);
+        }
+        return result;
+    }
+
+    // ================================================================
+    //  RENDERING HELPERS
+    // ================================================================
+    function renderAmplitudeChart(container, amplitudes, n) {
+        const size = 1 << n;
+        const maxAmp = Math.max(...amplitudes.map(Math.abs), 0.001);
+        let html = '<div class="zero-line"></div>';
+        for (let i = 0; i < size; i++) {
+            const amp = amplitudes[i];
+            const pct = Math.abs(amp) / maxAmp * 46;
+            html += `<div class="bar-group">`;
+            if (amp >= 0) {
+                html += `<div class="bar-top"><div class="bar positive" style="height:${pct}%"></div></div>`;
+                html += `<div class="bar-bottom"></div>`;
+            } else {
+                html += `<div class="bar-top"></div>`;
+                html += `<div class="bar-bottom"><div class="bar negative" style="height:${pct}%"></div></div>`;
+            }
+            html += `<div class="bar-label">|${toBin(i, n)}\u27E9</div></div>`;
+        }
+        container.innerHTML = html;
+    }
+
+    function makeBitToggles(container, n, onChange) {
+        container.innerHTML = '';
+        const bits = [];
+        for (let i = 0; i < n; i++) {
+            const d = document.createElement('div');
+            d.className = 'bit-toggle';
+            d.textContent = '0';
+            d.dataset.index = i;
+            d.addEventListener('click', () => {
+                d.classList.toggle('active');
+                d.textContent = d.classList.contains('active') ? '1' : '0';
+                onChange();
+            });
+            container.appendChild(d);
+            bits.push(d);
+        }
+        return bits;
+    }
+
+    function readBits(container) {
+        let val = 0;
+        const toggles = container.querySelectorAll('.bit-toggle');
+        toggles.forEach((t, i) => { if (t.classList.contains('active')) val |= (1 << (toggles.length - 1 - i)); });
+        return val;
+    }
+
+    function makeNButtons(container, options, currentN, onSelect) {
+        container.innerHTML = '';
+        options.forEach(n => {
+            const b = document.createElement('button');
+            b.className = 'btn' + (n === currentN ? ' active' : '');
+            b.textContent = n;
+            b.addEventListener('click', () => {
+                container.querySelectorAll('.btn').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
+                onSelect(n);
+            });
+            container.appendChild(b);
+        });
+    }
+
+    // Tooltip
+    const tooltip = document.getElementById('tooltip');
+    function showTooltip(el, html) {
+        tooltip.innerHTML = html;
+        tooltip.style.display = 'block';
+        const rect = el.getBoundingClientRect();
+        let left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2;
+        let top = rect.top - tooltip.offsetHeight - 8;
+        if (top < 4) top = rect.bottom + 8;
+        if (left < 4) left = 4;
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+    }
+    function hideTooltip() { tooltip.style.display = 'none'; }
+
+    function retypeset(el) {
+        if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]).catch(() => {});
+    }
+
+    // ================================================================
+    //  SECTION: SINGLE QUBIT
+    // ================================================================
+    function initSingleQubit() {
+        const panel = document.getElementById('single-interactive');
+        const btns = panel.querySelectorAll('.btn');
+        const output = document.getElementById('single-output');
+        const chart = document.getElementById('single-chart');
+        let x = 0;
+
+        function update() {
+            const amp0 = 1 / Math.sqrt(2);
+            const amp1 = (x === 0 ? 1 : -1) / Math.sqrt(2);
+            output.innerHTML = `<div style="font-size:1.05rem; margin:8px 0;">
+                \\(H|${x}\\rangle = \\frac{1}{\\sqrt{2}}(|0\\rangle ${x === 0 ? '+' : '-'} |1\\rangle)\\)
+                &nbsp;=&nbsp; \\(|${x === 0 ? '+' : '-'}\\rangle\\)
+            </div>`;
+            retypeset(output);
+            renderAmplitudeChart(chart, [amp0, amp1], 1);
+        }
+
+        btns.forEach(b => b.addEventListener('click', () => {
+            btns.forEach(bb => bb.classList.remove('active'));
+            b.classList.add('active');
+            x = parseInt(b.dataset.x);
+            update();
+        }));
+        update();
+    }
+
+    // ================================================================
+    //  SECTION: TENSOR PRODUCT VISUAL
+    // ================================================================
+    function initTensorProduct() {
+        const container = document.getElementById('tensor-visual');
+        const signs = [[1, 1], [1, -1]];
+        const big = [
+            [1, 1, 1, 1],
+            [1, -1, 1, -1],
+            [1, 1, -1, -1],
+            [1, -1, -1, 1]
+        ];
+
+        function cellHTML(val) {
+            const cls = val > 0 ? 'pos' : 'neg';
+            return `<div class="cell ${cls}">${val > 0 ? '+' : '\u2212'}</div>`;
+        }
+
+        let html = `<div class="mini-matrix" style="grid-template-columns:repeat(2,1fr);" id="tensor-small">`;
+        for (let i = 0; i < 2; i++)
+            for (let j = 0; j < 2; j++)
+                html += `<div class="cell ${signs[i][j] > 0 ? 'pos' : 'neg'}" data-si="${i}" data-sj="${j}">${signs[i][j] > 0 ? '+' : '\u2212'}</div>`;
+        html += `</div>`;
+
+        html += `<div class="tensor-op">&otimes;</div>`;
+        html += `<div class="mini-matrix" style="grid-template-columns:repeat(2,1fr);">`;
+        for (let i = 0; i < 2; i++)
+            for (let j = 0; j < 2; j++)
+                html += cellHTML(signs[i][j]);
+        html += `</div>`;
+
+        html += `<div class="tensor-op">=</div>`;
+
+        html += `<div class="mini-matrix large" style="grid-template-columns:repeat(4,1fr);" id="tensor-big">`;
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                const bi = Math.floor(i / 2), bj = Math.floor(j / 2);
+                let border = '';
+                if (j === 1) border += ' block-border-right';
+                if (i === 1) border += ' block-border-bottom';
+                html += `<div class="cell ${big[i][j] > 0 ? 'pos' : 'neg'}${border}" data-bi="${bi}" data-bj="${bj}">${big[i][j] > 0 ? '+' : '\u2212'}</div>`;
+            }
+        }
+        html += `</div>`;
+
+        container.innerHTML = html;
+
+        const bigEl = document.getElementById('tensor-big');
+        const smallEl = document.getElementById('tensor-small');
+
+        bigEl.addEventListener('mouseover', (e) => {
+            const cell = e.target.closest('.cell');
+            if (!cell) return;
+            const bi = cell.dataset.bi, bj = cell.dataset.bj;
+            bigEl.querySelectorAll('.cell').forEach(c => {
+                if (c.dataset.bi === bi && c.dataset.bj === bj) c.classList.add('highlight');
+            });
+            smallEl.querySelectorAll('.cell').forEach(c => {
+                if (c.dataset.si === bi && c.dataset.sj === bj) c.classList.add('highlight');
+            });
+        });
+        bigEl.addEventListener('mouseout', () => {
+            bigEl.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight'));
+            smallEl.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight'));
+        });
+    }
+
+    // ================================================================
+    //  SECTION: GF(2) CALCULATOR
+    // ================================================================
+    (function() {
+        let gf2N = 3;
+        window.initGF2 = function() {
+            const nBtns = document.getElementById('gf2-n-btns');
+            makeNButtons(nBtns, [2, 3, 4, 5, 6], gf2N, n => { gf2N = n; buildGF2(); });
+            buildGF2();
+        };
+
+        function buildGF2() {
+            makeBitToggles(document.getElementById('gf2-x-bits'), gf2N, updateGF2);
+            makeBitToggles(document.getElementById('gf2-y-bits'), gf2N, updateGF2);
+            updateGF2();
+        }
+
+        function updateGF2() {
+            const x = readBits(document.getElementById('gf2-x-bits'));
+            const y = readBits(document.getElementById('gf2-y-bits'));
+            const xStr = toBin(x, gf2N);
+            const yStr = toBin(y, gf2N);
+
+            let terms = [];
+            let products = [];
+            for (let i = 0; i < gf2N; i++) {
+                const xi = parseInt(xStr[i]);
+                const yi = parseInt(yStr[i]);
+                const pi = xi & yi;
+                terms.push(`<span class="product">${xi}&middot;${yi}</span>`);
+                products.push(pi);
+            }
+
+            const dot = gf2Dot(x, y, gf2N);
+            const sign = dot === 0 ? '+1' : '&minus;1';
+            const signClass = dot === 0 ? 'zero' : 'one';
+
+            let html = `<div>x &middot; y = ${terms.join(' &oplus; ')} = ${products.join(' &oplus; ')} = <span class="result ${signClass}">${dot}</span></div>`;
+            html += `<div style="margin-top:8px;">(-1)<sup>x&middot;y</sup> = (-1)<sup>${dot}</sup> = <span class="result ${signClass}" style="font-size:1.2rem;">${sign}</span></div>`;
+            document.getElementById('gf2-result').innerHTML = html;
+        }
+    })();
+
+    // ================================================================
+    //  SECTION: MATRIX EXPLORER
+    // ================================================================
+    (function() {
+        let matN = 2;
+        window.initMatrixExplorer = function() {
+            makeNButtons(document.getElementById('matrix-n-btns'), [1, 2, 3, 4], matN, n => { matN = n; renderMatrix(); });
+            const grid = document.getElementById('matrix-grid');
+            grid.addEventListener('mouseover', matrixHover);
+            grid.addEventListener('mouseout', hideTooltip);
+            renderMatrix();
+        };
+
+        function renderMatrix() {
+            const n = matN;
+            const size = 1 << n;
+            const cellSize = [0, 60, 48, 36, 28][n];
+            const grid = document.getElementById('matrix-grid');
+            grid.style.gridTemplateColumns = `40px repeat(${size}, ${cellSize}px)`;
+            grid.style.gridTemplateRows = `28px repeat(${size}, ${cellSize}px)`;
+
+            let html = '<div class="matrix-corner"></div>';
+            for (let j = 0; j < size; j++)
+                html += `<div class="matrix-header" style="font-size:${n > 3 ? '0.6rem' : '0.72rem'}">|${toBin(j, n)}\u27E9</div>`;
+
+            for (let i = 0; i < size; i++) {
+                html += `<div class="matrix-header" style="font-size:${n > 3 ? '0.6rem' : '0.72rem'}">\u27E8${toBin(i, n)}|</div>`;
+                for (let j = 0; j < size; j++) {
+                    const d = gf2Dot(j, i, n);
+                    const cls = d === 0 ? 'positive' : 'negative';
+                    html += `<div class="matrix-cell ${cls}" data-row="${i}" data-col="${j}" data-dot="${d}">${d === 0 ? '+' : '\u2212'}</div>`;
+                }
+            }
+            grid.innerHTML = html;
+            document.getElementById('matrix-scale').textContent = `Overall factor: 1/\u221A${size} \u2248 ${(1/Math.sqrt(size)).toFixed(4)}`;
+        }
+
+        function matrixHover(e) {
+            const cell = e.target.closest('.matrix-cell');
+            if (!cell) { hideTooltip(); return; }
+            const row = cell.dataset.row, col = cell.dataset.col, dot = cell.dataset.dot;
+            const n = matN;
+            const rowStr = toBin(parseInt(row), n);
+            const colStr = toBin(parseInt(col), n);
+            let products = [];
+            for (let i = 0; i < n; i++) products.push(`${colStr[i]}\u00B7${rowStr[i]}`);
+            const html = `<strong>|${rowStr}\u27E9\u27E8${colStr}|</strong><br>` +
+                `x\u00B7y = ${products.join(' \u2295 ')} = ${dot}<br>` +
+                `(-1)<sup>${dot}</sup> = <strong style="color:${dot==='0' ? 'var(--cyan)' : 'var(--red)'}">${dot==='0' ? '+1' : '\u22121'}</strong>`;
+            showTooltip(cell, html);
+        }
+    })();
+
+    // ================================================================
+    //  SECTION: STATE TRANSFORMER
+    // ================================================================
+    (function() {
+        let stN = 2;
+        window.initStateTransformer = function() {
+            makeNButtons(document.getElementById('state-n-btns'), [1, 2, 3, 4], stN, n => { stN = n; buildState(); });
+            buildState();
+        };
+
+        function buildState() {
+            makeBitToggles(document.getElementById('state-x-bits'), stN, updateState);
+            updateState();
+        }
+
+        function updateState() {
+            const n = stN;
+            const x = readBits(document.getElementById('state-x-bits'));
+            const size = 1 << n;
+            const inputState = new Array(size).fill(0);
+            inputState[x] = 1;
+            const output = applyHadamard(inputState, n);
+
+            const xStr = toBin(x, n);
+            let terms = [];
+            let count = 0;
+            for (let y = 0; y < size; y++) {
+                const sign = gf2Dot(x, y, n) === 0 ? '+' : '\u2212';
+                if (count < 8) {
+                    terms.push(`${count === 0 ? '' : sign === '+' ? ' + ' : ' \u2212 '}|${toBin(y, n)}\u27E9`);
+                } else if (count === 8) {
+                    terms.push(' + \u22EF');
+                }
+                count++;
+            }
+            const formula = document.getElementById('state-formula');
+            formula.innerHTML = `\\(H^{\\otimes ${n}}|${xStr}\\rangle = \\frac{1}{${size === 2 ? '\\sqrt{2}' : '\\sqrt{' + size + '}'}}\\big(\\)${terms.join('')}\\(\\big)\\)`;
+            retypeset(formula);
+
+            renderAmplitudeChart(document.getElementById('state-chart'), output, n);
+        }
+    })();
+
+    // ================================================================
+    //  SECTION: SUBSPACE EXPLORER
+    // ================================================================
+    (function() {
+        let subN = 3;
+        let selectedBasis = [];
+        let shift = 0;
+
+        window.initSubspaceExplorer = function() {
+            makeNButtons(document.getElementById('sub-n-btns'), [2, 3, 4], subN, n => { subN = n; selectedBasis = []; shift = 0; buildSubspace(); });
+            buildSubspace();
+        };
+
+        function buildSubspace() {
+            const n = subN;
+            const size = 1 << n;
+            selectedBasis = [];
+
+            const opts = document.getElementById('sub-basis-options');
+            let html = '';
+            for (let v = 1; v < size; v++) {
+                html += `<div class="basis-cb" data-v="${v}">|${toBin(v, n)}\u27E9</div>`;
+            }
+            opts.innerHTML = html;
+            opts.querySelectorAll('.basis-cb').forEach(el => {
+                el.addEventListener('click', () => {
+                    const v = parseInt(el.dataset.v);
+                    if (selectedBasis.includes(v)) {
+                        selectedBasis = selectedBasis.filter(x => x !== v);
+                        el.classList.remove('selected');
+                    } else {
+                        selectedBasis.push(v);
+                        el.classList.add('selected');
+                    }
+                    updateSubspace();
+                });
+            });
+
+            makeBitToggles(document.getElementById('sub-shift-bits'), n, () => {
+                shift = readBits(document.getElementById('sub-shift-bits'));
+                updateSubspace();
+            });
+
+            updateSubspace();
+        }
+
+        function updateSubspace() {
+            const n = subN;
+            const size = 1 << n;
+
+            const S = generateSubspace(selectedBasis);
+            const Sperp = orthComplement(selectedBasis, n);
+            const dimS = Math.log2(S.length);
+            const dimSp = Math.log2(Sperp.length);
+
+            const coset = [...new Set(S.map(s => s ^ shift))].sort((a, b) => a - b);
+
+            document.getElementById('sub-dim-s').textContent = Math.round(dimS);
+            document.getElementById('sub-size-s').textContent = S.length;
+            document.getElementById('sub-dim-sp').textContent = Math.round(dimSp);
+            document.getElementById('sub-size-sp').textContent = Sperp.length;
+
+            document.getElementById('sub-s-elements').innerHTML = S.map(s =>
+                `<span class="state-pill pill-sub">|${toBin(s, n)}\u27E9</span>`).join('');
+            document.getElementById('sub-sp-elements').innerHTML = Sperp.map(s =>
+                `<span class="state-pill pill-comp">|${toBin(s, n)}\u27E9</span>`).join('');
+            document.getElementById('sub-coset-elements').innerHTML = coset.map(s =>
+                `<span class="state-pill pill-coset">|${toBin(s, n)}\u27E9</span>`).join('');
+
+            const inputState = new Array(size).fill(0);
+            const amp = 1 / Math.sqrt(coset.length);
+            coset.forEach(s => inputState[s] = amp);
+
+            const outputState = applyHadamard(inputState, n);
+
+            renderAmplitudeChart(document.getElementById('sub-input-chart'), inputState, n);
+            renderAmplitudeChart(document.getElementById('sub-output-chart'), outputState, n);
+
+            const spEl = document.getElementById('sub-sp-elements');
+            Sperp.forEach((t, i) => {
+                const phase = gf2Dot(shift, t, n);
+                const pills = spEl.querySelectorAll('.state-pill');
+                if (pills[i]) {
+                    pills[i].className = 'state-pill ' + (phase === 0 ? 'pill-phase-pos' : 'pill-phase-neg');
+                    pills[i].innerHTML = `${phase === 0 ? '+' : '\u2212'}|${toBin(t, n)}\u27E9`;
+                }
+            });
+        }
+    })();
+
+    // ================================================================
+    //  INITIALIZATION
+    // ================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+        initSingleQubit();
+        initTensorProduct();
+        initGF2();
+        initMatrixExplorer();
+        initStateTransformer();
+        initSubspaceExplorer();
+    });
+    </script>
+</body>
+</html>
