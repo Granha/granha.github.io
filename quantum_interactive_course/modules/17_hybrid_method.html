@@ -1,0 +1,2348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Interactive pedagogical guide to the hybrid method (BBBV argument) proving Grover's quantum search algorithm requires Omega(sqrt N) queries. Includes visualizations, step-by-step proof, and quiz.">
+<meta name="theme-color" content="#0a0e1a">
+<meta property="og:title" content="The Hybrid Method — Proving Grover's Search is Optimal">
+<meta property="og:description" content="Interactive guide to the BBBV lower bound proof for quantum unstructured search optimality.">
+<meta property="og:type" content="article">
+<title>The Hybrid Method — Proving Grover's Search is Optimal</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --code-bg: #1a2236;
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+    --radius: 16px;
+  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  font-size: 17px;
+  overflow-x: hidden;
+}
+.container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Skip to content (a11y) ── */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 0 0 var(--radius) var(--radius);
+  font-weight: 600;
+  font-size: 0.9em;
+  z-index: 1100;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+.skip-link:focus {
+  top: 0;
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* ── Reading progress bar ── */
+#readingProgress {
+  position: fixed;
+  top: 0; left: 0;
+  width: 0%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--cyan), var(--pink));
+  z-index: 1001;
+  transition: width 0.1s linear;
+  pointer-events: none;
+}
+
+/* ── KaTeX light text ── */
+.katex { color: var(--text); }
+.katex-html { color: var(--text); }
+
+/* ── Header ── */
+header {
+  background: transparent;
+  color: var(--text);
+  padding: 60px 24px 50px;
+  text-align: center;
+  position: relative;
+}
+header::after {
+  content: '';
+  display: block;
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), transparent);
+  margin: 1.5rem auto 0;
+}
+header h1 {
+  font-size: 2.4em; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--accent), var(--cyan), var(--pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+header .subtitle { font-size: 1.15em; color: var(--text-dim); max-width: 600px; margin: 0 auto; font-weight: 300; }
+header .tag {
+  display: inline-block; margin-top: 18px;
+  background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3);
+  padding: 4px 16px; border-radius: 20px; font-size: 0.85em; color: var(--text-dim);
+}
+header .reading-time {
+  display: inline-block; margin-top: 18px; margin-left: 10px;
+  background: rgba(34, 211, 238, 0.1); border: 1px solid rgba(34, 211, 238, 0.25);
+  padding: 4px 16px; border-radius: 20px; font-size: 0.85em; color: var(--text-dim);
+}
+
+/* ── Sections ── */
+section { padding: 50px 0; }
+h2 {
+  font-size: 1.7em; margin-bottom: 20px; color: var(--text);
+  border-bottom: 3px solid var(--accent); display: inline-block; padding-bottom: 4px;
+}
+h3 { font-size: 1.25em; margin: 24px 0 12px; color: var(--cyan); }
+p { margin-bottom: 16px; }
+
+/* ── Cards ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin: 20px 0;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.5;
+}
+.card:hover { border-color: rgba(99, 102, 241, 0.4); }
+.card.highlight { border-left: 4px solid var(--accent); }
+.card.theorem { border-left: 4px solid var(--pink); background: rgba(244, 114, 182, 0.05); }
+.card.definition { border-left: 4px solid var(--cyan); background: rgba(34, 211, 238, 0.05); }
+.card-label {
+  font-size: 0.8em; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 8px;
+}
+.card.theorem .card-label { color: var(--pink); }
+.card.definition .card-label { color: var(--cyan); }
+.card.highlight .card-label { color: var(--accent); }
+
+/* ── Interactive panels ── */
+.interactive-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin: 28px 0;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.interactive-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.5;
+}
+.interactive-panel:hover { border-color: rgba(99, 102, 241, 0.4); }
+.interactive-panel h3 { color: var(--accent); margin-top: 0; font-size: 1.15em; }
+.controls { display: flex; flex-wrap: wrap; gap: 24px; margin: 16px 0; align-items: center; }
+.control-group { display: flex; flex-direction: column; gap: 4px; }
+.control-group label {
+  font-size: 0.78rem; font-weight: 500; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.control-group .value {
+  font-family: 'JetBrains Mono', monospace; font-weight: 700;
+  color: var(--accent); font-size: 1.1em;
+}
+input[type="range"] {
+  width: 200px; cursor: pointer;
+  accent-color: var(--accent);
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--surface2), var(--border));
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #818cf8);
+  border: 2px solid var(--bg);
+  margin-top: -6px;
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--accent-glow);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 14px var(--accent-glow);
+}
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--surface2), var(--border));
+  border: none;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #818cf8);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--cyan-glow), 0 0 14px var(--accent-glow);
+}
+select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+select:focus { border-color: var(--accent); }
+canvas {
+  display: block; margin: 16px auto;
+  border: 1px solid var(--border); border-radius: 8px; max-width: 100%;
+}
+
+/* ── Proof steps ── */
+.proof-steps { counter-reset: proof-step; }
+.proof-step {
+  position: relative; padding: 20px 20px 20px 60px; margin: 12px 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); cursor: pointer; transition: all 0.3s ease;
+  outline: none;
+}
+.proof-step:focus-visible { border-color: var(--cyan); box-shadow: 0 0 0 2px var(--cyan-glow); }
+.proof-step:hover { border-color: rgba(99, 102, 241, 0.4); box-shadow: 0 0 20px var(--accent-glow); }
+.proof-step.active { border-color: var(--accent); background: rgba(99, 102, 241, 0.08); box-shadow: 0 0 20px var(--accent-glow); }
+.proof-step::before {
+  counter-increment: proof-step; content: counter(proof-step);
+  position: absolute; left: 18px; top: 20px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #818cf8); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.9em;
+}
+.proof-step .step-title { font-weight: 700; margin-bottom: 6px; }
+.proof-step .step-detail {
+  display: none; margin-top: 12px; padding-top: 12px;
+  border-top: 1px dashed var(--border); font-size: 0.95em; color: var(--text-dim);
+}
+.proof-step.active .step-detail { display: block; }
+
+/* ── Proof progress indicator ── */
+#proofProgress {
+  display: inline-block;
+  margin-left: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88em;
+  color: var(--text-dim);
+  vertical-align: middle;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+#proofProgress.visible { opacity: 1; }
+
+/* ── Oracle diagram ── */
+.oracle-diagram {
+  display: flex; justify-content: center; gap: 40px;
+  flex-wrap: nowrap; margin: 24px 0; align-items: flex-start;
+}
+.oracle-box {
+  text-align: center; padding: 20px 24px;
+  border-radius: var(--radius); min-width: 180px; flex: 0 1 auto;
+}
+.oracle-box.null { background: rgba(52, 211, 153, 0.08); border: 2px solid rgba(52, 211, 153, 0.4); }
+.oracle-box.marked { background: rgba(99, 102, 241, 0.08); border: 2px solid rgba(99, 102, 241, 0.4); }
+.oracle-box .oracle-title { font-weight: 700; font-size: 1.05em; margin-bottom: 8px; }
+.oracle-box .oracle-grid {
+  display: grid; grid-template-columns: repeat(4, 32px);
+  gap: 4px; justify-content: center; margin-top: 10px;
+}
+.oracle-box .cell {
+  width: 32px; height: 32px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8em; font-weight: 700; transition: transform 0.2s;
+  font-family: 'JetBrains Mono', monospace;
+}
+.oracle-box .cell:hover { transform: scale(1.15); }
+.oracle-box.null .cell { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+.oracle-box.marked .cell { background: rgba(99, 102, 241, 0.15); color: var(--accent); }
+.oracle-box.marked .cell.marked-cell {
+  background: var(--pink); color: #fff;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 114, 182, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(244, 114, 182, 0); }
+}
+
+/* ── VS divider ── */
+.vs-divider {
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 1.4em; color: var(--text-dim);
+  align-self: center; padding: 0 4px;
+}
+
+/* ── Comparison table ── */
+.table-wrapper {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; margin: 20px 0;
+}
+.comparison-table {
+  width: 100%; border-collapse: collapse; font-size: 0.95em;
+}
+.comparison-table th, .comparison-table td {
+  padding: 12px 16px; text-align: center; border-bottom: 1px solid var(--border);
+}
+.comparison-table th {
+  background: linear-gradient(135deg, var(--accent), #818cf8); color: #fff; font-weight: 600;
+  font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.comparison-table tbody tr:nth-child(even) { background: var(--surface2); }
+.comparison-table tbody tr:nth-child(odd) { background: var(--surface); }
+.comparison-table tr:hover { background: rgba(99, 102, 241, 0.08); }
+.comparison-table tr:last-child td { border-bottom: none; }
+.comparison-table .optimal { color: var(--green); font-weight: 700; }
+.comparison-table .impossible-row { opacity: 0.7; }
+.comparison-table .impossible-row td:last-child { color: var(--pink); font-weight: 700; }
+
+/* ── Insight callouts ── */
+.insight {
+  background: rgba(251, 146, 60, 0.08); border-left: 4px solid var(--orange);
+  padding: 16px 20px; margin: 20px 0; border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 0.95em;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.insight:hover {
+  transform: translateX(4px);
+  box-shadow: -2px 0 16px rgba(251, 146, 60, 0.15);
+}
+.insight strong { color: var(--orange); }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-block; padding: 8px 20px;
+  background: linear-gradient(135deg, var(--accent), #818cf8); color: #fff; border: none;
+  border-radius: 8px; cursor: pointer; font-size: 0.9em;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600; transition: all 0.2s; letter-spacing: 0.01em;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
+.btn:active { transform: translateY(0); }
+.btn.secondary { background: var(--surface2); border: 1px solid var(--border); }
+.btn.secondary:hover { border-color: var(--accent); box-shadow: 0 4px 20px rgba(99, 102, 241, 0.1); }
+.btn.success { background: linear-gradient(135deg, var(--green), #2dd4bf); color: #0a0e1a; }
+.btn.success:hover { box-shadow: 0 4px 20px var(--green-glow); }
+.btn.danger { background: linear-gradient(135deg, var(--pink), #fb7185); }
+.btn.danger:hover { box-shadow: 0 4px 20px var(--pink-glow); }
+
+/* ── Toggle switch ── */
+.toggle-row {
+  display: flex; align-items: center; gap: 10px; font-size: 0.88em; color: var(--text-dim);
+}
+.toggle-row input[type="checkbox"] {
+  width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;
+}
+
+/* ── Quiz ── */
+.quiz-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; margin: 18px 0;
+  box-shadow: var(--shadow);
+}
+.quiz-card .q-number {
+  display: inline-block; background: linear-gradient(135deg, var(--accent), #818cf8); color: #fff;
+  width: 28px; height: 28px; border-radius: 50%; text-align: center;
+  line-height: 28px; font-weight: 700; font-size: 0.85em; margin-right: 8px;
+}
+.quiz-card .q-text { font-weight: 600; margin-bottom: 14px; }
+.quiz-options { list-style: none; padding: 0; }
+.quiz-options li {
+  padding: 10px 14px; margin: 6px 0; border-radius: 8px; cursor: pointer;
+  border: 2px solid var(--border); transition: all 0.2s; font-size: 0.93em;
+  background: var(--surface2);
+}
+.quiz-options li:hover { border-color: var(--accent); box-shadow: 0 0 16px var(--accent-glow); }
+.quiz-options li.correct {
+  border-color: var(--green); background: rgba(52, 211, 153, 0.12); color: var(--green);
+}
+.quiz-options li.incorrect {
+  border-color: var(--pink); background: rgba(244, 114, 182, 0.12); color: var(--pink);
+}
+.quiz-options li.disabled { pointer-events: none; opacity: 0.7; }
+.quiz-explanation {
+  display: none; margin-top: 10px; padding: 12px 14px;
+  background: rgba(99, 102, 241, 0.08); border-radius: 8px; font-size: 0.9em;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+.quiz-explanation.show { display: block; }
+.quiz-score {
+  text-align: center; font-size: 1.2em; font-weight: 700; margin: 24px 0;
+  padding: 16px; background: var(--surface); border-radius: var(--radius);
+  border: 2px solid var(--accent); box-shadow: var(--shadow);
+}
+
+/* ── Info visualization (searchlight) ── */
+.info-grid-container {
+  display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;
+  justify-content: center;
+}
+.info-grid-panel { flex: 1; min-width: 240px; text-align: center; }
+.info-grid-panel h4 { font-size: 0.95em; margin-bottom: 8px; color: var(--text-dim); }
+.info-meter {
+  height: 24px; background: var(--surface2); border-radius: 12px; overflow: hidden;
+  margin: 8px 0; position: relative; border: 1px solid var(--border);
+}
+.info-meter-fill {
+  height: 100%; background: linear-gradient(90deg, var(--accent), var(--pink));
+  border-radius: 12px; transition: width 0.3s; min-width: 0;
+}
+.info-meter-label {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75em; font-weight: 700; color: #fff;
+  text-shadow: 0 0 4px rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* ── Table of Contents ── */
+.toc-toggle {
+  position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #818cf8); color: #fff; border: none; cursor: pointer;
+  font-size: 1.3em; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.toc-toggle:hover { transform: translateY(-2px); box-shadow: 0 6px 24px var(--accent-glow); }
+.toc-nav {
+  position: fixed; bottom: 84px; right: 24px; z-index: 999;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  padding: 16px 20px; max-height: 70vh; overflow-y: auto;
+  display: none; min-width: 220px;
+}
+.toc-nav.open { display: block; }
+.toc-nav a {
+  display: block; padding: 6px 0; color: var(--text-dim);
+  text-decoration: none; font-size: 0.88em; border-bottom: 1px solid var(--border);
+  transition: color 0.2s;
+}
+.toc-nav a:last-child { border-bottom: none; }
+.toc-nav a:hover, .toc-nav a.active { color: var(--accent); font-weight: 600; }
+.toc-nav .toc-title {
+  font-size: 0.78em; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--accent); margin-bottom: 8px;
+}
+
+/* ── Footer ── */
+footer {
+  text-align: center; padding: 48px 24px 36px;
+  background: var(--surface); color: var(--text-dim); font-size: 0.85em;
+  border-top: 1px solid var(--border);
+}
+.footer-nav { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin-bottom: 16px; }
+.footer-nav a {
+  color: var(--text-dim); text-decoration: none; font-size: 0.9em;
+  transition: color 0.2s; padding: 4px 0; border-bottom: 1px solid transparent;
+}
+.footer-nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.footer-back-top {
+  display: inline-block; margin-bottom: 20px; color: var(--cyan); text-decoration: none;
+  font-weight: 600; font-size: 0.9em; transition: color 0.2s;
+}
+.footer-back-top:hover { color: var(--accent); }
+
+/* ── Particle background ── */
+#particleBg {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ── Scroll fade-in ── */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Icon badges ── */
+.icon-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 10px;
+  font-size: 1rem; margin-right: 8px; vertical-align: middle; flex-shrink: 0;
+}
+.icon-badge.purple { background: rgba(99, 102, 241, 0.15); }
+.icon-badge.cyan { background: rgba(34, 211, 238, 0.15); }
+.icon-badge.pink { background: rgba(244, 114, 182, 0.15); }
+.icon-badge.green { background: rgba(52, 211, 153, 0.15); }
+.icon-badge.orange { background: rgba(251, 146, 60, 0.15); }
+
+/* ── Quiz answer animations ── */
+.quiz-options li.correct { animation: correctPop 0.4s ease; }
+@keyframes correctPop { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
+.quiz-options li.selected { box-shadow: 0 0 20px var(--accent-glow); }
+
+/* ── Proof progress dots ── */
+.proof-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0 4px;
+}
+.proof-dots .dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+}
+.proof-dots .dot.visited {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+.proof-dots .dot.active {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan-glow);
+  transform: scale(1.25);
+}
+.proof-dots .dot-connector {
+  width: 16px; height: 2px;
+  background: var(--border);
+  border-radius: 1px;
+  transition: background 0.3s;
+}
+.proof-dots .dot-connector.filled {
+  background: var(--accent);
+}
+
+/* ── Proof completion celebration ── */
+.proof-complete-msg {
+  text-align: center; padding: 16px; margin-top: 16px;
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), rgba(34, 211, 238, 0.08));
+  border: 1px solid rgba(52, 211, 153, 0.3); border-radius: var(--radius);
+  font-weight: 600; color: var(--green); font-size: 0.95em;
+  animation: celebrateFadeIn 0.6s ease;
+  display: none;
+}
+.proof-complete-msg.show { display: block; }
+@keyframes celebrateFadeIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Section dividers ── */
+section + section { border-top: 1px solid var(--border); margin-top: 0; }
+
+/* ── Bibliography ── */
+.bibliography {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 24px; margin: 16px 0;
+}
+.bib-entry {
+  display: flex; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--border); font-size: 0.91em;
+  color: var(--text-dim); line-height: 1.6;
+}
+.bib-entry:last-child { border-bottom: none; }
+.bib-entry em { color: var(--text); }
+.bib-num {
+  font-family: 'JetBrains Mono', monospace; font-weight: 700;
+  color: var(--accent); flex-shrink: 0; font-size: 0.85em;
+  min-width: 28px;
+}
+
+/* ── Key Takeaways grid ── */
+.takeaways-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0;
+}
+.takeaway-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  font-size: 0.93em;
+}
+.takeaway-item:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 2px 16px var(--accent-glow);
+}
+.takeaway-item .icon-badge { margin-top: 2px; }
+
+/* ── Learning objectives ── */
+.objectives-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(34, 211, 238, 0.06));
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: var(--radius); padding: 24px 28px; margin: 24px 0;
+}
+.objectives-card h3 {
+  font-size: 1em; color: var(--accent); margin: 0 0 12px 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.objectives-card ul { list-style: none; padding: 0; margin: 0; }
+.objectives-card li {
+  padding: 5px 0 5px 24px; position: relative; font-size: 0.93em; color: var(--text-dim);
+}
+.objectives-card li::before {
+  content: '\2713'; position: absolute; left: 0; color: var(--green); font-weight: 700;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  header h1 { font-size: 1.7em; }
+  input[type="range"] { width: 140px; }
+  .oracle-diagram { flex-wrap: wrap; gap: 20px; }
+  .vs-divider { display: none; }
+  .controls { gap: 14px; }
+  .info-grid-container { flex-direction: column; }
+  canvas { width: 100% !important; height: auto !important; }
+  .quiz-options li { min-height: 48px; display: flex; align-items: center; }
+  .btn { padding: 12px 24px; font-size: 1em; }
+  .proof-step { padding: 16px 16px 16px 52px; }
+  .table-wrapper { overflow-x: auto; }
+  .comparison-table { min-width: 420px; }
+  .interactive-panel { padding: 18px; }
+  .card { padding: 20px; }
+  .takeaways-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  #particleBg { display: none; }
+  .proof-step, .card, .interactive-panel, .insight, .btn, .takeaway-item,
+  .oracle-box .cell, .toc-toggle {
+    transition: none !important;
+    transform: none !important;
+  }
+  section {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ── Print styles ── */
+@media print {
+  * { color: #1a1a1a !important; background: #fff !important; box-shadow: none !important; text-shadow: none !important; }
+  body { font-size: 12pt; line-height: 1.5; }
+  #particleBg, #readingProgress, .toc-toggle, .toc-nav, .footer-back-top { display: none !important; }
+  header { padding: 20px 0; }
+  header h1 { -webkit-text-fill-color: #1a1a1a !important; background: none !important; font-size: 1.8em; }
+  section { padding: 20px 0; break-inside: avoid; }
+  .card, .interactive-panel, .quiz-card, .objectives-card, .bibliography, .takeaway-item {
+    border: 1px solid #ccc !important; break-inside: avoid;
+  }
+  .card::before, .interactive-panel::before { display: none; }
+  .proof-step .step-detail { display: block !important; }
+  .btn, .controls button { display: none; }
+  canvas { border: 1px solid #ccc !important; }
+  .katex, .katex-html { color: #1a1a1a !important; }
+  a { color: #1a1a1a !important; text-decoration: underline; }
+  footer { border-top: 1px solid #ccc !important; }
+  .footer-nav { display: none; }
+}
+</style>
+</head>
+<body>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+
+<a href="#motivation" class="skip-link">Skip to content</a>
+<div id="readingProgress"></div>
+<canvas id="particleBg"></canvas>
+
+<!-- ════════════════════════ HEADER ════════════════════════ -->
+<header>
+  <div class="container">
+    <h1>The Hybrid Method</h1>
+    <div class="subtitle">A query complexity lower bound proving the optimality of Grover's quantum search algorithm</div>
+    <div class="tag">Quantum Computing &mdash; Query Complexity</div>
+    <div class="reading-time">~20 min read</div>
+  </div>
+</header>
+
+<!-- ════════════════════════ 1. MOTIVATION ════════════════════════ -->
+<section id="motivation">
+<div class="container">
+  <h2>1. Why Do We Need a Lower Bound?</h2>
+
+  <div class="objectives-card">
+    <h3><span class="icon-badge purple">🎯</span> What You'll Learn</h3>
+    <ul>
+      <li>How the phase oracle encodes search problems for quantum algorithms</li>
+      <li>Why each quantum query provides only limited information about the oracle</li>
+      <li>The hybrid argument that bounds total distinguishability to $O(T^2)$</li>
+      <li>Why Grover's $O(\sqrt{N})$ query complexity is provably optimal</li>
+    </ul>
+  </div>
+
+  <p>
+    Grover's algorithm (1996) searches an unstructured database of $N$ items using only $O(\sqrt{N})$
+    quantum queries&mdash;a quadratic speedup over classical search, which requires $\Theta(N)$ queries.
+  </p>
+  <p>But a natural question arises: <strong>can we do even better?</strong>
+    Could a cleverer quantum algorithm solve unstructured search in $O(\log N)$, or even $O(N^{1/3})$ queries?
+  </p>
+
+  <div class="card theorem">
+    <div class="card-label">Theorem (BBBV 1997)</div>
+    Any quantum algorithm that solves unstructured search on $N$ items with bounded error
+    requires $\Omega(\sqrt{N})$ oracle queries.
+    <br><br>
+    <em>Therefore, Grover's algorithm is asymptotically optimal.</em>
+  </div>
+
+  <p>
+    The proof uses the <strong>hybrid method</strong> (also called the BBBV argument, after
+    Bennett, Bernstein, Brassard, and Vazirani). The core idea is beautifully simple:
+    if you haven't queried enough positions, you can't tell the difference between
+    "no solution exists" and "a solution is hiding somewhere."
+  </p>
+
+  <div class="interactive-panel">
+    <h3><span class="icon-badge purple">📊</span>Interactive: Query Complexity Comparison</h3>
+    <p style="font-size:0.9em;color:var(--text-dim)">
+      Drag the slider to change $N$ and see how many queries each approach requires.
+    </p>
+    <div class="controls">
+      <div class="control-group">
+        <label>Database size $N$</label>
+        <input type="range" id="cmpN" min="2" max="20" value="10" step="1">
+        <span class="value" id="cmpNVal">1024</span>
+      </div>
+      <div class="control-group" style="align-self:flex-end;">
+        <div class="toggle-row">
+          <input type="checkbox" id="cmpLog">
+          <label for="cmpLog" style="cursor:pointer;">Log scale</label>
+        </div>
+      </div>
+    </div>
+    <canvas id="cmpCanvas" width="780" height="300" role="img" aria-label="Bar chart comparing query complexity: Classical O(N) vs Grover O(sqrt N) vs impossible sublinear approaches"></canvas>
+  </div>
+</div>
+</section>
+
+<!-- ════════════════════════ 2. THE ORACLE MODEL ════════════════════════ -->
+<section id="oracle-model">
+<div class="container">
+  <h2>2. The Oracle Query Model</h2>
+
+  <div class="card definition">
+    <div class="card-label">Definition &mdash; Phase Oracle</div>
+    Given an input $x \in \{0,1\}^N$, the <strong>phase oracle</strong> $O_x$ acts on
+    computational basis states as:
+    $$ O_x |i\rangle = (-1)^{x_i} |i\rangle $$
+    It flips the phase of basis state $|i\rangle$ if and only if $x_i = 1$ (i.e., position $i$ is "marked").
+  </div>
+
+  <p>We consider two types of inputs:</p>
+
+  <div class="oracle-diagram">
+    <div class="oracle-box null">
+      <div class="oracle-title">Null Oracle $O_{\mathbf{0}}$</div>
+      <div>$x = 00\ldots0$, no marked item</div>
+      <div>$O_{\mathbf{0}} = I$ (identity)</div>
+      <div class="oracle-grid" id="nullGrid"></div>
+    </div>
+    <div class="vs-divider">vs</div>
+    <div class="oracle-box marked">
+      <div class="oracle-title">Marked Oracle $O_{e_k}$</div>
+      <div>$x = e_k$, item $k$ is marked</div>
+      <div>$O_{e_k} = I - 2|k\rangle\langle k|$</div>
+      <div class="oracle-grid" id="markedGrid"></div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <strong>Key observation:</strong> The two oracles differ on exactly <em>one</em> input.
+    The marked oracle $O_{e_k}$ only flips the phase of $|k\rangle$ compared to the null oracle.
+    This means each query reveals very little information about the marked position!
+  </div>
+
+  <p>A quantum algorithm makes $T$ queries, interleaved with arbitrary unitaries:</p>
+
+  <div class="card highlight">
+    <div class="card-label">Algorithm Structure</div>
+    $$ |\psi_T^x\rangle = U_T \, O_x \, U_{T-1} \, O_x \cdots U_1 \, O_x \, U_0 \, |0\rangle $$
+    The unitaries $U_0, U_1, \ldots, U_T$ are fixed (independent of $x$). Only the oracle $O_x$ depends on the input.
+  </div>
+</div>
+</section>
+
+<!-- ════════════════════════ 2.5 INTUITION ════════════════════════ -->
+<section id="intuition">
+<div class="container">
+  <h2>3. Why Is Information Gain Limited?</h2>
+  <p>
+    Before diving into the formal proof, let's build intuition for <em>why</em> each query
+    can only contribute a bounded amount of information.
+  </p>
+  <p>
+    Imagine the database as a grid of $N$ positions. After each query, the algorithm accumulates
+    a little "distinguishability" at each position&mdash;the ability to tell whether that position is the
+    marked one. But the total budget per query is bounded: $\sqrt{D_T}$ can grow by at most $2$ per query.
+  </p>
+
+  <div class="interactive-panel">
+    <h3><span class="icon-badge cyan">🔦</span>Interactive: Searchlight Analogy</h3>
+    <p style="font-size:0.9em;color:var(--text-dim)">
+      Each query is like a dim searchlight illuminating all $N$ positions at once.
+      Distinguishability accumulates slowly&mdash;watch how many queries it takes for the average to cross the detection threshold.
+    </p>
+    <div class="controls">
+      <div class="control-group">
+        <label>Grid size (N)</label>
+        <select id="infoN" style="padding:4px 8px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-family:'JetBrains Mono',monospace;">
+          <option value="16">16</option>
+          <option value="36">36</option>
+          <option value="64" selected>64</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Queries</label>
+        <input type="range" id="infoT" min="0" max="20" value="0" step="1">
+        <span class="value" id="infoTVal">0</span>
+      </div>
+      <div class="control-group" style="margin-top:4px;">
+        <button class="btn" id="infoPlayBtn" onclick="infoTogglePlay()">Play</button>
+        <button class="btn secondary" onclick="infoReset()">Reset</button>
+      </div>
+    </div>
+    <div class="info-grid-container">
+      <div class="info-grid-panel">
+        <h4>Distinguishability per position ($\|\delta_T^k\|^2 / $ max)</h4>
+        <canvas id="infoCanvas" width="360" height="360" role="img" aria-label="Heatmap grid showing distinguishability per database position, brightening as queries increase"></canvas>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:0.75em;">
+          <span style="color:var(--text-dim);">Low</span>
+          <div style="flex:1;height:10px;border-radius:5px;background:linear-gradient(90deg, #0f1428, #1a2560, #3355cc, #6366f1, #22d3ee);"></div>
+          <span style="color:var(--text-dim);">High</span>
+        </div>
+      </div>
+      <div class="info-grid-panel" style="min-width:200px;">
+        <h4>Average $D_T/N$</h4>
+        <div class="info-meter" style="margin-top:20px;">
+          <div class="info-meter-fill" id="infoMeterFill" style="width:0%;"></div>
+          <div class="info-meter-label" id="infoMeterLabel">0.000</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75em;color:var(--text-dim);margin-top:2px;">
+          <span>0</span>
+          <span style="color:var(--green);font-weight:700;">threshold</span>
+          <span>1.0</span>
+        </div>
+        <div style="margin-top:20px; text-align:left; font-size:0.88em;">
+          <div>Queries used: <strong id="infoQUsed">0</strong></div>
+          <div>$\sqrt{N}/2$: <strong id="infoGrover">4</strong></div>
+          <div>Status: <strong id="infoStatus" style="color:var(--pink);">Below threshold</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <strong>Key intuition:</strong> The grid shows that distinguishability doesn't concentrate at
+    any single position&mdash;it spreads across all $N$ positions. This is why you need $\sim\!\sqrt{N}$
+    queries for the <em>average</em> to become large enough to detect the marked item.
+  </div>
+</div>
+</section>
+
+<!-- ════════════════════════ 3. THE HYBRID ARGUMENT ════════════════════════ -->
+<section id="hybrid-argument">
+<div class="container">
+  <h2>4. The Hybrid Argument</h2>
+
+  <p>
+    The proof compares the algorithm's behavior on the null oracle versus each marked oracle.
+    We track how "different" the quantum states are, and show this difference grows slowly.
+  </p>
+
+  <div class="card definition">
+    <div class="card-label">Definition &mdash; State Difference</div>
+    Let $|\psi_t\rangle$ be the algorithm's state after $t$ queries to the null oracle $O_{\mathbf{0}}$,
+    and $|\psi_t^k\rangle$ be the state after $t$ queries to $O_{e_k}$.
+    Define the <strong>state difference</strong>:
+    $$|\delta_t^k\rangle = |\psi_t^k\rangle - |\psi_t\rangle$$
+    and the <strong>total distinguishability</strong>:
+    $$ D_t = \sum_{k=0}^{N-1} \|\delta_t^k\|^2 $$
+  </div>
+
+  <p>Click each step below to expand the details, or use the button to walk through automatically.</p>
+
+  <div style="margin-bottom:16px; display:flex; align-items:center;">
+    <button class="btn success" id="autoAdvanceBtn" onclick="autoAdvanceProof()">Walk Through Proof</button>
+    <div id="proofProgress"></div>
+  </div>
+  <div class="proof-dots" id="proofDots" aria-label="Proof step progress"></div>
+
+  <div class="proof-steps" id="proofSteps">
+
+    <div class="proof-step" tabindex="0" role="button" aria-expanded="false" onclick="toggleStep(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleStep(this)}">
+      <div class="step-title">One-query evolution of the state difference</div>
+      <div class="step-detail">
+        <p>After one more query and unitary:</p>
+        $$|\delta_{t+1}^k\rangle = U_{t+1}\bigl(O_{e_k}|\delta_t^k\rangle + (O_{e_k} - I)|\psi_t\rangle\bigr)$$
+        <p>Since $O_{e_k} - I = -2|k\rangle\langle k|$ and both $U_{t+1}$ and $O_{e_k}$ are unitary, the triangle inequality gives:</p>
+        $$ \|\delta_{t+1}^k\| \leq \|\delta_t^k\| + 2\sqrt{p_k^{(t)}} $$
+        <p>where $p_k^{(t)} = \| \langle k | \psi_t \rangle \|^2$ is the probability of querying position $k$ at step $t$ under the <em>null</em> oracle.</p>
+      </div>
+    </div>
+
+    <div class="proof-step" tabindex="0" role="button" aria-expanded="false" onclick="toggleStep(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleStep(this)}">
+      <div class="step-title">Bounding the squared total distinguishability</div>
+      <div class="step-detail">
+        <p>Squaring both sides and summing over all $k$:</p>
+        $$ D_{t+1} \leq D_t + 4\sum_k \|\delta_t^k\| \sqrt{p_k^{(t)}} + 4\sum_k p_k^{(t)} $$
+        <p>By the Cauchy&ndash;Schwarz inequality:</p>
+        $$ \sum_k \|\delta_t^k\| \sqrt{p_k^{(t)}} \leq \sqrt{\sum_k \|\delta_t^k\|^2} \cdot \sqrt{\sum_k p_k^{(t)}} = \sqrt{D_t} \cdot 1 $$
+        <p>Since $\sum_k p_k^{(t)} = 1$ (probabilities sum to one), we get the <strong>key recurrence</strong>:</p>
+        $$ \boxed{D_{t+1} \leq D_t + 4\sqrt{D_t} + 4} $$
+      </div>
+    </div>
+
+    <div class="proof-step" tabindex="0" role="button" aria-expanded="false" onclick="toggleStep(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleStep(this)}">
+      <div class="step-title">Solving the recurrence: $D_T = O(T^2)$</div>
+      <div class="step-detail">
+        <p>Let $d_t = \sqrt{D_t}$. Observe that $D_{t+1} \leq (d_t + 2)^2$, so $d_{t+1} \leq d_t + 2$.</p>
+        <p>Since $d_0 = 0$ (both algorithms start in the same state $|0\rangle$):</p>
+        $$ d_T \leq 2T \quad \Longrightarrow \quad D_T \leq 4T^2 $$
+        <p>The total distinguishability grows at most <strong>quadratically</strong> with the number of queries.</p>
+      </div>
+    </div>
+
+    <div class="proof-step" tabindex="0" role="button" aria-expanded="false" onclick="toggleStep(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleStep(this)}">
+      <div class="step-title">Average distinguishability per oracle</div>
+      <div class="step-detail">
+        <p>The <em>average</em> squared distance over a uniformly random marked position $k$ is:</p>
+        $$ \mathbb{E}_k\bigl[\|\delta_T^k\|^2\bigr] = \frac{D_T}{N} \leq \frac{4T^2}{N} $$
+        <p>This is the distinguishability between the null algorithm state and the state for a typical marked oracle.</p>
+      </div>
+    </div>
+
+    <div class="proof-step" tabindex="0" role="button" aria-expanded="false" onclick="toggleStep(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleStep(this)}">
+      <div class="step-title">The success condition forces $T = \Omega(\sqrt{N})$</div>
+      <div class="step-detail">
+        <p>
+          If the algorithm correctly solves search with probability $\geq 2/3$, then:
+        </p>
+        <ul style="margin-left:20px; margin-bottom:12px;">
+          <li>On input $\mathbf{0}$, it outputs "no solution" with probability $\geq 2/3$.</li>
+          <li>On input $e_k$, it outputs $k$ with probability $\geq 2/3$.</li>
+        </ul>
+        <p>These measurement outcomes are very different, so the states must be far apart. Formally,
+        for most $k$: $\|\delta_T^k\| \geq c$ for some constant $c > 0$.</p>
+        <p>By averaging:</p>
+        $$ c^2 \leq \frac{4T^2}{N} \quad \Longrightarrow \quad T \geq \frac{c\sqrt{N}}{2} = \Omega(\sqrt{N}) $$
+        <div style="text-align:center; font-size:1.15em; font-weight:700; color:var(--pink); margin-top:12px;">
+          $\blacksquare$ &nbsp; Grover's $O(\sqrt{N})$ algorithm is optimal.
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="proof-complete-msg" id="proofCompleteMsg">&#127881; You've walked through the entire proof! The BBBV lower bound is complete. &#127881;</div>
+</div>
+</section>
+
+<!-- ════════════════════════ 4. VISUALIZING D_T ════════════════════════ -->
+<section id="visualization">
+<div class="container">
+  <h2>5. Visualizing the Distinguishability Bound</h2>
+  <p>
+    Watch how the total distinguishability $D_T$ grows with queries, and how the
+    <em>average</em> distinguishability $D_T / N$ reaches the threshold needed for a correct algorithm.
+  </p>
+
+  <div class="interactive-panel">
+    <h3><span class="icon-badge pink">📈</span>Interactive: Distinguishability Growth</h3>
+    <div class="controls">
+      <div class="control-group">
+        <label>Database size $N$</label>
+        <input type="range" id="distN" min="2" max="14" value="8" step="1">
+        <span class="value" id="distNVal">256</span>
+      </div>
+      <div class="control-group">
+        <label>Queries $T$</label>
+        <input type="range" id="distT" min="0" max="100" value="0" step="1">
+        <span class="value" id="distTVal">0</span>
+      </div>
+      <div class="control-group" style="margin-top:4px;">
+        <button class="btn" id="animateBtn" onclick="toggleDistAnim()">Play</button>
+      </div>
+    </div>
+    <canvas id="distCanvas" width="780" height="340" role="img" aria-label="Line chart showing distinguishability D_T/N growing with queries T, reaching success threshold at sqrt(N)/2"></canvas>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:8px;font-size:0.88em;">
+      <span><span style="color:var(--accent);font-weight:700;">&#9632;</span> $D_T/N$ (avg. distinguishability)</span>
+      <span><span style="color:var(--pink);font-weight:700;">&#9632;</span> Upper bound $4T^2/N$</span>
+      <span><span style="color:var(--green);font-weight:700;">- -</span> Success threshold ($c^2$)</span>
+      <span><span style="color:var(--text-dim);font-weight:700;">&#9474;</span> $T = \sqrt{N}/2$ (Grover)</span>
+    </div>
+  </div>
+
+  <div class="insight">
+    <strong>What to notice:</strong> The blue curve only reaches the green success threshold
+    around $T \approx \sqrt{N}/2$. No matter how you design the algorithm,
+    you can't push this curve up faster&mdash;the recurrence $D_{t+1} \leq D_t + 4\sqrt{D_t} + 4$ is a hard limit
+    on information gain per query.
+  </div>
+</div>
+</section>
+
+<!-- ════════════════════════ 5. QUERY BUDGET ════════════════════════ -->
+<section id="query-budget">
+<div class="container">
+  <h2>6. The Query Budget</h2>
+  <p>
+    Think of each query as a limited "budget" for gaining information. The hybrid method
+    shows that each query contributes at most a constant additive increase to $\sqrt{D_T}$.
+    After $T$ queries, you've accumulated at most $\sqrt{D_T} \leq 2T$ total "distinguishability units,"
+    but you need to spread them across $N$ possible marked positions.
+  </p>
+
+  <div class="interactive-panel">
+    <h3><span class="icon-badge green">⚖️</span>Interactive: Required Queries vs. Database Size</h3>
+    <p style="font-size:0.9em;color:var(--text-dim);">
+      The number of queries needed to reach the success threshold, as a function of $N$.
+    </p>
+    <canvas id="budgetCanvas" width="780" height="320" role="img" aria-label="Line chart comparing classical N/3, quantum lower bound, and Grover queries as functions of database size N"></canvas>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:8px;font-size:0.88em;">
+      <span><span style="color:var(--pink);font-weight:700;">&#9632;</span> Classical lower bound: $N/3$</span>
+      <span><span style="color:var(--accent);font-weight:700;">&#9632;</span> Quantum lower bound: $\frac{c}{2}\sqrt{N}$</span>
+      <span><span style="color:var(--green);font-weight:700;">&#9632;</span> Grover's algorithm: $\frac{\pi}{4}\sqrt{N}$</span>
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+  <table class="comparison-table">
+    <thead>
+      <tr><th>Algorithm</th><th>Queries</th><th>Optimal?</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Classical (linear scan)</td><td>$\Theta(N)$</td><td>Yes (classically)</td></tr>
+      <tr><td>Grover's algorithm</td><td>$O(\sqrt{N})$</td><td class="optimal">Yes (quantumly)</td></tr>
+      <tr class="impossible-row"><td>Hypothetical $O(N^{1/3})$</td><td>$O(N^{1/3})$</td><td>Impossible!</td></tr>
+      <tr class="impossible-row"><td>Hypothetical $O(\log N)$</td><td>$O(\log N)$</td><td>Impossible!</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+</section>
+
+<!-- ════════════════════════ 6. DETAILED RECURRENCE ════════════════════════ -->
+<section id="recurrence-explorer">
+<div class="container">
+  <h2>7. Exploring the Recurrence</h2>
+  <p>
+    The heart of the proof is the recurrence $D_{t+1} \leq D_t + 4\sqrt{D_t} + 4$.
+    Below, step through the recurrence query by query and see how each term contributes.
+  </p>
+
+  <div class="interactive-panel">
+    <h3><span class="icon-badge orange">🔢</span>Interactive: Step-by-Step Recurrence</h3>
+    <div class="controls">
+      <div class="control-group">
+        <label>$N$</label>
+        <input type="range" id="recN" min="2" max="14" value="6" step="1">
+        <span class="value" id="recNVal">64</span>
+      </div>
+      <div class="control-group" style="margin-top:4px;">
+        <button class="btn" id="recStepBtn" onclick="recurrenceStep()">Next Query</button>
+        <button class="btn secondary" onclick="recurrenceReset()">Reset</button>
+      </div>
+    </div>
+    <div id="recurrenceTable" style="font-family:'JetBrains Mono',monospace; font-size:0.92em; margin:16px 0; max-height:320px; overflow-y:auto;"></div>
+    <div id="recPlaceholder" style="text-align:center;padding:24px;color:var(--text-dim);font-size:0.95em;border:2px dashed var(--border);border-radius:8px;margin:8px 0;">Click <strong>Next Query</strong> to step through the recurrence $D_{t+1} \leq D_t + 4\sqrt{D_t} + 4$</div>
+    <canvas id="recCanvas" width="780" height="260" style="display:none;" role="img" aria-label="Step-by-step recurrence chart showing D_T/N growing toward the success threshold"></canvas>
+  </div>
+</div>
+</section>
+
+<!-- ════════════════════════ 7. QUIZ ════════════════════════ -->
+<section id="quiz">
+<div class="container">
+  <h2>8. Check Your Understanding</h2>
+  <p>Test your understanding of the hybrid method with these questions.</p>
+
+  <div id="quizContainer"></div>
+  <div class="quiz-score" id="quizScore" style="display:none;"></div>
+  <div id="quizResetWrap" style="text-align:center;margin-top:12px;display:none;">
+    <button class="btn secondary" onclick="resetQuiz()">Try Again</button>
+  </div>
+</div>
+</section>
+
+<!-- ════════════════════════ 8. SUMMARY ════════════════════════ -->
+<section id="summary">
+<div class="container">
+  <h2>9. Summary</h2>
+
+  <div class="card highlight">
+    <div class="card-label">The Argument in a Nutshell</div>
+    <ol style="margin-left:20px; line-height:2;">
+      <li>Each oracle query can increase $\sqrt{D_T}$ by at most $2$.</li>
+      <li>After $T$ queries: $D_T \leq 4T^2$.</li>
+      <li>Average distinguishability: $D_T / N \leq 4T^2 / N$.</li>
+      <li>A correct algorithm needs $D_T / N \geq c^2$ (a constant).</li>
+      <li>Therefore $T \geq \frac{c}{2}\sqrt{N} = \Omega(\sqrt{N})$.</li>
+    </ol>
+  </div>
+
+  <h3>Key Takeaways</h3>
+  <div class="takeaways-grid">
+    <div class="takeaway-item">
+      <span class="icon-badge green">&#10004;</span>
+      <div><strong>Grover is optimal:</strong> No quantum algorithm can search faster than $\Omega(\sqrt{N})$.</div>
+    </div>
+    <div class="takeaway-item">
+      <span class="icon-badge cyan">&#128269;</span>
+      <div><strong>Information is scarce:</strong> Each quantum query provides limited information about the oracle, bounded by the hybrid argument.</div>
+    </div>
+    <div class="takeaway-item">
+      <span class="icon-badge purple">&#9881;</span>
+      <div><strong>The hybrid method is general:</strong> This technique applies beyond search&mdash;it's a fundamental tool in quantum query complexity.</div>
+    </div>
+    <div class="takeaway-item">
+      <span class="icon-badge pink">&#9889;</span>
+      <div><strong>Quadratic is the quantum limit</strong> for unstructured problems&mdash;exponential speedups require structure (like in Shor's algorithm).</div>
+    </div>
+  </div>
+
+  <h3>References</h3>
+  <div class="bibliography">
+    <div class="bib-entry">
+      <span class="bib-num">[1]</span>
+      <span>C. Bennett, E. Bernstein, U. Vazirani, <em>Strengths and Weaknesses of Quantum Computing</em>, SIAM J. Comput. 26(5), 1997.</span>
+    </div>
+    <div class="bib-entry">
+      <span class="bib-num">[2]</span>
+      <span>M. Boyer, G. Brassard, P. H&oslash;yer, A. Tapp, <em>Tight bounds on quantum searching</em>, Fortschritte der Physik 46, 1998.</span>
+    </div>
+    <div class="bib-entry">
+      <span class="bib-num">[3]</span>
+      <span>R. de Wolf, <em>Quantum Computing: Lecture Notes</em>, Chapter 8 (Query Complexity).</span>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ════════════════════════ TOC NAV ════════════════════════ -->
+<button class="toc-toggle" id="tocToggle" onclick="toggleToc()" aria-label="Table of contents" aria-expanded="false" aria-controls="tocNav">&#9776;</button>
+<nav class="toc-nav" id="tocNav">
+  <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="color:var(--cyan);">↑ Back to Top</a>
+  <div class="toc-title">Contents</div>
+  <a href="#motivation">1. Why a Lower Bound?</a>
+  <a href="#oracle-model">2. Oracle Query Model</a>
+  <a href="#intuition">3. Information Gain Intuition</a>
+  <a href="#hybrid-argument">4. Hybrid Argument</a>
+  <a href="#visualization">5. Distinguishability Bound</a>
+  <a href="#query-budget">6. Query Budget</a>
+  <a href="#recurrence-explorer">7. Recurrence Explorer</a>
+  <a href="#quiz">8. Quiz</a>
+  <a href="#summary">9. Summary</a>
+</nav>
+
+
+
+<!-- ════════════════════════ JAVASCRIPT ════════════════════════ -->
+<script>
+/* ── Proof step toggle & auto-advance ── */
+function updateProofProgress() {
+  const steps = document.querySelectorAll('.proof-step');
+  const prog = document.getElementById('proofProgress');
+  let activeIdx = -1;
+  steps.forEach((s, i) => { if (s.classList.contains('active')) activeIdx = i; });
+  if (activeIdx >= 0) {
+    prog.textContent = 'Step ' + (activeIdx + 1) + ' / ' + steps.length;
+    prog.classList.add('visible');
+  } else {
+    prog.classList.remove('visible');
+  }
+}
+
+const visitedProofSteps = new Set();
+
+function checkProofCompletion() {
+  const allSteps = document.querySelectorAll('.proof-step');
+  if (visitedProofSteps.size >= allSteps.length) {
+    const msg = document.getElementById('proofCompleteMsg');
+    if (msg && !msg.classList.contains('show')) {
+      msg.classList.add('show');
+      msg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+}
+
+function buildProofDots() {
+  const dotsContainer = document.getElementById('proofDots');
+  const steps = document.querySelectorAll('.proof-step');
+  dotsContainer.innerHTML = '';
+  steps.forEach((_, i) => {
+    if (i > 0) {
+      const connector = document.createElement('div');
+      connector.className = 'dot-connector';
+      connector.dataset.idx = i;
+      dotsContainer.appendChild(connector);
+    }
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    dot.dataset.idx = i;
+    dot.title = 'Step ' + (i + 1);
+    dot.setAttribute('role', 'button');
+    dot.setAttribute('tabindex', '0');
+    dot.setAttribute('aria-label', 'Go to proof step ' + (i + 1));
+    dot.addEventListener('click', () => {
+      toggleStep(steps[i]);
+      steps[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    dot.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleStep(steps[i]);
+        steps[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+    dotsContainer.appendChild(dot);
+  });
+}
+
+function updateProofDots() {
+  const dots = document.querySelectorAll('.proof-dots .dot');
+  const connectors = document.querySelectorAll('.proof-dots .dot-connector');
+  const steps = document.querySelectorAll('.proof-step');
+  let activeIdx = -1;
+  steps.forEach((s, i) => { if (s.classList.contains('active')) activeIdx = i; });
+  dots.forEach((dot, i) => {
+    dot.classList.toggle('visited', visitedProofSteps.has(i));
+    dot.classList.toggle('active', i === activeIdx);
+  });
+  connectors.forEach(c => {
+    const idx = parseInt(c.dataset.idx);
+    c.classList.toggle('filled', visitedProofSteps.has(idx - 1) && visitedProofSteps.has(idx));
+  });
+}
+
+function toggleStep(el) {
+  const wasActive = el.classList.contains('active');
+  document.querySelectorAll('.proof-step').forEach(s => {
+    s.classList.remove('active');
+    s.setAttribute('aria-expanded', 'false');
+  });
+  if (!wasActive) {
+    el.classList.add('active');
+    el.setAttribute('aria-expanded', 'true');
+    // Track that this step has been visited
+    const allSteps = Array.from(document.querySelectorAll('.proof-step'));
+    visitedProofSteps.add(allSteps.indexOf(el));
+    renderMathInElement(el, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});
+  }
+  updateProofProgress();
+  updateProofDots();
+  checkProofCompletion();
+}
+
+let autoAdvanceTimer = null;
+function autoAdvanceProof() {
+  const btn = document.getElementById('autoAdvanceBtn');
+  if (autoAdvanceTimer) {
+    clearInterval(autoAdvanceTimer);
+    autoAdvanceTimer = null;
+    btn.textContent = 'Walk Through Proof';
+    btn.className = 'btn success';
+    return;
+  }
+  const steps = document.querySelectorAll('.proof-step');
+  let idx = 0;
+  document.querySelectorAll('.proof-step').forEach(s => s.classList.remove('active'));
+  btn.textContent = 'Stop';
+  btn.className = 'btn danger';
+
+  function showNext() {
+    if (idx >= steps.length) {
+      clearInterval(autoAdvanceTimer);
+      autoAdvanceTimer = null;
+      btn.textContent = 'Walk Through Proof';
+      btn.className = 'btn success';
+      return;
+    }
+    document.querySelectorAll('.proof-step').forEach(s => {
+      s.classList.remove('active');
+      s.setAttribute('aria-expanded', 'false');
+    });
+    steps[idx].classList.add('active');
+    steps[idx].setAttribute('aria-expanded', 'true');
+    visitedProofSteps.add(idx);
+    steps[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    renderMathInElement(steps[idx], {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});
+    updateProofProgress();
+    updateProofDots();
+    idx++;
+    checkProofCompletion();
+  }
+  showNext();
+  autoAdvanceTimer = setInterval(showNext, 3500);
+}
+
+/* ── Helper: draw on canvas with device pixel ratio ── */
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  if (!canvas.dataset.logicalW) {
+    canvas.dataset.logicalW = canvas.getAttribute('width');
+    canvas.dataset.logicalH = canvas.getAttribute('height');
+  }
+  const w = parseInt(canvas.dataset.logicalW);
+  const h = parseInt(canvas.dataset.logicalH);
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, w, h };
+}
+
+/* ════════════════════════════════════════
+   1. COMPLEXITY COMPARISON CHART
+   ════════════════════════════════════════ */
+const cmpSlider = document.getElementById('cmpN');
+const cmpVal = document.getElementById('cmpNVal');
+const cmpCanvas = document.getElementById('cmpCanvas');
+const cmpLogBox = document.getElementById('cmpLog');
+
+function drawComparison() {
+  const exp = parseInt(cmpSlider.value);
+  const N = Math.pow(2, exp);
+  const useLog = cmpLogBox.checked;
+  cmpVal.textContent = N.toLocaleString();
+
+  const { ctx, w, h } = setupCanvas(cmpCanvas);
+  ctx.clearRect(0, 0, w, h);
+
+  const pad = { l: 110, r: 30, t: 30, b: 50 };
+  const pw = w - pad.l - pad.r;
+  const ph = h - pad.t - pad.b;
+
+  const classical = N;
+  const grover = Math.ceil(Math.PI / 4 * Math.sqrt(N));
+  const cube = Math.ceil(Math.pow(N, 1/3));
+  const logN = Math.ceil(Math.log2(N));
+
+  const bars = [
+    { label: 'Classical', value: classical, color: '#e63946', impossible: false },
+    { label: 'Grover O(\u221AN)', value: grover, color: '#6366f1', impossible: false },
+    { label: 'O(\u221BN)', value: cube, color: '#e63946', impossible: true },
+    { label: 'O(log N)', value: logN, color: '#e63946', impossible: true },
+  ];
+
+  const maxRaw = classical * 1.1;
+  const toX = useLog
+    ? v => (v <= 0 ? 0 : (Math.log10(Math.max(1, v)) / Math.log10(maxRaw)) * pw)
+    : v => (v / maxRaw) * pw;
+
+  const barH = Math.min(40, ph / bars.length - 12);
+  const gap = (ph - bars.length * barH) / (bars.length + 1);
+
+  // Axes
+  ctx.strokeStyle = '#3a4560'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + ph);
+  ctx.lineTo(pad.l + pw, pad.t + ph); ctx.stroke();
+
+  // X ticks
+  ctx.fillStyle = '#8892a8'; ctx.font = '12px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+  if (useLog) {
+    const maxExp = Math.ceil(Math.log10(maxRaw));
+    for (let e = 0; e <= maxExp; e++) {
+      const v = Math.pow(10, e);
+      const x = pad.l + toX(v);
+      if (x <= pad.l + pw + 5) {
+        ctx.fillText(v >= 1000 ? v.toExponential(0) : v.toString(), x, pad.t + ph + 18);
+        ctx.save(); ctx.strokeStyle = '#1a2236'; ctx.beginPath();
+        ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ph); ctx.stroke(); ctx.restore();
+      }
+    }
+  } else {
+    for (let i = 0; i <= 4; i++) {
+      const v = (maxRaw / 4) * i;
+      const x = pad.l + toX(v);
+      ctx.fillText(Math.round(v).toLocaleString(), x, pad.t + ph + 18);
+      if (i > 0) {
+        ctx.save(); ctx.strokeStyle = '#1a2236'; ctx.beginPath();
+        ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ph); ctx.stroke(); ctx.restore();
+      }
+    }
+  }
+  ctx.font = '12px "Inter", sans-serif';
+  ctx.fillStyle = '#8892a8';
+  ctx.fillText(useLog ? 'Queries (log scale)' : 'Number of Queries', pad.l + pw / 2, pad.t + ph + 40);
+
+  // Bars
+  bars.forEach((b, i) => {
+    const y = pad.t + gap + i * (barH + gap);
+    const bw = Math.max(3, toX(b.value));
+
+    if (b.impossible) {
+      // Filled bar with striped pattern + pink border (dark theme)
+      ctx.fillStyle = 'rgba(244,114,182,0.15)';
+      ctx.fillRect(pad.l, y, bw, barH);
+      // Diagonal stripes
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(pad.l, y, bw, barH);
+      ctx.clip();
+      ctx.strokeStyle = 'rgba(244,114,182,0.3)';
+      ctx.lineWidth = 1;
+      for (let sx = -barH; sx < bw + barH; sx += 8) {
+        ctx.beginPath();
+        ctx.moveTo(pad.l + sx, y);
+        ctx.lineTo(pad.l + sx + barH, y + barH);
+        ctx.stroke();
+      }
+      ctx.restore();
+      // Pink border
+      ctx.strokeStyle = '#f472b6';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([]);
+      ctx.strokeRect(pad.l, y, bw, barH);
+      // X through bar
+      ctx.strokeStyle = '#f472b6';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(pad.l + 2, y + 2);
+      ctx.lineTo(pad.l + Math.min(bw, 30) - 2, y + barH - 2);
+      ctx.moveTo(pad.l + 2, y + barH - 2);
+      ctx.lineTo(pad.l + Math.min(bw, 30) - 2, y + 2);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = b.color;
+      ctx.fillRect(pad.l, y, bw, barH);
+    }
+
+    // Label
+    ctx.fillStyle = '#e2e8f0'; ctx.font = '13px "Inter", sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(b.label, pad.l - 8, y + barH / 2 + 5);
+
+    // Value
+    ctx.font = 'bold 13px "JetBrains Mono", monospace'; ctx.textAlign = 'left';
+    const valX = (!b.impossible && bw > 60) ? pad.l + 8 : pad.l + bw + 6;
+    ctx.fillStyle = (!b.impossible && bw > 60) ? '#fff' : '#e2e8f0';
+    ctx.fillText(b.value.toLocaleString() + (b.impossible ? ' (impossible)' : ''), valX, y + barH / 2 + 5);
+  });
+}
+
+cmpSlider.addEventListener('input', drawComparison);
+cmpLogBox.addEventListener('change', drawComparison);
+
+/* ════════════════════════════════════════
+   2. ORACLE GRIDS
+   ════════════════════════════════════════ */
+function buildOracleGrids() {
+  const n = 16;
+  const nullGrid = document.getElementById('nullGrid');
+  const markedGrid = document.getElementById('markedGrid');
+  nullGrid.innerHTML = '';
+  markedGrid.innerHTML = '';
+  const markedIdx = 5;
+  for (let i = 0; i < n; i++) {
+    const c1 = document.createElement('div');
+    c1.className = 'cell';
+    c1.textContent = '0';
+    c1.title = `Position ${i}: x\u2099 = 0 (no phase flip)`;
+    nullGrid.appendChild(c1);
+
+    const c2 = document.createElement('div');
+    const isMarked = i === markedIdx;
+    c2.className = 'cell' + (isMarked ? ' marked-cell' : '');
+    c2.textContent = isMarked ? '1' : '0';
+    c2.title = isMarked
+      ? `Position ${i}: MARKED! Phase flip \u2212|${i}\u27E9`
+      : `Position ${i}: x\u2099 = 0 (no phase flip)`;
+    markedGrid.appendChild(c2);
+  }
+}
+
+/* ════════════════════════════════════════
+   2.5 SEARCHLIGHT / INFO VISUALIZATION
+   ════════════════════════════════════════ */
+const infoNSelect = document.getElementById('infoN');
+const infoTSlider = document.getElementById('infoT');
+const infoTValEl = document.getElementById('infoTVal');
+let infoAnimId = null;
+
+function getInfoState() {
+  const N = parseInt(infoNSelect.value);
+  const T = parseInt(infoTSlider.value);
+  const sqrtN = Math.sqrt(N);
+  const groverT = Math.ceil(sqrtN / 2);
+  // D_t per position: simulate with slight random variation for visual interest
+  // But use deterministic seeded approach: each position k has a "weight"
+  // proportional to 1/N (uniform query distribution under null oracle)
+  // D_t = 4t^2 (upper bound), per-position ~ 4t^2/N
+  const perPos = [];
+  // Seed a pseudo-random but deterministic variation
+  for (let k = 0; k < N; k++) {
+    const base = 4 * T * T / N;
+    // Add deterministic variation: sin-based wobble
+    const wobble = 1 + 0.3 * Math.sin(k * 7.3 + T * 0.5) * Math.sin(k * 3.1 + T * 1.7);
+    perPos.push(base * Math.max(0.1, wobble));
+  }
+  const avg = perPos.reduce((a, b) => a + b, 0) / N;
+  return { N, T, groverT, perPos, avg };
+}
+
+function drawInfoViz() {
+  const { N, T, groverT, perPos, avg } = getInfoState();
+  infoTValEl.textContent = T;
+  const maxT = Math.ceil(Math.sqrt(N) * 1.2);
+  infoTSlider.max = maxT;
+
+  const canvas = document.getElementById('infoCanvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+
+  const cols = Math.ceil(Math.sqrt(N));
+  const rows = Math.ceil(N / cols);
+  const cellPad = 2;
+  const cellSize = Math.floor(Math.min((w - 20) / cols, (h - 20) / rows)) - cellPad;
+  const gridW = cols * (cellSize + cellPad);
+  const gridH = rows * (cellSize + cellPad);
+  const offX = (w - gridW) / 2;
+  const offY = (h - gridH) / 2;
+
+  // Normalize values to [0,1] for color mapping
+  const threshold = 0.5;
+  const maxVal = Math.max(threshold * 2, ...perPos);
+
+  for (let k = 0; k < N; k++) {
+    const col = k % cols;
+    const row = Math.floor(k / cols);
+    const x = offX + col * (cellSize + cellPad);
+    const y = offY + row * (cellSize + cellPad);
+    const intensity = Math.min(1, perPos[k] / maxVal);
+
+    // Dark theme: from dark navy to bright cyan/indigo
+    const r = Math.round(15 + intensity * 60);
+    const g = Math.round(20 + intensity * 100);
+    const b = Math.round(40 + intensity * 200);
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.beginPath();
+    ctx.roundRect(x, y, cellSize, cellSize, 3);
+    ctx.fill();
+
+    // If above threshold, add glow
+    if (perPos[k] >= threshold) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(52,211,153,0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(x, y, cellSize, cellSize, 3);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // Update meter
+  const meterFill = document.getElementById('infoMeterFill');
+  const meterLabel = document.getElementById('infoMeterLabel');
+  const pct = Math.min(100, (avg / 1.0) * 100);
+  meterFill.style.width = pct + '%';
+  meterLabel.textContent = avg.toFixed(3);
+
+  // Update stats
+  document.getElementById('infoQUsed').textContent = T;
+  document.getElementById('infoGrover').textContent = groverT;
+  const status = document.getElementById('infoStatus');
+  if (avg >= threshold) {
+    status.textContent = 'Above threshold!';
+    status.style.color = 'var(--green)';
+  } else {
+    status.textContent = 'Below threshold';
+    status.style.color = 'var(--pink)';
+  }
+}
+
+function infoTogglePlay() {
+  const btn = document.getElementById('infoPlayBtn');
+  if (infoAnimId) {
+    cancelAnimationFrame(infoAnimId);
+    infoAnimId = null;
+    btn.textContent = 'Play';
+    btn.className = 'btn';
+    return;
+  }
+  btn.textContent = 'Pause';
+  btn.className = 'btn danger';
+  infoTSlider.value = 0;
+  let frame = 0;
+  function tick() {
+    const maxT = parseInt(infoTSlider.max);
+    const t = Math.floor(frame / 3); // slow down
+    if (t > maxT) {
+      infoAnimId = null;
+      btn.textContent = 'Play';
+      btn.className = 'btn';
+      return;
+    }
+    infoTSlider.value = t;
+    drawInfoViz();
+    frame++;
+    infoAnimId = requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+function infoReset() {
+  if (infoAnimId) { cancelAnimationFrame(infoAnimId); infoAnimId = null; }
+  document.getElementById('infoPlayBtn').textContent = 'Play';
+  document.getElementById('infoPlayBtn').className = 'btn';
+  infoTSlider.value = 0;
+  drawInfoViz();
+}
+
+infoNSelect.addEventListener('change', () => { infoReset(); drawInfoViz(); });
+infoTSlider.addEventListener('input', () => {
+  if (infoAnimId) { cancelAnimationFrame(infoAnimId); infoAnimId = null;
+    document.getElementById('infoPlayBtn').textContent = 'Play';
+    document.getElementById('infoPlayBtn').className = 'btn';
+  }
+  drawInfoViz();
+});
+
+/* ════════════════════════════════════════
+   3. DISTINGUISHABILITY VISUALIZATION
+   ════════════════════════════════════════ */
+const distNSlider = document.getElementById('distN');
+const distTSlider = document.getElementById('distT');
+const distNVal = document.getElementById('distNVal');
+const distTVal = document.getElementById('distTVal');
+const distCanvas = document.getElementById('distCanvas');
+let animId = null;
+
+function computeRecurrence(T) {
+  const D = [0];
+  for (let t = 0; t < T; t++) {
+    const dt = D[t];
+    D.push(dt + 4 * Math.sqrt(dt) + 4);
+  }
+  return D;
+}
+
+function drawDistinguishability() {
+  const exp = parseInt(distNSlider.value);
+  const N = Math.pow(2, exp);
+  distNVal.textContent = N.toLocaleString();
+
+  const maxT = Math.ceil(Math.sqrt(N) * 1.2);
+  distTSlider.max = maxT;
+  const T = Math.min(parseInt(distTSlider.value), maxT);
+  distTSlider.value = T;
+  distTVal.textContent = T;
+
+  const { ctx, w, h } = setupCanvas(distCanvas);
+  ctx.clearRect(0, 0, w, h);
+
+  const pad = { l: 70, r: 30, t: 20, b: 50 };
+  const pw = w - pad.l - pad.r;
+  const ph = h - pad.t - pad.b;
+
+  const D = computeRecurrence(maxT);
+  const successThreshold = 0.5;
+  const groverT = Math.ceil(Math.sqrt(N) / 2);
+  const maxY = Math.max(1.5, D[maxT] / N * 1.2, successThreshold * 1.5);
+
+  // Axes
+  ctx.strokeStyle = '#3a4560'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + ph);
+  ctx.lineTo(pad.l + pw, pad.t + ph); ctx.stroke();
+
+  ctx.fillStyle = '#8892a8'; ctx.font = '11px "JetBrains Mono", monospace';
+
+  ctx.textAlign = 'center';
+  const xSteps = 5;
+  for (let i = 0; i <= xSteps; i++) {
+    const v = Math.round((maxT / xSteps) * i);
+    const x = pad.l + (v / maxT) * pw;
+    ctx.fillText(v, x, pad.t + ph + 16);
+    ctx.save(); ctx.strokeStyle = '#1a2236'; ctx.beginPath();
+    ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ph); ctx.stroke(); ctx.restore();
+  }
+  ctx.font = '12px "Inter", sans-serif';
+  ctx.fillStyle = '#8892a8';
+  ctx.fillText('Queries (T)', pad.l + pw / 2, pad.t + ph + 38);
+
+  ctx.textAlign = 'right'; ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#8892a8';
+  const ySteps = 4;
+  for (let i = 0; i <= ySteps; i++) {
+    const v = (maxY / ySteps) * i;
+    const y = pad.t + ph - (v / maxY) * ph;
+    ctx.fillText(v.toFixed(2), pad.l - 8, y + 4);
+    ctx.save(); ctx.strokeStyle = '#1a2236'; ctx.beginPath();
+    ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + pw, y); ctx.stroke(); ctx.restore();
+  }
+  ctx.save(); ctx.translate(14, pad.t + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.font = '12px "Inter", sans-serif'; ctx.fillStyle = '#8892a8'; ctx.fillText('D\u209c / N', 0, 0); ctx.restore();
+
+  // Success threshold
+  const threshY = pad.t + ph - (successThreshold / maxY) * ph;
+  ctx.save(); ctx.setLineDash([8, 5]); ctx.strokeStyle = '#34d399'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(pad.l, threshY); ctx.lineTo(pad.l + pw, threshY); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = '#34d399'; ctx.font = 'bold 11px "JetBrains Mono", monospace'; ctx.textAlign = 'left';
+  ctx.fillText('c\u00B2 threshold', pad.l + pw - 80, threshY - 6);
+
+  // Grover line
+  if (groverT <= maxT) {
+    const gx = pad.l + (groverT / maxT) * pw;
+    ctx.save(); ctx.setLineDash([4, 3]); ctx.strokeStyle = '#8892a8'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(gx, pad.t); ctx.lineTo(gx, pad.t + ph); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = '#8892a8'; ctx.font = '11px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+    ctx.fillText('\u221AN/2', gx, pad.t + ph + 28);
+  }
+
+  // Upper bound 4T^2/N
+  ctx.beginPath(); ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 2; ctx.setLineDash([]);
+  for (let t = 0; t <= maxT; t++) {
+    const val = 4 * t * t / N;
+    const x = pad.l + (t / maxT) * pw;
+    const y = pad.t + ph - (Math.min(val, maxY) / maxY) * ph;
+    t === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // D_T/N curve
+  if (T > 0) {
+    ctx.beginPath(); ctx.strokeStyle = '#6366f1'; ctx.lineWidth = 3;
+    for (let t = 0; t <= T; t++) {
+      const val = D[t] / N;
+      const x = pad.l + (t / maxT) * pw;
+      const y = pad.t + ph - (Math.min(val, maxY) / maxY) * ph;
+      t === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    const cx = pad.l + (T / maxT) * pw;
+    const cy = pad.t + ph - (Math.min(D[T] / N, maxY) / maxY) * ph;
+    ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#6366f1'; ctx.fill();
+    ctx.fillStyle = '#6366f1'; ctx.font = 'bold 12px "JetBrains Mono", monospace'; ctx.textAlign = 'left';
+    ctx.fillText((D[T] / N).toFixed(3), cx + 10, cy - 8);
+  }
+}
+
+function toggleDistAnim() {
+  const btn = document.getElementById('animateBtn');
+  if (animId) {
+    cancelAnimationFrame(animId);
+    animId = null;
+    btn.textContent = 'Play';
+    btn.className = 'btn';
+    return;
+  }
+  btn.textContent = 'Pause';
+  btn.className = 'btn danger';
+  distTSlider.value = 0;
+  const maxT = parseInt(distTSlider.max);
+  let t = 0;
+  function frame() {
+    if (t > maxT) {
+      animId = null;
+      btn.textContent = 'Play';
+      btn.className = 'btn';
+      return;
+    }
+    distTSlider.value = t;
+    drawDistinguishability();
+    t++;
+    animId = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+distNSlider.addEventListener('input', () => {
+  if (animId) { cancelAnimationFrame(animId); animId = null;
+    document.getElementById('animateBtn').textContent = 'Play';
+    document.getElementById('animateBtn').className = 'btn';
+  }
+  drawDistinguishability();
+});
+distTSlider.addEventListener('input', () => {
+  if (animId) { cancelAnimationFrame(animId); animId = null;
+    document.getElementById('animateBtn').textContent = 'Play';
+    document.getElementById('animateBtn').className = 'btn';
+  }
+  drawDistinguishability();
+});
+
+/* ════════════════════════════════════════
+   4. QUERY BUDGET CHART
+   ════════════════════════════════════════ */
+function drawBudgetChart() {
+  const canvas = document.getElementById('budgetCanvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+
+  const pad = { l: 70, r: 30, t: 20, b: 50 };
+  const pw = w - pad.l - pad.r;
+  const ph = h - pad.t - pad.b;
+  const maxN = 4096;
+  const maxQ = maxN / 2;
+
+  ctx.strokeStyle = '#3a4560'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + ph);
+  ctx.lineTo(pad.l + pw, pad.t + ph); ctx.stroke();
+
+  ctx.fillStyle = '#8892a8'; ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= 4; i++) {
+    const v = Math.round((maxN / 4) * i);
+    const x = pad.l + (v / maxN) * pw;
+    ctx.fillText(v, x, pad.t + ph + 16);
+    ctx.save(); ctx.strokeStyle = '#1a2236'; ctx.beginPath();
+    ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ph); ctx.stroke(); ctx.restore();
+  }
+  ctx.font = '12px "Inter", sans-serif';
+  ctx.fillStyle = '#8892a8';
+  ctx.fillText('Database Size (N)', pad.l + pw / 2, pad.t + ph + 38);
+
+  ctx.textAlign = 'right'; ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#8892a8';
+  for (let i = 0; i <= 4; i++) {
+    const v = Math.round((maxQ / 4) * i);
+    const y = pad.t + ph - (v / maxQ) * ph;
+    ctx.fillText(v.toLocaleString(), pad.l - 8, y + 4);
+  }
+  ctx.save(); ctx.translate(14, pad.t + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.font = '12px "Inter", sans-serif'; ctx.fillStyle = '#8892a8'; ctx.fillText('Queries Required', 0, 0); ctx.restore();
+
+  // Classical
+  ctx.beginPath(); ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 2;
+  for (let n = 1; n <= maxN; n += 4) {
+    const q = n / 3;
+    const x = pad.l + (n / maxN) * pw;
+    const y = pad.t + ph - (Math.min(q, maxQ) / maxQ) * ph;
+    n === 1 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Quantum lower bound
+  ctx.beginPath(); ctx.strokeStyle = '#6366f1'; ctx.lineWidth = 2.5;
+  for (let n = 1; n <= maxN; n += 4) {
+    const q = Math.sqrt(0.5) / 2 * Math.sqrt(n);
+    const x = pad.l + (n / maxN) * pw;
+    const y = pad.t + ph - (Math.min(q, maxQ) / maxQ) * ph;
+    n === 1 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Grover
+  ctx.beginPath(); ctx.strokeStyle = '#34d399'; ctx.lineWidth = 2.5;
+  for (let n = 1; n <= maxN; n += 4) {
+    const q = Math.PI / 4 * Math.sqrt(n);
+    const x = pad.l + (n / maxN) * pw;
+    const y = pad.t + ph - (Math.min(q, maxQ) / maxQ) * ph;
+    n === 1 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Inline labels: position carefully to avoid overlap
+  ctx.font = 'bold 12px "Inter", sans-serif'; ctx.textAlign = 'left';
+  // Classical: place along the steep line
+  const clN = 1400, clY = clN/3;
+  ctx.fillStyle = '#f472b6';
+  ctx.fillText('Classical N/3', pad.l + (clN/maxN)*pw + 8, pad.t + ph - (clY/maxQ)*ph - 8);
+  // Grover: place along the curve
+  const grN = 1600, grY = Math.PI/4*Math.sqrt(grN);
+  ctx.fillStyle = '#34d399';
+  ctx.fillText('Grover \u03C0/4\u00B7\u221AN', pad.l + (grN/maxN)*pw + 8, pad.t + ph - (grY/maxQ)*ph - 8);
+  // Quantum lower bound: very close to x-axis, place label above with arrow-like offset
+  const qN = 3000, qY = Math.sqrt(0.5)/2*Math.sqrt(qN);
+  ctx.fillStyle = '#6366f1';
+  const qLabelY = pad.t + ph - (qY/maxQ)*ph - 10;
+  ctx.fillText('Quantum \u03A9(\u221AN)', pad.l + (qN/maxN)*pw + 8, qLabelY);
+}
+
+/* ════════════════════════════════════════
+   5. RECURRENCE EXPLORER
+   ════════════════════════════════════════ */
+const recNSlider = document.getElementById('recN');
+const recNValEl = document.getElementById('recNVal');
+let recState = { t: 0, D: [0], N: 64 };
+
+function recurrenceReset() {
+  const exp = parseInt(recNSlider.value);
+  recState.N = Math.pow(2, exp);
+  recNValEl.textContent = recState.N.toLocaleString();
+  recState.t = 0;
+  recState.D = [0];
+  updateRecurrenceUI();
+}
+
+function recurrenceStep() {
+  const t = recState.t;
+  const Dt = recState.D[t];
+  const sqrtDt = Math.sqrt(Dt);
+  const Dt1 = Dt + 4 * sqrtDt + 4;
+  recState.D.push(Dt1);
+  recState.t++;
+  updateRecurrenceUI();
+}
+
+function updateRecurrenceUI() {
+  const { t, D, N } = recState;
+  const container = document.getElementById('recurrenceTable');
+  const placeholder = document.getElementById('recPlaceholder');
+  const recCanvasEl = document.getElementById('recCanvas');
+  if (t === 0) { placeholder.style.display = 'block'; recCanvasEl.style.display = 'none'; }
+  else { placeholder.style.display = 'none'; recCanvasEl.style.display = 'block'; }
+
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:0.88em;">';
+  html += '<tr style="background:linear-gradient(135deg, #6366f1, #818cf8);color:#fff;"><th style="padding:6px 10px;">t</th><th>D<sub>t</sub></th><th>\u221AD<sub>t</sub></th><th>+4\u221AD<sub>t</sub></th><th>+4</th><th>D<sub>t</sub> / N</th></tr>';
+  for (let i = 0; i <= t; i++) {
+    const bg = i === t ? 'rgba(99,102,241,0.15)' : (i % 2 === 0 ? 'var(--surface)' : 'var(--surface2)');
+    const sqD = Math.sqrt(D[i]);
+    html += `<tr style="background:${bg};">`;
+    html += `<td style="padding:4px 10px;text-align:center;font-weight:700;">${i}</td>`;
+    html += `<td style="text-align:center;">${D[i].toFixed(2)}</td>`;
+    html += `<td style="text-align:center;">${sqD.toFixed(2)}</td>`;
+    html += `<td style="text-align:center;color:#f472b6;">${(4 * sqD).toFixed(2)}</td>`;
+    html += `<td style="text-align:center;color:#818cf8;">4</td>`;
+    html += `<td style="text-align:center;font-weight:700;color:${D[i]/N >= 0.5 ? '#34d399' : '#e2e8f0'};">${(D[i]/N).toFixed(4)}</td>`;
+    html += '</tr>';
+  }
+  html += '</table>';
+  container.innerHTML = html;
+  container.scrollTop = container.scrollHeight;
+  drawRecurrenceChart();
+}
+
+function drawRecurrenceChart() {
+  const canvas = document.getElementById('recCanvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+
+  const { t, D, N } = recState;
+  const pad = { l: 60, r: 20, t: 16, b: 40 };
+  const pw = w - pad.l - pad.r;
+  const ph = h - pad.t - pad.b;
+  const maxT = Math.max(t + 5, Math.ceil(Math.sqrt(N)));
+  const maxY = Math.max(D[t] / N * 1.5, 1.0);
+
+  ctx.strokeStyle = '#3a4560'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + ph);
+  ctx.lineTo(pad.l + pw, pad.t + ph); ctx.stroke();
+
+  ctx.fillStyle = '#8892a8'; ctx.font = '10px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+  for (let i = 0; i <= 5; i++) {
+    const v = Math.round((maxT / 5) * i);
+    const x = pad.l + (v / maxT) * pw;
+    ctx.fillText(v, x, pad.t + ph + 14);
+  }
+  ctx.fillText('Queries', pad.l + pw / 2, pad.t + ph + 32);
+
+  const threshY = pad.t + ph - (0.5 / maxY) * ph;
+  if (threshY > pad.t) {
+    ctx.save(); ctx.setLineDash([6, 4]); ctx.strokeStyle = '#34d399'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(pad.l, threshY); ctx.lineTo(pad.l + pw, threshY); ctx.stroke(); ctx.restore();
+  }
+
+  ctx.beginPath(); ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+  for (let tt = 0; tt <= maxT; tt++) {
+    const val = 4 * tt * tt / N;
+    const x = pad.l + (tt / maxT) * pw;
+    const y = pad.t + ph - (Math.min(val, maxY) / maxY) * ph;
+    tt === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+
+  if (t > 0) {
+    ctx.beginPath(); ctx.strokeStyle = '#6366f1'; ctx.lineWidth = 2.5;
+    for (let i = 0; i <= t; i++) {
+      const val = D[i] / N;
+      const x = pad.l + (i / maxT) * pw;
+      const y = pad.t + ph - (Math.min(val, maxY) / maxY) * ph;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    for (let i = 0; i <= t; i++) {
+      const val = D[i] / N;
+      const x = pad.l + (i / maxT) * pw;
+      const y = pad.t + ph - (Math.min(val, maxY) / maxY) * ph;
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#6366f1'; ctx.fill();
+    }
+  }
+}
+
+recNSlider.addEventListener('input', recurrenceReset);
+
+/* ════════════════════════════════════════
+   6. QUIZ
+   ════════════════════════════════════════ */
+const quizData = [
+  {
+    q: 'What does the phase oracle $O_{e_k}$ do to basis state $|k\\rangle$?',
+    options: [
+      'Marks item $k$ with probability $1/2$',
+      'Flips the phase: $|k\\rangle \\mapsto -|k\\rangle$',
+      'Measures whether the item is at position $k$',
+      'Swaps items $k$ and $0$'
+    ],
+    correct: 1,
+    explanation: '$O_{e_k}$ applies a phase flip of $-1$ to $|k\\rangle$ and acts as identity on all other basis states: $O_{e_k} = I - 2|k\\rangle\\langle k|$.'
+  },
+  {
+    q: 'Why does the hybrid argument compare against the null oracle ($x = \\mathbf{0}$)?',
+    options: [
+      'The null oracle is the easiest to simulate classically',
+      'A correct algorithm must behave differently on null vs. marked inputs',
+      'The null oracle maximizes the state amplitude',
+      'Grover\'s algorithm only works with the null oracle'
+    ],
+    correct: 1,
+    explanation: 'A correct search algorithm must output "no solution" on the null input but output $k$ on the marked input $e_k$. This forces a measurable state difference $\\|\\delta_T^k\\|$, which the argument bounds.'
+  },
+  {
+    q: 'After $T$ queries, the total distinguishability $D_T$ is bounded by:',
+    options: [
+      '$4T$ (linear in $T$)',
+      '$4T^2$ (quadratic in $T$)',
+      '$4T^3$ (cubic in $T$)',
+      '$2^T$ (exponential in $T$)'
+    ],
+    correct: 1,
+    explanation: 'From the recurrence $D_{t+1} \\leq D_t + 4\\sqrt{D_t} + 4$, we get $\\sqrt{D_t} \\leq 2t$, so $D_T \\leq 4T^2$. The quadratic growth is what gives the $\\sqrt{N}$ lower bound.'
+  },
+  {
+    q: 'Which inequality is crucial for bounding the cross term $\\sum_k \\|\\delta_t^k\\| \\sqrt{p_k^{(t)}}$?',
+    options: [
+      'AM-GM inequality',
+      'Markov\'s inequality',
+      'Cauchy\u2013Schwarz inequality',
+      'Jensen\'s inequality'
+    ],
+    correct: 2,
+    explanation: 'The Cauchy\u2013Schwarz inequality bounds $\\sum_k \\|\\delta_t^k\\|\\sqrt{p_k^{(t)}} \\leq \\sqrt{D_t} \\cdot \\sqrt{\\sum_k p_k^{(t)}} = \\sqrt{D_t}$, since probabilities sum to 1.'
+  },
+  {
+    q: 'What is the fundamental reason the lower bound is $\\Omega(\\sqrt{N})$ rather than $\\Omega(N)$?',
+    options: [
+      'Quantum parallelism lets you query all items simultaneously',
+      '$D_T$ grows as $T^2$ (not $T$), so spreading $4T^2$ across $N$ positions gives $T \\geq \\Omega(\\sqrt{N})$',
+      'Entanglement allows teleporting information about the oracle',
+      'The phase kickback doubles the information per query'
+    ],
+    correct: 1,
+    explanation: 'The quadratic growth $D_T \\leq 4T^2$ is key. Requiring $D_T/N \\geq c^2$ gives $4T^2/N \\geq c^2$, so $T \\geq c\\sqrt{N}/2$. If $D_T$ grew linearly, the bound would be $\\Omega(N)$.'
+  }
+];
+
+let quizScore = 0;
+let quizAnswered = 0;
+
+function buildQuiz() {
+  const container = document.getElementById('quizContainer');
+  let html = '';
+  quizData.forEach((q, i) => {
+    html += `<div class="quiz-card" id="quiz-${i}">`;
+    html += `<div class="q-text"><span class="q-number">${i + 1}</span>${q.q}</div>`;
+    html += '<ul class="quiz-options">';
+    q.options.forEach((opt, j) => {
+      html += `<li onclick="checkAnswer(${i}, ${j})" id="q${i}-opt${j}">${opt}</li>`;
+    });
+    html += '</ul>';
+    html += `<div class="quiz-explanation" id="q${i}-expl">${q.explanation}</div>`;
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function checkAnswer(qIdx, optIdx) {
+  const q = quizData[qIdx];
+  // Prevent double-answering
+  if (document.getElementById(`q${qIdx}-opt0`).classList.contains('disabled')) return;
+
+  quizAnswered++;
+  const isCorrect = optIdx === q.correct;
+  if (isCorrect) quizScore++;
+
+  // Mark all options with emoji indicators
+  q.options.forEach((_, j) => {
+    const el = document.getElementById(`q${qIdx}-opt${j}`);
+    el.classList.add('disabled');
+    if (j === q.correct) {
+      el.classList.add('correct');
+      el.innerHTML = '✓ ' + el.innerHTML;
+    } else {
+      el.innerHTML = '✗ ' + el.innerHTML;
+      if (j === optIdx && !isCorrect) el.classList.add('incorrect');
+    }
+    if (j === optIdx) el.classList.add('selected');
+  });
+
+  // Show explanation
+  const expl = document.getElementById(`q${qIdx}-expl`);
+  expl.classList.add('show');
+  renderMathInElement(expl, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});
+
+  // Show score when all answered
+  if (quizAnswered === quizData.length) {
+    const scoreEl = document.getElementById('quizScore');
+    scoreEl.style.display = 'block';
+    const pct = Math.round(100 * quizScore / quizData.length);
+    let msg = `Score: ${quizScore}/${quizData.length} (${pct}%) &mdash; `;
+    if (pct === 100) msg += 'Perfect! You have a solid grasp of the hybrid method.';
+    else if (pct >= 60) msg += 'Good work! Review the explanations for the ones you missed.';
+    else msg += 'Consider re-reading the proof sections and trying again.';
+    scoreEl.innerHTML = msg;
+    document.getElementById('quizResetWrap').style.display = 'block';
+  }
+}
+
+function resetQuiz() {
+  quizScore = 0;
+  quizAnswered = 0;
+  document.getElementById('quizScore').style.display = 'none';
+  document.getElementById('quizScore').innerHTML = '';
+  document.getElementById('quizResetWrap').style.display = 'none';
+  buildQuiz();
+  // Re-render math in quiz questions
+  document.querySelectorAll('.quiz-card .q-text, .quiz-options li').forEach(el => {
+    renderMathInElement(el, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});
+  });
+}
+
+/* ════════════════════════════════════════
+   INIT
+   ════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    buildOracleGrids();
+    buildProofDots();
+    drawComparison();
+    drawInfoViz();
+    drawDistinguishability();
+    drawBudgetChart();
+    recurrenceReset();
+    buildQuiz();
+    // Render math in quiz questions
+    document.querySelectorAll('.quiz-card .q-text, .quiz-options li').forEach(el => {
+      renderMathInElement(el, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});
+    });
+  }, 200);
+});
+window.addEventListener('resize', () => {
+  drawComparison();
+  drawInfoViz();
+  drawDistinguishability();
+  drawBudgetChart();
+  drawRecurrenceChart();
+});
+
+/* ════════════════════════════════════════
+   TOC NAVIGATION
+   ════════════════════════════════════════ */
+function toggleToc() {
+  const nav = document.getElementById('tocNav');
+  const btn = document.getElementById('tocToggle');
+  nav.classList.toggle('open');
+  btn.setAttribute('aria-expanded', nav.classList.contains('open'));
+}
+// Close TOC when clicking a link
+document.querySelectorAll('.toc-nav a').forEach(a => {
+  a.addEventListener('click', () => document.getElementById('tocNav').classList.remove('open'));
+});
+// Highlight current section on scroll + reading progress bar
+const tocLinks = document.querySelectorAll('.toc-nav a');
+const sectionEls = document.querySelectorAll('section[id]');
+const progressBar = document.getElementById('readingProgress');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sectionEls.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 120) current = s.id;
+  });
+  tocLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+  // Update reading progress bar
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = docHeight > 0 ? Math.min(100, (scrollTop / docHeight) * 100) : 0;
+  progressBar.style.width = pct + '%';
+}, { passive: true });
+
+// ── Scroll reveal ──
+(function initScrollReveal() {
+  const sections = document.querySelectorAll('section');
+  sections.forEach(s => {
+    s.style.opacity = '0';
+    s.style.transform = 'translateY(30px)';
+  });
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const el = e.target;
+        revealObserver.unobserve(el);
+        el.style.transition = 'opacity 0.7s ease-out, transform 0.7s ease-out';
+        requestAnimationFrame(() => {
+          el.style.opacity = '1';
+          el.style.transform = 'translateY(0)';
+        });
+      }
+    });
+  }, { threshold: 0.05 });
+  // Observe after a small delay to avoid flash
+  requestAnimationFrame(() => {
+    sections.forEach(s => revealObserver.observe(s));
+  });
+})();
+
+// ── Particle Background ──
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 45;
+  const CONNECT_DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+  resize();
+  createParticles();
+  draw();
+})();
+</script>
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+</body>
+</html>

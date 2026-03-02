@@ -1,0 +1,2752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Toric Code — Interactive Guide</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" onerror="document.getElementById('katexFallback').style.display='block'"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"
+  onerror="document.getElementById('katexFallback').style.display='block'"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="document.getElementById('threeFallback').style.display='block'"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --red-glow: rgba(248,113,113,0.3);
+    --yellow-glow: rgba(250,204,21,0.3);
+    --purple: #c084fc;
+    --purple-glow: rgba(192,132,252,0.3);
+  }
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Particle background */
+#particleBg {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 1; }
+
+/* Header */
+header {
+  text-align: center;
+  padding: 3rem 0 2rem;
+  margin-bottom: 2rem;
+  position: relative;
+}
+header::after {
+  content: '';
+  display: block;
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), transparent);
+  margin: 1.5rem auto 0;
+}
+header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--cyan), var(--pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+header p { color: var(--text-dim); font-size: 1.05rem; font-weight: 300; }
+
+/* Table of Contents */
+.toc {
+  position: fixed;
+  left: max(4px, calc(50% - 720px));
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.5rem;
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(42, 53, 80, 0.6);
+  border-radius: 12px;
+  transition: opacity 0.3s;
+}
+.toc a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  white-space: nowrap;
+  position: relative;
+}
+.toc a:hover { color: var(--accent); background: rgba(99,102,241,0.08); }
+.toc a::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.toc a.active {
+  color: var(--accent);
+  background: rgba(99,102,241,0.10);
+}
+.toc a.active::after {
+  opacity: 1;
+  transform: translateY(-50%) scaleY(1);
+}
+.toc .toc-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border: 1.5px solid var(--border);
+  color: var(--text-dim);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.toc a.active .toc-num { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+@media (max-width: 1400px) {
+  .toc { left: 4px; }
+  .toc a span:not(.toc-num) { display: none; }
+}
+@media (min-width: 901px) and (max-width: 1400px) {
+  .container { padding-left: calc(52px + 1rem); }
+}
+@media (max-width: 900px) { .toc { display: none; } }
+
+/* Sections (card layout) */
+section {
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s, opacity 0.6s ease-out, transform 0.6s ease-out;
+  opacity: 0;
+  transform: translateY(20px);
+}
+section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+section:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.06);
+}
+section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.5;
+}
+h2 { font-size: 1.5rem; margin-bottom: 1rem; color: var(--accent); }
+h3 { font-size: 1.15rem; margin: 1rem 0 0.5rem; color: var(--text); }
+p, li { color: var(--text-dim); margin-bottom: 0.6rem; }
+ul { padding-left: 1.5rem; }
+.note {
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+  padding: 1rem 1.2rem;
+  border-radius: 0 8px 8px 0;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+.note strong { color: var(--accent); }
+.note.note-green { border-left-color: var(--green); }
+.note.note-green strong { color: var(--green); }
+.note.note-red { border-left-color: var(--red); }
+.note.note-red strong { color: var(--red); }
+.note.note-yellow { border-left-color: var(--yellow); }
+.note.note-yellow strong { color: var(--yellow); }
+code {
+  background: var(--surface2);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--yellow);
+}
+
+/* Canvas area */
+.canvas-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1.2rem 0;
+  text-align: center;
+}
+canvas:not(#particleBg) { border-radius: 8px; cursor: crosshair; display: block; margin: 0 auto; width: 100%; max-width: 600px; height: auto; aspect-ratio: 1; }
+#particleBg ~ .container canvas { image-rendering: auto; }
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 0.8rem;
+}
+.btn {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.45rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s;
+  letter-spacing: 0.01em;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(99,102,241,0.1); }
+.btn:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+.btn.active { background: linear-gradient(135deg, var(--accent), #818cf8); color: #fff; border-color: transparent; }
+.btn.secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); }
+.btn.secondary:hover { border-color: var(--accent); color: var(--text); }
+.btn-red.active { background: var(--red); border-color: var(--red); }
+.btn-green.active { background: var(--green); border-color: var(--green); color: #111; }
+.btn-purple.active { background: var(--purple); border-color: var(--purple); }
+.btn-yellow.active { background: var(--yellow); border-color: var(--yellow); color: #111; }
+
+/* Focus-visible states for keyboard navigation */
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+.quiz-option:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.toc a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  background: rgba(99,102,241,0.12);
+}
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.info-bar {
+  margin-top: 0.8rem;
+  padding: 0.6rem 1rem;
+  background: rgba(99,102,241,0.06);
+  border: 1px solid rgba(99,102,241,0.1);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  min-height: 2.4rem;
+  transition: all 0.3s;
+}
+
+/* Columns */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 768px) {
+  .two-col { grid-template-columns: 1fr; }
+  header h1 { font-size: 1.8rem; }
+  canvas:not(#particleBg) { max-width: 100% !important; }
+}
+
+/* Legend */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin: 0.8rem 0;
+  font-size: 0.82rem;
+}
+.legend-item { display: flex; align-items: center; gap: 0.35rem; color: var(--text-dim); }
+.legend-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 2px solid;
+  flex-shrink: 0;
+}
+
+/* Qubit counter badge */
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--text);
+  margin: 0.2rem;
+}
+.stat-badge .stat-val { font-weight: 700; font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', monospace; }
+
+/* Quiz */
+.quiz-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+.quiz-box h3 { margin-top: 0; color: var(--yellow); }
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--bg);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 0.4rem 0;
+  font-size: 0.93rem;
+  transition: all 0.2s;
+  font-family: inherit;
+  word-break: break-word;
+}
+.quiz-option:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+.quiz-option.correct { border-color: var(--green); color: var(--green); background: rgba(52,211,153,0.08); }
+.quiz-option.wrong { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.08); }
+.quiz-option:disabled { cursor: default; }
+.quiz-feedback { margin-top: 0.6rem; font-size: 0.9rem; min-height: 1.5rem; }
+
+/* 3D torus */
+#torusContainer {
+  width: 100%;
+  height: 380px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: grab;
+}
+#torusContainer:active { cursor: grabbing; }
+
+/* Walkthrough steps */
+.walkthrough-step {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  margin: 0.6rem 0;
+  display: none;
+}
+.walkthrough-step.active { display: block; animation: fadeSlide 0.3s ease; }
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.step-counter {
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+
+/* Dimension counting table */
+.count-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0.8rem 0;
+  font-size: 0.9rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.count-table th, .count-table td {
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.count-table th {
+  background: rgba(99,102,241,0.1);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.count-table td {
+  color: var(--text-dim);
+  background: var(--surface2);
+  transition: background 0.3s;
+}
+.count-table tr:hover td { background: rgba(99,102,241,0.05); }
+.count-table .highlight-cell { color: var(--yellow); font-weight: 700; }
+
+footer {
+  text-align: center;
+  padding: 2rem 0 3rem;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+.footer-line {
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 0 auto 1.2rem;
+}
+.footer-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.footer-sep { color: var(--border); }
+
+/* Walkthrough progress dots */
+.wt-progress {
+  display: none;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+.wt-progress.active { display: flex; }
+.wt-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.3s, transform 0.3s;
+}
+.wt-dot.active {
+  background: var(--accent);
+  transform: scale(1.2);
+}
+.wt-dot.done {
+  background: var(--green);
+}
+
+/* Anyon animation burst */
+@keyframes anyonBurst {
+  0% { transform: scale(0); opacity: 1; }
+  60% { transform: scale(2.5); opacity: 0.6; }
+  100% { transform: scale(3.5); opacity: 0; }
+}
+
+/* Quiz progress bar */
+.quiz-progress {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.2rem;
+  align-items: center;
+}
+.quiz-pip {
+  width: 28px; height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  transition: background 0.4s;
+}
+@keyframes pipBounce { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
+.quiz-pip.correct { background: var(--green); animation: pipBounce 0.4s ease; }
+.quiz-pip.wrong { background: var(--red); animation: pipBounce 0.4s ease; }
+.quiz-pip.current { background: var(--accent); }
+.quiz-score {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Challenge mode */
+.challenge-banner {
+  padding: 0.8rem 1.2rem;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-top: 0.6rem;
+  transition: all 0.3s;
+}
+.challenge-banner.success { background: rgba(52,211,153,0.12); border: 1px solid var(--green); color: var(--green); }
+.challenge-banner.fail { background: rgba(248,113,113,0.12); border: 1px solid var(--red); color: var(--red); }
+.challenge-banner.pending { background: rgba(99,102,241,0.08); border: 1px solid var(--border); color: var(--text-dim); }
+@keyframes slideReveal { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.challenge-banner[style*="block"] { animation: slideReveal 0.4s ease-out; }
+
+/* L explorer */
+.param-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.8rem;
+  margin: 1rem 0;
+}
+.param-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  text-align: center;
+}
+.param-card .param-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+.param-card .param-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin: 0.2rem 0; font-family: 'JetBrains Mono', monospace; }
+.param-card .param-formula { font-size: 0.8rem; color: var(--text-dim); }
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  outline: none;
+  margin: 0.8rem 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg);
+}
+.l-display {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+}
+
+/* Measurement demo eigenvalue badges */
+.eigen-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 24px;
+  padding: 0 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: 'Georgia', serif;
+}
+.eigen-badge.plus { background: rgba(52,211,153,0.15); color: var(--green); border: 1px solid rgba(52,211,153,0.3); }
+.eigen-badge.minus { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+
+/* Quiz completion banner */
+.quiz-completion {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+  animation: solutionReveal 0.6s ease-out;
+}
+.quiz-completion.perfect {
+  background: linear-gradient(135deg, rgba(52,211,153,0.12), rgba(99,102,241,0.08));
+  border: 1px solid var(--green);
+  color: var(--green);
+}
+.quiz-completion.good {
+  background: linear-gradient(135deg, rgba(250,204,21,0.12), rgba(99,102,241,0.08));
+  border: 1px solid var(--yellow);
+  color: var(--yellow);
+}
+.quiz-completion.retry {
+  background: rgba(248,113,113,0.08);
+  border: 1px solid var(--red);
+  color: var(--red);
+}
+@keyframes solutionReveal {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .controls .btn {
+    width: 100%;
+    text-align: center;
+  }
+  .param-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  section { padding: 1.25rem; margin-bottom: 1rem; }
+}
+@media (max-width: 480px) {
+  .param-grid {
+    grid-template-columns: 1fr;
+  }
+  .controls .btn {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  .param-card .param-value { font-size: 1.2rem; }
+  header h1 { font-size: 1.5rem; }
+  header p { font-size: 0.9rem; }
+  .l-display { font-size: 1.1rem; }
+}
+
+/* Scroll progress bar */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+  z-index: 200;
+  transition: width 0.1s linear;
+  pointer-events: none;
+}
+
+/* Back to top button */
+.back-to-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(17, 24, 39, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s, transform 0.3s, border-color 0.2s, color 0.2s;
+  pointer-events: none;
+  z-index: 100;
+}
+.back-to-top.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.back-to-top:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.back-to-top:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Sub-question heading style */
+h3.sub-question {
+  color: var(--text);
+  font-style: italic;
+  padding-left: 0.8rem;
+  border-left: 2px solid var(--accent);
+  margin-top: 1.5rem;
+}
+
+/* Keyboard shortcut hints */
+.shortcut-hint {
+  text-align: center;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+.shortcut-hint kbd {
+  display: inline-block;
+  padding: 0.15em 0.4em;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--accent);
+  margin-right: 0.15rem;
+}
+
+/* CDN fallback notices */
+.cdn-fallback {
+  display: none;
+  background: var(--surface2);
+  border: 1px solid var(--yellow);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  margin: 0.5rem 0;
+  color: var(--yellow);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* Print stylesheet */
+@media print {
+  #particleBg, .toc, .back-to-top, .scroll-progress { display: none !important; }
+  body { background: #fff; color: #111; }
+  section { opacity: 1 !important; transform: none !important; break-inside: avoid; border: 1px solid #ccc; background: #fff; }
+  header h1 { -webkit-text-fill-color: #111; background: none; color: #111; }
+  .note { border-left-color: #666; background: #f5f5f5; }
+  .btn { border: 1px solid #999; background: #eee; color: #111; }
+  canvas { max-width: 100%; }
+  footer { color: #666; }
+  .container { padding-left: 0 !important; }
+}
+
+</style>
+</head>
+<body>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+
+<div class="cdn-fallback" id="katexFallback">⚠ Math rendering unavailable — KaTeX library could not be loaded. Formulas will appear as raw LaTeX.</div>
+<div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+<canvas id="particleBg"></canvas>
+
+<!-- Sticky TOC -->
+<nav class="toc" id="toc">
+  <a href="#intro"><span class="toc-num">1</span><span>Introduction</span></a>
+  <a href="#torus3d"><span class="toc-num">2</span><span>The Torus</span></a>
+  <a href="#lattice"><span class="toc-num">3</span><span>Lattice Explorer</span></a>
+  <a href="#stabilizers"><span class="toc-num">4</span><span>Stabilizers</span></a>
+  <a href="#measurement"><span class="toc-num">5</span><span>Measurement</span></a>
+  <a href="#counting"><span class="toc-num">6</span><span>Counting</span></a>
+  <a href="#explorer"><span class="toc-num">7</span><span>Parameters</span></a>
+  <a href="#logical"><span class="toc-num">8</span><span>Logical Ops</span></a>
+  <a href="#correction"><span class="toc-num">9</span><span>Error Correction</span></a>
+  <a href="#challenge"><span class="toc-num">10</span><span>Challenge</span></a>
+  <a href="#quiz"><span class="toc-num">11</span><span>Quiz</span></a>
+</nav>
+
+<header>
+  <div class="container">
+    <h1>The Toric Code</h1>
+    <p>An interactive introduction to topological quantum error correction</p>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- Section 1: Introduction -->
+<section id="intro">
+  <h2>1. What is the Toric Code?</h2>
+  <div class="two-col">
+    <div>
+      <p>The <strong style="color:var(--text)">toric code</strong> is a topological quantum error-correcting code introduced by A. Kitaev in 1997. It is one of the most important models in quantum information, because it demonstrates how <strong style="color:var(--text)">topology</strong> can protect quantum information from local errors.</p>
+      <p>The key idea: place qubits on the <strong style="color:var(--text)">edges</strong> of a square lattice that wraps around on a <strong style="color:var(--text)">torus</strong> (periodic boundary conditions). Then define two types of local check operators &mdash; <strong style="color:var(--accent)">star operators</strong> ($A_v$) at vertices and <strong style="color:var(--red)">plaquette operators</strong> ($B_p$) at faces.</p>
+      <p>The code encodes <strong style="color:var(--yellow)">2 logical qubits</strong> in an $L \times L$ lattice using $2L^2$ physical qubits. Errors are detected as excitations of these operators, and logical information is stored in non-local, topological degrees of freedom.</p>
+    </div>
+    <div>
+      <div class="note">
+        <strong>Key properties:</strong>
+        <ul>
+          <li>Qubits live on <em>edges</em> of a square lattice</li>
+          <li>Star operators $A_v$ = product of $X$ on edges around a vertex</li>
+          <li>Plaquette operators $B_p$ = product of $Z$ on edges around a face</li>
+          <li>All stabilizers commute: $[A_v, B_p] = 0$</li>
+          <li>Code distance $= L$ (the lattice size)</li>
+          <li>Logical operators are non-contractible loops on the torus</li>
+        </ul>
+      </div>
+      $$A_v = \prod_{e \in \text{star}(v)} X_e \qquad B_p = \prod_{e \in \partial p} Z_e$$
+    </div>
+  </div>
+</section>
+
+<!-- Section 2: 3D Torus -->
+<section id="torus3d">
+  <h2>2. Visualizing the Torus</h2>
+  <p>The toric code lives on a lattice wrapped around a <strong style="color:var(--text)">torus</strong>. The left edge is identified with the right, and the top with the bottom. Drag to rotate the 3D torus below &mdash; the <strong style="color:var(--red)">red</strong> and <strong style="color:var(--accent)">blue</strong> loops show the two topologically distinct non-contractible cycles.</p>
+  <div class="canvas-wrap">
+    <div id="torusContainer" role="img" aria-label="Interactive 3D torus visualization. Drag to rotate. Two colored loops highlight the two topologically distinct non-contractible cycles."></div>
+    <div class="info-bar">Drag to rotate. The two colored loops cannot be shrunk to a point &mdash; they represent the two independent logical operators of the code.</div>
+  </div>
+</section>
+
+<!-- Section 3: Interactive Lattice -->
+<section id="lattice">
+  <h2>3. Interactive Lattice Explorer</h2>
+  <p><strong style="color:var(--text)">Click</strong> or <strong style="color:var(--text)">drag</strong> on edges (qubits) to apply error chains and see how the syndrome changes. Use the tools below to switch between X errors, Z errors, and to visualize stabilizer operators.</p>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot" style="background:#8892a8;border-color:#8892a8"></span> Qubit (edge)</div>
+    <div class="legend-item"><span class="legend-dot" style="background:transparent;border-color:var(--green)"></span> Vertex / star</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--red);border-color:var(--red)"></span> X error</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--purple);border-color:var(--purple)"></span> Z error</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--green);border-color:var(--green)"></span> e-anyon</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--red);border-color:var(--red);border-radius:3px"></span> m-anyon</div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="toricCanvas" role="img" aria-label="Interactive toric code lattice. Click or drag edges to toggle X and Z errors and see syndrome changes."></canvas>
+    <div class="controls">
+      <button class="btn btn-red active" id="btnXerr" onclick="setTool('X')">X Error</button>
+      <button class="btn btn-purple" id="btnZerr" onclick="setTool('Z')">Z Error</button>
+      <button class="btn btn-green" id="btnStar" onclick="setTool('star')">Star $A_v$</button>
+      <button class="btn" id="btnPlaq" onclick="setTool('plaq')">Plaquette $B_p$</button>
+      <button class="btn" onclick="resetLattice()">Reset</button>
+      <button class="btn" onclick="randomErrors()">Random</button>
+    </div>
+    <div class="info-bar" id="infoBar" aria-live="polite">Click or drag across edges to place X errors. Syndromes appear at adjacent plaquettes.</div>
+    <div class="shortcut-hint" aria-label="Keyboard shortcuts">
+      <kbd>X</kbd> X Error &nbsp; <kbd>Z</kbd> Z Error &nbsp; <kbd>S</kbd> Star &nbsp; <kbd>P</kbd> Plaquette &nbsp; <kbd>R</kbd> Reset
+    </div>
+  </div>
+</section>
+
+<!-- Section 4: Stabilizers -->
+<section id="stabilizers">
+  <h2>4. Stabilizer Operators</h2>
+  <div class="two-col">
+    <div>
+      <h3 style="color:var(--green)">Star Operator $A_v$</h3>
+      <p>The star operator at vertex $v$ acts with Pauli $X$ on all edges touching that vertex. On a square lattice, each vertex has 4 adjacent edges:</p>
+      $$A_v = X_{e_1} X_{e_2} X_{e_3} X_{e_4}$$
+      <p>$A_v$ detects <strong style="color:var(--text)">Z errors</strong>: if a $Z$ error occurs on an edge, the two star operators at its endpoints will be excited (eigenvalue $-1$). These excitations are called <strong style="color:var(--green)">e-anyons</strong> (electric charges).</p>
+      <div class="note note-green"><strong>Key insight:</strong> Z errors always create e-anyons <em>in pairs</em> at the endpoints of error chains. A single isolated excitation is impossible!</div>
+    </div>
+    <div>
+      <h3 style="color:var(--red)">Plaquette Operator $B_p$</h3>
+      <p>The plaquette operator at face $p$ acts with Pauli $Z$ on all edges bounding that face:</p>
+      $$B_p = Z_{e_1} Z_{e_2} Z_{e_3} Z_{e_4}$$
+      <p>$B_p$ detects <strong style="color:var(--text)">X errors</strong>: if an $X$ error occurs on an edge, the two plaquette operators sharing that edge will be excited. These excitations are called <strong style="color:var(--red)">m-anyons</strong> (magnetic fluxes).</p>
+      <div class="note note-red"><strong>Key insight:</strong> X errors always create m-anyons <em>in pairs</em> at the faces on either side. Anyons are always born in pairs!</div>
+    </div>
+  </div>
+  <h3 class="sub-question">Why do all stabilizers commute?</h3>
+  <p>Any star operator (all $X$) and any plaquette operator (all $Z$) share either 0 or exactly 2 edges. Since $X$ and $Z$ anticommute on a single qubit, sharing 2 qubits gives $(-1)^2 = +1$. Therefore $[A_v, B_p] = 0$ for all $v, p$.</p>
+</section>
+
+<!-- Section 5: Interactive Measurement -->
+<section id="measurement">
+  <h2>5. Interactive Stabilizer Measurement</h2>
+  <p>In the toric code, we detect errors by <strong style="color:var(--text)">measuring all stabilizer operators</strong>. Each measurement returns $+1$ (no error detected) or $-1$ (anyon present). Click on <strong style="color:var(--green)">vertices</strong> or <strong style="color:var(--red)">face centers</strong> below to measure them and watch eigenvalues change as you add errors.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="measCanvas" role="img" aria-label="Interactive stabilizer measurement demo. Click vertices or face centers to measure eigenvalues."></canvas>
+    <div class="controls">
+      <button class="btn btn-red" id="btnMeasX" onclick="setMeasTool('X')">Place X Error</button>
+      <button class="btn btn-purple" id="btnMeasZ" onclick="setMeasTool('Z')">Place Z Error</button>
+      <button class="btn btn-green active" id="btnMeasMeasure" onclick="setMeasTool('measure')">Measure Stabilizer</button>
+      <button class="btn" onclick="resetMeas()">Reset</button>
+    </div>
+    <div class="info-bar" id="measInfo" aria-live="polite">Click a vertex or face center to measure its stabilizer. Green ($+1$) = no excitation, Red ($-1$) = anyon detected!</div>
+  </div>
+
+  <div class="note note-green"><strong>Try this:</strong> Place a Z error on one edge, then click the two vertices at its endpoints. You'll see both flip from $+1$ to $-1$ &mdash; the error creates an e-anyon pair. Now place another Z error on an adjacent edge to "move" the anyon.</div>
+</section>
+
+<!-- Section 6: Dimension Counting -->
+<section id="counting">
+  <h2>6. Counting the Code Space</h2>
+  <p>Why does the toric code encode exactly <strong style="color:var(--yellow)">2 logical qubits</strong>? Let's count carefully for an $L \times L$ lattice.</p>
+
+  <table class="count-table">
+    <thead><tr><th>Quantity</th><th>Count</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr><td>Physical qubits (edges)</td><td>$2L^2$</td><td>$L^2$ horizontal + $L^2$ vertical</td></tr>
+      <tr><td>Star operators $A_v$</td><td>$L^2$</td><td>One per vertex</td></tr>
+      <tr><td>Independent star constraints</td><td>$L^2 - 1$</td><td>$\prod_v A_v = I$ (one relation)</td></tr>
+      <tr><td>Plaquette operators $B_p$</td><td>$L^2$</td><td>One per face</td></tr>
+      <tr><td>Independent plaquette constraints</td><td>$L^2 - 1$</td><td>$\prod_p B_p = I$ (one relation)</td></tr>
+      <tr><td>Total independent stabilizers</td><td>$2L^2 - 2$</td><td>Sum of above</td></tr>
+      <tr><td style="color:var(--yellow);font-weight:700">Logical qubits $k$</td><td class="highlight-cell">$2$</td><td>$k = n - s = 2L^2 - (2L^2 - 2) = 2$</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note note-yellow">
+    <strong>The formula:</strong> For a stabilizer code with $n$ physical qubits and $s$ independent stabilizer generators, the number of encoded logical qubits is $k = n - s$. For the toric code: $k = 2L^2 - (2L^2 - 2) = 2$.
+  </div>
+
+  <p>The key subtlety: there is one global constraint among all star operators ($\prod_v A_v = I$, because every edge touches exactly two vertices and $X^2 = I$), and similarly one constraint among all plaquette operators. This removes 2 from the stabilizer count, giving us exactly 2 logical qubits &mdash; a topological invariant of the torus!</p>
+</section>
+
+<!-- Section 7: Code Parameter Explorer -->
+<section id="explorer">
+  <h2>7. Code Parameter Explorer</h2>
+  <p>Adjust the lattice size $L$ below to see how all the code parameters scale. The toric code is a $[[n, k, d]]$ quantum error-correcting code.</p>
+
+  <div style="max-width:400px;margin:0 auto 1rem">
+    <div class="l-display">L = <span id="lVal">5</span></div>
+    <input type="range" id="lSlider" min="2" max="15" value="5" aria-label="Lattice size" aria-valuemin="2" aria-valuemax="15" oninput="updateExplorer(this.value)">
+    <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-dim)"><span>2</span><span>15</span></div>
+  </div>
+
+  <div class="param-grid">
+    <div class="param-card">
+      <div class="param-label">Physical Qubits $n$</div>
+      <div class="param-value" id="expN">50</div>
+      <div class="param-formula">$2L^2$</div>
+    </div>
+    <div class="param-card">
+      <div class="param-label">Logical Qubits $k$</div>
+      <div class="param-value" id="expK" style="color:var(--yellow)">2</div>
+      <div class="param-formula">always $2$</div>
+    </div>
+    <div class="param-card">
+      <div class="param-label">Code Distance $d$</div>
+      <div class="param-value" id="expD" style="color:var(--green)">5</div>
+      <div class="param-formula">$= L$</div>
+    </div>
+    <div class="param-card">
+      <div class="param-label">Stabilizers</div>
+      <div class="param-value" id="expS">48</div>
+      <div class="param-formula">$2L^2 - 2$</div>
+    </div>
+    <div class="param-card">
+      <div class="param-label">Encoding Rate $k/n$</div>
+      <div class="param-value" id="expRate" style="color:var(--cyan)">4.0%</div>
+      <div class="param-formula">$2 / 2L^2$</div>
+    </div>
+    <div class="param-card">
+      <div class="param-label">Correctable Errors</div>
+      <div class="param-value" id="expCorr" style="color:var(--red)">2</div>
+      <div class="param-formula">$\lfloor (d-1)/2 \rfloor$</div>
+    </div>
+  </div>
+
+  <div class="note"><strong>Trade-off:</strong> Increasing $L$ gives better protection (higher $d$), but at the cost of more physical qubits ($\propto L^2$). The encoding rate $k/n \to 0$ as $L \to \infty$ &mdash; a constant overhead for topological protection.</div>
+</section>
+
+<!-- Section 8: Logical operators -->
+<section id="logical">
+  <h2>8. Logical Operators &amp; Topology</h2>
+  <p>Logical operators correspond to <strong style="color:var(--text)">non-contractible loops</strong> on the torus &mdash; paths that wrap all the way around.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="logicalCanvas" role="img" aria-label="Visualization of logical operators as non-contractible loops on the toric code lattice."></canvas>
+    <div class="controls">
+      <button class="btn btn-red active" id="btnLogX1" onclick="showLogical('X1')">$\bar{X}_1$</button>
+      <button class="btn btn-purple" id="btnLogZ1" onclick="showLogical('Z1')">$\bar{Z}_1$</button>
+      <button class="btn btn-red" id="btnLogX2" onclick="showLogical('X2')">$\bar{X}_2$</button>
+      <button class="btn btn-purple" id="btnLogZ2" onclick="showLogical('Z2')">$\bar{Z}_2$</button>
+    </div>
+    <div class="info-bar" id="logicalInfo">$\bar{X}_1$: a horizontal chain of $X$ operators wrapping around the torus. Commutes with all stabilizers but is not itself a stabilizer product.</div>
+  </div>
+
+  <div class="two-col" style="margin-top:1rem">
+    <div>
+      <div class="note">
+        <strong>Logical qubit 1:</strong>
+        <ul>
+          <li>$\bar{X}_1$ = chain of $X$ along a horizontal non-contractible loop</li>
+          <li>$\bar{Z}_1$ = chain of $Z$ along a vertical non-contractible loop of the <em>dual</em> lattice</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="note">
+        <strong>Logical qubit 2:</strong>
+        <ul>
+          <li>$\bar{X}_2$ = chain of $X$ along a vertical non-contractible loop</li>
+          <li>$\bar{Z}_2$ = chain of $Z$ along a horizontal non-contractible loop of the <em>dual</em> lattice</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <p>These loops commute with all stabilizers (they cross each stabilizer an even number of times) but are logically distinct from the identity. The code distance is $L$ &mdash; an error must corrupt at least $L$ physical qubits to create a logical error.</p>
+</section>
+
+<!-- Section 7: Error Correction Walkthrough -->
+<section id="correction">
+  <h2>9. Error Correction &mdash; Step by Step</h2>
+  <p>Error correction on the toric code works by measuring syndromes and pairing anyons. Follow the walkthrough below, or experiment freely.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="corrCanvas" role="img" aria-label="Error correction walkthrough showing syndrome detection and minimum-weight matching."></canvas>
+    <div class="controls">
+      <button class="btn btn-red" onclick="addRandomXErrors()">Add X Errors</button>
+      <button class="btn btn-purple" onclick="addRandomZErrors()">Add Z Errors</button>
+      <button class="btn btn-green" onclick="correctErrors()">Correct!</button>
+      <button class="btn" onclick="resetCorr()">Reset</button>
+      <button class="btn btn-yellow" id="btnWalkthrough" onclick="startWalkthrough()">Walkthrough</button>
+    </div>
+    <div class="info-bar" id="corrInfo" aria-live="polite">Add errors, then click Correct to see minimum-weight matching pair the anyons.</div>
+  </div>
+
+  <!-- Walkthrough steps -->
+  <div id="walkthrough">
+    <div class="wt-progress" id="wtProgress">
+      <div class="wt-dot active" data-step="1"></div>
+      <div class="wt-dot" data-step="2"></div>
+      <div class="wt-dot" data-step="3"></div>
+      <div class="wt-dot" data-step="4"></div>
+      <div class="wt-dot" data-step="5"></div>
+    </div>
+    <div class="walkthrough-step" id="wt-step1">
+      <div class="step-counter">Step 1 of 5</div>
+      <p><strong style="color:var(--text)">Prepare the code state.</strong> All stabilizers have eigenvalue $+1$. There are no anyons &mdash; the lattice is "clean."</p>
+      <button class="btn" onclick="wtNext(2)">Next &rarr;</button>
+    </div>
+    <div class="walkthrough-step" id="wt-step2">
+      <div class="step-counter">Step 2 of 5</div>
+      <p><strong style="color:var(--text)">Errors occur.</strong> Physical noise applies random Pauli errors on qubits. Each error excites adjacent stabilizers, creating anyons in pairs.</p>
+      <button class="btn" onclick="wtNext(3)">Next &rarr;</button>
+    </div>
+    <div class="walkthrough-step" id="wt-step3">
+      <div class="step-counter">Step 3 of 5</div>
+      <p><strong style="color:var(--text)">Measure syndromes.</strong> We measure all $A_v$ and $B_p$ to find which ones are excited ($-1$ eigenvalue). This tells us the <em>locations</em> of the anyons but <em>not</em> the specific error that created them.</p>
+      <button class="btn" onclick="wtNext(4)">Next &rarr;</button>
+    </div>
+    <div class="walkthrough-step" id="wt-step4">
+      <div class="step-counter">Step 4 of 5</div>
+      <p><strong style="color:var(--text)">Pair anyons using MWPM (Minimum-Weight Perfect Matching).</strong> The decoder finds the minimum-weight set of paths that connects all anyons in pairs. This is the most likely error consistent with the observed syndrome.</p>
+      <button class="btn" onclick="wtNext(5)">Next &rarr;</button>
+    </div>
+    <div class="walkthrough-step" id="wt-step5">
+      <div class="step-counter">Step 5 of 5</div>
+      <p><strong style="color:var(--text)">Apply corrections.</strong> Apply correction operators along the pairing paths. If the combined error + correction forms a contractible loop, we succeed! If it forms a non-contractible loop, we've introduced a logical error.</p>
+      <button class="btn" onclick="endWalkthrough()">Finish</button>
+    </div>
+  </div>
+
+  <div class="note note-green"><strong>MWPM decoder:</strong> Minimum-Weight Perfect Matching finds the lowest-cost way to pair all anyons. On a torus, &ldquo;cost&rdquo; = the shortest path distance between each pair, respecting periodic boundaries. It runs in polynomial time and is the standard decoder for surface codes.</div>
+
+  <div class="note"><strong>Threshold theorem:</strong> The toric code has an error threshold of $\sim 10.3\%$ for independent depolarizing noise. Below this rate, increasing $L$ suppresses the logical error rate exponentially.</div>
+</section>
+
+<!-- Section 10: Challenge Mode -->
+<section id="challenge">
+  <h2>10. Challenge Mode</h2>
+  <p>Can <em>you</em> be the decoder? Hidden errors have been placed on the lattice. Your job: <strong style="color:var(--text)">click edges to apply corrections</strong> that eliminate all anyons <em>without</em> creating a logical error (non-contractible loop).</p>
+
+  <div class="canvas-wrap">
+    <canvas id="challengeCanvas" role="img" aria-label="Challenge mode. Place correction operators to eliminate all anyons without creating logical errors."></canvas>
+    <div class="controls">
+      <button class="btn btn-green" onclick="checkChallenge()">Check My Correction</button>
+      <button class="btn" onclick="newChallenge()">New Challenge</button>
+      <button class="btn btn-yellow" onclick="showHint()">Hint</button>
+      <button class="btn secondary" id="btnRevealErrors" onclick="revealErrors()">Reveal Errors</button>
+    </div>
+    <div class="info-bar" id="challengeInfo" aria-live="polite">Click on edges to place correction operators. Try to pair all anyons with the shortest paths!</div>
+    <div class="challenge-banner pending" id="challengeBanner" style="display:none"></div>
+  </div>
+</section>
+
+<!-- Section 11: Quiz -->
+<section id="quiz">
+  <h2>11. Check Your Understanding</h2>
+
+  <div class="quiz-progress" id="quizProgress">
+    <div class="quiz-pip current" data-q="q1"></div>
+    <div class="quiz-pip" data-q="q2"></div>
+    <div class="quiz-pip" data-q="q3"></div>
+    <div class="quiz-pip" data-q="q4"></div>
+    <div class="quiz-pip" data-q="q5"></div>
+    <span class="quiz-score" id="quizScore">0 / 5</span>
+  </div>
+
+  <div class="quiz-box" id="q1">
+    <h3 id="q1-label">Question 1</h3>
+    <p>Where do qubits live in the toric code?</p>
+    <div role="radiogroup" aria-labelledby="q1-label">
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q1',this,false)">On the vertices of the lattice</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q1',this,true)">On the edges of the lattice</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q1',this,false)">On the faces of the lattice</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q1',this,false)">At the center of the torus</button>
+    </div>
+    <div class="quiz-feedback" id="q1-fb" aria-live="polite"></div>
+  </div>
+
+  <div class="quiz-box" id="q2">
+    <h3 id="q2-label">Question 2</h3>
+    <p>An $X$ error on a single qubit excites which stabilizers?</p>
+    <div role="radiogroup" aria-labelledby="q2-label">
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q2',this,false)">The two star operators at its endpoints</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q2',this,true)">The two plaquette operators on either side</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q2',this,false)">All four neighboring stabilizers</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q2',this,false)">No stabilizers are excited</button>
+    </div>
+    <div class="quiz-feedback" id="q2-fb" aria-live="polite"></div>
+  </div>
+
+  <div class="quiz-box" id="q3">
+    <h3 id="q3-label">Question 3</h3>
+    <p>How many logical qubits does the toric code encode on a torus?</p>
+    <div role="radiogroup" aria-labelledby="q3-label">
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q3',this,false)">1</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q3',this,true)">2</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q3',this,false)">$L$ (the lattice size)</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q3',this,false)">$L^2$</button>
+    </div>
+    <div class="quiz-feedback" id="q3-fb" aria-live="polite"></div>
+  </div>
+
+  <div class="quiz-box" id="q4">
+    <h3 id="q4-label">Question 4</h3>
+    <p>Why does the product of <em>all</em> star operators $\prod_v A_v$ equal the identity?</p>
+    <div role="radiogroup" aria-labelledby="q4-label">
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q4',this,false)">Because the lattice is periodic</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q4',this,true)">Every edge touches exactly two vertices, so each $X_e$ appears twice and $X^2 = I$</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q4',this,false)">Because star operators commute with plaquette operators</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q4',this,false)">It doesn't &mdash; the product is $-I$</button>
+    </div>
+    <div class="quiz-feedback" id="q4-fb" aria-live="polite"></div>
+  </div>
+
+  <div class="quiz-box" id="q5">
+    <h3 id="q5-label">Question 5</h3>
+    <p>What is the code distance of an $L \times L$ toric code?</p>
+    <div role="radiogroup" aria-labelledby="q5-label">
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q5',this,true)">$L$</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q5',this,false)">$2L$</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q5',this,false)">$L^2$</button>
+      <button class="quiz-option" role="radio" aria-checked="false" onclick="checkQuiz('q5',this,false)">$2L^2 - 2$</button>
+    </div>
+    <div class="quiz-feedback" id="q5-fb" aria-live="polite"></div>
+  </div>
+
+  <div class="quiz-completion" id="quizCompletion" style="display:none"></div>
+</section>
+
+</div>
+
+
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top" title="Back to top">
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 12 10 7 5 12"/></svg>
+</button>
+
+<script>
+// ============================================================
+// 3D TORUS VISUALIZATION (Three.js)
+// ============================================================
+(function initTorus() {
+  const container = document.getElementById('torusContainer');
+  if (!container) return;
+  if (typeof THREE === 'undefined') {
+    container.innerHTML = '<div class="cdn-fallback" style="display:block">⚠ 3D visualization unavailable — Three.js library could not be loaded.</div>';
+    return;
+  }
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
+  camera.position.set(0, 2.5, 5);
+  camera.lookAt(0, 0, 0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x111827, 1);
+  container.appendChild(renderer.domElement);
+
+  // Torus
+  const torusGeo = new THREE.TorusGeometry(1.8, 0.7, 32, 64);
+  const torusMat = new THREE.MeshPhongMaterial({
+    color: 0x2a3550,
+    transparent: true,
+    opacity: 0.35,
+    wireframe: false,
+    side: THREE.DoubleSide
+  });
+  const torus = new THREE.Mesh(torusGeo, torusMat);
+  scene.add(torus);
+
+  // Wireframe
+  const wireGeo = new THREE.TorusGeometry(1.8, 0.7, 16, 32);
+  const wireMat = new THREE.MeshBasicMaterial({ color: 0x354060, wireframe: true, transparent: true, opacity: 0.3 });
+  scene.add(new THREE.Mesh(wireGeo, wireMat));
+
+  // Non-contractible loop 1 (around the hole) - red
+  const loop1Pts = [];
+  const R = 1.8, r = 0.72;
+  for (let i = 0; i <= 100; i++) {
+    const t = (i / 100) * Math.PI * 2;
+    const x = (R + r * Math.cos(0)) * Math.cos(t);
+    const y = (R + r * Math.cos(0)) * Math.sin(t);
+    const z = r * Math.sin(0);
+    loop1Pts.push(new THREE.Vector3(x, y, z));
+  }
+  const loop1Geo = new THREE.BufferGeometry().setFromPoints(loop1Pts);
+  const loop1Mat = new THREE.LineBasicMaterial({ color: 0xf87171, linewidth: 2 });
+  scene.add(new THREE.Line(loop1Geo, loop1Mat));
+
+  // Non-contractible loop 2 (around the tube) - blue
+  const loop2Pts = [];
+  const phi0 = 0;
+  for (let i = 0; i <= 100; i++) {
+    const t = (i / 100) * Math.PI * 2;
+    const x = (R + r * Math.cos(t)) * Math.cos(phi0);
+    const y = (R + r * Math.cos(t)) * Math.sin(phi0);
+    const z = r * Math.sin(t);
+    loop2Pts.push(new THREE.Vector3(x, y, z));
+  }
+  const loop2Geo = new THREE.BufferGeometry().setFromPoints(loop2Pts);
+  const loop2Mat = new THREE.LineBasicMaterial({ color: 0x6366f1, linewidth: 2 });
+  scene.add(new THREE.Line(loop2Geo, loop2Mat));
+
+  // Lights
+  scene.add(new THREE.AmbientLight(0x303850, 0.8));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.6);
+  dl.position.set(3, 5, 4);
+  scene.add(dl);
+
+  // Mouse drag rotation
+  let isDragging = false, prevX = 0, prevY = 0;
+  let rotX = 0.3, rotY = 0;
+  container.addEventListener('mousedown', e => { isDragging = true; prevX = e.clientX; prevY = e.clientY; });
+  container.addEventListener('touchstart', e => { isDragging = true; prevX = e.touches[0].clientX; prevY = e.touches[0].clientY; });
+  window.addEventListener('mouseup', () => isDragging = false);
+  window.addEventListener('touchend', () => isDragging = false);
+  container.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    rotY += (e.clientX - prevX) * 0.01;
+    rotX += (e.clientY - prevY) * 0.01;
+    prevX = e.clientX; prevY = e.clientY;
+  });
+  container.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    rotY += (e.touches[0].clientX - prevX) * 0.01;
+    rotX += (e.touches[0].clientY - prevY) * 0.01;
+    prevX = e.touches[0].clientX; prevY = e.touches[0].clientY;
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    if (!isDragging) rotY += 0.003;
+    torus.rotation.x = rotX;
+    torus.rotation.y = rotY;
+    torus.children = [];
+    scene.children.forEach(c => {
+      if (c !== torus && c.type !== 'AmbientLight' && c.type !== 'DirectionalLight') {
+        c.rotation.x = rotX;
+        c.rotation.y = rotY;
+      }
+    });
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+})();
+
+// ============================================================
+// COLOR CONSTANTS (matching Simon's theme)
+// ============================================================
+const COLORS = {
+  bg: '#0a0e1a',
+  surface: '#111827',
+  surface2: '#1a2236',
+  border: '#2a3550',
+  text: '#e2e8f0',
+  textDim: '#8892a8',
+  accent: '#6366f1',
+  red: '#f87171',
+  green: '#34d399',
+  yellow: '#facc15',
+  purple: '#c084fc',
+  cyan: '#22d3ee',
+  pink: '#f472b6',
+  orange: '#fb923c',
+  // Canvas-specific
+  gridLine: '#2a3550',
+  canvasBg: '#0d1220',
+  qubitDot: '#6b7294',
+  vertex: '#7b8098',
+  dashBorder: '#354060',
+  torusLabel: '#6b7294'
+};
+
+// ============================================================
+// TORIC CODE INTERACTIVE LATTICE
+// ============================================================
+const L = 6;
+const PAD = 55;
+
+function cellSize(canvas) { return (canvas.width - 2 * PAD) / L; }
+function cssDims(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  return [canvas.width / dpr, canvas.height / dpr];
+}
+
+// ---- Drawing helpers ----
+function drawLattice(ctx, w, h, cs) {
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = COLORS.canvasBg;
+  ctx.fillRect(0, 0, w, h);
+
+  // Grid lines
+  ctx.strokeStyle = COLORS.gridLine;
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= L; i++) {
+    ctx.beginPath(); ctx.moveTo(PAD + i * cs, PAD); ctx.lineTo(PAD + i * cs, PAD + L * cs); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(PAD, PAD + i * cs); ctx.lineTo(PAD + L * cs, PAD + i * cs); ctx.stroke();
+  }
+
+  // Qubit dots on edge midpoints
+  ctx.fillStyle = COLORS.qubitDot;
+  for (let r = 0; r < L; r++) {
+    for (let c = 0; c < L; c++) {
+      ctx.beginPath(); ctx.arc(PAD + c * cs + cs / 2, PAD + r * cs, 3, 0, 2 * Math.PI); ctx.fill();
+      ctx.beginPath(); ctx.arc(PAD + c * cs, PAD + r * cs + cs / 2, 3, 0, 2 * Math.PI); ctx.fill();
+    }
+  }
+
+  // Periodic boundary dashes
+  ctx.save();
+  ctx.setLineDash([3, 3]);
+  ctx.strokeStyle = COLORS.dashBorder;
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= L; i++) {
+    ctx.beginPath(); ctx.moveTo(PAD + i * cs, PAD - 10); ctx.lineTo(PAD + i * cs, PAD); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(PAD + i * cs, PAD + L * cs); ctx.lineTo(PAD + i * cs, PAD + L * cs + 10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(PAD - 10, PAD + i * cs); ctx.lineTo(PAD, PAD + i * cs); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(PAD + L * cs, PAD + i * cs); ctx.lineTo(PAD + L * cs + 10, PAD + i * cs); ctx.stroke();
+  }
+  ctx.restore();
+
+  // Torus identification labels
+  ctx.font = '10px Inter, sans-serif';
+  ctx.fillStyle = COLORS.torusLabel;
+  ctx.textAlign = 'center';
+  ctx.fillText('≡', PAD + L * cs + 18, PAD + L * cs / 2 + 3);
+  ctx.fillText('≡', PAD + L * cs / 2, PAD + L * cs + 20);
+}
+
+function drawVertices(ctx, cs, excited, color) {
+  for (let r = 0; r < L; r++) {
+    for (let c = 0; c < L; c++) {
+      const x = PAD + c * cs, y = PAD + r * cs;
+      const ex = excited && excited[r * L + c];
+      if (ex) {
+        ctx.shadowColor = color || COLORS.green;
+        ctx.shadowBlur = 14;
+        ctx.beginPath(); ctx.arc(x, y, 9, 0, 2 * Math.PI);
+        ctx.fillStyle = color || COLORS.green;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.beginPath(); ctx.arc(x, y, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+      } else {
+        ctx.beginPath(); ctx.arc(x, y, 3.5, 0, 2 * Math.PI);
+        ctx.fillStyle = COLORS.vertex;
+        ctx.fill();
+      }
+    }
+  }
+}
+
+function drawPlaquetteCenters(ctx, cs, excited) {
+  for (let r = 0; r < L; r++) {
+    for (let c = 0; c < L; c++) {
+      if (!excited || !excited[r * L + c]) continue;
+      const x = PAD + c * cs + cs / 2, y = PAD + r * cs + cs / 2;
+      ctx.shadowColor = COLORS.red;
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.rect(x - 9, y - 9, 18, 18);
+      ctx.fillStyle = 'rgba(248,113,113,0.35)';
+      ctx.fill();
+      ctx.strokeStyle = COLORS.red;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, 2 * Math.PI);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+    }
+  }
+}
+
+// ============================================================
+// SECTION 3: Interactive error placement (with drag support)
+// ============================================================
+let xErrors = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+let zErrors = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+let currentTool = 'X';
+let highlightOp = null;
+let hoveredEdge = null;
+let isDraggingCanvas = false;
+let lastToggled = null;
+
+function setTool(t) {
+  currentTool = t;
+  document.getElementById('btnXerr').classList.toggle('active', t === 'X');
+  document.getElementById('btnZerr').classList.toggle('active', t === 'Z');
+  document.getElementById('btnStar').classList.toggle('active', t === 'star');
+  document.getElementById('btnPlaq').classList.toggle('active', t === 'plaq');
+  highlightOp = null;
+  const msgs = {
+    'X': 'Click or drag across edges to place X errors. Excited plaquettes (m-anyons) appear in red.',
+    'Z': 'Click or drag across edges to place Z errors. Excited vertices (e-anyons) appear in green.',
+    'star': 'Hover over a vertex to highlight its star operator $A_v$ (the 4 adjacent edges).',
+    'plaq': 'Hover over a face center to highlight its plaquette operator $B_p$ (the 4 boundary edges).'
+  };
+  document.getElementById('infoBar').innerHTML = msgs[t];
+  if (typeof renderMathInElement !== 'undefined') renderMathInElement(document.getElementById('infoBar'), {delimiters:[{left:'$',right:'$',display:false}]});
+  renderMain();
+}
+
+function resetLattice() {
+  xErrors = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+  zErrors = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+  highlightOp = null;
+  document.getElementById('infoBar').textContent = 'Lattice reset. Click edges to place errors.';
+  renderMain();
+}
+
+function randomErrors() {
+  resetLattice();
+  const nerr = Math.floor(Math.random() * 5) + 3;
+  for (let i = 0; i < nerr; i++) {
+    const horiz = Math.random() < 0.5;
+    const r = Math.floor(Math.random() * L), c = Math.floor(Math.random() * L);
+    if (Math.random() < 0.5) xErrors[horiz ? 'h' : 'v'][r][c] = true;
+    else zErrors[horiz ? 'h' : 'v'][r][c] = true;
+  }
+  document.getElementById('infoBar').textContent = `Placed ${nerr} random errors. Observe the syndrome pattern — anyons always appear in pairs!`;
+  renderMain();
+}
+
+function computeSyndromes() {
+  const starSyn = Array(L * L).fill(false);
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    let cnt = 0;
+    if (zErrors.v[((r - 1 + L) % L)][c]) cnt++;
+    if (zErrors.v[r][c]) cnt++;
+    if (zErrors.h[r][((c - 1 + L) % L)]) cnt++;
+    if (zErrors.h[r][c]) cnt++;
+    starSyn[r * L + c] = (cnt % 2 === 1);
+  }
+  const plaqSyn = Array(L * L).fill(false);
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    let cnt = 0;
+    if (xErrors.h[r][c]) cnt++;
+    if (xErrors.h[(r + 1) % L][c]) cnt++;
+    if (xErrors.v[r][c]) cnt++;
+    if (xErrors.v[r][(c + 1) % L]) cnt++;
+    plaqSyn[r * L + c] = (cnt % 2 === 1);
+  }
+  return { starSyn, plaqSyn };
+}
+
+function findNearestEdge(mx, my, cs) {
+  let bestDist = Infinity, bestEdge = null;
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    const hx = PAD + c * cs + cs / 2, hy = PAD + r * cs;
+    const hd = Math.hypot(mx - hx, my - hy);
+    if (hd < bestDist) { bestDist = hd; bestEdge = { type: 'h', r, c }; }
+    const vx = PAD + c * cs, vy = PAD + r * cs + cs / 2;
+    const vd = Math.hypot(mx - vx, my - vy);
+    if (vd < bestDist) { bestDist = vd; bestEdge = { type: 'v', r, c }; }
+  }
+  return bestDist < cs * 0.38 ? bestEdge : null;
+}
+
+function toggleEdge(edge) {
+  const key = `${edge.type},${edge.r},${edge.c}`;
+  if (lastToggled === key) return;
+  lastToggled = key;
+  if (currentTool === 'X') xErrors[edge.type][edge.r][edge.c] = !xErrors[edge.type][edge.r][edge.c];
+  else zErrors[edge.type][edge.r][edge.c] = !zErrors[edge.type][edge.r][edge.c];
+  // Particle burst on error toggle
+  const cs = cellSize(document.getElementById('toricCanvas'));
+  let mx, my;
+  if (edge.type === 'h') { mx = PAD + edge.c * cs + cs / 2; my = PAD + edge.r * cs; }
+  else { mx = PAD + edge.c * cs; my = PAD + edge.r * cs + cs / 2; }
+  const burstColor = currentTool === 'X' ? COLORS.red : COLORS.purple;
+  spawnParticles('toricCanvas', mx, my, burstColor, 6);
+  renderMain();
+}
+
+function canvasCoords(canvas, e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+  const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+  return [(clientX - rect.left) * (canvas.width / rect.width), (clientY - rect.top) * (canvas.height / rect.height)];
+}
+
+const tc = document.getElementById('toricCanvas');
+tc.addEventListener('mousedown', function(e) {
+  if (currentTool === 'star' || currentTool === 'plaq') return;
+  isDraggingCanvas = true; lastToggled = null;
+  const [mx, my] = canvasCoords(this, e);
+  const edge = findNearestEdge(mx, my, cellSize(this));
+  if (edge) toggleEdge(edge);
+});
+tc.addEventListener('mousemove', function(e) {
+  const [mx, my] = canvasCoords(this, e);
+  const cs = cellSize(this);
+  if (isDraggingCanvas && (currentTool === 'X' || currentTool === 'Z')) {
+    hoveredEdge = null;
+    const edge = findNearestEdge(mx, my, cs);
+    if (edge) toggleEdge(edge);
+    return;
+  }
+  if (currentTool === 'star') {
+    hoveredEdge = null;
+    let best = Infinity, br = -1, bc = -1;
+    for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+      const d = Math.hypot(mx - (PAD + c * cs), my - (PAD + r * cs));
+      if (d < best) { best = d; br = r; bc = c; }
+    }
+    highlightOp = best < cs * 0.6 ? { type: 'star', r: br, c: bc } : null;
+  } else if (currentTool === 'plaq') {
+    hoveredEdge = null;
+    let best = Infinity, br = -1, bc = -1;
+    for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+      const d = Math.hypot(mx - (PAD + c * cs + cs / 2), my - (PAD + r * cs + cs / 2));
+      if (d < best) { best = d; br = r; bc = c; }
+    }
+    highlightOp = best < cs * 0.6 ? { type: 'plaq', r: br, c: bc } : null;
+  } else {
+    // Show edge hover preview for X/Z tools
+    hoveredEdge = findNearestEdge(mx, my, cs);
+  }
+  renderMain();
+});
+tc.addEventListener('mouseleave', function() { hoveredEdge = null; renderMain(); });
+window.addEventListener('mouseup', () => { isDraggingCanvas = false; lastToggled = null; });
+
+// Touch support
+tc.addEventListener('touchstart', function(e) {
+  if (currentTool === 'star' || currentTool === 'plaq') return;
+  e.preventDefault(); isDraggingCanvas = true; lastToggled = null;
+  const [mx, my] = canvasCoords(this, e);
+  const edge = findNearestEdge(mx, my, cellSize(this));
+  if (edge) toggleEdge(edge);
+}, { passive: false });
+tc.addEventListener('touchmove', function(e) {
+  e.preventDefault();
+  if (!isDraggingCanvas) return;
+  const [mx, my] = canvasCoords(this, e);
+  const edge = findNearestEdge(mx, my, cellSize(this));
+  if (edge) toggleEdge(edge);
+}, { passive: false });
+tc.addEventListener('touchend', () => { isDraggingCanvas = false; lastToggled = null; });
+
+// Keyboard shortcuts for main lattice
+document.addEventListener('keydown', function(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  const key = e.key.toLowerCase();
+  if (key === 'x') setTool('X');
+  else if (key === 'z') setTool('Z');
+  else if (key === 's') setTool('star');
+  else if (key === 'p') setTool('plaq');
+  else if (key === 'r') resetLattice();
+});
+
+function renderMain() {
+  const canvas = document.getElementById('toricCanvas');
+  const ctx = canvas.getContext('2d');
+  const cs = cellSize(canvas);
+  const [cw, ch] = cssDims(canvas);
+  drawLattice(ctx, cw, ch, cs);
+  const { starSyn, plaqSyn } = computeSyndromes();
+
+  // Highlight star/plaq operator
+  if (highlightOp) {
+    ctx.save();
+    ctx.globalAlpha = 0.4;
+    ctx.lineCap = 'round';
+    if (highlightOp.type === 'star') {
+      const x = PAD + highlightOp.c * cs, y = PAD + highlightOp.r * cs;
+      ctx.strokeStyle = COLORS.green; ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - cs); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + cs); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - cs, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + cs, y); ctx.stroke();
+      ctx.globalAlpha = 0.9; ctx.font = 'bold 14px Inter'; ctx.fillStyle = COLORS.green; ctx.textAlign = 'center';
+      ctx.fillText('X', x + cs / 2, y - 5); ctx.fillText('X', x - cs / 2, y - 5);
+      ctx.fillText('X', x + 8, y - cs / 2); ctx.fillText('X', x + 8, y + cs / 2 + 5);
+    } else {
+      const cx_ = PAD + highlightOp.c * cs + cs / 2, cy_ = PAD + highlightOp.r * cs + cs / 2;
+      ctx.strokeStyle = COLORS.red; ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.moveTo(cx_ - cs / 2, cy_ - cs / 2); ctx.lineTo(cx_ + cs / 2, cy_ - cs / 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx_ - cs / 2, cy_ + cs / 2); ctx.lineTo(cx_ + cs / 2, cy_ + cs / 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx_ - cs / 2, cy_ - cs / 2); ctx.lineTo(cx_ - cs / 2, cy_ + cs / 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx_ + cs / 2, cy_ - cs / 2); ctx.lineTo(cx_ + cs / 2, cy_ + cs / 2); ctx.stroke();
+      ctx.globalAlpha = 0.9; ctx.font = 'bold 14px Inter'; ctx.fillStyle = COLORS.red; ctx.textAlign = 'center';
+      ctx.fillText('Z', cx_, cy_ - cs / 2 - 5); ctx.fillText('Z', cx_, cy_ + cs / 2 + 14);
+      ctx.fillText('Z', cx_ - cs / 2 - 10, cy_ + 5); ctx.fillText('Z', cx_ + cs / 2 + 10, cy_ + 5);
+    }
+    ctx.restore();
+  }
+
+  // Error edges
+  ctx.lineCap = 'round';
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    const hx = xErrors.h[r][c], hz = zErrors.h[r][c];
+    if (hx || hz) {
+      const x1 = PAD + c * cs, y1 = PAD + r * cs;
+      ctx.strokeStyle = (hx && hz) ? COLORS.yellow : hx ? COLORS.red : COLORS.purple;
+      ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 + cs, y1); ctx.stroke();
+      ctx.font = 'bold 11px Inter, sans-serif'; ctx.fillStyle = ctx.strokeStyle; ctx.textAlign = 'center';
+      ctx.fillText((hx && hz) ? 'Y' : hx ? 'X' : 'Z', x1 + cs / 2, y1 - 7);
+    }
+    const vx = xErrors.v[r][c], vz = zErrors.v[r][c];
+    if (vx || vz) {
+      const x1 = PAD + c * cs, y1 = PAD + r * cs;
+      ctx.strokeStyle = (vx && vz) ? COLORS.yellow : vx ? COLORS.red : COLORS.purple;
+      ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1, y1 + cs); ctx.stroke();
+      ctx.font = 'bold 11px Inter, sans-serif'; ctx.fillStyle = ctx.strokeStyle; ctx.textAlign = 'center';
+      ctx.fillText((vx && vz) ? 'Y' : vx ? 'X' : 'Z', x1 - 9, y1 + cs / 2 + 4);
+    }
+  }
+
+  // Syndromes
+  drawPlaquetteCenters(ctx, cs, plaqSyn);
+  drawVertices(ctx, cs, starSyn, COLORS.green);
+
+  // Non-excited vertices on top
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    if (!starSyn[r * L + c]) {
+      ctx.beginPath(); ctx.arc(PAD + c * cs, PAD + r * cs, 3, 0, 2 * Math.PI);
+      ctx.fillStyle = COLORS.vertex; ctx.fill();
+    }
+  }
+
+  // Hover edge preview
+  if (hoveredEdge && !isDraggingCanvas) {
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = COLORS.accent;
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    const he = hoveredEdge;
+    if (he.type === 'h') {
+      ctx.beginPath(); ctx.moveTo(PAD + he.c * cs, PAD + he.r * cs); ctx.lineTo(PAD + he.c * cs + cs, PAD + he.r * cs); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(PAD + he.c * cs, PAD + he.r * cs); ctx.lineTo(PAD + he.c * cs, PAD + he.r * cs + cs); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Info bar update with live error/syndrome counts
+  const eCount = starSyn.filter(Boolean).length, mCount = plaqSyn.filter(Boolean).length;
+  const xCount = xErrors.h.flat().filter(Boolean).length + xErrors.v.flat().filter(Boolean).length;
+  const zCount = zErrors.h.flat().filter(Boolean).length + zErrors.v.flat().filter(Boolean).length;
+  const infoBar = document.getElementById('infoBar');
+  if (xCount || zCount) {
+    infoBar.textContent =
+      `Errors: ${xCount} X, ${zCount} Z | Syndrome: ${eCount} e-anyons (green), ${mCount} m-anyons (red) — anyons always appear in pairs!`;
+  } else {
+    infoBar.textContent = 'Click or drag across edges to place X errors. Syndromes appear at adjacent plaquettes.';
+  }
+}
+
+// ============================================================
+// SECTION 6: Logical operators
+// ============================================================
+let currentLogical = 'X1';
+
+function showLogical(which) {
+  currentLogical = which;
+  ['X1', 'Z1', 'X2', 'Z2'].forEach(w => document.getElementById('btnLog' + w).classList.toggle('active', w === which));
+  const descs = {
+    'X1': '$\\bar{X}_1$: a horizontal chain of $X$ operators wrapping around the torus. Commutes with all stabilizers but is not a stabilizer product.',
+    'Z1': '$\\bar{Z}_1$: a vertical chain of $Z$ operators on the dual lattice, crossing $\\bar{X}_1$ exactly once — so they anticommute.',
+    'X2': '$\\bar{X}_2$: a vertical chain of $X$ operators wrapping around the torus in the other direction.',
+    'Z2': '$\\bar{Z}_2$: a horizontal chain of $Z$ operators on the dual lattice, crossing $\\bar{X}_2$ exactly once.'
+  };
+  document.getElementById('logicalInfo').innerHTML = descs[which];
+  if (typeof renderMathInElement !== 'undefined') renderMathInElement(document.getElementById('logicalInfo'), {delimiters:[{left:'$',right:'$',display:false}]});
+  renderLogical();
+}
+
+function renderLogical() {
+  const canvas = document.getElementById('logicalCanvas');
+  const ctx = canvas.getContext('2d');
+  const cs = cellSize(canvas);
+  const [cw, ch] = cssDims(canvas);
+  drawLattice(ctx, cw, ch, cs);
+
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    ctx.beginPath(); ctx.arc(PAD + c * cs, PAD + r * cs, 3, 0, 2 * Math.PI);
+    ctx.fillStyle = COLORS.vertex; ctx.fill();
+  }
+
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 5;
+  const row = Math.floor(L / 2);
+
+  if (currentLogical === 'X1') {
+    ctx.strokeStyle = COLORS.red; ctx.shadowColor = COLORS.red; ctx.shadowBlur = 10;
+    for (let c = 0; c < L; c++) {
+      const x1 = PAD + c * cs, y1 = PAD + row * cs;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 + cs, y1); ctx.stroke();
+      ctx.font = 'bold 12px Inter'; ctx.textAlign = 'center'; ctx.fillStyle = COLORS.red;
+      ctx.fillText('X', x1 + cs / 2, y1 - 8);
+    }
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = COLORS.red; ctx.font = '12px Inter'; ctx.textAlign = 'left';
+    ctx.fillText('⟶ wraps ⟶', PAD + L * cs + 8, PAD + row * cs + 4);
+  } else if (currentLogical === 'Z1') {
+    ctx.strokeStyle = COLORS.purple; ctx.shadowColor = COLORS.purple; ctx.shadowBlur = 10;
+    for (let r = 0; r < L; r++) {
+      const x1 = PAD + row * cs + cs / 2, y1 = PAD + r * cs + cs / 2;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1, y1 + cs); ctx.stroke();
+      ctx.font = 'bold 12px Inter'; ctx.textAlign = 'center'; ctx.fillStyle = COLORS.purple;
+      ctx.fillText('Z', x1 + 12, y1 + cs / 2 + 4);
+    }
+    ctx.shadowBlur = 0;
+  } else if (currentLogical === 'X2') {
+    ctx.strokeStyle = COLORS.red; ctx.shadowColor = COLORS.red; ctx.shadowBlur = 10;
+    for (let r = 0; r < L; r++) {
+      const x1 = PAD + row * cs, y1 = PAD + r * cs;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1, y1 + cs); ctx.stroke();
+      ctx.font = 'bold 12px Inter'; ctx.textAlign = 'center'; ctx.fillStyle = COLORS.red;
+      ctx.fillText('X', x1 - 12, y1 + cs / 2 + 4);
+    }
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = COLORS.red; ctx.font = '12px Inter'; ctx.textAlign = 'center';
+    ctx.fillText('↓ wraps ↓', PAD + row * cs, PAD + L * cs + 20);
+  } else {
+    ctx.strokeStyle = COLORS.purple; ctx.shadowColor = COLORS.purple; ctx.shadowBlur = 10;
+    for (let c = 0; c < L; c++) {
+      const x1 = PAD + c * cs + cs / 2, y1 = PAD + row * cs + cs / 2;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 + cs, y1); ctx.stroke();
+      ctx.font = 'bold 12px Inter'; ctx.textAlign = 'center'; ctx.fillStyle = COLORS.purple;
+      ctx.fillText('Z', x1 + cs / 2, y1 - 8);
+    }
+    ctx.shadowBlur = 0;
+  }
+}
+
+// ============================================================
+// SECTION 7: Error correction
+// ============================================================
+let corrXErr = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+let corrZErr = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+let corrPairs = [];
+
+function resetCorr() {
+  corrXErr = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+  corrZErr = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+  corrPairs = [];
+  document.getElementById('corrInfo').textContent = 'Add errors, then click Correct to see minimum-weight matching pair the anyons.';
+  renderCorr();
+}
+
+function addRandomXErrors() {
+  const n = Math.floor(Math.random() * 3) + 2;
+  for (let i = 0; i < n; i++) {
+    const h = Math.random() < 0.5, r = Math.floor(Math.random() * L), c = Math.floor(Math.random() * L);
+    corrXErr[h ? 'h' : 'v'][r][c] = true;
+  }
+  corrPairs = [];
+  document.getElementById('corrInfo').textContent = `Added ${n} X errors. M-anyons (red) appeared in pairs.`;
+  renderCorr();
+}
+
+function addRandomZErrors() {
+  const n = Math.floor(Math.random() * 3) + 2;
+  for (let i = 0; i < n; i++) {
+    const h = Math.random() < 0.5, r = Math.floor(Math.random() * L), c = Math.floor(Math.random() * L);
+    corrZErr[h ? 'h' : 'v'][r][c] = true;
+  }
+  corrPairs = [];
+  document.getElementById('corrInfo').textContent = `Added ${n} Z errors. E-anyons (green) appeared in pairs.`;
+  renderCorr();
+}
+
+function toricDist(r1, c1, r2, c2) {
+  return Math.min(Math.abs(r1 - r2), L - Math.abs(r1 - r2)) + Math.min(Math.abs(c1 - c2), L - Math.abs(c1 - c2));
+}
+
+function greedyMatch(positions) {
+  const used = new Set(), pairs = [], pos = [...positions];
+  for (let i = 0; i < pos.length; i++) {
+    if (used.has(i)) continue;
+    let bestJ = -1, bestD = Infinity;
+    for (let j = i + 1; j < pos.length; j++) {
+      if (used.has(j)) continue;
+      const d = toricDist(pos[i][0], pos[i][1], pos[j][0], pos[j][1]);
+      if (d < bestD) { bestD = d; bestJ = j; }
+    }
+    if (bestJ >= 0) { used.add(i); used.add(bestJ); pairs.push([pos[i], pos[bestJ]]); }
+  }
+  return pairs;
+}
+
+function correctErrors() {
+  const plaqPos = [], starPos = [];
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    let pc = 0;
+    if (corrXErr.h[r][c]) pc++; if (corrXErr.h[(r + 1) % L][c]) pc++;
+    if (corrXErr.v[r][c]) pc++; if (corrXErr.v[r][(c + 1) % L]) pc++;
+    if (pc % 2 === 1) plaqPos.push([r, c]);
+    let sc = 0;
+    if (corrZErr.v[((r - 1 + L) % L)][c]) sc++; if (corrZErr.v[r][c]) sc++;
+    if (corrZErr.h[r][((c - 1 + L) % L)]) sc++; if (corrZErr.h[r][c]) sc++;
+    if (sc % 2 === 1) starPos.push([r, c]);
+  }
+  corrPairs = [];
+  greedyMatch(plaqPos).forEach(p => corrPairs.push({ type: 'plaq', from: p[0], to: p[1] }));
+  greedyMatch(starPos).forEach(p => corrPairs.push({ type: 'star', from: p[0], to: p[1] }));
+  const mp = corrPairs.filter(p => p.type === 'plaq').length, ms = corrPairs.filter(p => p.type === 'star').length;
+  document.getElementById('corrInfo').textContent = (mp + ms) > 0
+    ? `Matched ${mp} m-anyon pair(s) and ${ms} e-anyon pair(s). Correction chains shown as dashed lines.`
+    : 'No anyons to correct — the state is already in the code space!';
+  renderCorr();
+}
+
+function renderCorr() {
+  const canvas = document.getElementById('corrCanvas');
+  const ctx = canvas.getContext('2d');
+  const cs = cellSize(canvas);
+  const [cw, ch] = cssDims(canvas);
+  drawLattice(ctx, cw, ch, cs);
+
+  const plaqSyn = Array(L * L).fill(false), starSyn = Array(L * L).fill(false);
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    let pc = 0;
+    if (corrXErr.h[r][c]) pc++; if (corrXErr.h[(r + 1) % L][c]) pc++;
+    if (corrXErr.v[r][c]) pc++; if (corrXErr.v[r][(c + 1) % L]) pc++;
+    plaqSyn[r * L + c] = (pc % 2 === 1);
+    let sc = 0;
+    if (corrZErr.v[((r - 1 + L) % L)][c]) sc++; if (corrZErr.v[r][c]) sc++;
+    if (corrZErr.h[r][((c - 1 + L) % L)]) sc++; if (corrZErr.h[r][c]) sc++;
+    starSyn[r * L + c] = (sc % 2 === 1);
+  }
+
+  // Error edges
+  ctx.lineCap = 'round';
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    if (corrXErr.h[r][c]) { ctx.strokeStyle = COLORS.red; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(PAD + c * cs, PAD + r * cs); ctx.lineTo(PAD + (c + 1) * cs, PAD + r * cs); ctx.stroke(); }
+    if (corrXErr.v[r][c]) { ctx.strokeStyle = COLORS.red; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(PAD + c * cs, PAD + r * cs); ctx.lineTo(PAD + c * cs, PAD + (r + 1) * cs); ctx.stroke(); }
+    if (corrZErr.h[r][c]) { ctx.strokeStyle = COLORS.purple; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(PAD + c * cs, PAD + r * cs); ctx.lineTo(PAD + (c + 1) * cs, PAD + r * cs); ctx.stroke(); }
+    if (corrZErr.v[r][c]) { ctx.strokeStyle = COLORS.purple; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(PAD + c * cs, PAD + r * cs); ctx.lineTo(PAD + c * cs, PAD + (r + 1) * cs); ctx.stroke(); }
+  }
+
+  // Matching lines
+  ctx.setLineDash([6, 4]); ctx.lineWidth = 3;
+  corrPairs.forEach(p => {
+    if (p.type === 'plaq') {
+      ctx.strokeStyle = 'rgba(250,204,21,0.85)';
+      ctx.beginPath(); ctx.moveTo(PAD + p.from[1] * cs + cs / 2, PAD + p.from[0] * cs + cs / 2); ctx.lineTo(PAD + p.to[1] * cs + cs / 2, PAD + p.to[0] * cs + cs / 2); ctx.stroke();
+    } else {
+      ctx.strokeStyle = 'rgba(52,211,153,0.85)';
+      ctx.beginPath(); ctx.moveTo(PAD + p.from[1] * cs, PAD + p.from[0] * cs); ctx.lineTo(PAD + p.to[1] * cs, PAD + p.to[0] * cs); ctx.stroke();
+    }
+  });
+  ctx.setLineDash([]);
+
+  drawPlaquetteCenters(ctx, cs, plaqSyn);
+  drawVertices(ctx, cs, starSyn, COLORS.green);
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    if (!starSyn[r * L + c]) {
+      ctx.beginPath(); ctx.arc(PAD + c * cs, PAD + r * cs, 3, 0, 2 * Math.PI);
+      ctx.fillStyle = COLORS.vertex; ctx.fill();
+    }
+  }
+}
+
+// ---- Walkthrough ----
+let wtStep = 0;
+function updateWtDots(currentStep) {
+  const dots = document.querySelectorAll('.wt-dot');
+  dots.forEach(d => {
+    const s = parseInt(d.dataset.step);
+    d.classList.remove('active', 'done');
+    if (s < currentStep) d.classList.add('done');
+    else if (s === currentStep) d.classList.add('active');
+  });
+}
+function startWalkthrough() {
+  resetCorr();
+  wtStep = 1;
+  document.getElementById('wtProgress').classList.add('active');
+  showWtStep(1);
+  document.getElementById('btnWalkthrough').classList.add('active');
+}
+function showWtStep(n) {
+  for (let i = 1; i <= 5; i++) document.getElementById('wt-step' + i).classList.toggle('active', i === n);
+  updateWtDots(n);
+  if (n === 1) { resetCorr(); document.getElementById('corrInfo').textContent = 'Step 1: Clean code state — no anyons.'; }
+  if (n === 2) { addRandomXErrors(); addRandomZErrors(); }
+  if (n === 3) { document.getElementById('corrInfo').textContent = 'Step 3: Syndromes measured. Green = e-anyons, Red = m-anyons.'; }
+  if (n === 4) { correctErrors(); }
+  if (n === 5) { document.getElementById('corrInfo').textContent = 'Step 5: If correction + error = contractible loop → success! Otherwise → logical error.'; }
+}
+function wtNext(n) { wtStep = n; showWtStep(n); }
+function endWalkthrough() {
+  wtStep = 0;
+  for (let i = 1; i <= 5; i++) document.getElementById('wt-step' + i).classList.remove('active');
+  document.getElementById('wtProgress').classList.remove('active');
+  document.getElementById('btnWalkthrough').classList.remove('active');
+  resetCorr();
+}
+
+// ============================================================
+// QUIZ
+// ============================================================
+const quizFeedback = {
+  q1: { correct: 'Correct! Qubits live on edges, while vertices and faces host the stabilizer operators.', wrong: 'Not quite. In the toric code, qubits are placed on the edges of the lattice.' },
+  q2: { correct: 'Correct! X errors are detected by plaquette operators ($B_p$), creating m-anyons in pairs.', wrong: 'Not quite. X errors anticommute with the Z operators in plaquettes, exciting the two adjacent plaquette operators.' },
+  q3: { correct: 'Correct! The torus has two independent non-contractible cycles, giving exactly 2 logical qubits.', wrong: 'Not quite. The torus has two topologically distinct non-contractible loops, encoding exactly 2 logical qubits.' },
+  q4: { correct: 'Correct! Each edge is shared by exactly two vertices, so each $X_e$ appears squared, giving identity.', wrong: 'Not quite. The key is that every edge touches exactly two vertices, making each $X$ appear twice.' },
+  q5: { correct: 'Correct! The shortest non-contractible loop has length $L$, so at least $L$ errors are needed for a logical fault.', wrong: 'Not quite. The code distance equals the length of the shortest non-contractible loop, which is $L$.' },
+};
+
+let quizCorrect = 0, quizAnswered = 0;
+
+function checkQuiz(qid, btn, correct) {
+  const box = document.getElementById(qid);
+  // Guard: already answered
+  if (box.querySelector('.quiz-option:disabled')) return;
+
+  // 1. Core quiz logic
+  box.querySelectorAll('.quiz-option').forEach(b => { b.disabled = true; b.classList.remove('correct', 'wrong'); b.setAttribute('aria-checked', 'false'); });
+  btn.classList.add(correct ? 'correct' : 'wrong');
+  btn.setAttribute('aria-checked', 'true');
+  if (!correct) box.querySelectorAll('.quiz-option').forEach(b => { if (b !== btn && b.onclick.toString().includes('true')) b.classList.add('correct'); });
+  const fb = document.getElementById(qid + '-fb');
+  fb.innerHTML = correct ? quizFeedback[qid].correct : quizFeedback[qid].wrong;
+  fb.style.color = correct ? 'var(--green)' : 'var(--red)';
+  if (typeof renderMathInElement !== 'undefined') renderMathInElement(fb, {delimiters:[{left:'$',right:'$',display:false}]});
+
+  // 2. Progress tracking
+  quizAnswered++;
+  if (correct) quizCorrect++;
+  const pip = document.querySelector(`.quiz-pip[data-q="${qid}"]`);
+  if (pip) { pip.classList.remove('current'); pip.classList.add(correct ? 'correct' : 'wrong'); }
+  const allPips = document.querySelectorAll('.quiz-pip');
+  allPips.forEach((p, i) => {
+    if (i === quizAnswered && !p.classList.contains('correct') && !p.classList.contains('wrong')) p.classList.add('current');
+  });
+  document.getElementById('quizScore').textContent = `${quizCorrect} / 5`;
+
+  // 3. Completion banner
+  if (quizAnswered === 5) {
+    const comp = document.getElementById('quizCompletion');
+    comp.style.display = 'block';
+    if (quizCorrect === 5) {
+      comp.className = 'quiz-completion perfect';
+      comp.innerHTML = '<div style="font-size:1.3rem;font-weight:700;margin-bottom:0.5rem">Perfect Score!</div>You answered all 5 questions correctly. You have a solid understanding of the toric code!';
+    } else if (quizCorrect >= 3) {
+      comp.className = 'quiz-completion good';
+      comp.innerHTML = '<div style="font-size:1.3rem;font-weight:700;margin-bottom:0.5rem">' + quizCorrect + '/5 Correct</div>Good work! Review the sections above for the questions you missed.';
+    } else {
+      comp.className = 'quiz-completion retry';
+      comp.innerHTML = '<div style="font-size:1.3rem;font-weight:700;margin-bottom:0.5rem">' + quizCorrect + '/5 Correct</div>Consider re-reading the guide and trying the interactive demos again.';
+    }
+    setTimeout(() => comp.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+  }
+}
+
+// ============================================================
+// TOC active state tracking
+// ============================================================
+const tocLinks = document.querySelectorAll('.toc a');
+const sections = document.querySelectorAll('section[id]');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => observer.observe(s));
+
+// ============================================================
+// SECTION 5: Interactive Stabilizer Measurement
+// ============================================================
+let measXErr = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+let measZErr = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+let measRevealed = { star: Array(L * L).fill(false), plaq: Array(L * L).fill(false) };
+let measTool = 'measure';
+
+function setMeasTool(t) {
+  measTool = t;
+  document.getElementById('btnMeasX').classList.toggle('active', t === 'X');
+  document.getElementById('btnMeasZ').classList.toggle('active', t === 'Z');
+  document.getElementById('btnMeasMeasure').classList.toggle('active', t === 'measure');
+  const msgs = {
+    'X': 'Click an edge to place an X error, then measure the adjacent plaquettes.',
+    'Z': 'Click an edge to place a Z error, then measure the adjacent star operators.',
+    'measure': 'Click a vertex (star) or face center (plaquette) to measure its eigenvalue.'
+  };
+  document.getElementById('measInfo').textContent = msgs[t];
+}
+
+function resetMeas() {
+  measXErr = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+  measZErr = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+  measRevealed = { star: Array(L * L).fill(false), plaq: Array(L * L).fill(false) };
+  document.getElementById('measInfo').textContent = 'All stabilizers reset. Place errors and measure!';
+  renderMeas();
+}
+
+function computeMeasSyndromes() {
+  const starSyn = Array(L * L).fill(false);
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    let cnt = 0;
+    if (measZErr.v[((r - 1 + L) % L)][c]) cnt++;
+    if (measZErr.v[r][c]) cnt++;
+    if (measZErr.h[r][((c - 1 + L) % L)]) cnt++;
+    if (measZErr.h[r][c]) cnt++;
+    starSyn[r * L + c] = (cnt % 2 === 1);
+  }
+  const plaqSyn = Array(L * L).fill(false);
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    let cnt = 0;
+    if (measXErr.h[r][c]) cnt++;
+    if (measXErr.h[(r + 1) % L][c]) cnt++;
+    if (measXErr.v[r][c]) cnt++;
+    if (measXErr.v[r][(c + 1) % L]) cnt++;
+    plaqSyn[r * L + c] = (cnt % 2 === 1);
+  }
+  return { starSyn, plaqSyn };
+}
+
+function renderMeas() {
+  const canvas = document.getElementById('measCanvas');
+  const ctx = canvas.getContext('2d');
+  const cs = cellSize(canvas);
+  const [cw, ch] = cssDims(canvas);
+  drawLattice(ctx, cw, ch, cs);
+
+  // Draw error edges
+  ctx.lineCap = 'round';
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    if (measXErr.h[r][c]) { ctx.strokeStyle = COLORS.red; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(PAD + c * cs, PAD + r * cs); ctx.lineTo(PAD + c * cs + cs, PAD + r * cs); ctx.stroke(); }
+    if (measXErr.v[r][c]) { ctx.strokeStyle = COLORS.red; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(PAD + c * cs, PAD + r * cs); ctx.lineTo(PAD + c * cs, PAD + r * cs + cs); ctx.stroke(); }
+    if (measZErr.h[r][c]) { ctx.strokeStyle = COLORS.purple; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(PAD + c * cs, PAD + r * cs); ctx.lineTo(PAD + c * cs + cs, PAD + r * cs); ctx.stroke(); }
+    if (measZErr.v[r][c]) { ctx.strokeStyle = COLORS.purple; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(PAD + c * cs, PAD + r * cs); ctx.lineTo(PAD + c * cs, PAD + r * cs + cs); ctx.stroke(); }
+  }
+
+  const { starSyn, plaqSyn } = computeMeasSyndromes();
+
+  // Draw eigenvalue badges on measured stabilizers
+  ctx.font = 'bold 13px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    const idx = r * L + c;
+    // Vertices (star operators)
+    const vx = PAD + c * cs, vy = PAD + r * cs;
+    if (measRevealed.star[idx]) {
+      const excited = starSyn[idx];
+      ctx.beginPath(); ctx.arc(vx, vy, 12, 0, 2 * Math.PI);
+      ctx.fillStyle = excited ? 'rgba(248,113,113,0.25)' : 'rgba(52,211,153,0.25)';
+      ctx.fill();
+      ctx.strokeStyle = excited ? COLORS.red : COLORS.green;
+      ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = excited ? COLORS.red : COLORS.green;
+      ctx.fillText(excited ? '−1' : '+1', vx, vy);
+    } else {
+      ctx.beginPath(); ctx.arc(vx, vy, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = COLORS.vertex; ctx.fill();
+      ctx.strokeStyle = 'rgba(52,211,153,0.25)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+    // Face centers (plaquette operators)
+    const fx = PAD + c * cs + cs / 2, fy = PAD + r * cs + cs / 2;
+    if (measRevealed.plaq[idx]) {
+      const excited = plaqSyn[idx];
+      ctx.beginPath(); ctx.rect(fx - 13, fy - 13, 26, 26);
+      ctx.fillStyle = excited ? 'rgba(248,113,113,0.2)' : 'rgba(52,211,153,0.2)';
+      ctx.fill();
+      ctx.strokeStyle = excited ? COLORS.red : COLORS.green;
+      ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = excited ? COLORS.red : COLORS.green;
+      ctx.fillText(excited ? '−1' : '+1', fx, fy);
+    }
+  }
+}
+
+document.getElementById('measCanvas').addEventListener('click', function(e) {
+  const [mx, my] = canvasCoords(this, e);
+  const cs = cellSize(this);
+
+  if (measTool === 'X' || measTool === 'Z') {
+    const edge = findNearestEdge(mx, my, cs);
+    if (edge) {
+      if (measTool === 'X') measXErr[edge.type][edge.r][edge.c] = !measXErr[edge.type][edge.r][edge.c];
+      else measZErr[edge.type][edge.r][edge.c] = !measZErr[edge.type][edge.r][edge.c];
+      renderMeas();
+    }
+    return;
+  }
+
+  // Measure mode: find nearest vertex or face center
+  let bestStarD = Infinity, bestStarIdx = -1;
+  let bestPlaqD = Infinity, bestPlaqIdx = -1;
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    const sd = Math.hypot(mx - (PAD + c * cs), my - (PAD + r * cs));
+    if (sd < bestStarD) { bestStarD = sd; bestStarIdx = r * L + c; }
+    const pd = Math.hypot(mx - (PAD + c * cs + cs / 2), my - (PAD + r * cs + cs / 2));
+    if (pd < bestPlaqD) { bestPlaqD = pd; bestPlaqIdx = r * L + c; }
+  }
+  if (bestStarD < cs * 0.35 && bestStarD < bestPlaqD) {
+    measRevealed.star[bestStarIdx] = true;
+    const { starSyn } = computeMeasSyndromes();
+    const r = Math.floor(bestStarIdx / L), c = bestStarIdx % L;
+    document.getElementById('measInfo').textContent = `Star A_(${r},${c}): eigenvalue ${starSyn[bestStarIdx] ? '−1 (excited! e-anyon here)' : '+1 (no excitation)'}`;
+  } else if (bestPlaqD < cs * 0.35) {
+    measRevealed.plaq[bestPlaqIdx] = true;
+    const { plaqSyn } = computeMeasSyndromes();
+    const r = Math.floor(bestPlaqIdx / L), c = bestPlaqIdx % L;
+    document.getElementById('measInfo').textContent = `Plaquette B_(${r},${c}): eigenvalue ${plaqSyn[bestPlaqIdx] ? '−1 (excited! m-anyon here)' : '+1 (no excitation)'}`;
+  }
+  renderMeas();
+});
+
+// ============================================================
+// SECTION 7: Code Parameter Explorer
+// ============================================================
+function updateExplorer(val) {
+  const lv = parseInt(val);
+  document.getElementById('lVal').textContent = lv;
+  document.getElementById('expN').textContent = 2 * lv * lv;
+  document.getElementById('expK').textContent = '2';
+  document.getElementById('expD').textContent = lv;
+  document.getElementById('expS').textContent = 2 * lv * lv - 2;
+  document.getElementById('expRate').textContent = (200 / (2 * lv * lv)).toFixed(1) + '%';
+  document.getElementById('expCorr').textContent = Math.floor((lv - 1) / 2);
+}
+
+// ============================================================
+// SECTION 10: Challenge Mode
+// ============================================================
+let chalHiddenErr = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+let chalCorrection = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+let chalActive = false;
+let chalRevealed = false;
+
+function newChallenge() {
+  // Generate random X errors (keep it simple — X errors only)
+  chalHiddenErr = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+  chalCorrection = { h: Array.from({length: L}, () => Array(L).fill(false)), v: Array.from({length: L}, () => Array(L).fill(false)) };
+  const nerr = Math.floor(Math.random() * 3) + 2;
+  for (let i = 0; i < nerr; i++) {
+    const h = Math.random() < 0.5, r = Math.floor(Math.random() * L), c = Math.floor(Math.random() * L);
+    chalHiddenErr[h ? 'h' : 'v'][r][c] = true;
+  }
+  chalActive = true;
+  chalRevealed = false;
+  document.getElementById('btnRevealErrors').textContent = 'Reveal Errors';
+  document.getElementById('challengeInfo').textContent = `${nerr} hidden X errors placed. Click edges to apply correction operators and eliminate all m-anyons!`;
+  document.getElementById('challengeBanner').style.display = 'none';
+  renderChallenge();
+}
+
+function computeChalSyndromes(errH, errV) {
+  const syn = Array(L * L).fill(false);
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    let cnt = 0;
+    if (errH[r][c]) cnt++; if (errH[(r + 1) % L][c]) cnt++;
+    if (errV[r][c]) cnt++; if (errV[r][(c + 1) % L]) cnt++;
+    syn[r * L + c] = (cnt % 2 === 1);
+  }
+  return syn;
+}
+
+function renderChallenge() {
+  const canvas = document.getElementById('challengeCanvas');
+  const ctx = canvas.getContext('2d');
+  const cs = cellSize(canvas);
+  const [cw, ch] = cssDims(canvas);
+  drawLattice(ctx, cw, ch, cs);
+
+  // Combined error = hidden XOR correction
+  const combH = Array.from({length: L}, () => Array(L).fill(false));
+  const combV = Array.from({length: L}, () => Array(L).fill(false));
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    combH[r][c] = chalHiddenErr.h[r][c] !== chalCorrection.h[r][c];
+    combV[r][c] = chalHiddenErr.v[r][c] !== chalCorrection.v[r][c];
+  }
+
+  // Show correction edges the student placed
+  ctx.lineCap = 'round';
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    if (chalCorrection.h[r][c]) {
+      ctx.strokeStyle = COLORS.cyan; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(PAD + c * cs, PAD + r * cs); ctx.lineTo(PAD + (c + 1) * cs, PAD + r * cs); ctx.stroke();
+      ctx.font = 'bold 10px Inter'; ctx.fillStyle = COLORS.cyan; ctx.textAlign = 'center';
+      ctx.fillText('C', PAD + c * cs + cs / 2, PAD + r * cs - 7);
+    }
+    if (chalCorrection.v[r][c]) {
+      ctx.strokeStyle = COLORS.cyan; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(PAD + c * cs, PAD + r * cs); ctx.lineTo(PAD + c * cs, PAD + (r + 1) * cs); ctx.stroke();
+      ctx.font = 'bold 10px Inter'; ctx.fillStyle = COLORS.cyan; ctx.textAlign = 'center';
+      ctx.fillText('C', PAD + c * cs - 9, PAD + r * cs + cs / 2 + 4);
+    }
+  }
+
+  // Reveal hidden errors if toggled
+  if (chalRevealed) {
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.lineCap = 'round';
+    ctx.setLineDash([4, 4]);
+    for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+      if (chalHiddenErr.h[r][c]) {
+        ctx.strokeStyle = COLORS.orange; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(PAD + c * cs, PAD + r * cs); ctx.lineTo(PAD + (c+1) * cs, PAD + r * cs); ctx.stroke();
+      }
+      if (chalHiddenErr.v[r][c]) {
+        ctx.strokeStyle = COLORS.orange; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(PAD + c * cs, PAD + r * cs); ctx.lineTo(PAD + c * cs, PAD + (r+1) * cs); ctx.stroke();
+      }
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // Hover edge preview for challenge canvas
+  if (chalHoveredEdge && chalActive) {
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = COLORS.accent;
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    const he = chalHoveredEdge;
+    if (he.type === 'h') {
+      ctx.beginPath(); ctx.moveTo(PAD + he.c * cs, PAD + he.r * cs); ctx.lineTo(PAD + he.c * cs + cs, PAD + he.r * cs); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(PAD + he.c * cs, PAD + he.r * cs); ctx.lineTo(PAD + he.c * cs, PAD + he.r * cs + cs); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Syndrome from combined (hidden + correction)
+  const plaqSyn = computeChalSyndromes(combH, combV);
+  drawPlaquetteCenters(ctx, cs, plaqSyn);
+
+  // Vertices
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    ctx.beginPath(); ctx.arc(PAD + c * cs, PAD + r * cs, 3, 0, 2 * Math.PI);
+    ctx.fillStyle = COLORS.vertex; ctx.fill();
+  }
+
+  // Count remaining anyons
+  const mCount = plaqSyn.filter(Boolean).length;
+  if (chalActive) {
+    const corrCount = chalCorrection.h.flat().filter(Boolean).length + chalCorrection.v.flat().filter(Boolean).length;
+    document.getElementById('challengeInfo').textContent = `Your corrections: ${corrCount} edges | Remaining m-anyons: ${mCount}`;
+  }
+}
+
+let chalHoveredEdge = null;
+const chalCanvas = document.getElementById('challengeCanvas');
+chalCanvas.addEventListener('click', function(e) {
+  if (!chalActive) { newChallenge(); return; }
+  const [mx, my] = canvasCoords(this, e);
+  const cs = cellSize(this);
+  const edge = findNearestEdge(mx, my, cs);
+  if (edge) {
+    chalCorrection[edge.type][edge.r][edge.c] = !chalCorrection[edge.type][edge.r][edge.c];
+    renderChallenge();
+  }
+});
+chalCanvas.addEventListener('mousemove', function(e) {
+  if (!chalActive) return;
+  const [mx, my] = canvasCoords(this, e);
+  chalHoveredEdge = findNearestEdge(mx, my, cellSize(this));
+  renderChallenge();
+});
+chalCanvas.addEventListener('mouseleave', function() { chalHoveredEdge = null; renderChallenge(); });
+
+function showHint() {
+  // Reveal the syndrome from the hidden errors only
+  const syn = computeChalSyndromes(chalHiddenErr.h, chalHiddenErr.v);
+  const anyonPositions = [];
+  for (let i = 0; i < L * L; i++) if (syn[i]) anyonPositions.push(`(${Math.floor(i / L)},${i % L})`);
+  document.getElementById('challengeInfo').textContent = `Hint: ${anyonPositions.length} m-anyons at faces ${anyonPositions.join(', ')}. Try to pair nearby anyons with short paths.`;
+}
+
+function checkChallenge() {
+  if (!chalActive) return;
+  // Check: are all anyons eliminated?
+  const combH = Array.from({length: L}, () => Array(L).fill(false));
+  const combV = Array.from({length: L}, () => Array(L).fill(false));
+  for (let r = 0; r < L; r++) for (let c = 0; c < L; c++) {
+    combH[r][c] = chalHiddenErr.h[r][c] !== chalCorrection.h[r][c];
+    combV[r][c] = chalHiddenErr.v[r][c] !== chalCorrection.v[r][c];
+  }
+  const syn = computeChalSyndromes(combH, combV);
+  const remaining = syn.filter(Boolean).length;
+  const banner = document.getElementById('challengeBanner');
+  banner.style.display = 'block';
+
+  if (remaining > 0) {
+    banner.className = 'challenge-banner fail';
+    banner.textContent = `Not yet — ${remaining} m-anyon(s) remain. Keep placing corrections!`;
+    return;
+  }
+
+  // Check for logical error: does the combined residual form a non-contractible loop?
+  // Check horizontal winding: count X corrections in any row
+  let logicalErr = false;
+  for (let r = 0; r < L; r++) {
+    let hCount = 0;
+    for (let c = 0; c < L; c++) if (combH[r][c]) hCount++;
+    if (hCount % 2 === 1) { logicalErr = true; break; }
+  }
+  if (!logicalErr) {
+    for (let c = 0; c < L; c++) {
+      let vCount = 0;
+      for (let r = 0; r < L; r++) if (combV[r][c]) vCount++;
+      if (vCount % 2 === 1) { logicalErr = true; break; }
+    }
+  }
+
+  chalActive = false;
+  if (logicalErr) {
+    banner.className = 'challenge-banner fail';
+    banner.textContent = 'All anyons eliminated, but you introduced a logical error! The combined error + correction forms a non-contractible loop.';
+  } else {
+    banner.className = 'challenge-banner success';
+    banner.textContent = 'Perfect correction! All anyons eliminated with no logical error. You are a quantum decoder!';
+  }
+}
+
+// (Quiz progress tracking consolidated into checkQuiz above)
+
+// ============================================================
+// PARTICLE SYSTEM for anyon animations
+// ============================================================
+const particles = [];
+function spawnParticles(canvasId, x, y, color, count = 8) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count;
+    const speed = 1.5 + Math.random() * 2;
+    particles.push({
+      canvasId, x, y, color,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1.0,
+      decay: 0.02 + Math.random() * 0.02,
+      size: 2 + Math.random() * 3
+    });
+  }
+  if (!particleAnimating) animateParticles();
+}
+
+let particleAnimating = false;
+function animateParticles() {
+  if (particles.length === 0) { particleAnimating = false; return; }
+  particleAnimating = true;
+  // Group by canvas
+  const byCanvas = {};
+  particles.forEach(p => {
+    if (!byCanvas[p.canvasId]) byCanvas[p.canvasId] = [];
+    byCanvas[p.canvasId].push(p);
+  });
+  for (const [cid, parts] of Object.entries(byCanvas)) {
+    const canvas = document.getElementById(cid);
+    if (!canvas) continue;
+    const ctx = canvas.getContext('2d');
+    parts.forEach(p => {
+      ctx.globalAlpha = p.life;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * p.life, 0, 2 * Math.PI);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= p.decay;
+    });
+  }
+  // Remove dead particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    if (particles[i].life <= 0) particles.splice(i, 1);
+  }
+  requestAnimationFrame(animateParticles);
+}
+
+// Hook into main canvas error placement for particle effects
+const origToggleEdge = toggleEdge;
+toggleEdge = function(edge) {
+  origToggleEdge(edge);
+  const canvas = document.getElementById('toricCanvas');
+  const cs = cellSize(canvas);
+  let px, py;
+  if (edge.type === 'h') { px = PAD + edge.c * cs + cs / 2; py = PAD + edge.r * cs; }
+  else { px = PAD + edge.c * cs; py = PAD + edge.r * cs + cs / 2; }
+  const color = currentTool === 'X' ? COLORS.red : COLORS.purple;
+  spawnParticles('toricCanvas', px, py, color, 6);
+};
+
+// ============================================================
+// REVEAL ERRORS (Challenge Mode)
+// ============================================================
+function revealErrors() {
+  chalRevealed = !chalRevealed;
+  document.getElementById('btnRevealErrors').textContent = chalRevealed ? 'Hide Errors' : 'Reveal Errors';
+  renderChallenge();
+}
+
+// ============================================================
+// ANIMATED NUMBER TRANSITIONS (Parameter Explorer)
+// ============================================================
+function animateValue(el, newVal, suffix) {
+  suffix = suffix || '';
+  const current = parseFloat(el.textContent) || 0;
+  const target = parseFloat(newVal);
+  if (current === target) { el.textContent = newVal + suffix; return; }
+  const duration = 300;
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    const v = current + (target - current) * ease;
+    el.textContent = (Number.isInteger(target) ? Math.round(v) : v.toFixed(1)) + suffix;
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// Override updateExplorer with animated version
+const _origUpdateExplorer = updateExplorer;
+updateExplorer = function(val) {
+  const lv = parseInt(val);
+  document.getElementById('lVal').textContent = lv;
+  animateValue(document.getElementById('expN'), 2 * lv * lv);
+  document.getElementById('expK').textContent = '2';
+  animateValue(document.getElementById('expD'), lv);
+  animateValue(document.getElementById('expS'), 2 * lv * lv - 2);
+  animateValue(document.getElementById('expRate'), (200 / (2 * lv * lv)).toFixed(1), '%');
+  animateValue(document.getElementById('expCorr'), Math.floor((lv - 1) / 2));
+};
+
+// (Quiz completion banner consolidated into checkQuiz above)
+
+// ============================================================
+// PARTICLE BACKGROUND
+// ============================================================
+(function initParticleBg() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let bgParticles = [];
+  let paused = false;
+  const PARTICLE_COUNT = window.innerWidth < 768 ? 20 : 45;
+  const CONNECT_DIST = 120;
+  const bgColors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    bgParticles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      bgParticles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: bgColors[Math.floor(Math.random() * bgColors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < bgParticles.length; i++) {
+      for (let j = i + 1; j < bgParticles.length; j++) {
+        const dx = bgParticles[i].x - bgParticles[j].x;
+        const dy = bgParticles[i].y - bgParticles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = 'rgba(99, 102, 241, ' + alpha + ')';
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(bgParticles[i].x, bgParticles[i].y);
+          ctx.lineTo(bgParticles[j].x, bgParticles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    for (const p of bgParticles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+
+// ============================================================
+// SECTION FADE-IN ANIMATIONS
+// ============================================================
+const sectionAnimObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+document.querySelectorAll('section[id]').forEach(s => sectionAnimObserver.observe(s));
+// Make intro immediately visible
+document.getElementById('intro')?.classList.add('visible');
+
+// ============================================================
+// SCROLL PROGRESS BAR + BACK TO TOP
+// ============================================================
+(function() {
+  const progressBar = document.getElementById('scrollProgress');
+  const backToTopBtn = document.getElementById('backToTop');
+  window.addEventListener('scroll', function() {
+    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    if (scrollHeight > 0) {
+      progressBar.style.width = ((scrollTop / scrollHeight) * 100) + '%';
+    }
+    backToTopBtn.classList.toggle('visible', scrollTop > 600);
+  }, { passive: true });
+  backToTopBtn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+})();
+
+// ============================================================
+// RESPONSIVE CANVAS SIZING (ResizeObserver + DPR)
+// ============================================================
+const INTERACTIVE_CANVASES = [
+  { id: 'toricCanvas', render: () => renderMain() },
+  { id: 'measCanvas', render: () => renderMeas() },
+  { id: 'logicalCanvas', render: () => renderLogical() },
+  { id: 'corrCanvas', render: () => renderCorr() },
+  { id: 'challengeCanvas', render: () => renderChallenge() },
+];
+
+function sizeCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const cssW = Math.round(rect.width);
+  const cssH = Math.round(rect.height || cssW); // square fallback
+  const backingW = Math.round(cssW * dpr);
+  const backingH = Math.round(cssH * dpr);
+  if (canvas.width !== backingW || canvas.height !== backingH) {
+    canvas.width = backingW;
+    canvas.height = backingH;
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return true; // resized
+  }
+  return false;
+}
+
+function sizeAndRenderAll() {
+  INTERACTIVE_CANVASES.forEach(({ id, render }) => {
+    const canvas = document.getElementById(id);
+    if (canvas) { sizeCanvas(canvas); render(); }
+  });
+}
+
+// Update cellSize to use CSS pixel dimensions (pre-DPR scale)
+// The DPR scaling is handled by the ctx.setTransform above,
+// so all drawing math should use CSS pixels.
+// We override cellSize to work in CSS pixel space:
+cellSize = function(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.width / dpr;
+  return (cssW - 2 * PAD) / L;
+};
+
+// Update canvasCoords to also account for DPR-scaled backing store
+canvasCoords = function(canvas, e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+  const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+  // Return CSS-pixel coords since ctx is DPR-scaled
+  return [clientX - rect.left, clientY - rect.top];
+};
+
+// Observe all interactive canvases for size changes
+const canvasResizeObserver = new ResizeObserver(entries => {
+  for (const entry of entries) {
+    const canvas = entry.target;
+    const info = INTERACTIVE_CANVASES.find(c => document.getElementById(c.id) === canvas);
+    if (info && sizeCanvas(canvas)) {
+      info.render();
+    }
+  }
+});
+INTERACTIVE_CANVASES.forEach(({ id }) => {
+  const canvas = document.getElementById(id);
+  if (canvas) canvasResizeObserver.observe(canvas);
+});
+
+// Also handle DPR changes (e.g. moving window between monitors)
+window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
+  .addEventListener('change', sizeAndRenderAll, { once: true });
+
+// Fallback: window resize event (debounced) for environments where
+// ResizeObserver doesn't fire on viewport changes
+let _resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(sizeAndRenderAll, 100);
+});
+
+// ============================================================
+// Init
+// ============================================================
+sizeAndRenderAll();
+updateExplorer(5);
+// Re-size canvases after layout settles (fonts, images, etc.)
+setTimeout(sizeAndRenderAll, 100);
+</script>
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+
+<!-- Particle Background -->
+<script>
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 45;
+  const CONNECT_DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+</script>
+</body>
+</html>

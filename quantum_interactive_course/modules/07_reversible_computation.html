@@ -1,0 +1,2127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reversible Computation & Garbage Removal — Quantum Computing</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Particle background */
+  #particleBg {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0; pointer-events: none;
+  }
+
+  .container {
+    max-width: 960px; margin: 0 auto; padding: 0 1.5rem;
+    position: relative; z-index: 1;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    padding: 5rem 1.5rem 3rem;
+    position: relative; z-index: 1;
+  }
+  header::after {
+    content: '';
+    display: block; width: 120px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), transparent);
+    margin: 1.5rem auto 0;
+  }
+  header h1 {
+    font-size: 2.5rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--cyan), var(--pink));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em; margin-bottom: 0.5rem;
+  }
+  header .lead {
+    color: var(--text-dim); font-size: 1.05rem; font-weight: 300;
+    max-width: 640px; margin: 0 auto;
+  }
+
+  /* Navigation */
+  .toc {
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    padding: 1.25rem 0 2.5rem; position: sticky; top: 0; z-index: 10;
+    background: linear-gradient(var(--bg), var(--bg) 85%, transparent);
+  }
+  .toc a {
+    padding: 0.5rem 1.1rem; border-radius: 20px; text-decoration: none;
+    background: var(--surface); color: var(--text-dim); font-size: 0.85rem;
+    border: 1px solid var(--border); transition: all 0.25s; font-weight: 500;
+  }
+  .toc a:hover { color: var(--cyan); border-color: var(--cyan); }
+  .toc a.active {
+    background: rgba(99, 102, 241, 0.15); border-color: var(--accent);
+    color: var(--accent); font-weight: 600;
+  }
+
+  /* Sections */
+  section { margin-bottom: 3.5rem; padding: 2.5rem 0; }
+  section h2 {
+    font-size: 1.7rem; margin-bottom: 0.5rem; font-weight: 700;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  section h2 .sec-gradient {
+    background: linear-gradient(135deg, var(--accent), var(--cyan));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .sec-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 700;
+    background: rgba(99, 102, 241, 0.12); color: var(--accent);
+    border: 1px solid rgba(99, 102, 241, 0.25); flex-shrink: 0;
+  }
+  section h3 { font-size: 1.2rem; margin: 1.75rem 0 0.75rem; color: var(--cyan); font-weight: 600; }
+  .subtitle { color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.95rem; font-weight: 300; }
+
+  /* Description text (Simon's style) */
+  .desc {
+    color: var(--text-dim); font-size: 0.92rem; line-height: 1.7; margin-bottom: 1rem;
+  }
+  .desc strong { color: var(--text); font-weight: 500; }
+  p { margin-bottom: 1rem; }
+
+  /* Tag badges (Simon's style) */
+  .tag {
+    display: inline-block; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; padding: 0.15rem 0.5rem; border-radius: 4px;
+    background: rgba(99, 102, 241, 0.12); color: var(--accent);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+  }
+  .tag.cyan { background: rgba(34, 211, 238, 0.1); color: var(--cyan); border-color: rgba(34, 211, 238, 0.25); }
+  .tag.green { background: rgba(52, 211, 153, 0.1); color: var(--green); border-color: rgba(52, 211, 153, 0.25); }
+  .tag.pink { background: rgba(244, 114, 182, 0.1); color: var(--pink); border-color: rgba(244, 114, 182, 0.25); }
+  .tag.orange { background: rgba(251, 146, 60, 0.1); color: var(--orange); border-color: rgba(251, 146, 60, 0.25); }
+
+  /* Cards */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem; margin: 1.25rem 0;
+    position: relative; overflow: hidden; transition: border-color 0.3s;
+  }
+  .card:hover { border-color: rgba(99, 102, 241, 0.4); box-shadow: 0 4px 24px rgba(99,102,241,0.08); }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.5;
+  }
+  .card h4 { color: var(--cyan); margin-bottom: 0.75rem; font-size: 1.1rem; font-weight: 600; }
+
+  /* Insight / warning boxes */
+  .insight {
+    background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(34,211,238,0.04));
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 1.25rem 1.5rem; margin: 1.5rem 0;
+  }
+  .insight-label {
+    font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--accent); margin-bottom: 0.5rem;
+  }
+  .warning-box {
+    background: linear-gradient(135deg, rgba(248,113,113,0.06), rgba(251,146,60,0.04));
+    border-left: 3px solid var(--red);
+    border-radius: 0 12px 12px 0;
+    padding: 1.25rem 1.5rem; margin: 1.5rem 0;
+  }
+  .warning-label {
+    font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--red); margin-bottom: 0.5rem;
+  }
+
+  /* Math */
+  .math { font-family: 'Cambria Math', 'Latin Modern Math', Georgia, serif; font-style: italic; }
+  .math-block {
+    display: block; text-align: center;
+    padding: 1.1rem; margin: 1.25rem 0;
+    background: var(--surface2); border: 1px solid rgba(42,53,80,0.5);
+    border-radius: 12px; overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  /* Interactive containers */
+  .interactive {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem; margin: 1.5rem 0;
+    position: relative; overflow: hidden;
+  }
+  .interactive::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent); opacity: 0.5;
+  }
+  .interactive-title {
+    display: flex; align-items: center; gap: 0.6rem;
+    font-size: 0.95rem; font-weight: 600; color: var(--green);
+    margin-bottom: 1.25rem;
+  }
+  .interactive-title .icon {
+    width: 26px; height: 26px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; background: rgba(52,211,153,0.15); color: var(--green);
+  }
+
+  /* Tab / pill buttons */
+  .tab-group { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; }
+  .tab-btn {
+    padding: 0.45rem 1.1rem; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text-dim); cursor: pointer;
+    font-size: 0.85rem; font-weight: 500; transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+  }
+  .tab-btn:hover { border-color: var(--accent); color: var(--text); }
+  .tab-btn.active {
+    background: rgba(99,102,241,0.15); border-color: var(--accent);
+    color: var(--accent); font-weight: 600;
+  }
+
+  /* Gate explorer */
+  .gate-explorer-content { display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap; }
+  .gate-svg-container { flex: 1; min-width: 280px; }
+  .gate-svg-container svg { width: 100%; }
+  .gate-info { flex: 1; min-width: 240px; }
+  .gate-info .verdict { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .verdict.reversible { color: var(--green); }
+  .verdict.irreversible { color: var(--red); }
+
+  /* Bit toggles */
+  .bit-toggle {
+    width: 44px; height: 32px; border-radius: 8px;
+    border: 1px solid var(--border); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s; user-select: none;
+  }
+  .bit-toggle[data-val="0"] { background: rgba(100,116,139,0.12); color: var(--text-dim); border-color: rgba(100,116,139,0.3); }
+  .bit-toggle[data-val="1"] { background: rgba(99,102,241,0.2); color: var(--accent); border-color: rgba(99,102,241,0.4); }
+
+  .bit-output {
+    width: 44px; height: 32px; border-radius: 8px;
+    border: 1px solid rgba(34,211,238,0.4); background: rgba(34,211,238,0.1);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 600; color: var(--cyan);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Embedding demo */
+  .embedding-box {
+    display: flex; align-items: center; justify-content: center;
+    gap: 1rem; flex-wrap: wrap; margin: 1rem 0;
+  }
+  .uf-box {
+    padding: 1rem 1.5rem; border: 2px solid var(--accent);
+    border-radius: 12px; background: rgba(99,102,241,0.08);
+    text-align: center; font-weight: 600; color: var(--accent);
+    font-size: 1.1rem; font-family: 'JetBrains Mono', monospace;
+  }
+  .wire-group { display: flex; flex-direction: column; gap: 0.4rem; }
+  .wire {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
+  }
+  .wire-label { color: var(--text-dim); min-width: 42px; text-align: right; font-size: 0.85rem; }
+  .arrow { color: var(--text-dim); font-size: 1.4rem; }
+  .apply-twice-btn {
+    padding: 0.55rem 1.5rem; border-radius: 8px; border: 1px solid var(--accent);
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(34,211,238,0.08));
+    color: var(--accent); cursor: pointer; font-size: 0.85rem; font-family: 'Inter', sans-serif;
+    font-weight: 600; transition: all 0.25s; margin-top: 0.75rem;
+  }
+  .apply-twice-btn:hover { background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(34,211,238,0.12)); transform: translateY(-2px); box-shadow: 0 6px 24px var(--accent-glow); }
+  .apply-msg { text-align: center; min-height: 1.5rem; margin-top: 0.75rem; font-size: 0.9rem; }
+
+  /* Bennett stepper: register display */
+  .register-grid { display: grid; gap: 4px; margin: 1rem 0; }
+  .register-row {
+    display: grid; grid-template-columns: 80px 48px 1fr;
+    align-items: center; gap: 0.75rem;
+    padding: 0.5rem 0.75rem; border-radius: 8px;
+    transition: background 0.3s;
+  }
+  .register-row.highlight { background: rgba(99,102,241,0.06); }
+  .reg-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem; color: var(--text-dim); font-weight: 500;
+  }
+  .reg-val {
+    width: 40px; height: 34px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem; font-weight: 600; transition: all 0.3s;
+  }
+  .reg-val.input { border: 1px solid rgba(99,102,241,0.4); background: rgba(99,102,241,0.15); color: var(--accent); }
+  .reg-val.clean { border: 1px solid rgba(100,116,139,0.25); background: rgba(100,116,139,0.08); color: var(--text-dim); }
+  .reg-val.garbage { border: 1px solid rgba(251,146,60,0.5); background: rgba(251,146,60,0.12); color: var(--orange); }
+  .reg-val.result { border: 1px solid rgba(52,211,153,0.5); background: rgba(52,211,153,0.12); color: var(--green); }
+  .reg-val.just-changed { animation: valFlash 0.4s ease; }
+  @keyframes valFlash { 0% { transform: scale(1.15); } 100% { transform: scale(1); } }
+  .reg-description { font-size: 0.8rem; color: var(--text-dim); }
+
+  /* Gate label for current step */
+  .gate-label {
+    text-align: center; font-size: 0.92rem;
+    color: var(--text); margin-bottom: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 1.5rem;
+  }
+
+  /* Phase badges */
+  .phase-badge {
+    display: inline-block; padding: 0.25rem 0.85rem; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; margin-bottom: 0.75rem;
+  }
+  .phase-initial { background: rgba(136,146,168,0.12); color: var(--text-dim); }
+  .phase-compute { background: rgba(99,102,241,0.15); color: var(--accent); }
+  .phase-copy { background: rgba(52,211,153,0.15); color: var(--green); }
+  .phase-uncompute { background: rgba(244,114,182,0.15); color: var(--pink); }
+
+  /* Garbage counter */
+  .garbage-counter {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.75rem 1.1rem; border-radius: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    margin: 1rem 0; font-size: 0.9rem; transition: border-color 0.3s;
+  }
+  .garbage-counter .count {
+    font-weight: 700; font-size: 1.15rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .garbage-counter.has-garbage { border-color: rgba(251,146,60,0.5); }
+  .garbage-counter.has-garbage .count { color: var(--orange); }
+  .garbage-counter.clean { border-color: rgba(52,211,153,0.4); }
+  .garbage-counter.clean .count { color: var(--green); }
+
+  /* Steps timeline (Simon's pattern) */
+  .steps-timeline {
+    display: flex; gap: 0; margin: 0.75rem 0 1rem; overflow-x: auto; padding-bottom: 0.25rem;
+  }
+  .steps-timeline .step-pill {
+    flex: 1; min-width: 0;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 0; color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 500;
+    padding: 0.55rem 0.25rem; cursor: pointer; transition: all 0.25s;
+    position: relative; text-align: center; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .steps-timeline .step-pill:first-child { border-radius: 8px 0 0 8px; }
+  .steps-timeline .step-pill:last-child { border-radius: 0 8px 8px 0; }
+  .steps-timeline .step-pill.active {
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(34,211,238,0.1));
+    border-color: var(--accent); color: var(--text); z-index: 1;
+  }
+  .steps-timeline .step-pill.active::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
+  }
+  .steps-timeline .step-pill.done-compute {
+    background: rgba(99,102,241,0.08); color: var(--accent); border-color: rgba(99,102,241,0.3);
+  }
+  .steps-timeline .step-pill.done-copy {
+    background: rgba(52,211,153,0.08); color: var(--green); border-color: rgba(52,211,153,0.3);
+  }
+  .steps-timeline .step-pill.done-uncompute {
+    background: rgba(244,114,182,0.08); color: var(--pink); border-color: rgba(244,114,182,0.3);
+  }
+
+  /* Stepper controls */
+  .stepper-controls {
+    display: flex; align-items: center; gap: 0.75rem;
+    justify-content: center; margin: 1.25rem 0; flex-wrap: wrap;
+  }
+  .step-btn {
+    padding: 0.55rem 1.25rem; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text); cursor: pointer; font-size: 0.88rem;
+    font-family: 'Inter', sans-serif; font-weight: 500; transition: all 0.2s;
+  }
+  .step-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+  .step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .step-indicator {
+    font-size: 0.85rem; color: var(--text-dim); min-width: 90px; text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .auto-btn {
+    padding: 0.55rem 1.25rem; border-radius: 8px;
+    border: 1px solid rgba(52,211,153,0.4); background: rgba(52,211,153,0.08);
+    color: var(--green); cursor: pointer; font-size: 0.88rem;
+    font-family: 'Inter', sans-serif; font-weight: 600; transition: all 0.2s;
+  }
+  .auto-btn:hover { background: rgba(52,211,153,0.15); transform: translateY(-1px); }
+  .auto-btn.playing { border-color: rgba(248,113,113,0.5); color: var(--red); background: rgba(248,113,113,0.08); }
+
+  /* Speed control (Simon's pattern) */
+  .speed-control {
+    display: inline-flex; border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .speed-btn {
+    background: var(--surface2); border: none;
+    border-right: 1px solid var(--border);
+    color: var(--text-dim); font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; font-weight: 500;
+    padding: 0.4rem 0.6rem; cursor: pointer; transition: all 0.2s;
+    border-radius: 0; letter-spacing: 0;
+  }
+  .speed-btn:last-child { border-right: none; }
+  .speed-btn:hover { background: rgba(99,102,241,0.1); color: var(--text); }
+  .speed-btn.active { background: rgba(99,102,241,0.2); color: var(--accent); }
+
+  /* Side-by-side panels */
+  .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin: 1.25rem 0; }
+  .panel {
+    padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .panel h5 { font-size: 0.9rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+  .panel.good { border-color: rgba(52,211,153,0.3); }
+  .panel.good h5 { color: var(--green); }
+  .panel.bad { border-color: rgba(248,113,113,0.3); }
+  .panel.bad h5 { color: var(--red); }
+
+  .ket { font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; color: var(--text); line-height: 2; }
+  .ket .dim { color: var(--text-dim); }
+  .ket .hi { color: var(--accent); }
+  .ket .warn { color: var(--orange); }
+  .ket .ok { color: var(--green); }
+
+  /* Summary grid */
+  .summary-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem; margin: 1.25rem 0;
+  }
+  .summary-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.5rem;
+    position: relative; overflow: hidden; transition: border-color 0.3s;
+  }
+  .summary-card:hover { border-color: rgba(99,102,241,0.3); box-shadow: 0 4px 20px rgba(99,102,241,0.06); }
+  .summary-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.3;
+  }
+  .summary-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; font-weight: 600; }
+  .summary-card p { font-size: 0.88rem; color: var(--text-dim); margin: 0; }
+
+  .step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    font-size: 0.8rem; font-weight: 700; margin-right: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .step-num.compute { background: rgba(99,102,241,0.15); color: var(--accent); }
+  .step-num.copy { background: rgba(52,211,153,0.15); color: var(--green); }
+  .step-num.uncompute { background: rgba(244,114,182,0.15); color: var(--pink); }
+
+  .func-select-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .func-select-row label { color: var(--text-dim); font-size: 0.85rem; font-weight: 500; }
+
+  code {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.85em;
+    background: var(--surface2); padding: 0.15rem 0.45rem;
+    border-radius: 5px; border: 1px solid rgba(42,53,80,0.5);
+  }
+
+  /* Circuit diagram canvas */
+  .circuit-container {
+    background: var(--surface2); border-radius: 12px;
+    padding: 1rem; overflow-x: auto; margin: 0.75rem 0;
+    border: 1px solid rgba(42, 53, 80, 0.5);
+  }
+  canvas#circuitCanvas {
+    display: block; margin: 0 auto;
+  }
+
+  /* Keyboard hint */
+  .kbd-hint {
+    text-align: center; opacity: 0.5; font-size: 0.72rem; color: var(--text-dim);
+    margin-top: 0.5rem; transition: opacity 0.3s;
+  }
+  .kbd-hint:hover { opacity: 0.8; }
+  .kbd-hint kbd {
+    display: inline-block; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem; padding: 0.1rem 0.4rem; border-radius: 4px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text-dim); margin: 0 0.1rem;
+  }
+
+  /* Truth table in gate explorer */
+  .truth-table {
+    border-collapse: separate; border-spacing: 0;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
+    margin-top: 0.75rem; width: 100%;
+  }
+  .truth-table th, .truth-table td {
+    padding: 0.35rem 0.75rem; border: 1px solid var(--border); text-align: center;
+  }
+  .truth-table th {
+    background: rgba(99,102,241,0.08); color: var(--accent);
+    font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .truth-table td { background: var(--surface2); transition: background 0.3s; }
+  .truth-table tr:hover td { background: rgba(99,102,241,0.05); }
+  .truth-table td.collision { color: var(--red); font-weight: 600; }
+  .truth-table td.unique { color: var(--green); }
+
+  /* Quiz */
+  .quiz-question {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.25rem; margin-bottom: 0.75rem;
+    transition: border-color 0.3s;
+  }
+  .quiz-question.correct { border-color: var(--green); }
+  .quiz-question.wrong { border-color: var(--red); }
+  .quiz-q-text {
+    font-size: 0.9rem; font-weight: 500; margin-bottom: 0.75rem; line-height: 1.6;
+  }
+  .quiz-options { display: flex; flex-direction: column; gap: 0.4rem; }
+  .quiz-opt {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.5rem 0.85rem; cursor: pointer;
+    font-size: 0.85rem; transition: all 0.2s; text-align: left;
+    color: var(--text); font-family: 'Inter', sans-serif;
+  }
+  .quiz-opt:hover:not(.locked) {
+    border-color: var(--accent); background: rgba(99, 102, 241, 0.08);
+  }
+  .quiz-opt.chosen-correct {
+    border-color: var(--green); background: rgba(52, 211, 153, 0.12); color: var(--green);
+  }
+  .quiz-opt.chosen-wrong {
+    border-color: var(--red); background: rgba(248, 113, 113, 0.12); color: var(--red);
+  }
+  .quiz-opt.reveal-correct {
+    border-color: var(--green); background: rgba(52, 211, 153, 0.08);
+  }
+  .quiz-explain {
+    margin-top: 0.6rem; font-size: 0.82rem; color: var(--text-dim);
+    line-height: 1.6; padding: 0.5rem 0.75rem; border-radius: 8px;
+    background: rgba(99, 102, 241, 0.04);
+  }
+  .quiz-score {
+    text-align: center; padding: 1rem; margin-top: 1rem;
+    border-radius: 12px; font-size: 0.95rem; font-weight: 600;
+  }
+  .quiz-score.great {
+    background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); color: var(--green);
+  }
+  .quiz-score.ok {
+    background: rgba(251, 146, 60, 0.1); border: 1px solid rgba(251, 146, 60, 0.3); color: var(--orange);
+  }
+  .hidden { display: none !important; }
+
+  /* Scroll animations */
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in {
+    opacity: 0; transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+  /* Footer */
+  footer {
+    text-align: center; padding: 3rem 1.5rem 2rem;
+    position: relative; z-index: 1; color: var(--text-dim); font-size: 0.82rem;
+  }
+  footer::before {
+    content: ''; display: block; width: 80px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 0 auto 1.5rem;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    header h1 { font-size: 1.8rem; }
+    header { padding: 3.5rem 1rem 2rem; }
+    .container { padding: 0 1rem; }
+    section { margin-bottom: 2rem; padding: 1.5rem 0; }
+    section h2 { font-size: 1.35rem; }
+    .panels { grid-template-columns: 1fr; }
+    .gate-explorer-content { flex-direction: column; }
+    .gate-svg-container, .gate-info { min-width: 100%; }
+    .embedding-box { flex-direction: column; gap: 0.75rem; }
+    .toc { gap: 6px; padding: 1rem 0 1.5rem; }
+    .toc a { padding: 0.4rem 0.8rem; font-size: 0.78rem; }
+    .interactive { padding: 1.25rem; }
+    .card { padding: 1.25rem; }
+    .steps-timeline .step-pill { min-width: 30px; font-size: 0.6rem; padding: 0.4rem 0.15rem; }
+    .register-row { grid-template-columns: 60px 40px 1fr; gap: 0.5rem; }
+    .stepper-controls { gap: 0.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="particleBg"></canvas>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+
+<!-- ======================= HEADER ======================= -->
+<header>
+  <h1>Reversible Computation<br>& Garbage Removal</h1>
+  <p class="lead">How to implement any classical function as a quantum unitary — understanding information loss, reversible embeddings, garbage bits, and Bennett's uncomputation trick.</p>
+</header>
+
+<!-- ======================= TOC ======================= -->
+<div class="container">
+  <nav class="toc" id="toc">
+    <a href="#reversibility">Why Reversibility?</a>
+    <a href="#info-loss">Information Loss</a>
+    <a href="#rev-gates">Reversible Gates</a>
+    <a href="#embedding">Standard Embedding</a>
+    <a href="#garbage">The Garbage Problem</a>
+    <a href="#bennett">Bennett's Trick</a>
+    <a href="#summary">Summary</a>
+    <a href="#quiz">Quiz</a>
+  </nav>
+</div>
+
+<!-- ===================== SECTION 1 ===================== -->
+<div class="container">
+<section id="reversibility" class="fade-in">
+  <h2><span class="sec-num">1</span><span class="sec-gradient">The Reversibility Requirement</span></h2>
+  <p class="subtitle">Quantum mechanics demands that every computation be undoable</p>
+
+  <p class="desc">In quantum computing, every operation on qubits is described by a <strong>unitary matrix</strong> <span class="tag">U</span>. Unitaries have a defining property: they are always <strong>invertible</strong>. Given any output, you can always recover the input by applying <span class="math">U</span><sup>&dagger;</sup>.</p>
+
+  <div class="math-block">U U&dagger; = U&dagger; U = I</div>
+
+  <p class="desc">This means every quantum gate is <strong>reversible</strong> — no information is ever lost. But most classical logic gates (<span class="tag orange">AND</span>, <span class="tag orange">OR</span>, <span class="tag orange">NAND</span>) are <em>irreversible</em>: their outputs have fewer bits than their inputs, so information is destroyed.</p>
+
+  <div class="insight">
+    <div class="insight-label">Core Challenge</div>
+    <p>To run a classical function <span class="math">f</span> on a quantum computer, we must first find a <strong>reversible</strong> way to compute <span class="math">f</span>, then implement that reversible circuit as a unitary. This page shows you exactly how.</p>
+  </div>
+</section>
+
+<!-- ===================== SECTION 2 ===================== -->
+<section id="info-loss" class="fade-in">
+  <h2><span class="sec-num">2</span><span class="sec-gradient">Information Loss in Classical Gates</span></h2>
+  <p class="subtitle">Seeing why standard logic gates cannot be quantum gates</p>
+
+  <p class="desc">A gate is <strong>reversible</strong> if you can always determine the input from the output — the input&ndash;output mapping is a <em>bijection</em>. If two different inputs produce the same output, information has been lost and the gate is irreversible.</p>
+
+  <div class="insight">
+    <div class="insight-label">Landauer's Principle</div>
+    <p>Information erasure has a physical cost. Rolf Landauer showed in 1961 that erasing one bit of information <em>must</em> dissipate at least <span class="math">kT</span> ln 2 of energy as heat (about 3&times;10<sup>&minus;21</sup> J at room temperature). Irreversible gates destroy information, so they <em>necessarily</em> generate heat. Reversible gates preserve all information and can, in principle, compute with <strong>zero energy dissipation</strong>. This isn't just a quantum curiosity — it's a fundamental law of physics.</p>
+  </div>
+
+  <p class="desc">Use the explorer below to see the input&rarr;output mapping for different gates. When multiple inputs collapse to the same output (red arrows), that gate is irreversible.</p>
+
+  <div class="interactive">
+    <div class="interactive-title"><span class="icon">&#9654;</span> Gate Reversibility Explorer</div>
+    <div class="tab-group" id="gate-tabs"></div>
+    <div class="gate-explorer-content">
+      <div class="gate-svg-container" id="gate-svg-container"></div>
+      <div class="gate-info" id="gate-info"></div>
+    </div>
+    <div id="gate-truth-table"></div>
+  </div>
+</section>
+
+<!-- ===================== SECTION 3 ===================== -->
+<section id="rev-gates" class="fade-in">
+  <h2><span class="sec-num">3</span><span class="sec-gradient">Reversible Gates</span></h2>
+  <p class="subtitle">A universal set for reversible classical computation</p>
+
+  <p class="desc">To avoid information loss, reversible gates keep the number of output bits equal to the number of input bits. The key reversible gates are:</p>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <h4 style="color:var(--accent)">NOT Gate</h4>
+      <div class="math-block" style="font-size:0.9rem">|x&#10217; &rarr; |x &oplus; 1&#10217;</div>
+      <p>Flips a single bit. Trivially reversible (it's its own inverse).</p>
+    </div>
+    <div class="summary-card">
+      <h4 style="color:var(--accent)">CNOT Gate <span class="tag cyan">2-bit</span></h4>
+      <div class="math-block" style="font-size:0.9rem">|a, b&#10217; &rarr; |a, b &oplus; a&#10217;</div>
+      <p>Controlled-NOT. Flips the target <span class="math">b</span> when the control <span class="math">a</span> is 1. Computes XOR while preserving the control.</p>
+    </div>
+    <div class="summary-card">
+      <h4 style="color:var(--accent)">Toffoli Gate <span class="tag cyan">3-bit</span></h4>
+      <div class="math-block" style="font-size:0.9rem">|a, b, c&#10217; &rarr; |a, b, c &oplus; (a &and; b)&#10217;</div>
+      <p>Controlled-controlled-NOT. Flips <span class="math">c</span> only when both <span class="math">a</span> and <span class="math">b</span> are 1. Computes AND reversibly.</p>
+    </div>
+    <div class="summary-card">
+      <h4 style="color:var(--accent)">Fredkin Gate <span class="tag cyan">3-bit</span></h4>
+      <div class="math-block" style="font-size:0.9rem">|a, b, c&#10217; &rarr; |a, a?c:b, a?b:c&#10217;</div>
+      <p>Controlled-SWAP. Swaps <span class="math">b</span> and <span class="math">c</span> when the control <span class="math">a</span> is 1. Also universal for reversible computation.</p>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-label">Universality</div>
+    <p>Both the <span class="tag">Toffoli</span> and <span class="tag">Fredkin</span> gates are independently <strong>universal</strong> for reversible classical computation: any Boolean function can be computed using either one (plus ancilla bits initialized to 0 or 1). Since both gates are unitary, this bridges the gap between classical and quantum computation. In practice, quantum circuits most commonly use the Toffoli decomposition.</p>
+  </div>
+</section>
+
+<!-- ===================== SECTION 4 ===================== -->
+<section id="embedding" class="fade-in">
+  <h2><span class="sec-num">4</span><span class="sec-gradient">The Standard Reversible Embedding</span></h2>
+  <p class="subtitle">The canonical way to make any function f reversible</p>
+
+  <p class="desc">Given any classical function <span class="math">f : {0,1}<sup>n</sup> &rarr; {0,1}<sup>m</sup></span>, the standard trick is to <strong>keep the input and XOR the result into an ancilla register</strong>:</p>
+
+  <div class="math-block">
+    U<sub>f</sub> : |x&#10217;|y&#10217; &rarr; |x&#10217;|y &oplus; f(x)&#10217;
+  </div>
+
+  <p class="desc">This is reversible because <span class="tag">U<sub>f</sub></span> is its own inverse — applying it twice gives back the original state:</p>
+
+  <div class="math-block">
+    |x&#10217;|y&#10217; &xrarr;<sup>U<sub>f</sub></sup> |x&#10217;|y &oplus; f(x)&#10217; &xrarr;<sup>U<sub>f</sub></sup> |x&#10217;|y &oplus; f(x) &oplus; f(x)&#10217; = |x&#10217;|y&#10217;
+  </div>
+
+  <p class="desc">When we set <span class="math">y = 0</span>, the output register stores <span class="math">f(x)</span> directly: <span class="math">|x&#10217;|0&#10217; &rarr; |x&#10217;|f(x)&#10217;</span>.</p>
+
+  <h3>The Phase Kickback Trick</h3>
+
+  <p class="desc">Something remarkable happens when we set the ancilla to <span class="tag cyan">|&minus;&#10217; = (|0&#10217; &minus; |1&#10217;) / &radic;2</span> instead of |0&#10217;. For a single-bit function <span class="math">f</span>:</p>
+
+  <div class="math-block" style="font-size:0.88rem; line-height:2">
+    U<sub>f</sub> |x&#10217;|&minus;&#10217; = (&minus;1)<sup>f(x)</sup> |x&#10217;|&minus;&#10217;
+  </div>
+
+  <p class="desc">The ancilla <em>stays unchanged</em> in |&minus;&#10217;, but the <strong>input register</strong> picks up a phase factor (&minus;1)<sup>f(x)</sup>. This is called <strong>phase kickback</strong> — the function's value gets "kicked" from the output register into the phase of the input. The ancilla serves as a catalyst.</p>
+
+  <div class="insight">
+    <div class="insight-label">Why This Matters</div>
+    <p>Phase kickback converts function values into <strong>quantum phases</strong>, which can then be manipulated by interference. This is the engine behind nearly every quantum algorithm: Deutsch's algorithm, Bernstein-Vazirani, Simon's algorithm, Grover's search, and Shor's factoring all rely on applying <span class="tag">U<sub>f</sub></span> with the ancilla in |&minus;&#10217; to encode <span class="math">f</span> into phases.</p>
+  </div>
+
+  <div class="interactive">
+    <div class="interactive-title"><span class="icon">&#9654;</span> Reversible Embedding U<sub>f</sub></div>
+
+    <div class="func-select-row">
+      <label>Choose f :</label>
+      <div class="tab-group" id="embed-func-tabs" style="margin-bottom:0"></div>
+    </div>
+
+    <div class="embedding-box">
+      <div class="wire-group" id="embed-input"></div>
+      <div class="arrow">&rarr;</div>
+      <div class="uf-box">U<sub>f</sub></div>
+      <div class="arrow">&rarr;</div>
+      <div class="wire-group" id="embed-output"></div>
+    </div>
+
+    <div style="text-align:center">
+      <button class="apply-twice-btn" id="apply-twice-btn">Apply U<sub>f</sub> a second time</button>
+    </div>
+    <div class="apply-msg" id="apply-msg"></div>
+  </div>
+</section>
+
+<!-- ===================== SECTION 5 ===================== -->
+<section id="garbage" class="fade-in">
+  <h2><span class="sec-num">5</span><span class="sec-gradient">The Garbage Problem</span></h2>
+  <p class="subtitle">Why intermediate computation ruins quantum interference</p>
+
+  <p class="desc">The standard embedding <span class="tag">U<sub>f</sub></span> looks clean in theory, but <strong>implementing</strong> it for a complex function requires <em>intermediate computations</em> — temporary ancilla bits used to store partial results. These leftover bits are called <span class="tag orange">garbage</span>.</p>
+
+  <h3>A Concrete Example</h3>
+
+  <p class="desc">Consider computing <span class="math">f(a,b,c) = (a &and; b) &oplus; (b &and; c)</span>. We need two AND operations, each requiring a <span class="tag">Toffoli</span> gate with an ancilla:</p>
+
+  <div class="math-block" style="font-size:0.88rem; line-height:2.2">
+    |a, b, c, 0, 0, 0&#10217; &xrarr;<sup style="font-size:0.72rem">Toffoli(a,b)</sup> |a, b, c, <span style="color:var(--orange)">a&and;b</span>, 0, 0&#10217;<br>
+    &xrarr;<sup style="font-size:0.72rem">Toffoli(b,c)</sup> |a, b, c, <span style="color:var(--orange)">a&and;b</span>, <span style="color:var(--orange)">b&and;c</span>, 0&#10217;
+    &xrarr;<sup style="font-size:0.72rem">CNOTs</sup> |a, b, c, <span style="color:var(--orange)">a&and;b</span>, <span style="color:var(--orange)">b&and;c</span>, <span style="color:var(--green)">f</span>&#10217;
+  </div>
+
+  <p class="desc">The result <span style="color:var(--green);font-weight:600">f</span> is correct, but the registers holding <span style="color:var(--orange);font-weight:600">a&and;b</span> and <span style="color:var(--orange);font-weight:600">b&and;c</span> are <span class="tag orange">garbage</span> — they were needed for the computation but aren't part of the answer.</p>
+
+  <h3>Why Garbage Is Fatal for Quantum Algorithms</h3>
+
+  <p class="desc">Imagine using this circuit in superposition. We want the state on the left, but get the state on the right:</p>
+
+  <div class="panels">
+    <div class="panel good">
+      <h5>Desired (no garbage)</h5>
+      <div class="ket">
+        <span class="dim">&Sigma;<sub>x</sub> &alpha;<sub>x</sub></span> |x&#10217;|<span class="ok">f(x)</span>&#10217;
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-dim); margin-top:0.75rem">Different branches can <strong>interfere</strong> — the output register only depends on f(x), and two inputs with the same f(x) combine coherently.</p>
+    </div>
+    <div class="panel bad">
+      <h5>Actual (with garbage)</h5>
+      <div class="ket">
+        <span class="dim">&Sigma;<sub>x</sub> &alpha;<sub>x</sub></span> |x&#10217;|<span class="ok">f(x)</span>&#10217;|<span class="warn">g(x)</span>&#10217;
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-dim); margin-top:0.75rem">Garbage <span style="color:var(--orange)">g(x)</span> differs across branches. Even if f(x&#8321;) = f(x&#8322;), the garbage "tags" each branch uniquely — <strong>no interference possible</strong>. Tracing out garbage yields a mixed state.</p>
+    </div>
+  </div>
+
+  <div class="warning-box">
+    <div class="warning-label">The Fundamental Problem</div>
+    <p>Garbage bits become <strong>entangled</strong> with the computation. They act as a "which-path" marker, effectively decohering the quantum state. This destroys the speedup that relies on interference between branches of the superposition.</p>
+  </div>
+
+  <h3>Interactive: Garbage Kills Interference</h3>
+  <p class="desc">This demo shows a 2-input function where <span class="math">f(0) = f(1)</span> (constant). Without garbage, the two branches combine coherently. With garbage, each branch is "tagged" differently and interference is destroyed.</p>
+
+  <div class="interactive">
+    <div class="interactive-title"><span class="icon">&#9654;</span> Interference vs. Garbage</div>
+
+    <div class="tab-group" id="garbage-demo-tabs"></div>
+    <div id="garbage-demo-content"></div>
+  </div>
+</section>
+
+<!-- ===================== SECTION 6 ===================== -->
+<section id="bennett" class="fade-in">
+  <h2><span class="sec-num">6</span><span class="sec-gradient">Bennett's Trick (Uncomputation)</span></h2>
+  <p class="subtitle">Compute &rarr; Copy &rarr; Uncompute: the elegant solution to garbage</p>
+
+  <p class="desc">Charles Bennett (1973) discovered a beautiful solution: after computing the result, <strong>copy it</strong> to a clean output register, then <strong>reverse the entire computation</strong> to erase all garbage. Since the circuit is reversible, running it backwards is always possible.</p>
+
+  <div class="card">
+    <h4>The Three Phases</h4>
+    <div style="margin:0.75rem 0">
+      <p><span class="step-num compute">1</span><strong style="color:var(--accent)">Compute</strong> — Run the circuit forward. The result appears, but garbage accumulates in ancilla registers.</p>
+      <p><span class="step-num copy">2</span><strong style="color:var(--green)">Copy</strong> — Use CNOTs to copy the result into a fresh output register. This is the only step that writes to the final output.</p>
+      <p><span class="step-num uncompute">3</span><strong style="color:var(--pink)">Uncompute</strong> — Run the circuit <em>backwards</em> (apply each gate in reverse order). All garbage bits return to 0.</p>
+    </div>
+
+    <div class="math-block" style="font-size:0.88rem; line-height:2">
+      |x, 0<sub>work</sub>, 0<sub>out</sub>&#10217;
+      &xrarr;<sup style="font-size:0.72rem;color:var(--accent)">compute</sup>
+      |x, <span style="color:var(--orange)">g(x)</span>, 0<sub>out</sub>&#10217;
+      &xrarr;<sup style="font-size:0.72rem;color:var(--green)">copy</sup>
+      |x, <span style="color:var(--orange)">g(x)</span>, <span style="color:var(--green)">f(x)</span>&#10217;
+      &xrarr;<sup style="font-size:0.72rem;color:var(--pink)">uncompute</sup>
+      |x, 0<sub>work</sub>, <span style="color:var(--green)">f(x)</span>&#10217;
+    </div>
+  </div>
+
+  <h3>Step-by-Step Interactive</h3>
+  <p class="desc">Walk through Bennett's trick step by step. Choose a function, toggle the input values, and step through each gate to see garbage appear during the forward computation and then vanish during uncomputation.</p>
+
+  <div class="interactive">
+    <div class="interactive-title"><span class="icon">&#9654;</span> Bennett's Trick Stepper</div>
+
+    <div class="func-select-row">
+      <label>Function:</label>
+      <div class="tab-group" id="bennett-func-tabs" style="margin-bottom:0"></div>
+    </div>
+    <p class="desc" id="bennett-func-desc" style="font-size:0.82rem; margin-bottom:1rem;"></p>
+
+    <div style="display:flex; align-items:center; gap:1.25rem; margin-bottom:1.25rem; flex-wrap:wrap">
+      <div style="display:flex; align-items:center; gap:0.5rem;" id="bennett-input-toggles">
+        <span style="color:var(--text-dim); font-size:0.85rem; font-weight:500;">Inputs:</span>
+        <div class="bit-toggle" id="ben-a" data-val="1" onclick="toggleBennettInput(this,'a')" role="switch" aria-checked="true" aria-label="Input bit a" tabindex="0">1</div>
+        <span style="font-size:0.78rem; color:var(--text-dim)">a</span>
+        <div class="bit-toggle" id="ben-b" data-val="1" onclick="toggleBennettInput(this,'b')" role="switch" aria-checked="true" aria-label="Input bit b" tabindex="0">1</div>
+        <span style="font-size:0.78rem; color:var(--text-dim)">b</span>
+        <div class="bit-toggle" id="ben-c" data-val="0" onclick="toggleBennettInput(this,'c')" role="switch" aria-checked="false" aria-label="Input bit c" tabindex="0">0</div>
+        <span style="font-size:0.78rem; color:var(--text-dim)">c</span>
+      </div>
+      <div style="font-size:0.88rem; color:var(--text-dim)">
+        <span id="ben-formula"></span> = <span id="ben-expected" style="color:var(--green); font-weight:700; font-family:'JetBrains Mono',monospace;"></span>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.75rem; flex-wrap:wrap;">
+      <div id="bennett-phase-badge"></div>
+      <div style="margin-left:auto; display:flex; align-items:center; gap:0.5rem;">
+        <span style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em;">Speed</span>
+        <div class="speed-control" id="speed-control">
+          <button class="speed-btn" data-speed="1400" onclick="setSpeed(this)">0.5x</button>
+          <button class="speed-btn active" data-speed="900" onclick="setSpeed(this)">1x</button>
+          <button class="speed-btn" data-speed="450" onclick="setSpeed(this)">2x</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="steps-timeline" id="bennett-timeline"></div>
+
+    <div class="circuit-container" id="circuit-container">
+      <canvas id="circuitCanvas"></canvas>
+    </div>
+
+    <div class="gate-label" id="bennett-gate-label"></div>
+
+    <div class="register-grid" id="bennett-registers"></div>
+
+    <div class="garbage-counter" id="garbage-counter">
+      <span>Garbage bits (non-zero ancillae):</span>
+      <span class="count" id="garbage-count">0</span>
+    </div>
+
+    <div class="stepper-controls">
+      <button class="step-btn" id="ben-prev" onclick="bennettStep(-1)">&larr; Prev</button>
+      <span class="step-indicator" id="ben-step-label">Step 0 / 9</span>
+      <button class="step-btn" id="ben-next" onclick="bennettStep(1)">Next &rarr;</button>
+      <button class="auto-btn" id="ben-auto" onclick="bennettAutoPlay()">&#9654; Auto</button>
+    </div>
+    <div class="kbd-hint"><kbd>&larr;</kbd> <kbd>&rarr;</kbd> step &nbsp; <kbd>Space</kbd> auto-play &nbsp; <kbd>R</kbd> reset</div>
+  </div>
+
+  <h3>Why It Works</h3>
+  <p class="desc">The key insight is that copying a classical bit value with <span class="tag cyan">CNOT</span> does <em>not</em> create garbage — it just fans out the result. And because the entire forward computation is reversible, we can always run it backwards to clean up. The final state has:</p>
+  <ul style="margin-left:1.5rem; margin-bottom:1rem; color:var(--text-dim)">
+    <li>The <strong>input</strong> <span class="math">x</span> preserved (as required by reversibility)</li>
+    <li>All <strong>work registers</strong> back to <span class="math">|0&#10217;</span> (no garbage)</li>
+    <li>The <strong>output register</strong> holding <span class="math">f(x)</span></li>
+  </ul>
+
+  <div class="insight">
+    <div class="insight-label">Trade-off</div>
+    <p>Bennett's trick trades <strong>time for space cleanliness</strong>: we run the computation forward, then backward — roughly doubling the gate count. But we get a <em>clean</em> reversible implementation with no garbage, which is essential for using <span class="tag">U<sub>f</sub></span> inside quantum algorithms where interference must be preserved.</p>
+  </div>
+</section>
+
+<!-- ===================== SECTION 7 ===================== -->
+<section id="summary" class="fade-in">
+  <h2><span class="sec-num">7</span><span class="sec-gradient">Summary</span></h2>
+  <p class="subtitle">The complete recipe for implementing classical functions as quantum unitaries</p>
+
+  <div class="summary-grid">
+    <div class="summary-card" style="border-left: 3px solid var(--accent);">
+      <h4 style="color:var(--accent)">Step 1: Reversible Circuit</h4>
+      <p>Express f using reversible gates (<span class="tag">Toffoli</span> + <span class="tag cyan">CNOT</span> + NOT), adding ancilla qubits as needed for intermediate values.</p>
+    </div>
+    <div class="summary-card" style="border-left: 3px solid var(--cyan);">
+      <h4 style="color:var(--cyan)">Step 2: Identify Garbage</h4>
+      <p>Ancilla registers that are non-zero after the forward computation are <span class="tag orange">garbage</span> — they carry information about the input.</p>
+    </div>
+    <div class="summary-card" style="border-left: 3px solid var(--pink);">
+      <h4 style="color:var(--pink)">Step 3: Bennett's Trick</h4>
+      <p>Copy the result to a clean output register, then run the computation backwards to erase all garbage.</p>
+    </div>
+    <div class="summary-card" style="border-left: 3px solid var(--green);">
+      <h4 style="color:var(--green)">Step 4: Use as Unitary</h4>
+      <p>The resulting clean circuit implements U<sub>f</sub>: |x&#10217;|0&#10217; &rarr; |x&#10217;|f(x)&#10217; with no extra entanglement. It can now be used inside any quantum algorithm.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1.5rem">
+    <h4>Resource Costs</h4>
+    <p class="desc">If the original irreversible circuit for <span class="math">f</span> uses <span class="math">T</span> gates and <span class="math">S</span> ancilla bits:</p>
+    <ul style="margin-left:1.5rem; color:var(--text-dim)">
+      <li><strong>Gate count:</strong> &asymp; 2T + m (forward + backward + copy CNOTs)</li>
+      <li><strong>Ancilla qubits:</strong> S work qubits (all returned to |0&#10217;) + m output qubits</li>
+      <li><strong>Depth:</strong> roughly 2&times; the forward computation depth</li>
+    </ul>
+    <p style="margin-top:0.75rem; color:var(--text-dim); font-size:0.88rem">More advanced techniques (pebble games, incremental uncomputation) can reduce the overhead, but Bennett's basic trick captures the essential idea.</p>
+  </div>
+
+  <div class="card" style="margin-top:1.5rem; border-left: 3px solid var(--cyan);">
+    <h4 style="color:var(--cyan)">Looking Ahead</h4>
+    <p class="desc">The <span class="tag">U<sub>f</sub></span> embedding and phase kickback are the engine behind nearly every quantum algorithm in this course:</p>
+    <ul style="margin-left:1.5rem; color:var(--text-dim); font-size:0.88rem">
+      <li><strong>Deutsch's Algorithm</strong> &mdash; uses U<sub>f</sub>|x&#10217;|&minus;&#10217; to distinguish constant from balanced functions with one query</li>
+      <li><strong>Simon's Algorithm</strong> &mdash; uses a clean U<sub>f</sub> in superposition to find hidden structure through interference</li>
+      <li><strong>Grover's Search</strong> &mdash; repeatedly applies a phase oracle (U<sub>f</sub> with |&minus;&#10217;) to amplify the marked item</li>
+      <li><strong>Shor's Factoring</strong> &mdash; embeds modular exponentiation as a reversible circuit, then uses QFT to extract the period</li>
+    </ul>
+    <p style="margin-top:0.5rem; color:var(--text-dim); font-size:0.88rem">In every case, the function <em>must</em> be implemented as a clean reversible circuit &mdash; garbage would destroy the interference these algorithms rely on.</p>
+  </div>
+</section>
+
+<!-- ===================== SECTION 8 ===================== -->
+<section id="quiz" class="fade-in">
+  <h2><span class="sec-num">8</span><span class="sec-gradient">Test Your Understanding</span></h2>
+  <p class="subtitle">Check your grasp of reversible computation and garbage removal</p>
+
+  <div id="quizContainer"></div>
+  <div id="quizScore" class="hidden"></div>
+  <div style="text-align:center; margin-top:1rem;">
+    <button class="step-btn" onclick="resetQuiz()">Try Again</button>
+  </div>
+</section>
+
+</div>
+
+<!-- ===================== FOOTER ===================== -->
+
+
+<!-- ===================== JAVASCRIPT ===================== -->
+<script>
+// ======================== PARTICLES ========================
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  const COUNT = 50;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  for (let i = 0; i < COUNT; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 1.5 + 0.5,
+      a: Math.random() * 0.3 + 0.1
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const p of particles) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = canvas.width;
+      if (p.x > canvas.width) p.x = 0;
+      if (p.y < 0) p.y = canvas.height;
+      if (p.y > canvas.height) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(99, 102, 241, ${p.a})`;
+      ctx.fill();
+    }
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < 150) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(99, 102, 241, ${0.06 * (1 - d / 150)})`;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ======================== SCROLL ANIMATIONS ========================
+(function initScrollAnimations() {
+  const elements = document.querySelectorAll('.fade-in');
+  // Immediately reveal sections already in viewport on load
+  elements.forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 50) {
+      el.style.transition = 'none';
+      el.classList.add('visible');
+      // Re-enable transition after paint
+      requestAnimationFrame(() => { el.style.transition = ''; });
+    }
+  });
+  // Observe remaining for scroll-triggered reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+  elements.forEach(el => {
+    if (!el.classList.contains('visible')) observer.observe(el);
+  });
+})();
+
+// ======================== TOC SCROLL SPY ========================
+(function initScrollSpy() {
+  const tocLinks = document.querySelectorAll('#toc a');
+  const sections = [];
+  tocLinks.forEach(link => {
+    const id = link.getAttribute('href').slice(1);
+    const sec = document.getElementById(id);
+    if (sec) sections.push({ el: sec, link });
+  });
+
+  function update() {
+    let current = sections[0];
+    const scrollY = window.scrollY + 160;
+    for (const s of sections) {
+      if (s.el.offsetTop <= scrollY) current = s;
+    }
+    tocLinks.forEach(l => l.classList.remove('active'));
+    if (current) current.link.classList.add('active');
+  }
+
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+
+// ======================== GATE EXPLORER ========================
+const gateDefinitions = {
+  NOT: {
+    inputs: ['0','1'],
+    table: {'0':'1','1':'0'},
+    label: 'NOT', notation: '&not;a',
+    desc: 'The NOT gate flips a single bit. It is trivially reversible — it is its own inverse. Every input maps to a unique output.',
+  },
+  AND: {
+    inputs: ['00','01','10','11'],
+    table: {'00':'0','01':'0','10':'0','11':'1'},
+    label: 'AND', notation: 'a &and; b',
+    desc: 'Three different inputs (00, 01, 10) all produce output 0 — we cannot tell which input produced it. <strong>Information is irreversibly lost.</strong>',
+  },
+  OR: {
+    inputs: ['00','01','10','11'],
+    table: {'00':'0','01':'1','10':'1','11':'1'},
+    label: 'OR', notation: 'a &or; b',
+    desc: 'Three different inputs (01, 10, 11) all produce output 1 — we cannot distinguish them from the output alone. <strong>Information is lost.</strong>',
+  },
+  NAND: {
+    inputs: ['00','01','10','11'],
+    table: {'00':'1','01':'1','10':'1','11':'0'},
+    label: 'NAND', notation: '&not;(a &and; b)',
+    desc: 'NAND is <strong>universal for classical computation</strong> — any Boolean function can be built from NAND gates alone. Yet it is irreversible: three inputs (00, 01, 10) all produce output 1.',
+  },
+  XOR: {
+    inputs: ['00','01','10','11'],
+    table: {'00':'0','01':'1','10':'1','11':'0'},
+    label: 'XOR', notation: 'a &oplus; b',
+    desc: 'XOR loses less information (two inputs per output), but it is still irreversible: we cannot recover both input bits from the single output bit.',
+  },
+  CNOT: {
+    inputs: ['00','01','10','11'],
+    table: {'00':'00','01':'01','10':'11','11':'10'},
+    label: 'CNOT', notation: '(a, b &oplus; a)',
+    desc: 'Every input maps to a unique output — a <strong>permutation</strong>. Given any output, we can uniquely determine the input. This is the reversible XOR.',
+  },
+  Toffoli: {
+    inputs: ['000','001','010','011','100','101','110','111'],
+    table: {'000':'000','001':'001','010':'010','011':'011','100':'100','101':'101','110':'111','111':'110'},
+    label: 'Toffoli', notation: '(a, b, c &oplus; (a&and;b))',
+    desc: 'The Toffoli gate is a <strong>reversible AND</strong>: it flips the third bit only when both control bits are 1. Every input maps to a unique output — universal for reversible classical computation.',
+  },
+  Fredkin: {
+    inputs: ['000','001','010','011','100','101','110','111'],
+    table: {'000':'000','001':'001','010':'010','011':'011','100':'100','101':'110','110':'101','111':'111'},
+    label: 'Fredkin', notation: '(a, a?c:b, a?b:c)',
+    desc: 'The Fredkin gate is a <strong>controlled-SWAP</strong>: when the control bit is 1, the other two bits are swapped. Every input maps to a unique output. Like the Toffoli, it is universal for reversible computation.',
+  }
+};
+
+let currentGate = 'AND';
+
+function initGateExplorer() {
+  const tabContainer = document.getElementById('gate-tabs');
+  Object.keys(gateDefinitions).forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (name === currentGate ? ' active' : '');
+    btn.textContent = name;
+    btn.onclick = () => {
+      currentGate = name;
+      document.querySelectorAll('#gate-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderGateExplorer();
+    };
+    tabContainer.appendChild(btn);
+  });
+  renderGateExplorer();
+}
+
+function renderGateExplorer() {
+  const gate = gateDefinitions[currentGate];
+  const inputs = gate.inputs;
+  const outputMap = gate.table;
+  const outputValues = inputs.map(inp => outputMap[inp]);
+  const uniqueOutputs = [...new Set(outputValues)];
+  const isReversible = uniqueOutputs.length === inputs.length;
+
+  const outputCounts = {};
+  uniqueOutputs.forEach(o => outputCounts[o] = 0);
+  inputs.forEach(inp => outputCounts[outputMap[inp]]++);
+
+  // SVG mapping diagram
+  const leftX = 70, rightX = 330, svgW = 400;
+  const nodeR = 14;
+  const spacing = Math.min(44, 300 / Math.max(inputs.length, uniqueOutputs.length));
+  const leftStartY = 30;
+  const rightStartY = 30 + Math.max(0, (inputs.length - uniqueOutputs.length) * spacing / 2);
+  const svgH = Math.max(inputs.length, uniqueOutputs.length) * spacing + 50;
+
+  let svg = `<svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="max-height:380px;">`;
+  svg += `<text x="${leftX}" y="16" text-anchor="middle" fill="#8892a8" font-size="11" font-weight="600" font-family="Inter,sans-serif" letter-spacing="0.06em">INPUT</text>`;
+  svg += `<text x="${rightX}" y="16" text-anchor="middle" fill="#8892a8" font-size="11" font-weight="600" font-family="Inter,sans-serif" letter-spacing="0.06em">OUTPUT</text>`;
+
+  // Connections
+  inputs.forEach((inp, i) => {
+    const out = outputMap[inp];
+    const j = uniqueOutputs.indexOf(out);
+    const y1 = leftStartY + i * spacing;
+    const y2 = rightStartY + j * spacing;
+    const isCollision = outputCounts[out] > 1;
+    const color = isCollision ? '#f87171' : '#34d399';
+    const opacity = isCollision ? 0.55 : 0.45;
+    const cx1 = leftX + 60, cx2 = rightX - 60;
+    svg += `<path d="M${leftX + nodeR + 4} ${y1} C${cx1} ${y1}, ${cx2} ${y2}, ${rightX - nodeR - 4} ${y2}" stroke="${color}" stroke-width="2" fill="none" stroke-opacity="${opacity}"/>`;
+  });
+
+  // Input nodes
+  inputs.forEach((inp, i) => {
+    const y = leftStartY + i * spacing;
+    svg += `<circle cx="${leftX}" cy="${y}" r="${nodeR}" fill="#111827" stroke="#6366f1" stroke-width="1.5"/>`;
+    svg += `<text x="${leftX}" y="${y + 4}" text-anchor="middle" fill="#6366f1" font-size="10" font-family="JetBrains Mono,monospace" font-weight="600">${inp}</text>`;
+  });
+
+  // Output nodes
+  uniqueOutputs.forEach((out, j) => {
+    const y = rightStartY + j * spacing;
+    const count = outputCounts[out];
+    const isCollision = count > 1;
+    const color = isCollision ? '#f87171' : '#34d399';
+    const bg = isCollision ? '#1f1520' : '#121f1c';
+    svg += `<circle cx="${rightX}" cy="${y}" r="${nodeR}" fill="${bg}" stroke="${color}" stroke-width="1.5"/>`;
+    svg += `<text x="${rightX}" y="${y + 4}" text-anchor="middle" fill="${color}" font-size="10" font-family="JetBrains Mono,monospace" font-weight="600">${out}</text>`;
+    if (isCollision) {
+      svg += `<text x="${rightX + nodeR + 8}" y="${y + 4}" fill="#f87171" font-size="9" font-weight="600" font-family="Inter,sans-serif">&times;${count}</text>`;
+    }
+  });
+  svg += '</svg>';
+  document.getElementById('gate-svg-container').innerHTML = svg;
+
+  // Info panel
+  document.getElementById('gate-info').innerHTML = `
+    <div class="verdict ${isReversible ? 'reversible' : 'irreversible'}">
+      ${isReversible ? '&#10003; Reversible' : '&#10007; Irreversible'}
+    </div>
+    <p style="font-size:0.88rem; margin-bottom:0.5rem;">
+      <strong>${gate.label}</strong> : ${inputs[0].length}-bit input &rarr; ${uniqueOutputs[0].length}-bit output
+      <br><span style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:0.82rem">f(${inputs[0].length > 2 ? 'a,b,c' : 'a,b'}) = ${gate.notation}</span>
+    </p>
+    <p style="font-size:0.88rem; color:var(--text-dim)">
+      <strong>${inputs.length}</strong> possible inputs &rarr;
+      <strong>${uniqueOutputs.length}</strong> distinct outputs
+      ${!isReversible ? '<br><span style="color:var(--red)">Multiple inputs map to the same output — information is destroyed.</span>' : '<br><span style="color:var(--green)">Every input maps to a unique output — a perfect bijection.</span>'}
+    </p>
+    <p style="font-size:0.85rem; color:var(--text-dim); margin-top:0.5rem">${gate.desc}</p>
+  `;
+
+  // Truth table
+  const nIn = inputs[0].length;
+  const nOut = uniqueOutputs[0].length;
+  const inLabels = nIn === 3 ? ['a','b','c'] : ['a','b'];
+  const outLabels = nOut > 1 ? (nOut === 3 ? ['a\'','b\'','c\''] : ['a\'','b\'']) : ['out'];
+
+  let tt = '<table class="truth-table"><thead><tr>';
+  inLabels.forEach(l => tt += `<th>${l}</th>`);
+  tt += '<th style="border-left:2px solid var(--border)"></th>';
+  outLabels.forEach(l => tt += `<th>${l}</th>`);
+  tt += '</tr></thead><tbody>';
+  inputs.forEach(inp => {
+    const out = outputMap[inp];
+    const isCollision = outputCounts[out] > 1;
+    tt += '<tr>';
+    for (const ch of inp) tt += `<td>${ch}</td>`;
+    tt += `<td style="border-left:2px solid var(--border);color:var(--text-dim)">&rarr;</td>`;
+    for (const ch of out) tt += `<td class="${isCollision ? 'collision' : 'unique'}">${ch}</td>`;
+    tt += '</tr>';
+  });
+  tt += '</tbody></table>';
+  document.getElementById('gate-truth-table').innerHTML = tt;
+}
+
+// =================== EMBEDDING INTERACTIVE ===================
+const embedFunctions = {
+  'AND': { label: 'AND', fn: (a,b) => a & b },
+  'OR':  { label: 'OR',  fn: (a,b) => a | b },
+  'XOR': { label: 'XOR', fn: (a,b) => a ^ b },
+};
+let embedFunc = 'AND';
+let embedState = { x1: 0, x2: 1, y: 0 };
+let embedApplied = 1;
+
+function initEmbedding() {
+  const tabs = document.getElementById('embed-func-tabs');
+  Object.keys(embedFunctions).forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (name === embedFunc ? ' active' : '');
+    btn.textContent = 'f = ' + name;
+    btn.onclick = () => {
+      embedFunc = name;
+      embedApplied = 1;
+      document.querySelectorAll('#embed-func-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderEmbedding();
+    };
+    tabs.appendChild(btn);
+  });
+
+  document.getElementById('apply-twice-btn').onclick = () => {
+    embedApplied = embedApplied === 2 ? 1 : 2;
+    renderEmbedding();
+  };
+  renderEmbedding();
+}
+
+function renderEmbedding() {
+  const f = embedFunctions[embedFunc].fn;
+  const {x1, x2, y} = embedState;
+  const fx = f(x1, x2);
+  let outY = embedApplied === 2 ? y : y ^ fx;
+
+  document.getElementById('embed-input').innerHTML = `
+    <div class="wire"><span class="wire-label">x&#8321; =</span><div class="bit-toggle" data-val="${x1}" onclick="embedToggle('x1')">${x1}</div></div>
+    <div class="wire"><span class="wire-label">x&#8322; =</span><div class="bit-toggle" data-val="${x2}" onclick="embedToggle('x2')">${x2}</div></div>
+    <div class="wire"><span class="wire-label">y =</span><div class="bit-toggle" data-val="${y}" onclick="embedToggle('y')">${y}</div></div>
+  `;
+  document.getElementById('embed-output').innerHTML = `
+    <div class="wire"><span class="wire-label">x&#8321; =</span><div class="bit-output">${x1}</div></div>
+    <div class="wire"><span class="wire-label">x&#8322; =</span><div class="bit-output">${x2}</div></div>
+    <div class="wire"><span class="wire-label">y&oplus;f =</span><div class="bit-output">${outY}</div></div>
+  `;
+
+  const msg = document.getElementById('apply-msg');
+  const btn = document.getElementById('apply-twice-btn');
+  if (embedApplied === 2) {
+    msg.innerHTML = '<span style="color:var(--green);font-weight:600">Applied twice: y &oplus; f(x) &oplus; f(x) = y — back to the original!</span>';
+    btn.innerHTML = 'Reset to single application';
+  } else {
+    const fLabel = embedFunctions[embedFunc].label;
+    msg.innerHTML = `<span style="color:var(--text-dim)">f(${x1},${x2}) = ${fLabel}(${x1},${x2}) = <span style="color:var(--cyan);font-weight:600">${fx}</span> &nbsp;&rarr;&nbsp; y &oplus; f = ${y} &oplus; ${fx} = <span style="color:var(--cyan);font-weight:600">${outY}</span></span>`;
+    btn.innerHTML = 'Apply U<sub>f</sub> a second time';
+  }
+}
+
+function embedToggle(which) {
+  embedState[which] ^= 1;
+  embedApplied = 1;
+  renderEmbedding();
+}
+
+// =================== BENNETT'S TRICK STEPPER ===================
+let bennettInputs = {a: 1, b: 1, c: 0};
+let bennettStepIdx = 0;
+let autoPlaying = false;
+let autoTimer = null;
+let autoSpeed = 900;
+let currentBennettFunc = 'xor_and';
+
+// Each Bennett function defines its registers, step generator, gate defs for the circuit, and descriptions
+const bennettFunctions = {
+  'and': {
+    label: 'a \u2227 b',
+    formula: 'f(a,b)',
+    desc: 'A simple AND — the minimal case. One Toffoli gate produces the result directly, so there is no garbage and uncomputation is trivial.',
+    nInputs: 2,
+    registers: [
+      {name:'a', label:'a', type:'input'},
+      {name:'b', label:'b', type:'input'},
+      {name:'out', label:'out', type:'output'},
+    ],
+    regDescriptions: ['input bit', 'input bit', 'output register'],
+    computeSteps(a, b) {
+      const f = a & b;
+      return [
+        {regs:[a,b,0], gate:'Initial state', phase:'initial', changed:[], short:'Init'},
+        {regs:[a,b,f], gate:'Toffoli(a, b \u2192 out): out = a \u2227 b', phase:'compute', changed:[2], short:'T(a,b)'},
+      ];
+    },
+    gatesDef: [
+      null,
+      {type:'toffoli', controls:[0,1], target:2, label:'T', color:'#6366f1'},
+    ],
+  },
+  'xor_and': {
+    label: '(a\u2227b) \u2295 (b\u2227c)',
+    formula: 'f(a,b,c)',
+    desc: 'Two AND operations combined with XOR. This is the standard example: intermediate ancillae accumulate garbage that Bennett\'s trick must clean up.',
+    nInputs: 3,
+    registers: [
+      {name:'a', label:'a', type:'input'},
+      {name:'b', label:'b', type:'input'},
+      {name:'c', label:'c', type:'input'},
+      {name:'t1', label:'t\u2081', type:'work'},
+      {name:'t2', label:'t\u2082', type:'work'},
+      {name:'w', label:'w', type:'work'},
+      {name:'out', label:'out', type:'output'},
+    ],
+    regDescriptions: ['input bit','input bit','input bit','ancilla for a\u2227b','ancilla for b\u2227c','work register','output register'],
+    computeSteps(a, b, c) {
+      const t1 = a & b, t2 = b & c, f = t1 ^ t2;
+      return [
+        {regs:[a,b,c,0,0,0,0], gate:'Initial state', phase:'initial', changed:[], short:'Init'},
+        {regs:[a,b,c,t1,0,0,0], gate:'Toffoli(a, b \u2192 t\u2081): t\u2081 = a \u2227 b', phase:'compute', changed:[3], short:'T(a,b)'},
+        {regs:[a,b,c,t1,t2,0,0], gate:'Toffoli(b, c \u2192 t\u2082): t\u2082 = b \u2227 c', phase:'compute', changed:[4], short:'T(b,c)'},
+        {regs:[a,b,c,t1,t2,t1,0], gate:'CNOT(t\u2081 \u2192 w): w = w \u2295 t\u2081', phase:'compute', changed:[5], short:'\u2295t\u2081'},
+        {regs:[a,b,c,t1,t2,f,0], gate:'CNOT(t\u2082 \u2192 w): w = w \u2295 t\u2082 = f(a,b,c)', phase:'compute', changed:[5], short:'\u2295t\u2082'},
+        {regs:[a,b,c,t1,t2,f,f], gate:'CNOT(w \u2192 out): copy result to output', phase:'copy', changed:[6], short:'Copy'},
+        {regs:[a,b,c,t1,t2,t1,f], gate:'CNOT(t\u2082 \u2192 w)\u2020: undo w \u2295= t\u2082', phase:'uncompute', changed:[5], short:'\u2295t\u2082\u2020'},
+        {regs:[a,b,c,t1,t2,0,f], gate:'CNOT(t\u2081 \u2192 w)\u2020: undo w \u2295= t\u2081', phase:'uncompute', changed:[5], short:'\u2295t\u2081\u2020'},
+        {regs:[a,b,c,t1,0,0,f], gate:'Toffoli(b, c \u2192 t\u2082)\u2020: uncompute t\u2082', phase:'uncompute', changed:[4], short:'T(b,c)\u2020'},
+        {regs:[a,b,c,0,0,0,f], gate:'Toffoli(a, b \u2192 t\u2081)\u2020: uncompute t\u2081', phase:'uncompute', changed:[3], short:'T(a,b)\u2020'},
+      ];
+    },
+    gatesDef: [
+      null,
+      {type:'toffoli', controls:[0,1], target:3, label:'T', color:'#6366f1'},
+      {type:'toffoli', controls:[1,2], target:4, label:'T', color:'#6366f1'},
+      {type:'cnot', controls:[3], target:5, label:'', color:'#6366f1'},
+      {type:'cnot', controls:[4], target:5, label:'', color:'#6366f1'},
+      {type:'cnot', controls:[5], target:6, label:'', color:'#34d399'},
+      {type:'cnot', controls:[4], target:5, label:'', color:'#f472b6'},
+      {type:'cnot', controls:[3], target:5, label:'', color:'#f472b6'},
+      {type:'toffoli', controls:[1,2], target:4, label:'T\u2020', color:'#f472b6'},
+      {type:'toffoli', controls:[0,1], target:3, label:'T\u2020', color:'#f472b6'},
+    ],
+  },
+  'majority': {
+    label: 'MAJ(a,b,c)',
+    formula: 'f(a,b,c)',
+    desc: 'The majority function outputs 1 when at least two of the three inputs are 1. It requires computing all three pairwise ANDs — more garbage to clean up.',
+    nInputs: 3,
+    registers: [
+      {name:'a', label:'a', type:'input'},
+      {name:'b', label:'b', type:'input'},
+      {name:'c', label:'c', type:'input'},
+      {name:'t1', label:'t\u2081', type:'work'},
+      {name:'t2', label:'t\u2082', type:'work'},
+      {name:'t3', label:'t\u2083', type:'work'},
+      {name:'w', label:'w', type:'work'},
+      {name:'out', label:'out', type:'output'},
+    ],
+    regDescriptions: ['input bit','input bit','input bit','ancilla for a\u2227b','ancilla for a\u2227c','ancilla for b\u2227c','work register','output register'],
+    computeSteps(a, b, c) {
+      const t1 = a & b, t2 = a & c, t3 = b & c;
+      const w1 = t1, w2 = t1 ^ t2, w3 = t1 ^ t2 ^ t3;
+      const f = (t1 | t2 | t3) ? 1 : 0; // majority = (ab + ac + bc) >= 1 means at least 2 of 3
+      // Actually majority(a,b,c) = (a&b) | (a&c) | (b&c) = (a&b) ^ (a&c) ^ (b&c) ^ (a&b&c&...)
+      // But simpler: majority = (a&b) XOR (a&c) XOR (b&c) XOR ((a&b)&(a&c)) ... no
+      // Actually: majority = ab + ac + bc - 2abc. Over GF(2): ab XOR ac XOR bc XOR abc... no that's wrong too
+      // Let me think: ab XOR ac XOR bc = ab + ac + bc mod 2. For majority we need ab OR ac OR bc.
+      // For 3-input majority: output 1 if at least 2 are 1.
+      // Using XOR of all pairwise ANDs: ab^ac^bc. Let's check:
+      // (1,1,0): 1^0^0=1 OK, (1,0,1): 0^1^0=1 OK, (0,1,1): 0^0^1=1 OK, (1,1,1): 1^1^1=1 OK
+      // (1,0,0): 0^0^0=0 OK, (0,1,0): 0^0^0=0 OK, (0,0,1): 0^0^0=0 OK, (0,0,0): 0 OK
+      // So majority(a,b,c) = (a&b) XOR (a&c) XOR (b&c).
+      const fv = t1 ^ t2 ^ t3;
+      return [
+        {regs:[a,b,c,0,0,0,0,0], gate:'Initial state', phase:'initial', changed:[], short:'Init'},
+        {regs:[a,b,c,t1,0,0,0,0], gate:'Toffoli(a, b \u2192 t\u2081): t\u2081 = a \u2227 b', phase:'compute', changed:[3], short:'T(a,b)'},
+        {regs:[a,b,c,t1,t2,0,0,0], gate:'Toffoli(a, c \u2192 t\u2082): t\u2082 = a \u2227 c', phase:'compute', changed:[4], short:'T(a,c)'},
+        {regs:[a,b,c,t1,t2,t3,0,0], gate:'Toffoli(b, c \u2192 t\u2083): t\u2083 = b \u2227 c', phase:'compute', changed:[5], short:'T(b,c)'},
+        {regs:[a,b,c,t1,t2,t3,t1,0], gate:'CNOT(t\u2081 \u2192 w): w \u2295= t\u2081', phase:'compute', changed:[6], short:'\u2295t\u2081'},
+        {regs:[a,b,c,t1,t2,t3,t1^t2,0], gate:'CNOT(t\u2082 \u2192 w): w \u2295= t\u2082', phase:'compute', changed:[6], short:'\u2295t\u2082'},
+        {regs:[a,b,c,t1,t2,t3,fv,0], gate:'CNOT(t\u2083 \u2192 w): w \u2295= t\u2083 = MAJ', phase:'compute', changed:[6], short:'\u2295t\u2083'},
+        {regs:[a,b,c,t1,t2,t3,fv,fv], gate:'CNOT(w \u2192 out): copy result to output', phase:'copy', changed:[7], short:'Copy'},
+        {regs:[a,b,c,t1,t2,t3,fv^t3,fv], gate:'CNOT(t\u2083 \u2192 w)\u2020: undo w \u2295= t\u2083', phase:'uncompute', changed:[6], short:'\u2295t\u2083\u2020'},
+        {regs:[a,b,c,t1,t2,t3,t1,fv], gate:'CNOT(t\u2082 \u2192 w)\u2020: undo w \u2295= t\u2082', phase:'uncompute', changed:[6], short:'\u2295t\u2082\u2020'},
+        {regs:[a,b,c,t1,t2,t3,0,fv], gate:'CNOT(t\u2081 \u2192 w)\u2020: undo w \u2295= t\u2081', phase:'uncompute', changed:[6], short:'\u2295t\u2081\u2020'},
+        {regs:[a,b,c,t1,t2,0,0,fv], gate:'Toffoli(b, c \u2192 t\u2083)\u2020: uncompute t\u2083', phase:'uncompute', changed:[5], short:'T(b,c)\u2020'},
+        {regs:[a,b,c,t1,0,0,0,fv], gate:'Toffoli(a, c \u2192 t\u2082)\u2020: uncompute t\u2082', phase:'uncompute', changed:[4], short:'T(a,c)\u2020'},
+        {regs:[a,b,c,0,0,0,0,fv], gate:'Toffoli(a, b \u2192 t\u2081)\u2020: uncompute t\u2081', phase:'uncompute', changed:[3], short:'T(a,b)\u2020'},
+      ];
+    },
+    gatesDef: [
+      null,
+      {type:'toffoli', controls:[0,1], target:3, label:'T', color:'#6366f1'},
+      {type:'toffoli', controls:[0,2], target:4, label:'T', color:'#6366f1'},
+      {type:'toffoli', controls:[1,2], target:5, label:'T', color:'#6366f1'},
+      {type:'cnot', controls:[3], target:6, label:'', color:'#6366f1'},
+      {type:'cnot', controls:[4], target:6, label:'', color:'#6366f1'},
+      {type:'cnot', controls:[5], target:6, label:'', color:'#6366f1'},
+      {type:'cnot', controls:[6], target:7, label:'', color:'#34d399'},
+      {type:'cnot', controls:[5], target:6, label:'', color:'#f472b6'},
+      {type:'cnot', controls:[4], target:6, label:'', color:'#f472b6'},
+      {type:'cnot', controls:[3], target:6, label:'', color:'#f472b6'},
+      {type:'toffoli', controls:[1,2], target:5, label:'T\u2020', color:'#f472b6'},
+      {type:'toffoli', controls:[0,2], target:4, label:'T\u2020', color:'#f472b6'},
+      {type:'toffoli', controls:[0,1], target:3, label:'T\u2020', color:'#f472b6'},
+    ],
+  },
+};
+
+function getBennettFunc() { return bennettFunctions[currentBennettFunc]; }
+
+function computeBennettSteps(a, b, c) {
+  const bf = getBennettFunc();
+  if (bf.nInputs === 2) return bf.computeSteps(a, b);
+  return bf.computeSteps(a, b, c);
+}
+
+function setSpeed(btn) {
+  autoSpeed = parseInt(btn.dataset.speed);
+  document.querySelectorAll('#speed-control .speed-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (autoPlaying) {
+    clearInterval(autoTimer);
+    autoTimer = setInterval(autoTick, autoSpeed);
+  }
+}
+
+function toggleBennettInput(el, which) {
+  bennettInputs[which] ^= 1;
+  el.dataset.val = bennettInputs[which];
+  el.textContent = bennettInputs[which];
+  el.setAttribute('aria-checked', bennettInputs[which] === 1 ? 'true' : 'false');
+  bennettStepIdx = 0;
+  renderBennett();
+}
+
+function bennettStep(dir) {
+  const steps = computeBennettSteps(bennettInputs.a, bennettInputs.b, bennettInputs.c);
+  bennettStepIdx = Math.max(0, Math.min(steps.length - 1, bennettStepIdx + dir));
+  renderBennett();
+}
+
+function bennettJumpTo(idx) {
+  bennettStepIdx = idx;
+  renderBennett();
+}
+
+function autoTick() {
+  const steps = computeBennettSteps(bennettInputs.a, bennettInputs.b, bennettInputs.c);
+  if (bennettStepIdx >= steps.length - 1) {
+    clearInterval(autoTimer);
+    autoPlaying = false;
+    document.getElementById('ben-auto').innerHTML = '&#9654; Auto';
+    document.getElementById('ben-auto').classList.remove('playing');
+    return;
+  }
+  bennettStepIdx++;
+  renderBennett();
+}
+
+function bennettAutoPlay() {
+  if (autoPlaying) {
+    clearInterval(autoTimer);
+    autoPlaying = false;
+    document.getElementById('ben-auto').innerHTML = '&#9654; Auto';
+    document.getElementById('ben-auto').classList.remove('playing');
+    return;
+  }
+  autoPlaying = true;
+  bennettStepIdx = 0;
+  renderBennett();
+  document.getElementById('ben-auto').innerHTML = '&#9632; Stop';
+  document.getElementById('ben-auto').classList.add('playing');
+  autoTimer = setInterval(autoTick, autoSpeed);
+}
+
+function renderBennett() {
+  const {a, b, c} = bennettInputs;
+  const bf = getBennettFunc();
+  const steps = computeBennettSteps(a, b, c);
+  const step = steps[bennettStepIdx];
+  const finalStep = steps[steps.length - 1];
+  const f = finalStep.regs[finalStep.regs.length - 1];
+
+  // Update formula display
+  document.getElementById('ben-formula').textContent = bf.formula;
+  document.getElementById('ben-expected').textContent = f;
+
+  // Show/hide c input based on function
+  const cToggle = document.getElementById('ben-c');
+  const cLabel = cToggle ? cToggle.nextElementSibling : null;
+  if (cToggle && cLabel) {
+    const showC = bf.nInputs === 3;
+    cToggle.style.display = showC ? '' : 'none';
+    cLabel.style.display = showC ? '' : 'none';
+  }
+
+  // Phase badge
+  const phaseLabels = {initial:'Initial', compute:'Phase 1: Compute', copy:'Phase 2: Copy', uncompute:'Phase 3: Uncompute'};
+  document.getElementById('bennett-phase-badge').innerHTML = `<span class="phase-badge phase-${step.phase}">${phaseLabels[step.phase]}</span>`;
+
+  // Steps timeline
+  const timelineEl = document.getElementById('bennett-timeline');
+  let tlHTML = '';
+  steps.forEach((s, i) => {
+    let cls = 'step-pill';
+    if (i === bennettStepIdx) {
+      cls += ' active';
+    } else if (i < bennettStepIdx) {
+      if (s.phase === 'compute') cls += ' done-compute';
+      else if (s.phase === 'copy') cls += ' done-copy';
+      else if (s.phase === 'uncompute') cls += ' done-uncompute';
+    }
+    tlHTML += `<div class="${cls}" onclick="bennettJumpTo(${i})" title="${s.gate}">${s.short}</div>`;
+  });
+  timelineEl.innerHTML = tlHTML;
+
+  // Gate label
+  document.getElementById('bennett-gate-label').textContent = step.gate;
+
+  // Register grid
+  const grid = document.getElementById('bennett-registers');
+  const descriptions = bf.regDescriptions;
+  const registerNames = bf.registers;
+  let html = '';
+  let garbageCount = 0;
+
+  step.regs.forEach((val, i) => {
+    const reg = registerNames[i];
+    const isChanged = step.changed.includes(i);
+    let valClass = 'clean';
+    if (reg.type === 'input') valClass = 'input';
+    else if (reg.type === 'output' && val !== 0) valClass = 'result';
+    else if (reg.type === 'work' && val !== 0) { valClass = 'garbage'; garbageCount++; }
+
+    html += `
+      <div class="register-row ${isChanged ? 'highlight' : ''}">
+        <span class="reg-name">${reg.label}</span>
+        <div class="reg-val ${valClass} ${isChanged ? 'just-changed' : ''}">${val}</div>
+        <span class="reg-description">${descriptions[i]}${valClass === 'garbage' ? ' <span style="color:var(--orange);font-weight:600">&larr; garbage</span>' : ''}${valClass === 'result' ? ' <span style="color:var(--green);font-weight:600">&larr; result!</span>' : ''}</span>
+      </div>`;
+  });
+  grid.innerHTML = html;
+
+  // Garbage counter
+  const gc = document.getElementById('garbage-counter');
+  document.getElementById('garbage-count').textContent = garbageCount;
+  gc.className = 'garbage-counter' + (garbageCount > 0 ? ' has-garbage' : ' clean');
+
+  // Step controls
+  document.getElementById('ben-step-label').textContent = `Step ${bennettStepIdx} / ${steps.length - 1}`;
+  document.getElementById('ben-prev').disabled = bennettStepIdx === 0;
+  document.getElementById('ben-next').disabled = bennettStepIdx === steps.length - 1;
+
+  // Circuit diagram
+  drawCircuit(bennettStepIdx);
+}
+
+// =================== CIRCUIT DIAGRAM ===================
+function drawCircuit(activeStep) {
+  const bf = getBennettFunc();
+  const gatesDef = bf.gatesDef;
+  const nGates = gatesDef.length - 1; // excluding the null at index 0
+  const nWires = bf.registers.length;
+  const wireNames = bf.registers.map(r => r.label);
+
+  const canvas = document.getElementById('circuitCanvas');
+  const container = document.getElementById('circuit-container');
+  const dpr = window.devicePixelRatio || 1;
+  const W = Math.min(860, container.clientWidth - 32);
+  const wireSpacing = 30;
+  const wireTop = 20;
+  const H = wireTop + (nWires - 1) * wireSpacing + 40;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const wireY = [];
+  for (let i = 0; i < nWires; i++) wireY.push(wireTop + i * wireSpacing);
+
+  const labelX = 30;
+  const wireStartX = 58;
+  const wireEndX = W - 15;
+
+  // Colors
+  const dimWire = 'rgba(136, 146, 168, 0.18)';
+  const accentC = '#6366f1';
+  const greenC = '#34d399';
+  const pinkC = '#f472b6';
+  const textDimC = '#8892a8';
+
+  // Background clear
+  ctx.clearRect(0, 0, W, H);
+
+  // Wire labels
+  ctx.font = '500 11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i < nWires; i++) {
+    const reg = bf.registers[i];
+    ctx.fillStyle = reg.type === 'input' ? accentC : (reg.type === 'output' ? greenC : textDimC);
+    ctx.fillText(wireNames[i], labelX, wireY[i]);
+  }
+
+  // Draw wires
+  ctx.lineWidth = 1;
+  for (let i = 0; i < nWires; i++) {
+    ctx.beginPath();
+    ctx.moveTo(wireStartX, wireY[i]);
+    ctx.lineTo(wireEndX, wireY[i]);
+    ctx.strokeStyle = dimWire;
+    ctx.stroke();
+  }
+
+  // Phase separator lines
+  const gateXPositions = [];
+  const gateSpacing = (W - 130) / nGates;
+  const gateStartX = 70;
+  for (let g = 0; g <= nGates; g++) gateXPositions.push(gateStartX + g * gateSpacing);
+
+  // Find phase boundaries from gate definitions
+  let lastCompute = 0, copyIdx = -1, firstUncompute = nGates + 1;
+  for (let g = 1; g <= nGates; g++) {
+    const gdef = gatesDef[g];
+    if (gdef.color === '#34d399') copyIdx = g;
+    else if (gdef.color === '#f472b6' && firstUncompute > g) firstUncompute = g;
+    else if (gdef.color === '#6366f1') lastCompute = g;
+  }
+
+  const computeEnd = copyIdx > 0 ? (gateXPositions[copyIdx - 1] + gateXPositions[copyIdx]) / 2 : gateXPositions[lastCompute] + gateSpacing / 2;
+  const copyEnd = copyIdx > 0 ? (gateXPositions[copyIdx] + gateXPositions[Math.min(copyIdx + 1, nGates)]) / 2 : computeEnd;
+
+  // Phase background bands
+  ctx.globalAlpha = 0.04;
+  ctx.fillStyle = accentC;
+  ctx.fillRect(gateXPositions[0] - 30, 5, computeEnd - gateXPositions[0] + 30, H - 10);
+  if (copyIdx > 0) {
+    ctx.fillStyle = greenC;
+    ctx.fillRect(computeEnd, 5, copyEnd - computeEnd, H - 10);
+  }
+  if (firstUncompute <= nGates) {
+    ctx.fillStyle = pinkC;
+    ctx.fillRect(copyEnd, 5, wireEndX - copyEnd, H - 10);
+  }
+  ctx.globalAlpha = 1;
+
+  // Phase labels at top
+  ctx.font = '600 9px "Inter", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.letterSpacing = '0.06em';
+  ctx.fillStyle = 'rgba(99, 102, 241, 0.5)';
+  const computeCenter = (gateXPositions[1] + gateXPositions[lastCompute]) / 2;
+  ctx.fillText('COMPUTE', computeCenter, 12);
+  if (copyIdx > 0) {
+    ctx.fillStyle = 'rgba(52, 211, 153, 0.5)';
+    ctx.fillText('COPY', gateXPositions[copyIdx], 12);
+  }
+  if (firstUncompute <= nGates) {
+    ctx.fillStyle = 'rgba(244, 114, 182, 0.5)';
+    const uncompCenter = (gateXPositions[firstUncompute] + gateXPositions[nGates]) / 2;
+    ctx.fillText('UNCOMPUTE', uncompCenter, 12);
+  }
+
+  // Draw gates
+  for (let g = 1; g <= nGates; g++) {
+    const gx = gateXPositions[g];
+    const gdef = gatesDef[g];
+    const isActive = g === activeStep;
+    const isPast = g < activeStep;
+    const alpha = isActive ? 1 : (isPast ? 0.6 : 0.25);
+
+    ctx.globalAlpha = alpha;
+
+    // Vertical connection line
+    const allWires = [...gdef.controls, gdef.target].sort((a,b) => a - b);
+    const topW = wireY[allWires[0]];
+    const botW = wireY[allWires[allWires.length - 1]];
+    ctx.beginPath();
+    ctx.moveTo(gx, topW);
+    ctx.lineTo(gx, botW);
+    ctx.strokeStyle = gdef.color;
+    ctx.lineWidth = isActive ? 2.5 : 1.5;
+    ctx.stroke();
+
+    // Control dots
+    for (const c of gdef.controls) {
+      ctx.beginPath();
+      ctx.arc(gx, wireY[c], isActive ? 5 : 4, 0, Math.PI * 2);
+      ctx.fillStyle = gdef.color;
+      ctx.fill();
+    }
+
+    // Target (XOR circle)
+    const ty = wireY[gdef.target];
+    const tr = isActive ? 10 : 8;
+    ctx.beginPath();
+    ctx.arc(gx, ty, tr, 0, Math.PI * 2);
+    ctx.strokeStyle = gdef.color;
+    ctx.lineWidth = isActive ? 2.5 : 1.5;
+    ctx.stroke();
+    // Plus inside
+    ctx.beginPath();
+    ctx.moveTo(gx - tr * 0.6, ty);
+    ctx.lineTo(gx + tr * 0.6, ty);
+    ctx.moveTo(gx, ty - tr * 0.6);
+    ctx.lineTo(gx, ty + tr * 0.6);
+    ctx.stroke();
+
+    // Active glow
+    if (isActive) {
+      ctx.save();
+      ctx.shadowColor = gdef.color;
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(gx, ty, tr + 2, 0, Math.PI * 2);
+      ctx.strokeStyle = gdef.color;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Gate label below
+    if (gdef.label) {
+      ctx.font = (isActive ? '700' : '500') + ' 9px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = gdef.color;
+      ctx.fillText(gdef.label, gx, wireY[nWires - 1] + 20);
+    }
+  }
+
+  ctx.globalAlpha = 1;
+
+  // Step marker: small triangle above active gate
+  if (activeStep >= 1 && activeStep <= nGates) {
+    const ax = gateXPositions[activeStep];
+    ctx.beginPath();
+    ctx.moveTo(ax - 5, wireY[0] - 14);
+    ctx.lineTo(ax + 5, wireY[0] - 14);
+    ctx.lineTo(ax, wireY[0] - 7);
+    ctx.closePath();
+    ctx.fillStyle = gatesDef[activeStep].color;
+    ctx.fill();
+  }
+}
+
+// =================== KEYBOARD ACCESSIBILITY ===================
+document.addEventListener('keydown', (e) => {
+  if (e.target.classList.contains('bit-toggle') && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    e.target.click();
+    return;
+  }
+});
+
+// =================== KEYBOARD NAVIGATION ===================
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.target.tagName === 'BUTTON' || e.target.classList.contains('bit-toggle')) return;
+
+  const bennettSection = document.getElementById('bennett');
+  const rect = bennettSection.getBoundingClientRect();
+  const visible = rect.top < window.innerHeight && rect.bottom > 0;
+  if (!visible) return;
+
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    bennettStep(1);
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    bennettStep(-1);
+  } else if (e.key === ' ') {
+    e.preventDefault();
+    bennettAutoPlay();
+  } else if (e.key === 'r' || e.key === 'R') {
+    e.preventDefault();
+    bennettStepIdx = 0;
+    if (autoPlaying) {
+      clearInterval(autoTimer);
+      autoPlaying = false;
+      document.getElementById('ben-auto').innerHTML = '&#9654; Auto';
+      document.getElementById('ben-auto').classList.remove('playing');
+    }
+    renderBennett();
+  }
+});
+
+// =================== BENNETT FUNCTION SELECTOR ===================
+function initBennettFuncTabs() {
+  const tabs = document.getElementById('bennett-func-tabs');
+  Object.keys(bennettFunctions).forEach(key => {
+    const bf = bennettFunctions[key];
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (key === currentBennettFunc ? ' active' : '');
+    btn.innerHTML = 'f = ' + bf.label;
+    btn.onclick = () => {
+      currentBennettFunc = key;
+      bennettStepIdx = 0;
+      if (autoPlaying) {
+        clearInterval(autoTimer);
+        autoPlaying = false;
+        document.getElementById('ben-auto').innerHTML = '&#9654; Auto';
+        document.getElementById('ben-auto').classList.remove('playing');
+      }
+      document.querySelectorAll('#bennett-func-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('bennett-func-desc').textContent = bf.desc;
+      renderBennett();
+    };
+    tabs.appendChild(btn);
+  });
+  document.getElementById('bennett-func-desc').textContent = bennettFunctions[currentBennettFunc].desc;
+}
+
+// =================== GARBAGE INTERFERENCE DEMO ===================
+const garbageDemoScenarios = {
+  clean: {
+    label: 'No garbage (clean U_f)',
+    desc: 'Apply H to input, then clean U_f (no garbage). Since f(0) = f(1) = 0, the output register is the same for both branches. The branches can interfere.',
+    states: [
+      { label: 'Start: |0⟩|0⟩', terms: [{amp: '1', input: '0', output: '0', garbage: null}] },
+      { label: 'After H: equal superposition', terms: [
+        {amp: '1/√2', input: '0', output: '0', garbage: null},
+        {amp: '1/√2', input: '1', output: '0', garbage: null}
+      ]},
+      { label: 'After U_f: f(0)=f(1)=0', terms: [
+        {amp: '1/√2', input: '0', output: '0', garbage: null},
+        {amp: '1/√2', input: '1', output: '0', garbage: null}
+      ]},
+      { label: 'After H on input: interference!', terms: [
+        {amp: '1', input: '0', output: '0', garbage: null, highlight: 'green'},
+        {amp: '0', input: '1', output: '0', garbage: null, highlight: 'dim'}
+      ]},
+    ]
+  },
+  garbage: {
+    label: 'With garbage',
+    desc: 'Same function, but the implementation leaks garbage g(x) that differs per input. Even though f(0) = f(1), the garbage tags prevent interference.',
+    states: [
+      { label: 'Start: |0⟩|0⟩|0⟩', terms: [{amp: '1', input: '0', output: '0', garbage: '0'}] },
+      { label: 'After H: equal superposition', terms: [
+        {amp: '1/√2', input: '0', output: '0', garbage: '0'},
+        {amp: '1/√2', input: '1', output: '0', garbage: '0'}
+      ]},
+      { label: 'After U_f: f(0)=f(1)=0, but garbage differs!', terms: [
+        {amp: '1/√2', input: '0', output: '0', garbage: '0'},
+        {amp: '1/√2', input: '1', output: '0', garbage: '1'}
+      ]},
+      { label: 'After H on input: NO interference', terms: [
+        {amp: '1/2', input: '0', output: '0', garbage: '0'},
+        {amp: '1/2', input: '1', output: '0', garbage: '0'},
+        {amp: '1/2', input: '0', output: '0', garbage: '1'},
+        {amp: '\u22121/2', input: '1', output: '0', garbage: '1'}
+      ]},
+    ]
+  }
+};
+
+let garbageDemoMode = 'clean';
+let garbageDemoStep = 0;
+
+function initGarbageDemo() {
+  const tabs = document.getElementById('garbage-demo-tabs');
+  Object.keys(garbageDemoScenarios).forEach(key => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (key === garbageDemoMode ? ' active' : '');
+    btn.textContent = garbageDemoScenarios[key].label;
+    btn.onclick = () => {
+      garbageDemoMode = key;
+      garbageDemoStep = 0;
+      document.querySelectorAll('#garbage-demo-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderGarbageDemo();
+    };
+    tabs.appendChild(btn);
+  });
+  renderGarbageDemo();
+}
+
+function renderGarbageDemo() {
+  const scenario = garbageDemoScenarios[garbageDemoMode];
+  const state = scenario.states[garbageDemoStep];
+  const hasGarbage = garbageDemoMode === 'garbage';
+
+  let termsHTML = '';
+  state.terms.forEach((t, i) => {
+    const dimClass = t.highlight === 'dim' ? ' style="opacity:0.3"' : '';
+    const greenClass = t.highlight === 'green' ? ' style="color:var(--green);font-weight:700"' : '';
+    const garbageStr = t.garbage !== null ? `|<span style="color:var(--orange)">${t.garbage}</span>⟩` : '';
+    const plus = i > 0 ? ' <span style="color:var(--text-dim);margin:0 0.25rem">+</span> ' : '';
+    termsHTML += `${plus}<span class="ket"${dimClass}${greenClass}><span style="color:var(--text-dim)">${t.amp}</span> |<span class="hi">${t.input}</span>⟩|<span class="ok">${t.output}</span>⟩${garbageStr}</span>`;
+  });
+
+  const isLast = garbageDemoStep === scenario.states.length - 1;
+  const verdictHTML = isLast ? (hasGarbage
+    ? '<div style="margin-top:0.75rem;padding:0.6rem 1rem;border-radius:8px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.3);color:var(--red);font-size:0.85rem;font-weight:500">Garbage prevents cancellation — both |0⟩ and |1⟩ have nonzero amplitude. Measuring gives a random result.</div>'
+    : '<div style="margin-top:0.75rem;padding:0.6rem 1rem;border-radius:8px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.3);color:var(--green);font-size:0.85rem;font-weight:500">Constructive interference! The |0⟩ amplitudes add and |1⟩ amplitudes cancel. Measuring always gives 0.</div>'
+  ) : '';
+
+  document.getElementById('garbage-demo-content').innerHTML = `
+    <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1rem">${scenario.desc}</p>
+    <div class="gate-label" style="margin-bottom:0.5rem;font-weight:600">${state.label}</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;font-family:'JetBrains Mono',monospace;font-size:0.92rem;line-height:2.2;overflow-x:auto">
+      ${termsHTML}
+    </div>
+    ${verdictHTML}
+    <div class="stepper-controls" style="margin-top:1rem">
+      <button class="step-btn" onclick="garbageDemoStep=Math.max(0,garbageDemoStep-1);renderGarbageDemo()" ${garbageDemoStep===0?'disabled':''}>&larr; Prev</button>
+      <span class="step-indicator">Step ${garbageDemoStep} / ${scenario.states.length-1}</span>
+      <button class="step-btn" onclick="garbageDemoStep=Math.min(${scenario.states.length-1},garbageDemoStep+1);renderGarbageDemo()" ${isLast?'disabled':''}>Next &rarr;</button>
+    </div>
+  `;
+}
+
+// =================== QUIZ ===================
+const QUIZ = [
+  {
+    q: 'Why can\'t an AND gate be used directly as a quantum gate?',
+    opts: [
+      'It requires too much energy',
+      'It maps two input bits to one output bit, losing information',
+      'It only works on classical bits, not qubits',
+      'It is too slow for quantum computers'
+    ],
+    ans: 1,
+    explain: 'The AND gate maps 2 bits of input to 1 bit of output. Three different inputs (00, 01, 10) all produce 0 — you cannot recover the input from the output. Quantum gates must be unitary (reversible), preserving all information.'
+  },
+  {
+    q: 'What makes the Toffoli gate universal for reversible classical computation?',
+    opts: [
+      'It can compute AND reversibly, and AND plus NOT can build any Boolean function',
+      'It operates on three qubits instead of two',
+      'It is faster than other reversible gates',
+      'It does not require any ancilla bits'
+    ],
+    ans: 0,
+    explain: 'The Toffoli gate computes a reversible AND (via c \u2295 (a \u2227 b)). Since AND and NOT together are universal for classical Boolean logic, and NOT is trivially reversible, the Toffoli gate (with ancilla bits) can implement any classical function reversibly.'
+  },
+  {
+    q: 'In the standard embedding U_f, what operation ensures reversibility?',
+    opts: [
+      'Measuring the output register',
+      'XOR-ing f(x) into an ancilla register: |x\u27E9|y\u27E9 \u2192 |x\u27E9|y \u2295 f(x)\u27E9',
+      'Applying a Hadamard gate to the input',
+      'Discarding the input qubits after computation'
+    ],
+    ans: 1,
+    explain: 'The XOR embedding keeps the input x unchanged and XORs f(x) into a separate register. This is reversible because XOR is its own inverse: applying U_f twice returns to the original state.'
+  },
+  {
+    q: 'Why is "garbage" fatal for quantum algorithms?',
+    opts: [
+      'Garbage bits use too much memory',
+      'Garbage bits become entangled with the computation, destroying interference between branches',
+      'Garbage bits cause the computer to overheat',
+      'Garbage bits make the output incorrect'
+    ],
+    ans: 1,
+    explain: 'Garbage bits carry information that differs across superposition branches. This entanglement acts as a "which-path" marker, decohering the quantum state. Even if f(x\u2081) = f(x\u2082), different garbage tags prevent these branches from interfering \u2014 destroying the quantum speedup.'
+  },
+  {
+    q: 'What are the three phases of Bennett\'s trick, in order?',
+    opts: [
+      'Copy \u2192 Compute \u2192 Uncompute',
+      'Compute \u2192 Uncompute \u2192 Copy',
+      'Compute \u2192 Copy \u2192 Uncompute',
+      'Uncompute \u2192 Copy \u2192 Compute'
+    ],
+    ans: 2,
+    explain: 'Bennett\'s trick first runs the circuit forward (Compute) to get the result plus garbage, then copies just the result to a clean output register (Copy), then runs the circuit backwards (Uncompute) to erase all garbage. The key insight is that the copy step isolates the answer before cleanup.'
+  },
+  {
+    q: 'What is the approximate gate count overhead of Bennett\'s trick?',
+    opts: [
+      'No overhead \u2014 same as the original circuit',
+      'Roughly 2\u00D7 the original gate count (forward + backward + copy)',
+      'Roughly 3\u00D7 the original gate count',
+      'Exponential in the number of ancilla bits'
+    ],
+    ans: 1,
+    explain: 'Bennett\'s trick runs the computation forward (\u2248T gates) and backward (\u2248T gates), plus a small number of CNOT gates to copy the result. The total is approximately 2T + m, roughly doubling the gate count. This is a modest price for eliminating all garbage.'
+  },
+];
+
+let quizAnswered = 0;
+let quizCorrect = 0;
+
+function buildQuiz() {
+  const container = document.getElementById('quizContainer');
+  container.innerHTML = '';
+  quizAnswered = 0;
+  quizCorrect = 0;
+  document.getElementById('quizScore').classList.add('hidden');
+
+  QUIZ.forEach((q, qi) => {
+    const div = document.createElement('div');
+    div.className = 'quiz-question';
+    div.id = `qq${qi}`;
+
+    let optsHTML = '';
+    q.opts.forEach((o, oi) => {
+      optsHTML += `<button class="quiz-opt" data-q="${qi}" data-o="${oi}" onclick="answerQuiz(${qi}, ${oi})">${o}</button>`;
+    });
+
+    div.innerHTML = `<div class="quiz-q-text">${q.q}</div><div class="quiz-options">${optsHTML}</div>`;
+    container.appendChild(div);
+  });
+}
+
+function answerQuiz(qi, oi) {
+  const q = QUIZ[qi];
+  const div = document.getElementById(`qq${qi}`);
+  const btns = div.querySelectorAll('.quiz-opt');
+
+  btns.forEach(b => { b.classList.add('locked'); b.style.pointerEvents = 'none'; });
+
+  if (oi === q.ans) {
+    btns[oi].classList.add('chosen-correct');
+    div.classList.add('correct');
+    quizCorrect++;
+  } else {
+    btns[oi].classList.add('chosen-wrong');
+    btns[q.ans].classList.add('reveal-correct');
+    div.classList.add('wrong');
+  }
+
+  const explDiv = document.createElement('div');
+  explDiv.className = 'quiz-explain';
+  explDiv.textContent = q.explain;
+  div.appendChild(explDiv);
+
+  quizAnswered++;
+  if (quizAnswered === QUIZ.length) showQuizScore();
+}
+
+function showQuizScore() {
+  const el = document.getElementById('quizScore');
+  el.classList.remove('hidden');
+  const pct = Math.round(quizCorrect / QUIZ.length * 100);
+  el.className = `quiz-score ${pct >= 80 ? 'great' : 'ok'}`;
+  el.textContent = `Score: ${quizCorrect}/${QUIZ.length} (${pct}%) ` + (pct === 100 ? 'Perfect!' : pct >= 80 ? 'Well done!' : 'Review the sections above and try again.');
+}
+
+function resetQuiz() { buildQuiz(); }
+
+// =================== INIT ===================
+document.addEventListener('DOMContentLoaded', () => {
+  initGateExplorer();
+  initEmbedding();
+  initBennettFuncTabs();
+  renderBennett();
+  initGarbageDemo();
+  buildQuiz();
+});
+</script>
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+</body>
+</html>

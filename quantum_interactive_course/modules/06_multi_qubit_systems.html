@@ -1,0 +1,2976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Qubit Systems &amp; Tensor Products — Interactive Quantum Computing Guide</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+:root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --bg2: #0e1322;
+    --surface3: #222a4a;
+    --border-light: rgba(99,102,241,0.4);
+    --text-muted: #4a5278;
+    --accent-soft: rgba(99,102,241,0.10);
+    --control-color: #22d3ee;
+    --control-dim: rgba(34,211,238,0.12);
+    --target-color: #f472b6;
+    --target-dim: rgba(244,114,182,0.12);
+    --entangled: #a78bfa;
+    --entangled-dim: rgba(167,139,250,0.12);
+    --green-dim: rgba(52,211,153,0.12);
+    --radius: 16px;
+    --radius-sm: 8px;
+    --transition: 0.3s ease;
+  }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── Header ── */
+.app-header {
+  text-align: center;
+  padding: 48px 24px 24px;
+  position: relative;
+}
+.app-header::after {
+  content: '';
+  display: block;
+  width: 140px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), transparent);
+  margin: 1.25rem auto 0;
+}
+.app-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--cyan), var(--pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+.app-header p {
+  color: var(--text-dim); margin-top: 8px; font-size: 1.05rem; font-weight: 300;
+  max-width: 680px; margin-left: auto; margin-right: auto;
+}
+
+/* ── Tab Navigation ── */
+.tab-nav {
+  display: flex; justify-content: center; gap: 6px; padding: 12px 24px;
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,14,26,0.92);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 10px 20px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text-dim); border-radius: 999px; cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem; font-weight: 500; transition: all 0.2s; white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+.tab-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--accent); transform: translateY(-1px); }
+.tab-btn.active {
+  background: linear-gradient(135deg, var(--accent), #818cf8);
+  color: #fff; border-color: var(--accent);
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+/* ── Content ── */
+.container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.tab-content { display: none; animation: fadeIn 0.35s ease; }
+.tab-content.active { display: block; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 2rem; margin-bottom: 1.5rem;
+  position: relative; overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.5;
+}
+.card:hover { border-color: var(--border-light); box-shadow: 0 4px 30px rgba(0,0,0,0.25); transform: translateY(-1px); }
+.card h2 {
+  font-size: 1.25rem; margin-bottom: 1rem; font-weight: 600;
+  display: flex; align-items: center; gap: 0.5rem;
+  color: var(--text);
+}
+.card h2 .icon {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; flex-shrink: 0;
+}
+.card h3 { font-size: 1.05rem; margin: 18px 0 8px; color: var(--entangled); font-weight: 600; }
+.card p  { margin-bottom: 12px; line-height: 1.75; }
+.card ul, .card ol { margin: 8px 0 12px 20px; }
+.card li { margin-bottom: 6px; line-height: 1.7; }
+
+/* ── Highlight boxes ── */
+.highlight {
+  background: var(--accent-soft); border-left: 3px solid var(--accent);
+  padding: 1rem 1.25rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin: 16px 0;
+  font-size: 0.95rem;
+}
+.highlight strong { color: var(--cyan); }
+.highlight.warn   { background: rgba(250,204,21,0.06); border-left-color: var(--yellow); }
+.highlight.warn strong { color: var(--yellow); }
+.highlight.success { background: var(--green-dim); border-left-color: var(--green); }
+.highlight.success strong { color: var(--green); }
+.highlight.purple  { background: var(--entangled-dim); border-left-color: var(--entangled); }
+.highlight.purple strong { color: var(--entangled); }
+
+/* ── Math blocks (KaTeX) ── */
+.math-block {
+  text-align: center; padding: 1.25rem 1.5rem; margin: 16px 0;
+  background: var(--surface2); border-radius: var(--radius-sm);
+  border: 1px solid var(--border); overflow-x: auto;
+  position: relative;
+}
+.math-block::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  opacity: 0.3;
+}
+
+/* ── Canvas ── */
+canvas.circuit-canvas {
+  width: 100%; max-width: 700px; border-radius: var(--radius);
+  background: var(--bg); border: 1px solid var(--border);
+  display: block; margin: 16px auto;
+}
+
+/* ── Controls ── */
+.controls-row {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 14px 0;
+}
+.ctrl-btn {
+  padding: 0.5rem 1.25rem; border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text-dim); border-radius: var(--radius-sm); cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem; font-weight: 500; transition: all 0.2s;
+  letter-spacing: 0.01em;
+}
+.ctrl-btn:hover { border-color: var(--accent); color: var(--text); background: var(--surface3); transform: translateY(-1px); }
+.ctrl-btn.active {
+  background: linear-gradient(135deg, var(--accent), #818cf8);
+  color: #fff; border-color: var(--accent);
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+.ctrl-btn.green  { border-color: var(--green); color: var(--green); }
+.ctrl-btn.green:hover, .ctrl-btn.green.active { background: linear-gradient(135deg, var(--green), #5eead4); color: #fff; border-color: var(--green); box-shadow: 0 4px 20px var(--green-glow); }
+.ctrl-btn.purple { border-color: var(--entangled); color: var(--entangled); }
+.ctrl-btn.purple:hover { background: linear-gradient(135deg, var(--entangled), #c4b5fd); color: #fff; box-shadow: 0 4px 20px var(--entangled-dim); }
+.ctrl-btn:disabled { opacity: .4; cursor: default; pointer-events: none; }
+.ctrl-btn:active { transform: translateY(0); }
+
+/* ── State display ── */
+.state-display {
+  font-size: 1.15rem; text-align: center; padding: 1rem 1.25rem; margin: 12px 0;
+  background: var(--surface2); border-radius: var(--radius-sm);
+  border: 1px solid var(--border); min-height: 56px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Truth table ── */
+.truth-table {
+  width: 100%; max-width: 620px; margin: 16px auto; border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
+}
+.truth-table th {
+  background: var(--surface2); color: var(--cyan); padding: 10px 16px;
+  text-align: center; border-bottom: 2px solid var(--border); font-weight: 600;
+  font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em;
+}
+.truth-table td { padding: 10px 16px; text-align: center; border-bottom: 1px solid var(--border); }
+.truth-table tr { cursor: pointer; transition: var(--transition); }
+.truth-table tbody tr:hover td { background: var(--accent-soft); }
+.truth-table tr.hl td { background: var(--accent-glow); color: #fff; font-weight: 600; }
+
+/* ── Matrix grid ── */
+.matrix-wrap { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; align-items: center; }
+.matrix-grid {
+  display: inline-grid; gap: 1px; background: var(--border); border-radius: var(--radius-sm); overflow: hidden; margin: 12px 0;
+}
+.matrix-grid .cell {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface); font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem; font-weight: 600; transition: var(--transition);
+  min-width: 50px; min-height: 50px;
+}
+.matrix-grid .cell.one  { color: var(--cyan); }
+.matrix-grid .cell.zero { color: var(--text-muted); }
+.matrix-grid .cell.hi   { background: var(--accent-soft); }
+.matrix-grid .cell.nonzero { color: var(--cyan); }
+.matrix-grid.cols-2 { grid-template-columns: repeat(2,56px); }
+.matrix-grid.cols-4 { grid-template-columns: repeat(4,50px); }
+.matrix-grid.cols-8 { grid-template-columns: repeat(8,40px); }
+.matrix-grid .cell.sm { min-width: 40px; min-height: 40px; font-size: .9rem; }
+
+/* ── Steps timeline (Simon's style) ── */
+.steps-timeline {
+  display:flex; gap:0; margin-bottom:1rem; overflow-x:auto; padding-bottom:0.5rem;
+}
+.step-btn {
+  flex:1; min-width:110px; background:var(--surface2); border:1px solid var(--border);
+  border-radius:0; color:var(--text-dim); font-family:'Inter',sans-serif;
+  font-size:0.78rem; font-weight:500; padding:0.65rem 0.5rem; cursor:pointer;
+  transition:all 0.25s; position:relative; text-align:center;
+}
+.step-btn:first-child { border-radius:8px 0 0 8px; }
+.step-btn:last-child { border-radius:0 8px 8px 0; }
+.step-btn:hover { background:rgba(99,102,241,0.08); color:var(--text); }
+.step-btn.active {
+  background:linear-gradient(135deg, rgba(99,102,241,0.15), rgba(34,211,238,0.1));
+  border-color:var(--accent); color:var(--text); z-index:1;
+}
+.step-btn.active::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, var(--accent), var(--cyan));
+}
+.step-btn.done {
+  background:rgba(52,211,153,0.08); color:var(--green);
+  border-color:rgba(52,211,153,0.3);
+}
+.step-num {
+  display:block; font-family:'JetBrains Mono',monospace; font-size:0.7rem;
+  margin-bottom:2px; opacity:0.6;
+}
+
+/* ── Quiz ── */
+.quiz-options { display: grid; gap: 10px; margin: 14px 0; }
+.quiz-opt {
+  padding: 0.75rem 1.25rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface2); color: var(--text); cursor: pointer;
+  font-size: 0.93rem; transition: all 0.2s; text-align: left;
+}
+.quiz-opt:hover { border-color: var(--accent); background: var(--surface3); transform: translateX(3px); }
+.quiz-opt.correct { border-color: var(--green); background: var(--green-dim); color: var(--green); transform: none; }
+.quiz-opt.wrong   { border-color: var(--red); background: rgba(248,113,113,0.08); color: var(--red); transform: none; }
+.quiz-opt.disabled { pointer-events: none; opacity: .7; }
+.quiz-fb {
+  padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin: 10px 0; font-size: 0.93rem; display: none;
+}
+.quiz-fb.show { display: block; animation: fadeIn 0.35s ease; }
+.quiz-fb.correct { background: var(--green-dim); color: var(--green); border: 1px solid rgba(52,211,153,0.3); }
+.quiz-fb.wrong   { background: rgba(248,113,113,0.08); color: #fca5a5; border: 1px solid rgba(248,113,113,0.2); }
+
+/* ── Proof steps ── */
+.proof-step {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 1rem 1.25rem; margin: 12px 0;
+  cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.proof-step::before {
+  content: ''; position: absolute; top: 0; left: 0; bottom: 0;
+  width: 3px; background: var(--accent); opacity: 0; transition: opacity 0.3s;
+}
+.proof-step.open::before { opacity: 1; }
+.proof-step:hover { border-color: var(--accent); }
+.proof-step .step-label {
+  color: var(--cyan); font-weight: 600; font-size: 0.82rem;
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.proof-step .step-label::after { content: '▸'; transition: transform .3s; }
+.proof-step.open .step-label::after { transform: rotate(90deg); }
+.proof-step .step-body {
+  overflow: hidden; max-height: 0; opacity: 0;
+  transition: max-height 0.45s ease, opacity 0.35s ease; margin-top: 0;
+}
+.proof-step.open .step-body { max-height: 600px; opacity: 1; margin-top: 10px; }
+
+/* ── Two-column ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 768px) {
+  .two-col { grid-template-columns: 1fr; }
+  .app-header h1 { font-size: 1.8rem; }
+  .tab-btn { padding: 8px 14px; font-size: 0.82rem; }
+  .matrix-grid.cols-4 { grid-template-columns: repeat(4,42px); }
+  .matrix-grid.cols-8 { grid-template-columns: repeat(8,32px); }
+  .matrix-grid .cell.sm { min-width: 32px; min-height: 32px; font-size: .75rem; }
+  .container { padding: 1rem; }
+  .card { padding: 1.25rem; }
+  .step-btn { min-width: 70px; font-size: 0.72rem; padding: 0.5rem 0.35rem; }
+  .step-num { font-size: 0.62rem; }
+  .controls-row { gap: 6px; }
+  .ctrl-btn { padding: 0.4rem 0.75rem; font-size: 0.82rem; }
+  .qubit-orb { width: 52px; height: 52px; font-size: 0.75rem; }
+  .qubit-viz { gap: 1.5rem; }
+  .nav-arrow { padding: 0.45rem 0.75rem !important; font-size: 0.8rem !important; }
+  .kbd-hint { display: none; }
+}
+
+/* ── Form inputs ── */
+.amp-input {
+  width: 100%; padding: 0.5rem 0.75rem; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
+  transition: border-color .2s; outline: none;
+}
+.amp-input:focus { border-color: var(--accent); }
+.field-label {
+  color: var(--text-dim); font-size: 0.78rem; margin-bottom: 4px; display: block;
+  font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+/* ── Tensor product visual ── */
+.tensor-visual {
+  display: flex; gap: 16px; align-items: center; justify-content: center;
+  flex-wrap: wrap; margin: 16px 0; padding: 1.25rem;
+  background: var(--bg); border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.tensor-visual .vec-label {
+  font-size: .75rem; color: var(--text-dim); text-align: center; margin-bottom: 4px;
+  font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em;
+}
+.tensor-visual .symbol {
+  font-size: 1.5rem; color: var(--entangled); font-weight: 700;
+  padding: 0 4px; align-self: center;
+}
+
+/* ── Basis state buttons ── */
+.basis-grid {
+  display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0;
+}
+.basis-btn {
+  padding: 0.4rem 1rem; border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text-dim); border-radius: var(--radius-sm); cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+  transition: all 0.2s;
+}
+.basis-btn:hover { border-color: var(--accent); color: var(--text); transform: translateY(-1px); }
+.basis-btn.active { background: linear-gradient(135deg, var(--accent), #818cf8); color: #fff; border-color: var(--accent); box-shadow: 0 4px 20px var(--accent-glow); }
+
+/* ── Dimension bar chart ── */
+.dim-bars { display: flex; gap: 12px; align-items: flex-end; justify-content: center; margin: 20px 0; height: 180px; }
+.dim-bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.dim-bar {
+  width: 50px; border-radius: 6px 6px 0 0; transition: height 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  background: linear-gradient(0deg, var(--accent), var(--cyan));
+  min-height: 4px;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+.dim-bar-label { font-size: .78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.dim-bar-val { font-size: .82rem; font-weight: 600; color: var(--cyan); font-family: 'JetBrains Mono', monospace; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Staggered card entry ── */
+.tab-content.active .card {
+  animation: cardSlide 0.4s ease both;
+}
+.tab-content.active .card:nth-child(1) { animation-delay: 0s; }
+.tab-content.active .card:nth-child(2) { animation-delay: 0.06s; }
+.tab-content.active .card:nth-child(3) { animation-delay: 0.12s; }
+.tab-content.active .card:nth-child(4) { animation-delay: 0.18s; }
+.tab-content.active .card:nth-child(5) { animation-delay: 0.24s; }
+.tab-content.active .card:nth-child(6) { animation-delay: 0.30s; }
+@keyframes cardSlide {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Card heading icons ── */
+.card h2 .icon.blue  { background: var(--accent-soft); color: var(--accent); }
+.card h2 .icon.cyan  { background: var(--control-dim); color: var(--cyan); }
+.card h2 .icon.pink  { background: var(--target-dim); color: var(--pink); }
+.card h2 .icon.green { background: var(--green-dim); color: var(--green); }
+.card h2 .icon.purple { background: var(--entangled-dim); color: var(--entangled); }
+
+/* ── Tab navigation arrows ── */
+.tab-nav-bottom {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 2rem; padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.tab-nav-bottom .nav-arrow {
+  padding: 0.6rem 1.5rem; border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text-dim); border-radius: var(--radius-sm); cursor: pointer;
+  font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 500;
+  transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+}
+.tab-nav-bottom .nav-arrow:hover { border-color: var(--accent); color: var(--text); background: var(--surface3); transform: translateY(-1px); }
+.tab-nav-bottom .nav-arrow:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+.tab-nav-bottom .nav-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ── Measurement pulse animation ── */
+@keyframes pulse { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 20px var(--accent-glow)} }
+.meas-flash { animation: pulse 0.6s ease; }
+
+/* ── Qubit orbs (Simon's style) ── */
+.qubit-viz { display:flex; gap:1rem; align-items:center; justify-content:center; margin:16px 0; position:relative; }
+.qubit-col { display:flex; flex-direction:column; align-items:center; }
+.qubit-orb {
+  width:56px; height:56px; border-radius:50%; position:relative;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:0.72rem; font-weight:600;
+  transition:all 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+.qubit-orb.state-super {
+  background:radial-gradient(circle at 35% 35%, #4338ca, #312e81);
+  border:2px solid var(--accent); color:#c7d2fe;
+  box-shadow:0 0 20px var(--accent-glow);
+  animation:orbPulse 2s ease-in-out infinite;
+}
+.qubit-orb.state-zero {
+  background:radial-gradient(circle at 35% 35%, #374151, #1f2937);
+  border:2px solid #4b5563; color:#9ca3af;
+  box-shadow:0 0 12px rgba(75,85,99,0.3); animation:none;
+}
+.qubit-orb.state-measured-0 {
+  background:radial-gradient(circle at 35% 35%, #0e7490, #164e63);
+  border:2px solid var(--cyan); color:#a5f3fc;
+  box-shadow:0 0 20px var(--cyan-glow); animation:none;
+}
+.qubit-orb.state-measured-1 {
+  background:radial-gradient(circle at 35% 35%, #9d174d, #831843);
+  border:2px solid var(--pink); color:#fce7f3;
+  box-shadow:0 0 20px var(--pink-glow); animation:none;
+}
+@keyframes orbPulse {
+  0%,100% { box-shadow:0 0 16px var(--accent-glow); }
+  50% { box-shadow:0 0 28px var(--accent-glow); }
+}
+.qubit-label { font-size:0.68rem; color:var(--text-dim); text-align:center; margin-top:4px; }
+.entanglement-svg { overflow:visible; flex-shrink:0; }
+.entanglement-arc {
+  fill:none; stroke:var(--cyan); stroke-width:1.5; stroke-dasharray:6 4;
+  opacity:0; filter:drop-shadow(0 0 4px var(--cyan-glow));
+  transition:opacity 0.6s ease;
+}
+.entanglement-arc.visible { opacity:0.6; animation:arcFlow 1.5s linear infinite; }
+@keyframes arcFlow { to { stroke-dashoffset:-20; } }
+
+/* ── Particle background ── */
+#particleBg {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 0; pointer-events: none;
+}
+.app-header, .tab-nav, .container { position: relative; z-index: 1; }
+
+/* ── Keyboard hint ── */
+.kbd-hint {
+  text-align:center; padding:6px 0 0; font-size:0.72rem; color:var(--text-dim); opacity:0.5;
+}
+.kbd-hint kbd {
+  display:inline-block; background:var(--surface2); border:1px solid var(--border);
+  border-radius:3px; padding:0.1rem 0.35rem;
+  font-family:'JetBrains Mono',monospace; font-size:0.68rem; margin:0 0.1rem;
+}
+
+/* ── Bit display pills ── */
+.bit-pill {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:24px; height:24px; border-radius:4px;
+  font-family:'JetBrains Mono',monospace; font-size:0.8rem; font-weight:600;
+}
+.bit-pill.one { background:rgba(34,211,238,0.2); color:var(--cyan); border:1px solid rgba(34,211,238,0.4); }
+.bit-pill.zero { background:rgba(100,116,139,0.12); color:var(--text-dim); border:1px solid rgba(100,116,139,0.25); }
+
+/* ── Solution reveal animation ── */
+@keyframes solutionReveal {
+  from { opacity:0; transform:scale(0.95); }
+  to { opacity:1; transform:scale(1); }
+}
+.result-reveal { animation:solutionReveal 0.5s ease-out; }
+
+/* ── Crossfade for interactive panels ── */
+.crossfade { transition: opacity 0.2s ease; }
+.crossfade.fading { opacity: 0; }
+
+/* ── Inline mini-quiz (pause & think) ── */
+.inline-quiz {
+  background: var(--surface2); border: 1px solid rgba(99,102,241,0.25);
+  border-radius: var(--radius-sm); padding: 1.25rem; margin: 18px 0;
+  position: relative; overflow: hidden;
+}
+.inline-quiz::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--cyan)); opacity: 0.6;
+}
+.inline-quiz .iq-label {
+  font-size: 0.78rem; font-weight: 600; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.inline-quiz .iq-question { font-size: 0.95rem; margin-bottom: 10px; }
+.inline-quiz .iq-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.inline-quiz .iq-opt {
+  padding: 0.45rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text-dim); cursor: pointer;
+  font-size: 0.88rem; transition: all 0.2s; font-family: 'Inter', sans-serif;
+}
+.inline-quiz .iq-opt:hover { border-color: var(--accent); color: var(--text); transform: translateY(-1px); }
+.inline-quiz .iq-opt.correct { border-color: var(--green); background: var(--green-dim); color: var(--green); pointer-events: none; }
+.inline-quiz .iq-opt.wrong { border-color: var(--red); background: rgba(248,113,113,0.08); color: var(--red); pointer-events: none; }
+.inline-quiz .iq-opt.disabled { pointer-events: none; opacity: 0.6; }
+.inline-quiz .iq-fb {
+  margin-top: 10px; padding: 0.6rem 0.8rem; border-radius: var(--radius-sm);
+  font-size: 0.9rem; display: none; animation: fadeIn 0.35s ease;
+}
+.inline-quiz .iq-fb.show { display: block; }
+.inline-quiz .iq-fb.ok { background: var(--green-dim); color: var(--green); border: 1px solid rgba(52,211,153,0.3); }
+.inline-quiz .iq-fb.nope { background: rgba(248,113,113,0.08); color: #fca5a5; border: 1px solid rgba(248,113,113,0.2); }
+
+/* ── Cross-tab prompt link ── */
+.crosstab-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--accent); font-size: 0.88rem; font-weight: 500;
+  cursor: pointer; transition: all 0.2s; margin-top: 12px;
+  padding: 0.35rem 0; border: none; background: none;
+  font-family: 'Inter', sans-serif;
+}
+.crosstab-link:hover { color: var(--cyan); transform: translateX(3px); }
+.crosstab-link svg { transition: transform 0.2s; }
+.crosstab-link:hover svg { transform: translateX(2px); }
+
+/* ── EPR explanation panel ── */
+.epr-explain {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 1rem 1.25rem; margin-top: 12px;
+  min-height: 80px; transition: opacity 0.25s ease;
+}
+.epr-explain .epr-ex-title {
+  font-size: 0.78rem; font-weight: 600; color: var(--cyan);
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;
+}
+.epr-explain .epr-ex-body { font-size: 0.92rem; line-height: 1.7; color: var(--text-dim); }
+.epr-explain .epr-ex-body strong { color: var(--text); }
+
+/* ── Celebration banner ── */
+@keyframes celebSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.celebration-banner {
+  animation: celebSlide 0.5s ease-out;
+  background: linear-gradient(135deg, rgba(52,211,153,0.1), rgba(34,211,238,0.08));
+  border: 1px solid rgba(52,211,153,0.3);
+  border-radius: var(--radius); padding: 1.5rem; margin-top: 1.5rem;
+  text-align: center;
+}
+.celebration-banner .celeb-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+.celebration-banner .celeb-title {
+  font-size: 1.15rem; font-weight: 700;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; margin-bottom: 0.5rem;
+}
+.celebration-banner .celeb-subtitle { color: var(--text-dim); font-size: 0.92rem; margin-bottom: 1rem; }
+.celebration-banner a {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 0.6rem 1.5rem; border: 1px solid var(--green);
+  background: linear-gradient(135deg, rgba(52,211,153,0.15), rgba(34,211,238,0.1));
+  color: var(--green); border-radius: var(--radius-sm);
+  text-decoration: none; font-family: 'Inter', sans-serif;
+  font-size: 0.88rem; font-weight: 500; transition: all 0.2s;
+}
+.celebration-banner a:hover { background: linear-gradient(135deg, var(--green), #5eead4); color: #fff; transform: translateY(-2px); }
+
+/* ── Accessibility ── */
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.tab-btn:focus-visible, .ctrl-btn:focus-visible, .basis-btn:focus-visible,
+.quiz-opt:focus-visible, .iq-opt:focus-visible, .nav-arrow:focus-visible,
+.crosstab-link:focus-visible, .proof-step:focus-visible {
+  outline: 2px solid var(--cyan); outline-offset: 2px;
+}
+
+/* ── Tab progress tracker ── */
+.tab-progress { display:flex; gap:3px; justify-content:center; padding:8px 24px 0; }
+.tab-pip {
+  width:100%; max-width:120px; height:3px; border-radius:2px;
+  background:var(--surface2); transition:background 0.4s ease;
+}
+.tab-pip.visited { background:var(--green); }
+.tab-pip.current { background:var(--accent); box-shadow:0 0 8px var(--accent-glow); }
+.tab-progress-label {
+  text-align:center; font-size:0.72rem; color:var(--text-muted);
+  padding:2px 0 4px; letter-spacing:0.04em;
+}
+
+/* ── Onboarding hints ── */
+@keyframes onboard-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.onboard-overlay { position:fixed; inset:0; z-index:9998; background:rgba(0,0,0,0.4); }
+.onboard-hint {
+  position:fixed; z-index:9999; background:var(--surface);
+  border:1px solid var(--accent); border-radius:var(--radius-sm);
+  padding:1rem 1.25rem; max-width:340px; box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  animation:onboard-in 0.35s ease;
+}
+.onboard-hint::before {
+  content:''; position:absolute; width:10px; height:10px;
+  background:var(--surface); border-left:1px solid var(--accent); border-top:1px solid var(--accent);
+  transform:rotate(45deg); top:-6px; left:24px;
+}
+.onboard-hint.arrow-bottom::before { top:auto; bottom:-6px; transform:rotate(225deg); }
+.onboard-hint .ob-step { font-size:0.72rem; color:var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px; }
+.onboard-hint .ob-text { font-size:0.9rem; line-height:1.6; color:var(--text-dim); margin-bottom:10px; }
+.onboard-hint .ob-actions { display:flex; justify-content:flex-end; gap:8px; }
+.onboard-hint .ob-btn {
+  padding:0.35rem 1rem; border:1px solid var(--accent); border-radius:var(--radius-sm);
+  background:linear-gradient(135deg,var(--accent),#818cf8); color:#fff;
+  font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:500; cursor:pointer;
+  transition:all 0.2s;
+}
+.onboard-hint .ob-btn:hover { transform:translateY(-1px); box-shadow:0 4px 16px var(--accent-glow); }
+.onboard-hint .ob-skip { background:none; color:var(--text-dim); border-color:var(--border); }
+
+/* ── Worked examples ── */
+.worked-example {
+  background:linear-gradient(135deg,rgba(34,211,238,0.04),rgba(99,102,241,0.04));
+  border:1px solid rgba(34,211,238,0.2); border-radius:var(--radius-sm);
+  padding:1.25rem; margin:16px 0;
+}
+.worked-example .we-title {
+  font-size:0.82rem; font-weight:600; color:var(--cyan);
+  text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;
+  display:flex; align-items:center; gap:6px;
+}
+.example-step {
+  display:flex; gap:12px; align-items:flex-start;
+  padding:8px 0; border-bottom:1px solid rgba(42,53,80,0.3);
+}
+.example-step:last-child { border-bottom:none; }
+.step-number {
+  flex-shrink:0; width:24px; height:24px; border-radius:50%;
+  background:rgba(34,211,238,0.12); color:var(--cyan);
+  font-family:'JetBrains Mono',monospace; font-size:0.75rem; font-weight:600;
+  display:flex; align-items:center; justify-content:center; margin-top:2px;
+}
+.example-step .step-content { font-size:0.92rem; line-height:1.7; flex:1; }
+
+/* ── Prediction challenge ── */
+.challenge-area {
+  background:linear-gradient(135deg,rgba(244,114,182,0.05),rgba(167,139,250,0.05));
+  border:1px solid rgba(167,139,250,0.25); border-radius:var(--radius);
+  padding:1.5rem; text-align:center;
+}
+.challenge-area .ch-prompt { font-size:1.05rem; margin-bottom:12px; line-height:1.7; }
+.challenge-area .ch-choices { display:flex; gap:12px; justify-content:center; margin:12px 0; }
+.challenge-area .ch-choice {
+  padding:0.6rem 2rem; border:2px solid var(--border); border-radius:var(--radius-sm);
+  background:var(--surface); color:var(--text); cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:1.1rem; font-weight:600;
+  transition:all 0.2s; min-width:80px;
+}
+.challenge-area .ch-choice:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 4px 16px var(--accent-glow); }
+.challenge-area .ch-choice.correct { border-color:var(--green); background:var(--green-dim); color:var(--green); pointer-events:none; }
+.challenge-area .ch-choice.wrong { border-color:var(--red); background:rgba(248,113,113,0.08); color:var(--red); pointer-events:none; }
+.challenge-area .ch-choice.disabled { pointer-events:none; opacity:.5; }
+.ch-feedback { margin-top:10px; font-size:0.92rem; min-height:24px; }
+.ch-scoreboard {
+  display:flex; gap:20px; justify-content:center; align-items:center;
+  margin-top:12px; font-family:'JetBrains Mono',monospace; font-size:0.88rem;
+}
+
+/* ── Histogram canvas ── */
+.histogram-wrap {
+  position:relative; margin-top:12px; border-radius:var(--radius-sm);
+  background:var(--bg); border:1px solid var(--border); overflow:hidden;
+}
+.histogram-wrap canvas { display:block; width:100%; }
+
+/* ── Light theme (Pass 4) ── */
+:root[data-theme="light"] {
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --surface2: #eef0f5;
+  --surface3: #dde0e8;
+  --border: #d0d5e0;
+  --border-light: rgba(99,102,241,0.35);
+  --text: #1a1d27;
+  --text-dim: #5a5e70;
+  --text-muted: #8892a8;
+  --accent-soft: rgba(99,102,241,0.08);
+  --control-dim: rgba(34,211,238,0.08);
+  --target-dim: rgba(244,114,182,0.08);
+  --entangled-dim: rgba(167,139,250,0.08);
+  --green-dim: rgba(52,211,153,0.08);
+  --bg2: #e8eaf0;
+  --accent-glow: rgba(99,102,241,0.15);
+  --cyan-glow: rgba(34,211,238,0.12);
+  --pink-glow: rgba(244,114,182,0.12);
+  --green-glow: rgba(52,211,153,0.12);
+}
+:root[data-theme="light"] .app-header { background: linear-gradient(180deg, #eef0f5 0%, var(--bg) 100%); }
+:root[data-theme="light"] .tab-nav { background: rgba(245,246,250,0.95); }
+:root[data-theme="light"] canvas.circuit-canvas { background: #f0f2f7; }
+:root[data-theme="light"] .math-block { background: rgba(0,0,0,0.03); }
+:root[data-theme="light"] .highlight { background: rgba(99,102,241,0.06); }
+:root[data-theme="light"] .highlight.warn { background: rgba(250,204,21,0.08); }
+:root[data-theme="light"] .highlight.success { background: rgba(52,211,153,0.06); }
+:root[data-theme="light"] .highlight.purple { background: rgba(167,139,250,0.06); }
+:root[data-theme="light"] .state-display { background: rgba(0,0,0,0.03); }
+:root[data-theme="light"] .qubit-orb.state-super { box-shadow: 0 0 12px rgba(99,102,241,0.2); }
+
+#theme-toggle {
+  position: fixed; top: 1.2rem; right: 1.5rem; z-index: 1001;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(17,24,39,0.7); border: 1px solid rgba(42,53,80,0.5);
+  color: var(--text-dim); font-size: 1.15rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s; font-family: inherit;
+}
+#theme-toggle:hover { color: var(--text); border-color: var(--accent); }
+:root[data-theme="light"] #theme-toggle {
+  background: rgba(255,255,255,0.85);
+  border-color: var(--border);
+}
+
+/* ── Speed control (Pass 4) ── */
+.speed-control {
+  display: inline-flex; border-radius: 6px;
+  overflow: hidden; border: 1px solid var(--border);
+}
+.speed-btn-ctrl {
+  background: var(--surface2); border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem; font-weight: 500;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer; transition: all 0.2s;
+  border-radius: 0; letter-spacing: 0;
+}
+.speed-btn-ctrl:last-child { border-right: none; }
+.speed-btn-ctrl:hover { background: rgba(99,102,241,0.1); color: var(--text); }
+.speed-btn-ctrl.active {
+  background: rgba(99,102,241,0.2);
+  color: var(--accent);
+}
+
+/* ── Circuit tooltip (Pass 4) ── */
+.circuit-tooltip {
+  position: absolute; background: var(--surface); border: 1px solid var(--accent);
+  border-radius: 8px; padding: 0.55rem 0.85rem; font-size: 0.82rem;
+  color: var(--text); max-width: 280px; z-index: 20;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4); pointer-events: none;
+  display: none; line-height: 1.5; font-family: 'Inter', sans-serif;
+  transition: opacity 0.15s ease;
+}
+.circuit-tooltip strong { color: var(--cyan); }
+.circuit-tooltip .ct-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px; }
+
+/* ── Concept grid (Pass 4) ── */
+.concept-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px; margin: 16px 0;
+}
+.concept-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.1rem;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+}
+.concept-card:hover {
+  border-color: rgba(99,102,241,0.3);
+  box-shadow: 0 4px 20px rgba(99,102,241,0.08);
+  transform: translateY(-2px);
+}
+.concept-card h4 {
+  font-size: 0.92rem; font-weight: 600; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.concept-card p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.55; margin: 0; }
+
+/* ── Shortcuts popup (Pass 4) ── */
+.kbd-hint { position: relative; cursor: help; }
+.shortcuts-popup {
+  display: none; position: absolute; bottom: calc(100% + 8px);
+  left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 0.75rem 1rem;
+  font-size: 0.78rem; color: var(--text); white-space: nowrap;
+  z-index: 20; box-shadow: 0 4px 20px rgba(0,0,0,0.4); line-height: 2;
+  min-width: 220px;
+}
+.kbd-hint:hover .shortcuts-popup,
+.kbd-hint:focus-within .shortcuts-popup { display: block; }
+.shortcuts-popup .sp-title {
+  font-weight: 600; font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--accent); margin-bottom: 4px;
+}
+.shortcuts-popup .sp-row { display: flex; justify-content: space-between; gap: 12px; }
+.shortcuts-popup .sp-row span:last-child { color: var(--text-dim); }
+
+/* ── Dimension ghost bars (Pass 4) ── */
+.dim-bar-ghost {
+  width: 50px; border-radius: 6px 6px 0 0;
+  min-height: 4px; opacity: 0.2;
+  border: 1.5px dashed var(--accent); background: none;
+  position: absolute; bottom: 0;
+  transition: opacity 1.2s ease 0.3s, height 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.dim-bar-ghost.fade { opacity: 0; }
+.dim-bar-wrap { position: relative; }
+
+/* ── Entanglement creation diagram (Pass 4) ── */
+.ent-creation-svg {
+  width: 100%; max-width: 600px; margin: 16px auto;
+  display: block; overflow: visible;
+}
+.ent-creation-svg text { font-family: 'JetBrains Mono', monospace; }
+@keyframes photonMove {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes entGlow {
+  0%, 100% { filter: drop-shadow(0 0 4px var(--entangled)); opacity: 0.7; }
+  50% { filter: drop-shadow(0 0 12px var(--entangled)); opacity: 1; }
+}
+.ent-glow-pulse { animation: entGlow 2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<canvas id="particleBg"></canvas>
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">🌙</button>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+
+<!-- ════════════════════════════ HEADER ════════════════════════════ -->
+<div class="app-header">
+  <h1>Multi-Qubit Quantum Systems</h1>
+  <p>From tensor products to entangled EPR pairs — an interactive guide to composite quantum systems, the CNOT gate, and the mathematics of entanglement</p>
+</div>
+
+<!-- ════════════════════════════ TABS ═════════════════════════════ -->
+<nav class="tab-nav" role="tablist" aria-label="Module sections">
+  <button class="tab-btn active" data-tab="tensor" role="tab" aria-selected="true" aria-controls="tab-tensor">① Tensor Products</button>
+  <button class="tab-btn" data-tab="multiqubit" role="tab" aria-selected="false" aria-controls="tab-multiqubit">② Multi-Qubit Systems</button>
+  <button class="tab-btn" data-tab="cnot" role="tab" aria-selected="false" aria-controls="tab-cnot">③ CNOT Gate</button>
+  <button class="tab-btn" data-tab="epr" role="tab" aria-selected="false" aria-controls="tab-epr">④ EPR Pairs</button>
+  <button class="tab-btn" data-tab="entanglement" role="tab" aria-selected="false" aria-controls="tab-entanglement">⑤ Entanglement</button>
+  <button class="tab-btn" data-tab="proof" role="tab" aria-selected="false" aria-controls="tab-proof">⑥ Proof</button>
+  <button class="tab-btn" data-tab="exercises" role="tab" aria-selected="false" aria-controls="tab-exercises">⑦ Exercises</button>
+</nav>
+<div class="tab-progress" aria-hidden="true"><div class="tab-pip current"></div><div class="tab-pip"></div><div class="tab-pip"></div><div class="tab-pip"></div><div class="tab-pip"></div><div class="tab-pip"></div><div class="tab-pip"></div></div>
+<div class="tab-progress-label" id="progress-label">1 / 7 explored</div>
+<div class="kbd-hint" tabindex="0" role="button" aria-label="Show keyboard shortcuts">Use <kbd>←</kbd> <kbd>→</kbd> arrow keys to switch tabs
+  <div class="shortcuts-popup" role="tooltip">
+    <div class="sp-title">Keyboard Shortcuts</div>
+    <div class="sp-row"><span><kbd>←</kbd> <kbd>→</kbd></span> <span>Switch tabs</span></div>
+    <div class="sp-row"><span><kbd>1</kbd>-<kbd>7</kbd></span> <span>Jump to tab</span></div>
+    <div class="sp-row"><span><kbd>R</kbd></span> <span>Reset current view</span></div>
+    <div class="sp-row"><span><kbd>Space</kbd></span> <span>Toggle auto-play</span></div>
+  </div>
+</div>
+<div id="live-status" class="sr-only" aria-live="polite"></div>
+
+<div class="container">
+
+<!-- ═══════════════════ TAB 1 — TENSOR PRODUCTS ════════════════════ -->
+<div class="tab-content active" id="tab-tensor" role="tabpanel" aria-labelledby="tab-tensor-btn">
+
+  <div class="card">
+    <h2><span class="icon blue">⊗</span> Why Tensor Products?</h2>
+    <p>In classical computing, combining two bits is simple: you just list them side by side. A pair of bits has 4 possible values (00, 01, 10, 11). In quantum mechanics, the situation is richer because of <strong>superposition</strong>.</p>
+    <p>When we combine two quantum systems, the resulting state space is not a simple Cartesian product — it is the <strong>tensor product</strong> \(\otimes\) of the individual Hilbert spaces. This mathematical operation captures all the ways the two systems can be correlated, including entanglement.</p>
+    <div class="highlight">
+      <strong>Key idea:</strong> The tensor product of two vector spaces \(\mathcal{H}_A\) and \(\mathcal{H}_B\) produces a new space \(\mathcal{H}_A\otimes\mathcal{H}_B\) whose dimension is the <em>product</em> of the original dimensions: \(\dim(\mathcal{H}_A\otimes\mathcal{H}_B) = \dim(\mathcal{H}_A)\times\dim(\mathcal{H}_B)\).
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon cyan">⊗</span> Tensor Product of Two Qubits</h2>
+    <p>A single qubit \(|\psi\rangle = \alpha|0\rangle+\beta|1\rangle\) lives in \(\mathbb{C}^2\). When we combine two qubits, the tensor product gives us \(\mathbb{C}^2\otimes\mathbb{C}^2 = \mathbb{C}^4\), with the <strong>computational basis</strong>:</p>
+    <div class="math-block">$$|00\rangle,\quad|01\rangle,\quad|10\rangle,\quad|11\rangle$$</div>
+    <p>The tensor product of two individual states is computed by multiplying every component of the first vector with every component of the second:</p>
+    <div class="math-block">$$|\psi\rangle\otimes|\phi\rangle = \begin{pmatrix}\alpha\\\beta\end{pmatrix}\!\otimes\!\begin{pmatrix}\gamma\\\delta\end{pmatrix} = \begin{pmatrix}\alpha\gamma\\\alpha\delta\\\beta\gamma\\\beta\delta\end{pmatrix}$$</div>
+    <p>which represents the state \(\alpha\gamma|00\rangle + \alpha\delta|01\rangle + \beta\gamma|10\rangle + \beta\delta|11\rangle\).</p>
+  </div>
+
+  <!-- Interactive tensor product calculator -->
+  <div class="card">
+    <h2><span class="icon blue">⚡</span> Interactive Tensor Product Calculator</h2>
+    <p>Choose a state for each qubit and see the tensor product computed step by step.</p>
+    <div class="two-col">
+      <div>
+        <strong style="color:var(--control-color)">Qubit A:</strong>
+        <div class="controls-row" id="tp-btns-a">
+          <button class="ctrl-btn active" data-tp="0">|0⟩</button>
+          <button class="ctrl-btn" data-tp="1">|1⟩</button>
+          <button class="ctrl-btn" data-tp="+">|+⟩</button>
+          <button class="ctrl-btn" data-tp="-">|−⟩</button>
+          <button class="ctrl-btn" data-tp="custom" style="font-size:.78rem">Custom</button>
+        </div>
+        <div id="tp-custom-a" style="display:none;margin-top:8px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <div><label class="field-label">α₀</label><input class="amp-input" id="tp-a0" type="number" value="0.8" step="0.1" style="width:90px"></div>
+            <span style="color:var(--text-dim)">|0⟩ +</span>
+            <div><label class="field-label">α₁</label><input class="amp-input" id="tp-a1" type="number" value="0.6" step="0.1" style="width:90px"></div>
+            <span style="color:var(--text-dim)">|1⟩</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <strong style="color:var(--target-color)">Qubit B:</strong>
+        <div class="controls-row" id="tp-btns-b">
+          <button class="ctrl-btn active" data-tp="0">|0⟩</button>
+          <button class="ctrl-btn" data-tp="1">|1⟩</button>
+          <button class="ctrl-btn" data-tp="+">|+⟩</button>
+          <button class="ctrl-btn" data-tp="-">|−⟩</button>
+          <button class="ctrl-btn" data-tp="custom" style="font-size:.78rem">Custom</button>
+        </div>
+        <div id="tp-custom-b" style="display:none;margin-top:8px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <div><label class="field-label">β₀</label><input class="amp-input" id="tp-b0" type="number" value="0.6" step="0.1" style="width:90px"></div>
+            <span style="color:var(--text-dim)">|0⟩ +</span>
+            <div><label class="field-label">β₁</label><input class="amp-input" id="tp-b1" type="number" value="0.8" step="0.1" style="width:90px"></div>
+            <span style="color:var(--text-dim)">|1⟩</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tensor-visual" id="tp-visual"></div>
+    <div class="state-display" id="tp-result"></div>
+
+    <div class="worked-example">
+      <div class="we-title">✎ Worked Example — Compute \(|+\rangle\otimes|1\rangle\)</div>
+      <div class="example-step"><div class="step-number">1</div><div class="step-content">Write \(|+\rangle\) as a column vector: \(|+\rangle = \tfrac{1}{\sqrt2}\begin{pmatrix}1\\1\end{pmatrix}\).</div></div>
+      <div class="example-step"><div class="step-number">2</div><div class="step-content">Write \(|1\rangle\) as a column vector: \(|1\rangle = \begin{pmatrix}0\\1\end{pmatrix}\).</div></div>
+      <div class="example-step"><div class="step-number">3</div><div class="step-content">Multiply each entry of the first vector by the entire second vector:
+        \(\tfrac{1}{\sqrt2}\begin{pmatrix}1\cdot\begin{pmatrix}0\\1\end{pmatrix}\\[4pt]1\cdot\begin{pmatrix}0\\1\end{pmatrix}\end{pmatrix} = \tfrac{1}{\sqrt2}\begin{pmatrix}0\\1\\0\\1\end{pmatrix}\)</div></div>
+      <div class="example-step"><div class="step-number">4</div><div class="step-content">Read off the state: \(\tfrac{1}{\sqrt2}(|01\rangle + |11\rangle)\). Try it in the calculator above — select <strong>|+⟩</strong> for A and <strong>|1⟩</strong> for B!</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon purple">✦</span> Important Properties</h2>
+    <ul>
+      <li><strong>Bilinearity:</strong> \((\alpha|\psi_1\rangle+\beta|\psi_2\rangle)\otimes|\phi\rangle = \alpha(|\psi_1\rangle\otimes|\phi\rangle)+\beta(|\psi_2\rangle\otimes|\phi\rangle)\)</li>
+      <li><strong>Not commutative:</strong> In general \(|a\rangle\otimes|b\rangle \neq |b\rangle\otimes|a\rangle\) (the ordering of subsystems matters).</li>
+      <li><strong>Not surjective:</strong> Not every vector in the tensor product space can be written as a single tensor product. Those that cannot are <strong>entangled</strong> (see Tab ⑤).</li>
+    </ul>
+    <div class="highlight warn">
+      <strong>Common misconception:</strong> The tensor product is <em>not</em> the same as the Cartesian product or the outer product, although it is related to both. It produces a new vector space, not a set of pairs.
+    </div>
+  </div>
+
+  <!-- Inline quiz: Tensor Product -->
+  <div class="inline-quiz" id="iq-tensor">
+    <div class="iq-label">💡 Pause &amp; Think</div>
+    <div class="iq-question">If a single qubit lives in \(\mathbb{C}^2\), what is the dimension of the state space for a system of <strong>3 qubits</strong>?</div>
+    <div class="iq-options">
+      <div class="iq-opt" data-iq="0">6</div>
+      <div class="iq-opt" data-iq="1">8</div>
+      <div class="iq-opt" data-iq="0">9</div>
+      <div class="iq-opt" data-iq="0">3</div>
+    </div>
+    <div class="iq-fb" id="iq-tensor-fb"></div>
+  </div>
+
+  <div class="tab-nav-bottom">
+    <div></div>
+    <button class="nav-arrow" onclick="goTab(1)">② Multi-Qubit Systems →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB 2 — MULTI-QUBIT SYSTEMS ══════════════ -->
+<div class="tab-content" id="tab-multiqubit" role="tabpanel" aria-labelledby="tab-multiqubit-btn">
+
+  <div class="card">
+    <h2><span class="icon cyan">⊕</span> From 1 Qubit to \(n\) Qubits</h2>
+    <p>An \(n\)-qubit <strong>quantum register</strong> lives in the tensor product of \(n\) copies of \(\mathbb{C}^2\):</p>
+    <div class="math-block">$$\mathcal{H}_n = \underbrace{\mathbb{C}^2\otimes\mathbb{C}^2\otimes\cdots\otimes\mathbb{C}^2}_{n\text{ times}} = (\mathbb{C}^2)^{\otimes n}$$</div>
+    <p>The dimension of this space is \(2^n\). The most general \(n\)-qubit state is a superposition over all \(2^n\) computational basis states:</p>
+    <div class="math-block">$$|\psi\rangle = \sum_{x\in\{0,1\}^n} c_x\,|x\rangle, \qquad \sum_{x}|c_x|^2=1$$</div>
+    <p>Each \(c_x\) is a complex amplitude — to fully describe the state classically, you need all \(2^n\) of them.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon pink">📈</span> The Exponential Explosion</h2>
+    <p>This exponential scaling is the fundamental reason quantum computers can be powerful. Click a number of qubits to see how the dimension grows.</p>
+    <div class="controls-row" style="justify-content:center" id="dim-btns">
+      <button class="ctrl-btn" data-nq="1">1</button>
+      <button class="ctrl-btn active" data-nq="2">2</button>
+      <button class="ctrl-btn" data-nq="3">3</button>
+      <button class="ctrl-btn" data-nq="4">4</button>
+      <button class="ctrl-btn" data-nq="5">5</button>
+      <button class="ctrl-btn" data-nq="8">8</button>
+      <button class="ctrl-btn" data-nq="10">10</button>
+    </div>
+    <div class="dim-bars" id="dim-bars"></div>
+    <div class="state-display" id="dim-info" style="flex-direction:column;gap:4px"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon blue">🔍</span> Explore the Computational Basis</h2>
+    <p>Select the number of qubits, then click a basis state to see its tensor-product decomposition.</p>
+    <div class="controls-row" id="basis-n-btns">
+      <span style="color:var(--text-dim);font-size:.85rem">Qubits:</span>
+      <button class="ctrl-btn" data-bn="1">1</button>
+      <button class="ctrl-btn active" data-bn="2">2</button>
+      <button class="ctrl-btn" data-bn="3">3</button>
+      <button class="ctrl-btn" data-bn="4">4</button>
+    </div>
+    <div class="basis-grid" id="basis-grid"></div>
+    <div class="state-display" id="basis-detail" style="flex-direction:column;gap:6px;min-height:80px"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon purple">⬡</span> Quantum Registers as Subsystems</h2>
+    <p>A multi-qubit system can be divided into <strong>subsystems</strong> (also called registers). For example, a 4-qubit state can be viewed as:</p>
+    <ul>
+      <li>Four individual qubits: \(\mathcal{H}_A\otimes\mathcal{H}_B\otimes\mathcal{H}_C\otimes\mathcal{H}_D\)</li>
+      <li>Two 2-qubit registers: \(\mathcal{H}_{AB}\otimes\mathcal{H}_{CD}\)</li>
+      <li>One 3-qubit register and one qubit: \(\mathcal{H}_{ABC}\otimes\mathcal{H}_D\)</li>
+    </ul>
+    <div class="highlight purple">
+      <strong>Partial measurement:</strong> When you measure one register of a composite system, the other register collapses into a state that depends on the measurement outcome. This is the physical basis of entanglement.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon cyan">≡</span> Reference: Dimensions by Qubit Count</h2>
+    <table class="truth-table" style="max-width:520px">
+      <thead><tr><th>Qubits \(n\)</th><th>Basis states \(2^n\)</th><th>Amplitudes needed</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>2</td><td>2</td></tr>
+        <tr><td>2</td><td>4</td><td>4</td></tr>
+        <tr><td>3</td><td>8</td><td>8</td></tr>
+        <tr><td>5</td><td>32</td><td>32</td></tr>
+        <tr><td>10</td><td>1,024</td><td>1,024</td></tr>
+        <tr><td>20</td><td>1,048,576</td><td>≈ 10⁶</td></tr>
+        <tr><td>50</td><td>≈ 10¹⁵</td><td>≈ 10¹⁵</td></tr>
+        <tr><td>300</td><td>2³⁰⁰</td><td>More than atoms in the universe</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tab-nav-bottom">
+    <button class="nav-arrow" onclick="goTab(0)">← ① Tensor Products</button>
+    <button class="nav-arrow" onclick="goTab(2)">③ CNOT Gate →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TAB 3 – CNOT GATE ════════════════════ -->
+<div class="tab-content" id="tab-cnot" role="tabpanel" aria-labelledby="tab-cnot-btn">
+
+  <div class="card">
+    <h2><span class="icon cyan">⊕</span> What is the CNOT Gate?</h2>
+    <p>The <strong>Controlled-NOT</strong> (CNOT) gate is the most important two-qubit gate in quantum computing. It operates on a pair of qubits: a <strong style="color:var(--control-color)">control</strong> qubit and a <strong style="color:var(--target-color)">target</strong> qubit.</p>
+    <div class="highlight">
+      <strong>Rule:</strong> The CNOT flips the target qubit <em>if and only if</em> the control qubit is \(|1\rangle\). Otherwise, it leaves both qubits unchanged.
+    </div>
+    <p>In computational-basis notation:</p>
+    <div class="math-block">$$\mathrm{CNOT}\,|a,b\rangle \;=\; |a,\; a\oplus b\rangle$$</div>
+    <p>where \(\oplus\) denotes addition modulo 2 (the XOR operation).</p>
+  </div>
+
+  <!-- Truth table -->
+  <div class="card">
+    <h2><span class="icon green">⊞</span> Truth Table</h2>
+    <p>Click any row to see the CNOT action on the circuit below.</p>
+    <table class="truth-table" id="cnot-table">
+      <thead><tr><th>Control In</th><th>Target In</th><th>Control Out</th><th>Target Out</th></tr></thead>
+      <tbody>
+        <tr data-in="00"><td>|0⟩</td><td>|0⟩</td><td>|0⟩</td><td>|0⟩</td></tr>
+        <tr data-in="01"><td>|0⟩</td><td>|1⟩</td><td>|0⟩</td><td>|1⟩</td></tr>
+        <tr data-in="10"><td>|1⟩</td><td>|0⟩</td><td>|1⟩</td><td>|1⟩</td></tr>
+        <tr data-in="11"><td>|1⟩</td><td>|1⟩</td><td>|1⟩</td><td>|0⟩</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Interactive circuit -->
+  <div class="card">
+    <h2><span class="icon blue">⚡</span> Interactive Circuit</h2>
+    <p>Select an input state and watch the CNOT gate in action.</p>
+    <div class="controls-row">
+      <span style="color:var(--text-dim);font-size:0.85rem">Input:</span>
+      <button class="ctrl-btn active" data-ci="00">|00⟩</button>
+      <button class="ctrl-btn" data-ci="01">|01⟩</button>
+      <button class="ctrl-btn" data-ci="10">|10⟩</button>
+      <button class="ctrl-btn" data-ci="11">|11⟩</button>
+    </div>
+    <div style="position:relative">
+      <canvas class="circuit-canvas" id="cnot-cv" width="700" height="240" role="img" aria-label="CNOT gate circuit diagram"></canvas>
+      <div class="circuit-tooltip" id="cnot-tooltip"></div>
+    </div>
+    <div class="state-display" id="cnot-sd"></div>
+  </div>
+
+  <!-- Matrix -->
+  <div class="card">
+    <h2><span class="icon purple">▦</span> Matrix Representation</h2>
+    <p>In the ordered basis \(\{|00\rangle,|01\rangle,|10\rangle,|11\rangle\}\) the CNOT is:</p>
+    <div class="math-block">
+      $$\mathrm{CNOT}=\begin{pmatrix}1&0&0&0\\0&1&0&0\\0&0&0&1\\0&0&1&0\end{pmatrix}$$
+    </div>
+    <p style="text-align:center;color:var(--text-dim);font-size:.9rem">Hover over elements to see which basis transition they encode.</p>
+    <div class="matrix-wrap"><div class="matrix-grid cols-4" id="cnot-mat"></div></div>
+    <div id="mat-info" style="text-align:center;color:var(--text-dim);font-size:.88rem;margin-top:6px;min-height:22px"></div>
+    <h3>Key Properties</h3>
+    <ul>
+      <li><strong>Unitary:</strong> \(\mathrm{CNOT}^\dagger\!\cdot\!\mathrm{CNOT}=I\)</li>
+      <li><strong>Self-inverse:</strong> \(\mathrm{CNOT}^{2}=I\) — applying it twice returns the original state</li>
+      <li><strong>Entangling:</strong> it can create entanglement from separable states (see Tab ④)</li>
+    </ul>
+  </div>
+  <!-- CNOT on superpositions -->
+  <div class="card">
+    <h2><span class="icon purple">✦</span> CNOT on Superpositions</h2>
+    <p>The real power of CNOT appears when the <strong style="color:var(--control-color)">control</strong> qubit is in <strong>superposition</strong>. Click to see what happens:</p>
+    <div class="controls-row" style="justify-content:center" id="cnot-sup-btns">
+      <button class="ctrl-btn active" data-cs="p0">|+⟩⊗|0⟩</button>
+      <button class="ctrl-btn" data-cs="p1">|+⟩⊗|1⟩</button>
+      <button class="ctrl-btn" data-cs="m0">|−⟩⊗|0⟩</button>
+      <button class="ctrl-btn" data-cs="m1">|−⟩⊗|1⟩</button>
+    </div>
+    <div class="state-display crossfade" id="cnot-sup-result" style="flex-direction:column;gap:8px;min-height:100px"></div>
+    <div class="highlight purple" style="margin-top:12px">
+      <strong>Key insight:</strong> When the control is in superposition, CNOT creates <em>entanglement</em> — the output cannot be factored as a product of single-qubit states. This is exactly how Bell pairs are created!
+    </div>
+    <button class="crosstab-link" onclick="goTab(3)">See this in action with EPR pairs <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+  </div>
+
+  <!-- Inline quiz: CNOT -->
+  <div class="inline-quiz" id="iq-cnot">
+    <div class="iq-label">💡 Pause &amp; Think</div>
+    <div class="iq-question">If the control qubit is in state \(|0\rangle\) (not in superposition), can CNOT ever create entanglement?</div>
+    <div class="iq-options">
+      <div class="iq-opt" data-iq="0">Yes — CNOT always entangles</div>
+      <div class="iq-opt" data-iq="1">No — the output is always separable</div>
+      <div class="iq-opt" data-iq="0">It depends on the target qubit</div>
+    </div>
+    <div class="iq-fb" id="iq-cnot-fb"></div>
+  </div>
+
+  <div class="tab-nav-bottom">
+    <button class="nav-arrow" onclick="goTab(1)">← ② Multi-Qubit Systems</button>
+    <button class="nav-arrow" onclick="goTab(3)">④ EPR Pairs →</button>
+  </div>
+</div>
+
+<!-- ════════════════════ TAB 4 – EPR PAIRS ═══════════════════════ -->
+<div class="tab-content" id="tab-epr" role="tabpanel" aria-labelledby="tab-epr-btn">
+
+  <div class="card">
+    <h2><span class="icon pink">⟁</span> The EPR Circuit</h2>
+    <p>An <strong>EPR pair</strong> (Einstein–Podolsky–Rosen pair), also called a <strong>Bell pair</strong>, is the simplest entangled two-qubit state. It is created by just two gates:</p>
+    <ol>
+      <li>Apply a <strong>Hadamard gate</strong> \(H\) to the first qubit.</li>
+      <li>Apply a <strong>CNOT</strong> with the first qubit as control and the second as target.</li>
+    </ol>
+    <div class="highlight purple">
+      Starting from \(|00\rangle\), this circuit produces the Bell state
+      \(|\Phi^+\rangle = \tfrac{1}{\sqrt{2}}\!\left(|00\rangle+|11\rangle\right)\).
+    </div>
+  </div>
+
+  <!-- Step-by-step -->
+  <div class="card">
+    <h2><span class="icon blue">▶</span> Step-by-Step Construction</h2>
+    <p>Click the steps below or use the buttons to watch the circuit build the EPR pair.</p>
+    <div class="steps-timeline" id="epr-timeline">
+      <button class="step-btn active" data-step="0"><span class="step-num">01</span>Initial</button>
+      <button class="step-btn" data-step="1"><span class="step-num">02</span>Hadamard</button>
+      <button class="step-btn" data-step="2"><span class="step-num">03</span>CNOT → EPR</button>
+    </div>
+    <div class="controls-row" style="justify-content:center">
+      <button class="ctrl-btn" id="epr-prev" disabled aria-label="Previous step">← Previous</button>
+      <button class="ctrl-btn green" id="epr-next" aria-label="Next step">Next Step →</button>
+      <button class="ctrl-btn" id="epr-play" style="border-color:var(--cyan);color:var(--cyan)" aria-label="Auto-play steps">▶ Auto-play</button>
+      <button class="ctrl-btn purple" id="epr-reset" aria-label="Reset to initial state">Reset</button>
+      <div class="speed-control" aria-label="Animation speed">
+        <button class="speed-btn-ctrl" data-epr-speed="3000">0.5x</button>
+        <button class="speed-btn-ctrl active" data-epr-speed="2000">1x</button>
+        <button class="speed-btn-ctrl" data-epr-speed="1000">2x</button>
+        <button class="speed-btn-ctrl" data-epr-speed="500">4x</button>
+      </div>
+    </div>
+    <div style="position:relative">
+      <canvas class="circuit-canvas" id="epr-cv" width="700" height="260" role="img" aria-label="EPR pair construction circuit"></canvas>
+      <div class="circuit-tooltip" id="epr-tooltip"></div>
+    </div>
+    <div class="state-display" id="epr-sd"></div>
+    <div class="epr-explain crossfade" id="epr-explain">
+      <div class="epr-ex-title">What's happening</div>
+      <div class="epr-ex-body" id="epr-ex-body"></div>
+    </div>
+  </div>
+
+  <!-- All four Bell states -->
+  <div class="card">
+    <h2><span class="icon purple">✦</span> All Four Bell States</h2>
+    <p>By choosing different input pairs, the same \(H\)+CNOT circuit produces all four maximally-entangled Bell states:</p>
+    <table class="truth-table" id="bell-tbl">
+      <thead><tr><th>Input</th><th>Name</th><th>State</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>|00⟩</td><td>|Φ⁺⟩</td><td>\(\tfrac{1}{\sqrt2}(|00\rangle+|11\rangle)\)</td></tr>
+        <tr><td>|01⟩</td><td>|Ψ⁺⟩</td><td>\(\tfrac{1}{\sqrt2}(|01\rangle+|10\rangle)\)</td></tr>
+        <tr><td>|10⟩</td><td>|Φ⁻⟩</td><td>\(\tfrac{1}{\sqrt2}(|00\rangle-|11\rangle)\)</td></tr>
+        <tr><td>|11⟩</td><td>|Ψ⁻⟩</td><td>\(\tfrac{1}{\sqrt2}(|01\rangle-|10\rangle)\)</td></tr>
+      </tbody>
+    </table>
+    <div class="highlight">
+      <strong>Orthonormal basis:</strong> The four Bell states form a complete orthonormal basis for the 4-dimensional two-qubit space. Any two-qubit state can be decomposed into a superposition of Bell states.
+    </div>
+  </div>
+
+  <!-- Entanglement creation SVG diagram -->
+  <div class="card">
+    <h2><span class="icon purple">✦</span> How Entanglement Is Born</h2>
+    <p>Watch the quantum state evolve as it passes through the Hadamard and CNOT gates. The entanglement link appears when the state can no longer be factored.</p>
+    <svg class="ent-creation-svg" viewBox="0 0 600 200" id="ent-creation-diagram">
+      <!-- Qubit wires -->
+      <line x1="60" y1="60" x2="540" y2="60" stroke="var(--border)" stroke-width="2"/>
+      <line x1="60" y1="140" x2="540" y2="140" stroke="var(--border)" stroke-width="2"/>
+      <!-- Labels -->
+      <text x="30" y="64" fill="var(--cyan)" font-size="14" text-anchor="middle" font-weight="600">q1</text>
+      <text x="30" y="144" fill="var(--pink)" font-size="14" text-anchor="middle" font-weight="600">q2</text>
+      <!-- Initial state label -->
+      <text x="80" y="46" fill="var(--text-dim)" font-size="11" text-anchor="middle">|0&#x27E9;</text>
+      <text x="80" y="158" fill="var(--text-dim)" font-size="11" text-anchor="middle">|0&#x27E9;</text>
+      <!-- Hadamard gate -->
+      <rect x="155" y="36" width="48" height="48" rx="8" fill="rgba(167,139,250,0.12)" stroke="var(--entangled)" stroke-width="2"/>
+      <text x="179" y="65" fill="var(--entangled)" font-size="18" text-anchor="middle" font-weight="700">H</text>
+      <!-- After H label -->
+      <text x="245" y="46" fill="var(--text-dim)" font-size="10" text-anchor="middle">|+&#x27E9;</text>
+      <text x="245" y="158" fill="var(--text-dim)" font-size="10" text-anchor="middle">|0&#x27E9;</text>
+      <!-- CNOT gate -->
+      <line x1="350" y1="60" x2="350" y2="140" stroke="var(--accent)" stroke-width="2"/>
+      <circle cx="350" cy="60" r="7" fill="var(--cyan)"/>
+      <circle cx="350" cy="140" r="18" fill="none" stroke="var(--pink)" stroke-width="2.5"/>
+      <line x1="338" y1="140" x2="362" y2="140" stroke="var(--pink)" stroke-width="2"/>
+      <line x1="350" y1="128" x2="350" y2="152" stroke="var(--pink)" stroke-width="2"/>
+      <!-- Entanglement wavy line (animated) -->
+      <path id="ent-link-path" class="ent-glow-pulse" d="M 460,60 C 480,80 480,120 460,140"
+        fill="none" stroke="var(--entangled)" stroke-width="2.5" stroke-dasharray="6 4"
+        opacity="0.8"/>
+      <!-- Output labels -->
+      <text x="510" y="46" fill="var(--entangled)" font-size="12" text-anchor="middle" font-weight="600">Entangled!</text>
+      <text x="510" y="104" fill="var(--text-dim)" font-size="11" text-anchor="middle">|&#x3A6;&#x207A;&#x27E9;</text>
+      <!-- Stage labels -->
+      <text x="80" y="190" fill="var(--text-muted)" font-size="10" text-anchor="middle">Separable</text>
+      <text x="245" y="190" fill="var(--text-muted)" font-size="10" text-anchor="middle">Superposed</text>
+      <text x="460" y="190" fill="var(--entangled)" font-size="10" text-anchor="middle" font-weight="600">Entangled</text>
+      <!-- Stage connectors -->
+      <line x1="120" y1="186" x2="200" y2="186" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"/>
+      <line x1="290" y1="186" x2="410" y2="186" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"/>
+      <!-- Arrow markers on wires -->
+      <polygon points="540,57 530,53 530,61" fill="var(--accent)"/>
+      <polygon points="540,137 530,133 530,141" fill="var(--accent)"/>
+    </svg>
+  </div>
+
+  <!-- Try different inputs -->
+  <div class="card">
+    <h2><span class="icon cyan">⚡</span> Try Different Inputs</h2>
+    <p>Select a starting two-qubit state to see which Bell state the circuit produces.</p>
+    <div class="controls-row">
+      <button class="ctrl-btn active" data-bi="00">|00⟩</button>
+      <button class="ctrl-btn" data-bi="01">|01⟩</button>
+      <button class="ctrl-btn" data-bi="10">|10⟩</button>
+      <button class="ctrl-btn" data-bi="11">|11⟩</button>
+    </div>
+    <canvas class="circuit-canvas" id="bell-cv" width="700" height="260" role="img" aria-label="Bell state circuit diagram"></canvas>
+    <div class="state-display" id="bell-sd"></div>
+  </div>
+
+  <!-- ── Measurement Simulation ── -->
+  <div class="card">
+    <h2><span class="icon pink">🎲</span> Measure an EPR Pair</h2>
+    <p>Experience entanglement first-hand! Start with \(|\Phi^+\rangle=\tfrac{1}{\sqrt2}(|00\rangle+|11\rangle)\), then measure one qubit and watch the other <em>instantly</em> collapse.</p>
+    <div class="qubit-viz" id="meas-orbs">
+      <div class="qubit-col">
+        <div class="qubit-orb state-super" id="orb-q1">q&#x2081;</div>
+        <div class="qubit-label">Qubit 1</div>
+      </div>
+      <svg class="entanglement-svg" id="ent-arc-svg" width="200" height="80" viewBox="0 0 200 80">
+        <path class="entanglement-arc visible" d="M30,60 Q100,0 170,60"/>
+      </svg>
+      <div class="qubit-col">
+        <div class="qubit-orb state-super" id="orb-q2">q&#x2082;</div>
+        <div class="qubit-label">Qubit 2</div>
+      </div>
+    </div>
+    <div class="state-display" id="meas-state" style="min-height:64px;font-size:1.1rem"></div>
+    <div class="controls-row" style="justify-content:center;margin-top:12px">
+      <button class="ctrl-btn" id="meas-q1" style="border-color:var(--control-color);color:var(--control-color)">Measure Qubit 1</button>
+      <button class="ctrl-btn" id="meas-q2" style="border-color:var(--target-color);color:var(--target-color)">Measure Qubit 2</button>
+      <button class="ctrl-btn green" id="meas-batch">Measure 50 ×</button>
+      <button class="ctrl-btn purple" id="meas-reset">Reset to |Φ⁺⟩</button>
+    </div>
+    <div id="meas-log" style="margin-top:12px;font-size:.9rem;color:var(--text-dim);text-align:center;min-height:24px"></div>
+    <div id="meas-stats" style="margin-top:12px;border-radius:var(--radius-sm);padding:12px;background:var(--surface2);border:1px solid var(--border)">
+      <div style="display:flex;justify-content:center;gap:24px;font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--text-dim)">
+        <span>|00⟩: <strong id="stat-00" style="color:var(--cyan)">0</strong></span>
+        <span>|11⟩: <strong id="stat-11" style="color:var(--pink)">0</strong></span>
+        <span>Total: <strong id="stat-tot" style="color:var(--text)">0</strong></span>
+      </div>
+      <div class="histogram-wrap">
+        <canvas id="meas-histogram" width="500" height="140"></canvas>
+      </div>
+      <p style="font-size:.82rem;color:var(--text-muted);text-align:center;margin-top:8px">Run many measurements to see the 50/50 statistics emerge — but always perfectly correlated!</p>
+    </div>
+    <button class="crosstab-link" onclick="goTab(4)" style="display:block;margin:12px auto 0">You've seen it empirically — now let's define entanglement formally <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+  </div>
+
+  <!-- Predict the Measurement challenge -->
+  <div class="card">
+    <h2><span class="icon pink">🎯</span> Challenge: Predict the Measurement</h2>
+    <p>Test your intuition! You'll be given a two-qubit state and told what Qubit 1 measured. Can you predict Qubit 2?</p>
+    <div class="challenge-area" id="challenge-area">
+      <div class="ch-prompt" id="ch-prompt">Click "New Round" to start!</div>
+      <div class="ch-choices" id="ch-choices" style="display:none">
+        <button class="ch-choice" data-ch="0">|0⟩</button>
+        <button class="ch-choice" data-ch="1">|1⟩</button>
+      </div>
+      <div class="ch-feedback" id="ch-feedback"></div>
+      <div class="ch-scoreboard">
+        <span>Correct: <strong id="ch-correct" style="color:var(--green)">0</strong></span>
+        <span>Total: <strong id="ch-total" style="color:var(--text)">0</strong></span>
+        <span>Streak: <strong id="ch-streak" style="color:var(--yellow)">0</strong></span>
+      </div>
+    </div>
+    <div class="controls-row" style="justify-content:center;margin-top:12px">
+      <button class="ctrl-btn green" id="ch-new">New Round</button>
+      <button class="ctrl-btn" id="ch-reset-score">Reset Score</button>
+    </div>
+  </div>
+  <div class="tab-nav-bottom">
+    <button class="nav-arrow" onclick="goTab(2)">← ③ CNOT Gate</button>
+    <button class="nav-arrow" onclick="goTab(4)">⑤ Entanglement →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB 5 – ENTANGLEMENT ═════════════════════ -->
+<div class="tab-content" id="tab-entanglement" role="tabpanel" aria-labelledby="tab-entanglement-btn">
+
+  <div class="card">
+    <h2><span class="icon purple">⟐</span> What is Entanglement?</h2>
+    <p>A two-qubit state \(|\psi\rangle\) is called <strong>separable</strong> (not entangled) if it can be written as a tensor product of two single-qubit states:</p>
+    <div class="math-block">$$|\psi\rangle = |\alpha\rangle\otimes|\beta\rangle$$</div>
+    <p>for some single-qubit states \(|\alpha\rangle\) and \(|\beta\rangle\).</p>
+    <div class="highlight">
+      <strong>Definition:</strong> A state that <em>cannot</em> be written as such a product is called <strong>entangled</strong>.
+    </div>
+    <p>Entanglement is a uniquely quantum phenomenon with no classical counterpart. When two qubits are entangled, the outcome of measuring one qubit is correlated with the outcome of measuring the other — <em>no matter how far apart they are</em>.</p>
+
+    <div class="concept-grid">
+      <div class="concept-card">
+        <h4><span style="color:var(--cyan)">&#x29BF;</span> Non-local Correlations</h4>
+        <p>Measurement outcomes are correlated across any distance. Measuring one qubit instantly constrains the other, yet no information travels faster than light.</p>
+      </div>
+      <div class="concept-card">
+        <h4><span style="color:var(--pink)">&#x2716;</span> No Cloning</h4>
+        <p>Entangled states cannot be perfectly copied. The no-cloning theorem ensures quantum information is fundamentally different from classical bits.</p>
+      </div>
+      <div class="concept-card">
+        <h4><span style="color:var(--entangled)">&#x2318;</span> Monogamy</h4>
+        <p>A qubit maximally entangled with one partner cannot be entangled with another. Entanglement is a limited resource that must be shared carefully.</p>
+      </div>
+      <div class="concept-card">
+        <h4><span style="color:var(--green)">&#x26A1;</span> Resource for Computation</h4>
+        <p>Entanglement powers teleportation, superdense coding, and quantum error correction. It is the key resource behind quantum advantage.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon blue">⚡</span> Separable vs. Entangled — Visual Comparison</h2>
+    <p>Click each example to see whether it is separable or entangled, and why.</p>
+    <div class="controls-row" style="justify-content:center">
+      <button class="ctrl-btn active" data-es="sep1">|00⟩</button>
+      <button class="ctrl-btn" data-es="sep2">|+⟩⊗|0⟩</button>
+      <button class="ctrl-btn" data-es="ent1">|Φ⁺⟩</button>
+      <button class="ctrl-btn" data-es="ent2">|Ψ⁻⟩</button>
+    </div>
+    <div id="ent-box" class="state-display crossfade" style="flex-direction:column;gap:8px;min-height:140px"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon green">⊡</span> The Determinant Criterion</h2>
+    <p>Write a general two-qubit state as:</p>
+    <div class="math-block">$$|\psi\rangle = \alpha|00\rangle+\beta|01\rangle+\gamma|10\rangle+\delta|11\rangle$$</div>
+    <p>Arrange the amplitudes in a \(2\times 2\) matrix and compute its determinant:</p>
+    <div class="math-block">$$M=\begin{pmatrix}\alpha&\beta\\\gamma&\delta\end{pmatrix},\qquad \det M = \alpha\delta-\beta\gamma$$</div>
+    <div class="highlight success">
+      <strong>Criterion:</strong> The state is <strong>separable ⟺</strong> \(\alpha\delta-\beta\gamma=0\). If this quantity is nonzero, the state is <strong>entangled</strong>.
+    </div>
+    <p><em>Why?</em> If \(|\psi\rangle=(a|0\rangle+b|1\rangle)\otimes(c|0\rangle+d|1\rangle)\), then \(\alpha=ac,\;\beta=ad,\;\gamma=bc,\;\delta=bd\), so \(\alpha\delta-\beta\gamma=acbd-adbc=0\). A nonzero value means no such factorisation exists.</p>
+
+    <div class="worked-example">
+      <div class="we-title">✎ Worked Example — Is \(\tfrac{1}{2}(|00\rangle+|01\rangle+|10\rangle+|11\rangle)\) entangled?</div>
+      <div class="example-step"><div class="step-number">1</div><div class="step-content">Identify the amplitudes: \(\alpha = \tfrac12,\;\beta = \tfrac12,\;\gamma = \tfrac12,\;\delta = \tfrac12\).</div></div>
+      <div class="example-step"><div class="step-number">2</div><div class="step-content">Form the amplitude matrix: \(M = \begin{pmatrix}\tfrac12 & \tfrac12 \\[4pt] \tfrac12 & \tfrac12\end{pmatrix}\).</div></div>
+      <div class="example-step"><div class="step-number">3</div><div class="step-content">Compute the determinant: \(\det M = \tfrac12 \cdot \tfrac12 - \tfrac12 \cdot \tfrac12 = \tfrac14 - \tfrac14 = 0\).</div></div>
+      <div class="example-step"><div class="step-number">4</div><div class="step-content">Since \(\det M = 0\), the state is <strong style="color:var(--green)">separable</strong>. It factors as \(\tfrac{|0\rangle+|1\rangle}{\sqrt2}\otimes\tfrac{|0\rangle+|1\rangle}{\sqrt2} = |+\rangle\otimes|+\rangle\). Try it in the detector below!</div></div>
+    </div>
+  </div>
+
+  <!-- Interactive detector -->
+  <div class="card">
+    <h2><span class="icon pink">🔬</span> Interactive Entanglement Detector</h2>
+    <p>Enter the amplitudes of any two-qubit state and check whether it is entangled.</p>
+    <div class="two-col">
+      <div>
+        <div style="margin-bottom:10px"><label class="field-label">α  (amplitude of |00⟩)</label><input class="amp-input" id="amp-a" type="number" value="0.7071" step="0.1"></div>
+        <div style="margin-bottom:10px"><label class="field-label">β  (amplitude of |01⟩)</label><input class="amp-input" id="amp-b" type="number" value="0" step="0.1"></div>
+        <div style="margin-bottom:10px"><label class="field-label">γ  (amplitude of |10⟩)</label><input class="amp-input" id="amp-c" type="number" value="0" step="0.1"></div>
+        <div style="margin-bottom:10px"><label class="field-label">δ  (amplitude of |11⟩)</label><input class="amp-input" id="amp-d" type="number" value="0.7071" step="0.1"></div>
+        <div class="controls-row" style="margin-top:8px">
+          <button class="ctrl-btn green" id="chk-ent" style="flex:1">Check</button>
+        </div>
+        <div class="controls-row" style="margin-top:4px">
+          <button class="ctrl-btn preset-btn" data-preset="bell" style="flex:1;font-size:.82rem">|Φ⁺⟩</button>
+          <button class="ctrl-btn preset-btn" data-preset="product" style="flex:1;font-size:.82rem">|+0⟩</button>
+          <button class="ctrl-btn preset-btn" data-preset="psi" style="flex:1;font-size:.82rem">|Ψ⁻⟩</button>
+        </div>
+      </div>
+      <div id="ent-res" style="display:flex;flex-direction:column;gap:10px;justify-content:center"></div>
+    </div>
+  </div>
+
+  <!-- Inline quiz: Entanglement -->
+  <div class="inline-quiz" id="iq-ent">
+    <div class="iq-label">💡 Pause &amp; Think</div>
+    <div class="iq-question">The state \(\tfrac{1}{2}(|00\rangle+|01\rangle+|10\rangle+|11\rangle)\) has amplitudes \(\alpha=\beta=\gamma=\delta=\tfrac{1}{2}\). Is it entangled?</div>
+    <div class="iq-options">
+      <div class="iq-opt" data-iq="0">Yes — it has four nonzero amplitudes</div>
+      <div class="iq-opt" data-iq="1">No — \(\alpha\delta-\beta\gamma = \tfrac14 - \tfrac14 = 0\)</div>
+      <div class="iq-opt" data-iq="0">Cannot tell without measuring</div>
+    </div>
+    <div class="iq-fb" id="iq-ent-fb"></div>
+  </div>
+
+  <div class="tab-nav-bottom">
+    <button class="nav-arrow" onclick="goTab(3)">← ④ EPR Pairs</button>
+    <button class="nav-arrow" onclick="goTab(5)">⑥ Proof →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TAB 6 – PROOF ════════════════════════ -->
+<div class="tab-content" id="tab-proof" role="tabpanel" aria-labelledby="tab-proof-btn">
+
+  <div class="card">
+    <h2>Theorem: \(|\Phi^+\rangle\) is Entangled</h2>
+    <p>We prove that \(|\Phi^+\rangle=\tfrac{1}{\sqrt2}(|00\rangle+|11\rangle)\) cannot be written as a tensor product of two single-qubit states. Click each step to reveal it.</p>
+    <div class="controls-row" style="justify-content:flex-end;margin-bottom:4px">
+      <button class="ctrl-btn" id="proof-toggle" style="font-size:.82rem">Reveal All Steps</button>
+    </div>
+
+    <div class="proof-step open" data-s="1">
+      <div class="step-label">Step 1 — Assume Separability</div>
+      <div class="step-body" style="max-height:600px;opacity:1">
+        <p>Assume for contradiction that \(|\Phi^+\rangle\) is separable. Then there exist single-qubit states</p>
+        <div class="math-block">$$|\alpha\rangle=a|0\rangle+b|1\rangle,\qquad |\beta\rangle=c|0\rangle+d|1\rangle$$</div>
+        <p>with \(|\Phi^+\rangle=|\alpha\rangle\otimes|\beta\rangle\).</p>
+      </div>
+    </div>
+
+    <div class="proof-step" data-s="2">
+      <div class="step-label">Step 2 — Expand the Tensor Product</div>
+      <div class="step-body">
+        <p>Expanding:</p>
+        <div class="math-block">$$|\alpha\rangle\otimes|\beta\rangle = ac\,|00\rangle + ad\,|01\rangle + bc\,|10\rangle + bd\,|11\rangle$$</div>
+      </div>
+    </div>
+
+    <div class="proof-step" data-s="3">
+      <div class="step-label">Step 3 — Match Coefficients</div>
+      <div class="step-body">
+        <p>Comparing with \(|\Phi^+\rangle=\tfrac{1}{\sqrt2}|00\rangle+0\cdot|01\rangle+0\cdot|10\rangle+\tfrac{1}{\sqrt2}|11\rangle\) gives the system:</p>
+        <div class="math-block">$$ac=\tfrac{1}{\sqrt2},\quad ad=0,\quad bc=0,\quad bd=\tfrac{1}{\sqrt2}$$</div>
+      </div>
+    </div>
+
+    <div class="proof-step" data-s="4">
+      <div class="step-label">Step 4 — Derive the Contradiction</div>
+      <div class="step-body">
+        <p>From \(ad=0\): either \(a=0\) or \(d=0\).</p>
+        <ul>
+          <li><strong>Case 1 — </strong>\(a=0\): then \(ac=0\neq\tfrac{1}{\sqrt2}\). <strong>Contradiction.</strong></li>
+          <li><strong>Case 2 — </strong>\(d=0\): then \(bd=0\neq\tfrac{1}{\sqrt2}\). <strong>Contradiction.</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="proof-step" data-s="5">
+      <div class="step-label">Step 5 — Conclusion</div>
+      <div class="step-body">
+        <p>Since the assumption of separability leads to a contradiction in every case, we conclude:</p>
+        <div class="highlight success">
+          \(|\Phi^+\rangle=\tfrac{1}{\sqrt2}(|00\rangle+|11\rangle)\) is <strong>entangled</strong>. \(\blacksquare\)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Quick Check via the Determinant</h2>
+    <p>We can verify the same result algebraically. For \(|\Phi^+\rangle\) the amplitude matrix is:</p>
+    <div class="math-block">$$M=\begin{pmatrix}\tfrac{1}{\sqrt2}&0\\[4pt]0&\tfrac{1}{\sqrt2}\end{pmatrix}$$</div>
+    <p>Its determinant:</p>
+    <div class="math-block">$$\det M=\tfrac{1}{\sqrt2}\cdot\tfrac{1}{\sqrt2}-0\cdot0=\tfrac{1}{2}\neq 0$$</div>
+    <div class="highlight success">
+      Because \(\det M=\tfrac12\neq0\), the state is <strong>entangled</strong>. The Bell states achieve the maximum \(|\det M|=\frac12\) — they are <strong>maximally entangled</strong>.
+    </div>
+  </div>
+  <div class="tab-nav-bottom">
+    <button class="nav-arrow" onclick="goTab(4)">← ⑤ Entanglement</button>
+    <button class="nav-arrow" onclick="goTab(6)">⑦ Exercises →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB 7 – EXERCISES ════════════════════════ -->
+<div class="tab-content" id="tab-exercises" role="tabpanel" aria-labelledby="tab-exercises-btn">
+
+  <div style="background:linear-gradient(135deg,var(--surface2),var(--surface));border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div style="font-size:.95rem;color:var(--text-dim)">Score: <strong id="quiz-score" style="color:var(--cyan);font-size:1.2rem">0</strong> / <strong id="quiz-total" style="color:var(--text)">7</strong></div>
+    <div style="flex:1;max-width:300px;height:8px;border-radius:4px;background:var(--surface3);overflow:hidden">
+      <div id="quiz-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:4px;transition:width .4s ease"></div>
+    </div>
+    <button class="ctrl-btn" id="quiz-reset-all" style="font-size:.82rem">Reset All</button>
+  </div>
+
+  <div class="card">
+    <h2>Quiz 1 — Tensor Product Basics</h2>
+    <p>What is \(|1\rangle\otimes|0\rangle\) as a column vector?</p>
+    <div class="quiz-options" id="q1">
+      <div class="quiz-opt" data-ok="0">\(\begin{pmatrix}1\\0\\0\\0\end{pmatrix}\) — this is \(|00\rangle\)</div>
+      <div class="quiz-opt" data-ok="0">\(\begin{pmatrix}0\\1\\0\\0\end{pmatrix}\) — this is \(|01\rangle\)</div>
+      <div class="quiz-opt" data-ok="1">\(\begin{pmatrix}0\\0\\1\\0\end{pmatrix}\) — this is \(|10\rangle\)</div>
+      <div class="quiz-opt" data-ok="0">\(\begin{pmatrix}0\\0\\0\\1\end{pmatrix}\) — this is \(|11\rangle\)</div>
+    </div>
+    <div class="quiz-fb" id="q1-fb"></div>
+  </div>
+
+  <div class="card">
+    <h2>Quiz 2 — Hilbert Space Dimension</h2>
+    <p>How many complex amplitudes are needed to describe a general 5-qubit state?</p>
+    <div class="quiz-options" id="q2">
+      <div class="quiz-opt" data-ok="0">5</div>
+      <div class="quiz-opt" data-ok="0">10</div>
+      <div class="quiz-opt" data-ok="1">32</div>
+      <div class="quiz-opt" data-ok="0">25</div>
+    </div>
+    <div class="quiz-fb" id="q2-fb"></div>
+  </div>
+
+  <div class="card">
+    <h2>Quiz 3 — CNOT Action</h2>
+    <p>What is \(\mathrm{CNOT}\,|1,0\rangle\)?</p>
+    <div class="quiz-options" id="q3">
+      <div class="quiz-opt" data-ok="0">|00⟩</div>
+      <div class="quiz-opt" data-ok="0">|10⟩</div>
+      <div class="quiz-opt" data-ok="1">|11⟩</div>
+      <div class="quiz-opt" data-ok="0">|01⟩</div>
+    </div>
+    <div class="quiz-fb" id="q3-fb"></div>
+  </div>
+
+  <div class="card">
+    <h2>Quiz 4 — Superposition Through CNOT</h2>
+    <p>Applying CNOT to \(\tfrac{1}{\sqrt2}(|00\rangle+|10\rangle)\) yields:</p>
+    <div class="quiz-options" id="q4">
+      <div class="quiz-opt" data-ok="1">\(\tfrac{1}{\sqrt2}(|00\rangle+|11\rangle)\)</div>
+      <div class="quiz-opt" data-ok="0">\(\tfrac{1}{\sqrt2}(|00\rangle+|10\rangle)\)</div>
+      <div class="quiz-opt" data-ok="0">\(\tfrac{1}{\sqrt2}(|01\rangle+|11\rangle)\)</div>
+      <div class="quiz-opt" data-ok="0">\(\tfrac{1}{\sqrt2}(|10\rangle+|01\rangle)\)</div>
+    </div>
+    <div class="quiz-fb" id="q4-fb"></div>
+  </div>
+
+  <div class="card">
+    <h2>Quiz 5 — Entanglement Detection</h2>
+    <p>Is \(\tfrac12(|00\rangle+|01\rangle+|10\rangle+|11\rangle)\) entangled?</p>
+    <div class="quiz-options" id="q5">
+      <div class="quiz-opt" data-ok="1">No — it is separable \(\bigl(\tfrac{|0\rangle+|1\rangle}{\sqrt2}\otimes\tfrac{|0\rangle+|1\rangle}{\sqrt2}\bigr)\)</div>
+      <div class="quiz-opt" data-ok="0">Yes — it is entangled</div>
+      <div class="quiz-opt" data-ok="0">Cannot be determined without measurement</div>
+    </div>
+    <div class="quiz-fb" id="q5-fb"></div>
+  </div>
+
+  <div class="card">
+    <h2>Quiz 6 — Bell State Identification</h2>
+    <p>Which Bell state does \((H\otimes I)\cdot\mathrm{CNOT}\) produce from \(|11\rangle\)?</p>
+    <div class="quiz-options" id="q6">
+      <div class="quiz-opt" data-ok="0">\(|\Phi^+\rangle=\tfrac{1}{\sqrt2}(|00\rangle+|11\rangle)\)</div>
+      <div class="quiz-opt" data-ok="0">\(|\Psi^+\rangle=\tfrac{1}{\sqrt2}(|01\rangle+|10\rangle)\)</div>
+      <div class="quiz-opt" data-ok="0">\(|\Phi^-\rangle=\tfrac{1}{\sqrt2}(|00\rangle-|11\rangle)\)</div>
+      <div class="quiz-opt" data-ok="1">\(|\Psi^-\rangle=\tfrac{1}{\sqrt2}(|01\rangle-|10\rangle)\)</div>
+    </div>
+    <div class="quiz-fb" id="q6-fb"></div>
+  </div>
+
+  <div class="card">
+    <h2>Quiz 7 — Tensor Product Properties</h2>
+    <p>Is the tensor product commutative? That is, does \(|a\rangle\otimes|b\rangle = |b\rangle\otimes|a\rangle\) always hold?</p>
+    <div class="quiz-options" id="q7">
+      <div class="quiz-opt" data-ok="0">Yes — order does not matter</div>
+      <div class="quiz-opt" data-ok="1">No — \(|0\rangle\otimes|1\rangle = |01\rangle \neq |10\rangle = |1\rangle\otimes|0\rangle\)</div>
+      <div class="quiz-opt" data-ok="0">Only for basis states, not superpositions</div>
+    </div>
+    <div class="quiz-fb" id="q7-fb"></div>
+  </div>
+  <div class="tab-nav-bottom">
+    <button class="nav-arrow" onclick="goTab(5)">← ⑥ Proof</button>
+    <div></div>
+  </div>
+
+  <div style="margin-top:2rem;padding:1.5rem;background:linear-gradient(135deg,var(--surface2),var(--surface));border:1px solid var(--border);border-radius:var(--radius);text-align:center">
+    <p style="color:var(--text-dim);margin-bottom:1rem;font-size:.95rem">Continue your quantum journey</p>
+    <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+      <a href="03_bomb_tester.html" style="padding:0.6rem 1.5rem;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);border-radius:var(--radius-sm);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:8px" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">← Previous: Bomb Tester</a>
+      <a href="07_reversible_computation.html" style="padding:0.6rem 1.5rem;border:1px solid var(--accent);background:linear-gradient(135deg,var(--accent),#818cf8);color:#fff;border-radius:var(--radius-sm);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px var(--accent-glow)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Next: Reversible Computation →</a>
+    </div>
+  </div>
+</div>
+
+</div><!-- .container -->
+
+<!-- ════════════════════════ JAVASCRIPT ═══════════════════════════ -->
+<script>
+// ─── Tab navigation with accessibility + progress ────────────────
+const tabBtns = document.querySelectorAll('.tab-btn');
+const tabPanes = document.querySelectorAll('.tab-content');
+const tabPips = document.querySelectorAll('.tab-pip');
+const visitedTabs = new Set([0]);
+const liveStatus = document.getElementById('live-status');
+
+function announce(msg) { if (liveStatus) liveStatus.textContent = msg; }
+
+function updateProgress() {
+  tabPips.forEach((pip, i) => {
+    pip.classList.toggle('visited', visitedTabs.has(i));
+    pip.classList.toggle('current', tabBtns[i].classList.contains('active'));
+  });
+  const label = document.getElementById('progress-label');
+  if (label) label.textContent = visitedTabs.size + ' / ' + tabBtns.length + ' explored';
+}
+
+function goTab(idx) {
+  tabBtns.forEach((x, i) => { x.classList.remove('active'); x.setAttribute('aria-selected', 'false'); });
+  tabPanes.forEach(x => x.classList.remove('active'));
+  tabBtns[idx].classList.add('active');
+  tabBtns[idx].setAttribute('aria-selected', 'true');
+  tabPanes[idx].classList.add('active');
+  visitedTabs.add(idx);
+  updateProgress();
+  announce(tabBtns[idx].textContent.replace(/[①-⑦]\s*/, '') + ' section');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+tabBtns.forEach((b,i) => b.addEventListener('click', () => goTab(i)));
+
+// ─── KaTeX auto-render ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof renderMathInElement === 'function') {
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '\\(', right: '\\)', display: false }
+      ],
+      throwOnError: false
+    });
+  }
+});
+
+// ─── Crossfade utility ───────────────────────────────────────────
+function crossfade(el, updateFn) {
+  if (!el) return updateFn();
+  el.classList.add('fading');
+  setTimeout(() => {
+    updateFn();
+    el.classList.remove('fading');
+  }, 200);
+}
+
+// ─── Inline mini-quiz engine ─────────────────────────────────────
+const IQ_FB = {
+  'iq-tensor': {
+    ok: 'Correct! \\(\\dim = 2^3 = 8\\). Three qubits give us an 8-dimensional Hilbert space with basis states \\(|000\\rangle\\) through \\(|111\\rangle\\).',
+    no: 'The dimension of \\(n\\) qubits is \\(2^n\\), not \\(n \\times 2\\) or \\(n^2\\). For 3 qubits: \\(2^3 = 8\\).'
+  },
+  'iq-cnot': {
+    ok: 'Correct! When the control is \\(|0\\rangle\\), CNOT acts as the identity — it does nothing. The output is \\(|0\\rangle\\otimes|\\text{target}\\rangle\\), which is always a product state. Superposition in the control is the essential ingredient for creating entanglement.',
+    no: 'Think about the CNOT rule: it flips the target only when the control is \\(|1\\rangle\\). If the control is definitely \\(|0\\rangle\\), the target is never flipped — CNOT acts as the identity, and no entanglement is created.'
+  },
+  'iq-ent': {
+    ok: 'Correct! The determinant \\(\\alpha\\delta - \\beta\\gamma = \\tfrac{1}{4} - \\tfrac{1}{4} = 0\\). This state factors as \\(|+\\rangle\\otimes|+\\rangle\\) — it is separable despite having four nonzero amplitudes.',
+    no: 'Use the determinant test! With \\(\\alpha=\\beta=\\gamma=\\delta=\\tfrac{1}{2}\\): \\(\\alpha\\delta - \\beta\\gamma = \\tfrac{1}{4} - \\tfrac{1}{4} = 0\\). Zero determinant means separable.'
+  }
+};
+
+document.querySelectorAll('.inline-quiz').forEach(quiz => {
+  const id = quiz.id;
+  quiz.querySelectorAll('.iq-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const ok = opt.dataset.iq === '1';
+      quiz.querySelectorAll('.iq-opt').forEach(x => x.classList.add('disabled'));
+      opt.classList.add(ok ? 'correct' : 'wrong');
+      if (!ok) quiz.querySelector('[data-iq="1"]').classList.add('correct');
+      const fb = document.getElementById(id + '-fb');
+      fb.className = 'iq-fb show ' + (ok ? 'ok' : 'nope');
+      fb.innerHTML = ok ? IQ_FB[id].ok : IQ_FB[id].no;
+      if (typeof renderMathInElement === 'function') {
+        renderMathInElement(fb, {
+          delimiters: [{ left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false }],
+          throwOnError: false
+        });
+      }
+    });
+  });
+});
+
+// ─── Canvas DPR helper ──────────────────────────────────────────
+function initCanvas(cv) {
+  if (!cv) return null;
+  const dpr = window.devicePixelRatio || 1;
+  const w = +cv.getAttribute('width'), h = +cv.getAttribute('height');
+  cv.width = w * dpr; cv.height = h * dpr;
+  cv.style.width = '100%'; cv.style.maxWidth = w + 'px'; cv.style.height = 'auto';
+  cv.style.aspectRatio = w + '/' + h;
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx._w = w; ctx._h = h;
+  return ctx;
+}
+
+// ─── Drawing primitives ─────────────────────────────────────────
+// Pass 4: Dynamic colors that respect light/dark theme
+function getCOL() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  return {
+    wire: isLight ? '#d0d5e0' : '#2a3550',
+    wireOn: '#6366f1',
+    ctrl: '#22d3ee',
+    tgt: '#f472b6',
+    had: '#a78bfa',
+    green: '#34d399',
+    text: isLight ? '#1a1d27' : '#e2e8f0',
+    dim: isLight ? '#5a5e70' : '#8892a8',
+    ent: '#a78bfa',
+    bg: isLight ? '#f5f6fa' : '#0a0e1a',
+    soft: 'rgba(99,102,241,0.15)'
+  };
+}
+let COL = getCOL();
+
+function line(ctx, x1, y1, x2, y2, c, w) {
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+  ctx.strokeStyle = c || COL.wire; ctx.lineWidth = w || 1.5; ctx.stroke();
+}
+function dot(ctx, x, y, r, c) {
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle = c; ctx.fill();
+}
+function circle(ctx, x, y, r, c, w) {
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.strokeStyle = c; ctx.lineWidth = w||2.5; ctx.stroke();
+}
+function txt(ctx, s, x, y, c, sz, align) {
+  ctx.fillStyle = c || COL.text; ctx.font = (sz||14)+'px "Inter","Segoe UI",sans-serif';
+  ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle'; ctx.fillText(s, x, y);
+}
+function arrowTip(ctx, x, y, c) {
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-8,y-4); ctx.lineTo(x-8,y+4); ctx.closePath();
+  ctx.fillStyle = c || COL.wireOn; ctx.fill();
+}
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath(); ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+function drawCtrlDot(ctx, x, y) { dot(ctx,x,y,7,COL.ctrl); }
+function drawTgtCircle(ctx, x, y) {
+  circle(ctx,x,y,18,COL.tgt,2.5);
+  line(ctx,x-12,y,x+12,y,COL.tgt,2);
+  line(ctx,x,y-12,x,y+12,COL.tgt,2);
+}
+function drawHBox(ctx, x, y) {
+  const s = 22;
+  roundRect(ctx, x-s, y-s, s*2, s*2, 6);
+  ctx.fillStyle = 'rgba(167,139,250,0.12)'; ctx.fill();
+  ctx.strokeStyle = COL.had; ctx.lineWidth = 2; ctx.stroke();
+  txt(ctx, 'H', x, y, COL.had, 18);
+}
+
+// ═══════════════════ TENSOR PRODUCT CALCULATOR ════════════════════
+const S2 = 1/Math.sqrt(2);
+const TP_STATES = {
+  '0': { v:[1,0], lbl:'|0⟩', tex:'|0\\rangle' },
+  '1': { v:[0,1], lbl:'|1⟩', tex:'|1\\rangle' },
+  '+': { v:[S2,S2], lbl:'|+⟩', tex:'|+\\rangle' },
+  '-': { v:[S2,-S2], lbl:'|−⟩', tex:'|-\\rangle' },
+  'custom': { v:[0.8,0.6], lbl:'custom', tex:'|\\psi\\rangle' }
+};
+let tpA = '0', tpB = '0';
+
+function getTPState(key, side) {
+  if (key !== 'custom') return TP_STATES[key];
+  const a = parseFloat(document.getElementById('tp-'+side+'0').value) || 0;
+  const b = parseFloat(document.getElementById('tp-'+side+'1').value) || 0;
+  return { v:[a,b], lbl:`(${fmtV(a)}|0⟩+${fmtV(b)}|1⟩)`, tex: fmtV(a)+'|0\\rangle+'+fmtV(b)+'|1\\rangle' };
+}
+
+function fmtV(v) {
+  if (Math.abs(v)<1e-9) return '0';
+  if (Math.abs(v-1)<1e-6) return '1';
+  if (Math.abs(v+1)<1e-6) return '−1';
+  if (Math.abs(v-S2)<1e-4) return '1/√2';
+  if (Math.abs(v+S2)<1e-4) return '−1/√2';
+  if (Math.abs(v-0.5)<1e-4) return '½';
+  if (Math.abs(v+0.5)<1e-4) return '−½';
+  return v.toFixed(4);
+}
+
+function updateTP() {
+  const a = getTPState(tpA, 'a'), b = getTPState(tpB, 'b');
+  document.getElementById('tp-custom-a').style.display = tpA === 'custom' ? 'block' : 'none';
+  document.getElementById('tp-custom-b').style.display = tpB === 'custom' ? 'block' : 'none';
+  const result = [a.v[0]*b.v[0], a.v[0]*b.v[1], a.v[1]*b.v[0], a.v[1]*b.v[1]];
+  const labels = ['00','01','10','11'];
+
+  // Visual
+  const vis = document.getElementById('tp-visual');
+  vis.innerHTML = `
+    <div>
+      <div class="vec-label" style="color:var(--control-color)">Qubit A: ${a.lbl}</div>
+      <div class="matrix-grid cols-2" style="grid-template-columns:1fr;gap:1px;margin:0">
+        <div class="cell nonzero" style="min-width:56px;min-height:36px;font-size:.95rem">${fmtV(a.v[0])}</div>
+        <div class="cell nonzero" style="min-width:56px;min-height:36px;font-size:.95rem">${fmtV(a.v[1])}</div>
+      </div>
+    </div>
+    <div class="symbol">⊗</div>
+    <div>
+      <div class="vec-label" style="color:var(--target-color)">Qubit B: ${b.lbl}</div>
+      <div class="matrix-grid cols-2" style="grid-template-columns:1fr;gap:1px;margin:0">
+        <div class="cell nonzero" style="min-width:56px;min-height:36px;font-size:.95rem">${fmtV(b.v[0])}</div>
+        <div class="cell nonzero" style="min-width:56px;min-height:36px;font-size:.95rem">${fmtV(b.v[1])}</div>
+      </div>
+    </div>
+    <div class="symbol">=</div>
+    <div>
+      <div class="vec-label">Result</div>
+      <div class="matrix-grid cols-2" style="grid-template-columns:1fr;gap:1px;margin:0">
+        ${result.map((v,i) => `<div class="cell ${Math.abs(v)>1e-9?'nonzero':'zero'}" style="min-width:56px;min-height:36px;font-size:.95rem">${fmtV(v)} <span style="font-size:.7rem;color:var(--text-muted)">${labels[i]}</span></div>`).join('')}
+      </div>
+    </div>`;
+
+  // KaTeX state
+  const rEl = document.getElementById('tp-result'); rEl.innerHTML = '';
+  const terms = labels.map((l,i) => {
+    if (Math.abs(result[i])<1e-9) return null;
+    const c = Math.abs(result[i]-1)<1e-6 ? '' :
+              Math.abs(result[i]+1)<1e-6 ? '-' :
+              Math.abs(Math.abs(result[i])-S2)<1e-4 ? (result[i]>0?'\\tfrac{1}{\\sqrt2}':'-\\tfrac{1}{\\sqrt2}') :
+              fmtV(result[i]);
+    return c+'|'+l+'\\rangle';
+  }).filter(Boolean);
+  const tex = a.tex + '\\otimes' + b.tex + '=' + terms.join('+').replace(/\+\-/g,'-');
+  katex.render(tex, rEl, {throwOnError:false});
+}
+
+document.querySelectorAll('#tp-btns-a .ctrl-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#tp-btns-a .ctrl-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); tpA = b.dataset.tp; updateTP();
+}));
+document.querySelectorAll('#tp-btns-b .ctrl-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#tp-btns-b .ctrl-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); tpB = b.dataset.tp; updateTP();
+}));
+['tp-a0','tp-a1','tp-b0','tp-b1'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateTP);
+});
+
+// ═══════════════════ MULTI-QUBIT DIMENSION EXPLORER ══════════════
+function updateDim(n) {
+  document.querySelectorAll('#dim-btns .ctrl-btn').forEach(b => b.classList.toggle('active', +b.dataset.nq===n));
+  const dim = Math.pow(2, n);
+  const maxH = 160;
+  const maxDim = 1024; // for visual scaling
+  const bars = document.getElementById('dim-bars');
+  bars.innerHTML = '';
+  for (let i = 1; i <= Math.min(n, 10); i++) {
+    const d = Math.pow(2, i);
+    const h = Math.max(4, (Math.log2(d) / Math.log2(maxDim)) * maxH);
+    bars.innerHTML += `<div class="dim-bar-wrap">
+      <div class="dim-bar-val">${d > 9999 ? '2^' + i : d}</div>
+      <div class="dim-bar" style="height:${h}px"></div>
+      <div class="dim-bar-label">${i}q</div>
+    </div>`;
+  }
+  const info = document.getElementById('dim-info');
+  info.innerHTML = '';
+  const tex = n + '\\text{ qubits}\\;\\Rightarrow\\;2^{' + n + '}=' + (dim <= 100000 ? dim.toLocaleString() : '2^{'+n+'}') + '\\text{ basis states}';
+  katex.render(tex, info, {throwOnError:false});
+}
+document.querySelectorAll('#dim-btns .ctrl-btn').forEach(b => b.addEventListener('click', () => updateDim(+b.dataset.nq)));
+
+// ═══════════════════ BASIS STATE EXPLORER ═════════════════════════
+let basisN = 2;
+function updateBasis(n) {
+  basisN = n;
+  document.querySelectorAll('#basis-n-btns .ctrl-btn').forEach(b => b.classList.toggle('active', +b.dataset.bn===n));
+  const grid = document.getElementById('basis-grid');
+  const num = Math.pow(2, n);
+  grid.innerHTML = '';
+  for (let i = 0; i < num; i++) {
+    const bits = i.toString(2).padStart(n, '0');
+    const btn = document.createElement('button');
+    btn.className = 'basis-btn' + (i===0?' active':'');
+    btn.textContent = '|' + bits + '⟩';
+    btn.addEventListener('click', () => {
+      grid.querySelectorAll('.basis-btn').forEach(x => x.classList.remove('active'));
+      btn.classList.add('active');
+      showBasisDetail(n, i);
+    });
+    grid.appendChild(btn);
+  }
+  showBasisDetail(n, 0);
+}
+
+function showBasisDetail(n, idx) {
+  const bits = idx.toString(2).padStart(n, '0');
+  const detail = document.getElementById('basis-detail');
+  detail.innerHTML = '';
+  const parts = bits.split('').map((b,i) => '|'+b+'\\rangle_{q_'+i+'}');
+  const tex = '|'+bits+'\\rangle = ' + parts.join('\\otimes');
+  const decTex = '\\text{Decimal: }' + idx + '\\qquad\\text{Binary: }' + bits;
+  const d1 = document.createElement('div'); d1.style.fontSize = '1.15rem';
+  katex.render(tex, d1, {throwOnError:false});
+  const d2 = document.createElement('div'); d2.style.cssText = 'font-size:.9rem;color:var(--text-dim)';
+  katex.render(decTex, d2, {throwOnError:false});
+  detail.appendChild(d1);
+  detail.appendChild(d2);
+}
+document.querySelectorAll('#basis-n-btns .ctrl-btn').forEach(b => b.addEventListener('click', () => updateBasis(+b.dataset.bn)));
+
+// ═══════════════════ CNOT CIRCUIT ═════════════════════════════════
+function cnotOut(inp) { const c=+inp[0], t=+inp[1]; return ''+c+(c^t); }
+
+const cnotCtx = initCanvas(document.getElementById('cnot-cv'));
+function drawCNOT(inp) {
+  const ctx = cnotCtx, W = ctx._w, H = ctx._h;
+  const out = cnotOut(inp);
+  ctx.clearRect(0,0,W,H);
+  const y1=80, y2=160, xS=70, xE=630, xG=350;
+  txt(ctx,'control',32,y1-22,COL.ctrl,12);
+  txt(ctx,'target',32,y2-22,COL.tgt,12);
+  line(ctx,xS,y1,xE,y1,COL.wireOn,2.5); arrowTip(ctx,xE,y1,COL.wireOn);
+  line(ctx,xS,y2,xE,y2,COL.wireOn,2.5); arrowTip(ctx,xE,y2,COL.wireOn);
+  txt(ctx,'|'+inp[0]+'⟩',xS-14,y1,COL.ctrl,16);
+  txt(ctx,'|'+inp[1]+'⟩',xS-14,y2,COL.tgt,16);
+  txt(ctx,'|'+out[0]+'⟩',xE+22,y1,COL.ctrl,16);
+  txt(ctx,'|'+out[1]+'⟩',xE+22,y2,COL.tgt,16);
+  line(ctx,xG,y1,xG,y2,COL.wireOn,2);
+  drawCtrlDot(ctx,xG,y1);
+  drawTgtCircle(ctx,xG,y2);
+  if(inp[0]==='1'){
+    roundRect(ctx,xG-28,y2-28,56,56,8);
+    ctx.fillStyle='rgba(255,110,138,0.06)'; ctx.fill();
+  }
+  // Gate label
+  txt(ctx,'CNOT',xG,y2+34,COL.dim,11);
+}
+function updateCNOT(inp) {
+  drawCNOT(inp);
+  const d = document.getElementById('cnot-sd'); d.innerHTML = '';
+  katex.render(`\\mathrm{CNOT}\\,|${inp[0]}${inp[1]}\\rangle=|${cnotOut(inp)[0]}${cnotOut(inp)[1]}\\rangle`, d, {throwOnError:false});
+  document.querySelectorAll('#cnot-table tbody tr').forEach(r => r.classList.toggle('hl', r.dataset.in===inp));
+  document.querySelectorAll('[data-ci]').forEach(b => b.classList.toggle('active', b.dataset.ci===inp));
+}
+document.querySelectorAll('[data-ci]').forEach(b => b.addEventListener('click', () => updateCNOT(b.dataset.ci)));
+document.querySelectorAll('#cnot-table tbody tr').forEach(r => r.addEventListener('click', () => updateCNOT(r.dataset.in)));
+
+// ═══════════════════ CNOT MATRIX ══════════════════════════════════
+const MAT = [[1,0,0,0],[0,1,0,0],[0,0,0,1],[0,0,1,0]];
+const BAS = ['|00⟩','|01⟩','|10⟩','|11⟩'];
+const matDiv = document.getElementById('cnot-mat'), matInfo = document.getElementById('mat-info');
+MAT.forEach((row,i) => row.forEach((v,j) => {
+  const c = document.createElement('div');
+  c.className = 'cell '+(v?'one':'zero'); c.textContent = v;
+  c.addEventListener('mouseenter', () => {
+    matInfo.textContent = v ? `${BAS[j]} → contributes to ${BAS[i]}` : `${BAS[j]} does not contribute to ${BAS[i]}`;
+    c.classList.add('hi');
+  });
+  c.addEventListener('mouseleave', () => { matInfo.textContent = ''; c.classList.remove('hi'); });
+  matDiv.appendChild(c);
+}));
+
+// ═══════════════════ CNOT ON SUPERPOSITIONS ════════════════════════
+const CNOT_SUP = {
+  'p0': {
+    input: '\\tfrac{1}{\\sqrt2}(|0\\rangle+|1\\rangle)\\otimes|0\\rangle = \\tfrac{1}{\\sqrt2}(|00\\rangle+|10\\rangle)',
+    step: '\\mathrm{CNOT}: \\;|00\\rangle\\to|00\\rangle,\\;|10\\rangle\\to|11\\rangle',
+    output: '\\tfrac{1}{\\sqrt2}(|00\\rangle+|11\\rangle) = |\\Phi^+\\rangle',
+    kind: 'Entangled (Bell state)'
+  },
+  'p1': {
+    input: '\\tfrac{1}{\\sqrt2}(|0\\rangle+|1\\rangle)\\otimes|1\\rangle = \\tfrac{1}{\\sqrt2}(|01\\rangle+|11\\rangle)',
+    step: '\\mathrm{CNOT}: \\;|01\\rangle\\to|01\\rangle,\\;|11\\rangle\\to|10\\rangle',
+    output: '\\tfrac{1}{\\sqrt2}(|01\\rangle+|10\\rangle) = |\\Psi^+\\rangle',
+    kind: 'Entangled (Bell state)'
+  },
+  'm0': {
+    input: '\\tfrac{1}{\\sqrt2}(|0\\rangle-|1\\rangle)\\otimes|0\\rangle = \\tfrac{1}{\\sqrt2}(|00\\rangle-|10\\rangle)',
+    step: '\\mathrm{CNOT}: \\;|00\\rangle\\to|00\\rangle,\\;|10\\rangle\\to|11\\rangle',
+    output: '\\tfrac{1}{\\sqrt2}(|00\\rangle-|11\\rangle) = |\\Phi^-\\rangle',
+    kind: 'Entangled (Bell state)'
+  },
+  'm1': {
+    input: '\\tfrac{1}{\\sqrt2}(|0\\rangle-|1\\rangle)\\otimes|1\\rangle = \\tfrac{1}{\\sqrt2}(|01\\rangle-|11\\rangle)',
+    step: '\\mathrm{CNOT}: \\;|01\\rangle\\to|01\\rangle,\\;|11\\rangle\\to|10\\rangle',
+    output: '\\tfrac{1}{\\sqrt2}(|01\\rangle-|10\\rangle) = |\\Psi^-\\rangle',
+    kind: 'Entangled (Bell state)'
+  }
+};
+
+function showCnotSup(key) {
+  const s = CNOT_SUP[key];
+  const el = document.getElementById('cnot-sup-result');
+  crossfade(el, () => {
+    el.innerHTML = '';
+    const d1 = document.createElement('div'); d1.style.cssText = 'font-size:.85rem;color:var(--text-dim)';
+    d1.textContent = 'Input:';
+    const d2 = document.createElement('div');
+    katex.render(s.input, d2, {throwOnError:false});
+    const d3 = document.createElement('div'); d3.style.cssText = 'font-size:.85rem;color:var(--text-dim);margin-top:4px';
+    d3.textContent = 'Apply CNOT:';
+    const d4 = document.createElement('div');
+    katex.render(s.step, d4, {throwOnError:false});
+    const d5 = document.createElement('div'); d5.style.cssText = 'font-size:.85rem;color:var(--text-dim);margin-top:4px';
+    d5.textContent = 'Output:';
+    const d6 = document.createElement('div'); d6.style.fontSize = '1.15rem';
+    katex.render(s.output, d6, {throwOnError:false});
+    const d7 = document.createElement('div');
+    d7.style.cssText = 'color:var(--pink);font-weight:600;font-size:.95rem;margin-top:4px';
+    d7.textContent = s.kind;
+    el.append(d1,d2,d3,d4,d5,d6,d7);
+  });
+  document.querySelectorAll('#cnot-sup-btns .ctrl-btn').forEach(b => b.classList.toggle('active', b.dataset.cs===key));
+}
+document.querySelectorAll('#cnot-sup-btns .ctrl-btn').forEach(b => b.addEventListener('click', () => showCnotSup(b.dataset.cs)));
+
+// ═══════════════════ EPR STEP-BY-STEP ═════════════════════════════
+const eprCtx = initCanvas(document.getElementById('epr-cv'));
+let eprStep = 0;
+const eprData = [
+  { lbl:'Initial state', tex:'|00\\rangle',
+    explain:'<strong>Starting point:</strong> Both qubits are in the ground state \\(|0\\rangle\\). The combined system is \\(|0\\rangle \\otimes |0\\rangle = |00\\rangle\\) — a simple product state. No entanglement, no superposition. This is the "blank canvas" for building a Bell pair.' },
+  { lbl:'After Hadamard on qubit 1',
+    tex:'\\frac{1}{\\sqrt{2}}(|0\\rangle+|1\\rangle)\\otimes|0\\rangle = \\frac{1}{\\sqrt{2}}(|00\\rangle+|10\\rangle)',
+    explain:'<strong>Creating superposition:</strong> The Hadamard gate maps \\(|0\\rangle \\to \\tfrac{1}{\\sqrt2}(|0\\rangle+|1\\rangle)\\). Qubit 1 is now in an equal superposition. But the two-qubit state is <strong>still separable</strong> — you can factor it as \\(|+\\rangle \\otimes |0\\rangle\\). Use the determinant test: \\(\\alpha\\delta - \\beta\\gamma = \\tfrac{1}{\\sqrt2}\\cdot 0 - 0 \\cdot \\tfrac{1}{\\sqrt2} = 0\\). Superposition alone is not entanglement.' },
+  { lbl:'After CNOT', tex:'\\frac{1}{\\sqrt{2}}(|00\\rangle+|11\\rangle)=|\\Phi^+\\rangle',
+    explain:'<strong>Entanglement is born:</strong> CNOT acts on each term in the superposition — \\(|00\\rangle \\to |00\\rangle\\) (control is 0, no flip) and \\(|10\\rangle \\to |11\\rangle\\) (control is 1, target flips). The result \\(\\tfrac{1}{\\sqrt2}(|00\\rangle + |11\\rangle)\\) <strong>cannot be factored</strong> into a product (determinant = \\(\\tfrac{1}{2} \\neq 0\\)). This is \\(|\\Phi^+\\rangle\\), a maximally entangled Bell state. Measuring either qubit instantly determines the other.' }
+];
+
+function drawEPR(s) {
+  const ctx = eprCtx, W = ctx._w, H = ctx._h;
+  ctx.clearRect(0,0,W,H);
+  const y1=90, y2=180, xS=80, xE=620, xH=240, xC=420;
+  txt(ctx,'qubit 1',38,y1,COL.dim,12); txt(ctx,'qubit 2',38,y2,COL.dim,12);
+  line(ctx,xS,y1,xE,y1,COL.wireOn,2); arrowTip(ctx,xE,y1,COL.wireOn);
+  line(ctx,xS,y2,xE,y2,COL.wireOn,2); arrowTip(ctx,xE,y2,COL.wireOn);
+  txt(ctx,'|0⟩',xS-14,y1,COL.wireOn,16); txt(ctx,'|0⟩',xS-14,y2,COL.wireOn,16);
+  ctx.globalAlpha = s>=1?1:0.3; drawHBox(ctx,xH,y1); ctx.globalAlpha=1;
+  if(s===1){ roundRect(ctx,xH-32,y1-32,64,64,10); ctx.fillStyle='rgba(167,139,250,0.08)'; ctx.fill(); }
+  ctx.globalAlpha = s>=2?1:0.3;
+  line(ctx,xC,y1,xC,y2,COL.wireOn,2); drawCtrlDot(ctx,xC,y1); drawTgtCircle(ctx,xC,y2);
+  ctx.globalAlpha=1;
+  if(s===2){ roundRect(ctx,xC-28,y1-18,56,y2-y1+36,10); ctx.fillStyle='rgba(108,140,255,0.06)'; ctx.fill(); }
+  txt(ctx,eprData[s].lbl,W/2,30,COL.wireOn,15);
+  if(s===2) txt(ctx,'|Φ⁺⟩',xE+22,(y1+y2)/2,COL.ent,16);
+  // Gate labels below
+  if(s>=1) { ctx.globalAlpha=s>=1?0.7:0.3; txt(ctx,'H',xH,y1+34,COL.dim,11); ctx.globalAlpha=1; }
+  if(s>=2) { txt(ctx,'CNOT',xC,y2+34,COL.dim,11); }
+}
+function setEPR(s) {
+  eprStep = s; drawEPR(s);
+  const d = document.getElementById('epr-sd'); d.innerHTML = '';
+  katex.render(eprData[s].tex, d, {throwOnError:false});
+  // Rich explanation with crossfade
+  const exPanel = document.getElementById('epr-explain');
+  const exBody = document.getElementById('epr-ex-body');
+  crossfade(exPanel, () => {
+    exBody.innerHTML = eprData[s].explain;
+    if (typeof renderMathInElement === 'function') {
+      renderMathInElement(exBody, {
+        delimiters: [{ left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false }],
+        throwOnError: false
+      });
+    }
+  });
+  // Update steps-timeline
+  document.querySelectorAll('#epr-timeline .step-btn').forEach((btn,i) => {
+    btn.classList.remove('active','done');
+    if (i < s) btn.classList.add('done');
+    else if (i === s) btn.classList.add('active');
+  });
+  document.getElementById('epr-prev').disabled = s===0;
+  document.getElementById('epr-next').disabled = s===2;
+}
+document.getElementById('epr-next').addEventListener('click', () => { if(eprStep<2) setEPR(eprStep+1); });
+document.getElementById('epr-prev').addEventListener('click', () => { if(eprStep>0) setEPR(eprStep-1); });
+document.getElementById('epr-reset').addEventListener('click', () => { stopEprPlay(); setEPR(0); });
+document.querySelectorAll('#epr-timeline .step-btn').forEach(b => b.addEventListener('click', () => { stopEprPlay(); setEPR(+b.dataset.step); }));
+
+// Auto-play
+let eprPlayTimer = null;
+let eprPlaySpeed = 2000; // Pass 4: variable speed (controlled by speed buttons)
+function stopEprPlay() {
+  if (eprPlayTimer) { clearInterval(eprPlayTimer); eprPlayTimer = null; }
+  document.getElementById('epr-play').textContent = '▶ Auto-play';
+  document.getElementById('epr-play').style.borderColor = 'var(--cyan)';
+  document.getElementById('epr-play').style.color = 'var(--cyan)';
+}
+// Original auto-play handler (speed is now controlled by Pass 4 speed buttons via eprPlaySpeed)
+document.getElementById('epr-play').addEventListener('click', function eprPlayHandler() {
+  if (eprPlayTimer) { stopEprPlay(); return; }
+  if (eprStep >= 2) setEPR(0);
+  document.getElementById('epr-play').textContent = '⏸ Pause';
+  document.getElementById('epr-play').style.borderColor = 'var(--yellow)';
+  document.getElementById('epr-play').style.color = 'var(--yellow)';
+  eprPlayTimer = setInterval(() => {
+    if (eprStep < 2) { setEPR(eprStep + 1); }
+    else { stopEprPlay(); }
+  }, eprPlaySpeed);
+});
+
+// ═══════════════════ BELL STATES ══════════════════════════════════
+const bellCtx = initCanvas(document.getElementById('bell-cv'));
+const BELLS = {
+  '00':{ n:'|\\Phi^+\\rangle', e:'\\tfrac{1}{\\sqrt2}(|00\\rangle+|11\\rangle)' },
+  '01':{ n:'|\\Psi^+\\rangle', e:'\\tfrac{1}{\\sqrt2}(|01\\rangle+|10\\rangle)' },
+  '10':{ n:'|\\Phi^-\\rangle', e:'\\tfrac{1}{\\sqrt2}(|00\\rangle-|11\\rangle)' },
+  '11':{ n:'|\\Psi^-\\rangle', e:'\\tfrac{1}{\\sqrt2}(|01\\rangle-|10\\rangle)' }
+};
+function drawBell(inp) {
+  const ctx=bellCtx, W=ctx._w, H=ctx._h;
+  ctx.clearRect(0,0,W,H);
+  const y1=90,y2=180,xS=80,xE=620,xH=240,xC=420;
+  txt(ctx,'qubit 1',38,y1,COL.dim,12); txt(ctx,'qubit 2',38,y2,COL.dim,12);
+  line(ctx,xS,y1,xE,y1,COL.wireOn,2); arrowTip(ctx,xE,y1,COL.wireOn);
+  line(ctx,xS,y2,xE,y2,COL.wireOn,2); arrowTip(ctx,xE,y2,COL.wireOn);
+  txt(ctx,'|'+inp[0]+'⟩',xS-14,y1,COL.wireOn,16); txt(ctx,'|'+inp[1]+'⟩',xS-14,y2,COL.wireOn,16);
+  drawHBox(ctx,xH,y1);
+  line(ctx,xC,y1,xC,y2,COL.wireOn,2); drawCtrlDot(ctx,xC,y1); drawTgtCircle(ctx,xC,y2);
+  const names = {'00':'|Φ⁺⟩','01':'|Ψ⁺⟩','10':'|Φ⁻⟩','11':'|Ψ⁻⟩'};
+  txt(ctx, names[inp], xE+22, (y1+y2)/2, COL.ent, 16);
+  txt(ctx,'H',xH,y1+34,COL.dim,11);
+  txt(ctx,'CNOT',xC,y2+34,COL.dim,11);
+}
+function updateBell(inp) {
+  drawBell(inp);
+  const d = document.getElementById('bell-sd'); d.innerHTML = '';
+  katex.render(BELLS[inp].n+'='+BELLS[inp].e, d, {throwOnError:false});
+  document.querySelectorAll('[data-bi]').forEach(b => b.classList.toggle('active', b.dataset.bi===inp));
+  const inputs=['00','01','10','11'];
+  document.querySelectorAll('#bell-tbl tbody tr').forEach((r,i) => r.classList.toggle('hl', inputs[i]===inp));
+}
+document.querySelectorAll('[data-bi]').forEach(b => b.addEventListener('click', () => updateBell(b.dataset.bi)));
+
+// ═══════════════════ ENTANGLEMENT EXAMPLES ════════════════════════
+const ENT = {
+  sep1: { lbl:'|00⟩', kind:'Separable', col:COL.green,
+    why:'This is simply |0⟩ ⊗ |0⟩ — a product of two single-qubit states.',
+    det:'α=1, β=0, γ=0, δ=0  →  αδ − βγ = 0' },
+  sep2: { lbl:'|+⟩ ⊗ |0⟩ = (|00⟩+|10⟩)/√2', kind:'Separable', col:COL.green,
+    why:'Factors as (|0⟩+|1⟩)/√2 ⊗ |0⟩. Each qubit has a well-defined individual state.',
+    det:'α=1/√2, β=0, γ=1/√2, δ=0  →  αδ − βγ = 0' },
+  ent1: { lbl:'|Φ⁺⟩ = (|00⟩+|11⟩)/√2', kind:'Entangled', col:COL.tgt,
+    why:'Cannot be written as a product. Measuring one qubit instantly determines the other.',
+    det:'α=1/√2, β=0, γ=0, δ=1/√2  →  αδ − βγ = ½ ≠ 0' },
+  ent2: { lbl:'|Ψ⁻⟩ = (|01⟩−|10⟩)/√2', kind:'Entangled', col:COL.tgt,
+    why:'The singlet state — measurements always give anti-correlated (opposite) results.',
+    det:'α=0, β=1/√2, γ=−1/√2, δ=0  →  αδ − βγ = ½ ≠ 0' }
+};
+function showEnt(k) {
+  const s = ENT[k], el = document.getElementById('ent-box');
+  crossfade(el, () => {
+    el.innerHTML = `<div style="font-size:1.2rem;font-weight:700;color:${s.col}">${s.kind}</div>
+      <div style="font-size:1rem">${s.lbl}</div>
+      <div style="font-size:.92rem;color:var(--text-dim)">${s.why}</div>
+      <div style="font-size:.85rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">${s.det}</div>`;
+  });
+  document.querySelectorAll('[data-es]').forEach(b => b.classList.toggle('active', b.dataset.es===k));
+}
+document.querySelectorAll('[data-es]').forEach(b => b.addEventListener('click', () => showEnt(b.dataset.es)));
+
+// ═══════════════════ ENTANGLEMENT DETECTOR ════════════════════════
+document.getElementById('chk-ent').addEventListener('click', checkEntanglement);
+
+function checkEntanglement() {
+  const a=parseFloat(document.getElementById('amp-a').value)||0;
+  const b=parseFloat(document.getElementById('amp-b').value)||0;
+  const c=parseFloat(document.getElementById('amp-c').value)||0;
+  const d=parseFloat(document.getElementById('amp-d').value)||0;
+  const det = a*d - b*c;
+  const norm = Math.sqrt(a*a+b*b+c*c+d*d);
+  const ent = Math.abs(det) > 1e-9;
+  const col = ent ? COL.tgt : COL.green;
+  let html = `<div style="font-size:.9rem;color:var(--text-dim)">αδ − βγ =</div>
+    <div style="font-size:1.4rem;font-family:monospace;font-weight:700;color:${col}">${det.toFixed(6)}</div>
+    <div style="font-size:1.15rem;font-weight:700;color:${col}">${ent?'✗ ENTANGLED':'✓ SEPARABLE'}</div>
+    <div style="font-size:.88rem;color:var(--text-dim)">${ent
+      ? 'The state cannot be factored as a product of single-qubit states.'
+      : 'The state can be written as a tensor product |α⟩⊗|β⟩.'}</div>`;
+  if(Math.abs(norm-1)>0.05) html += `<div style="color:var(--yellow);font-size:.85rem">⚠ State not normalised (‖ψ‖ = ${norm.toFixed(4)})</div>`;
+  const entRes = document.getElementById('ent-res');
+  entRes.classList.remove('result-reveal');
+  entRes.innerHTML = html;
+  setTimeout(() => entRes.classList.add('result-reveal'), 10);
+}
+
+function setDetPreset(name) {
+  const presets = {
+    'bell':    [S2, 0, 0, S2],
+    'product': [S2, 0, S2, 0],
+    'psi':     [0, S2, -S2, 0]
+  };
+  const v = presets[name];
+  ['amp-a','amp-b','amp-c','amp-d'].forEach((id,i) => document.getElementById(id).value = v[i].toFixed(4));
+  checkEntanglement();
+}
+document.querySelectorAll('.preset-btn').forEach(b => b.addEventListener('click', () => setDetPreset(b.dataset.preset)));
+
+// ═══════════════════ PROOF STEPS ══════════════════════════════════
+document.querySelectorAll('.proof-step').forEach(s => {
+  s.addEventListener('click', () => {
+    s.classList.toggle('open');
+    if (s.classList.contains('open') && typeof renderMathInElement === 'function') {
+      renderMathInElement(s, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '\\(', right: '\\)', display: false }
+        ],
+        throwOnError: false
+      });
+    }
+  });
+});
+
+// ═══════════════════ MEASUREMENT SIMULATION ═════════════════════════
+let measState = 'epr'; // 'epr' | '00' | '11'
+let measCounts = { '00': 0, '11': 0 };
+
+function updateOrbs() {
+  const o1 = document.getElementById('orb-q1'), o2 = document.getElementById('orb-q2');
+  const arc = document.querySelector('#ent-arc-svg .entanglement-arc');
+  if (measState === 'epr') {
+    o1.className = 'qubit-orb state-super'; o1.textContent = 'q\u2081';
+    o2.className = 'qubit-orb state-super'; o2.textContent = 'q\u2082';
+    arc.classList.add('visible');
+  } else if (measState === '00') {
+    o1.className = 'qubit-orb state-measured-0'; o1.textContent = '|0\u27E9';
+    o2.className = 'qubit-orb state-measured-0'; o2.textContent = '|0\u27E9';
+    arc.classList.remove('visible');
+  } else {
+    o1.className = 'qubit-orb state-measured-1'; o1.textContent = '|1\u27E9';
+    o2.className = 'qubit-orb state-measured-1'; o2.textContent = '|1\u27E9';
+    arc.classList.remove('visible');
+  }
+}
+
+function renderMeasState() {
+  const el = document.getElementById('meas-state');
+  el.innerHTML = '';
+  if (measState === 'epr') {
+    katex.render('|\\Phi^+\\rangle = \\tfrac{1}{\\sqrt2}(|00\\rangle + |11\\rangle)', el, { throwOnError: false });
+    el.style.borderColor = 'rgba(99,102,241,0.3)';
+  } else {
+    katex.render('|' + measState + '\\rangle', el, { throwOnError: false });
+    el.style.borderColor = measState === '00' ? 'rgba(34,211,238,0.4)' : 'rgba(244,114,182,0.4)';
+    el.classList.add('meas-flash');
+    setTimeout(() => el.classList.remove('meas-flash'), 600);
+  }
+  updateOrbs();
+}
+
+function updateMeasStats() {
+  const t = measCounts['00'] + measCounts['11'];
+  document.getElementById('stat-00').textContent = measCounts['00'];
+  document.getElementById('stat-11').textContent = measCounts['11'];
+  document.getElementById('stat-tot').textContent = t;
+  drawHistogram();
+}
+
+function doMeasure(qubit) {
+  if (measState !== 'epr') {
+    document.getElementById('meas-log').textContent = 'State already collapsed! Click "Reset to |Φ⁺⟩" first.';
+    return;
+  }
+  const outcome = Math.random() < 0.5 ? '0' : '1';
+  measState = outcome + outcome;
+  measCounts[measState]++;
+  const other = qubit === 1 ? 2 : 1;
+  document.getElementById('meas-log').innerHTML =
+    `Qubit ${qubit} measured <strong style="color:var(--cyan)">|${outcome}⟩</strong> → ` +
+    `Qubit ${other} <em>instantly</em> collapses to <strong style="color:var(--pink)">|${outcome}⟩</strong>. ` +
+    `Both are <strong>|${measState}⟩</strong>.`;
+  renderMeasState();
+  updateMeasStats();
+  announce('Measured ' + measState);
+}
+
+document.getElementById('meas-q1').addEventListener('click', () => doMeasure(1));
+document.getElementById('meas-q2').addEventListener('click', () => doMeasure(2));
+document.getElementById('meas-batch').addEventListener('click', () => {
+  let last = '';
+  for (let i = 0; i < 50; i++) {
+    const outcome = Math.random() < 0.5 ? '0' : '1';
+    const res = outcome + outcome;
+    measCounts[res]++;
+    last = res;
+  }
+  measState = last;
+  renderMeasState();
+  updateMeasStats();
+  const t = measCounts['00'] + measCounts['11'];
+  const pct00 = (measCounts['00'] / t * 100).toFixed(1);
+  document.getElementById('meas-log').innerHTML =
+    `Ran <strong style="color:var(--cyan)">50 measurements</strong>. ` +
+    `|00⟩: ${pct00}% &nbsp; |11⟩: ${(100-pct00).toFixed(1)}% &nbsp; (${t} total). Always perfectly correlated!`;
+});
+document.getElementById('meas-reset').addEventListener('click', () => {
+  measState = 'epr';
+  document.getElementById('meas-log').textContent = 'State reset. Measure a qubit to see entanglement in action!';
+  renderMeasState();
+});
+
+// ═══════════════════ PROOF TOGGLE ═══════════════════════════════════
+document.getElementById('proof-toggle').addEventListener('click', function() {
+  const steps = document.querySelectorAll('.proof-step');
+  const allOpen = [...steps].every(s => s.classList.contains('open'));
+  steps.forEach(s => {
+    if (allOpen) {
+      if (s.dataset.s !== '1') s.classList.remove('open');
+    } else {
+      s.classList.add('open');
+    }
+  });
+  this.textContent = allOpen ? 'Reveal All Steps' : 'Collapse Steps';
+  // Re-render KaTeX in newly opened steps
+  if (!allOpen && typeof renderMathInElement === 'function') {
+    steps.forEach(s => renderMathInElement(s, {
+      delimiters: [{ left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false }],
+      throwOnError: false
+    }));
+  }
+});
+
+// ═══════════════════ MODULE COMPLETION TRACKING ═════════════════════
+const MODULE_ID = '6';
+const STORAGE_KEY = 'quantum-course-progress';
+
+function markModuleComplete() {
+  try {
+    let completed = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    if (!completed.includes(MODULE_ID)) {
+      completed.push(MODULE_ID);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(completed));
+    }
+  } catch(e) {}
+  // Show completion message
+  const bar = document.getElementById('quiz-bar');
+  if (bar) bar.style.background = 'linear-gradient(90deg, var(--green), #5eead4)';
+  const scoreEl = document.getElementById('quiz-score');
+  if (scoreEl) scoreEl.style.color = 'var(--green)';
+
+  // Show celebration banner (if not already shown)
+  if (document.getElementById('celeb-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'celeb-banner';
+  banner.className = 'celebration-banner';
+  banner.innerHTML = `
+    <div class="celeb-icon">🎉</div>
+    <div class="celeb-title">Multi-Qubit Systems — Complete!</div>
+    <div class="celeb-subtitle">You've mastered tensor products, CNOT, EPR pairs, and entanglement detection.</div>
+    <a href="07_reversible_computation.html">Continue to Reversible Computation <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+  `;
+  // Insert after the quiz score bar area
+  const quizResetBtn = document.getElementById('quiz-reset-all');
+  const scoreContainer = quizResetBtn ? quizResetBtn.closest('div[style]') : null;
+  if (scoreContainer) {
+    scoreContainer.after(banner);
+  } else {
+    document.getElementById('tab-exercises').appendChild(banner);
+  }
+  banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ═══════════════════ QUIZ ENGINE (with scoring) ════════════════════
+let quizScore = 0;
+const quizTotal = document.querySelectorAll('.quiz-options').length;
+document.getElementById('quiz-total').textContent = quizTotal;
+
+function updateQuizBar() {
+  document.getElementById('quiz-score').textContent = quizScore;
+  document.getElementById('quiz-bar').style.width = (quizScore / quizTotal * 100) + '%';
+}
+
+const QFB = {
+  q1: { ok:'Correct! \\(|1\\rangle\\otimes|0\\rangle\\) gives the third basis vector \\(|10\\rangle\\) (index 2).',
+        no:'Remember: \\(|1\\rangle\\otimes|0\\rangle = |10\\rangle\\), the third computational basis vector (0-indexed at position 2).' },
+  q2: { ok:'Correct! \\(2^5 = 32\\) complex amplitudes are needed.',
+        no:'The dimension of the \\(n\\)-qubit Hilbert space is \\(2^n\\). For \\(n=5\\): \\(2^5 = 32\\).' },
+  q3: { ok:'Correct! Control is \\(|1\\rangle\\) so the target flips: \\(|0\\rangle\\to|1\\rangle\\). Result: \\(|11\\rangle\\).',
+        no:'When control \\(= |1\\rangle\\), the target is flipped. \\(\\mathrm{CNOT}\\,|10\\rangle = |11\\rangle\\).' },
+  q4: { ok:'Correct! CNOT acts linearly: \\(|00\\rangle\\to|00\\rangle\\) and \\(|10\\rangle\\to|11\\rangle\\). This gives \\(|\\Phi^+\\rangle\\)!',
+        no:'Apply CNOT to each term: \\(|00\\rangle\\to|00\\rangle\\), \\(|10\\rangle\\to|11\\rangle\\).' },
+  q5: { ok:'Correct! \\(\\alpha\\delta-\\beta\\gamma = \\tfrac14-\\tfrac14 = 0\\), so the state factors as \\(|+\\rangle\\otimes|+\\rangle\\) — separable.',
+        no:'Use the determinant test: \\(\\alpha=\\beta=\\gamma=\\delta=\\tfrac12\\). Then \\(\\alpha\\delta-\\beta\\gamma = \\tfrac14-\\tfrac14 = 0\\) → separable.' },
+  q6: { ok:'Correct! \\(|11\\rangle \\xrightarrow{H\\otimes I} \\tfrac{|0\\rangle-|1\\rangle}{\\sqrt2}\\otimes|1\\rangle \\xrightarrow{\\mathrm{CNOT}} \\tfrac{|01\\rangle-|10\\rangle}{\\sqrt2} = |\\Psi^-\\rangle\\).',
+        no:'Trace through: \\(|11\\rangle \\xrightarrow{H\\otimes I} \\tfrac{|0\\rangle-|1\\rangle}{\\sqrt2}\\otimes|1\\rangle \\xrightarrow{\\mathrm{CNOT}} |\\Psi^-\\rangle\\).' },
+  q7: { ok:'Correct! The tensor product is NOT commutative. \\(|01\\rangle \\neq |10\\rangle\\).',
+        no:'Think about it: \\(|0\\rangle\\otimes|1\\rangle = |01\\rangle\\), but \\(|1\\rangle\\otimes|0\\rangle = |10\\rangle\\). Different basis vectors!' }
+};
+
+function initQuizzes() {
+  quizScore = 0; updateQuizBar();
+  document.querySelectorAll('.quiz-options').forEach(q => {
+    const id = q.id;
+    q.querySelectorAll('.quiz-opt').forEach(o => {
+      o.classList.remove('correct', 'wrong', 'disabled');
+      const fb = document.getElementById(id + '-fb');
+      if (fb) { fb.className = 'quiz-fb'; fb.textContent = ''; }
+    });
+    q.querySelectorAll('.quiz-opt').forEach(o => {
+      // Clone to remove old listeners
+      const clone = o.cloneNode(true);
+      o.parentNode.replaceChild(clone, o);
+      clone.addEventListener('click', () => {
+        if (clone.classList.contains('disabled')) return;
+        const ok = clone.dataset.ok === '1';
+        q.querySelectorAll('.quiz-opt').forEach(x => x.classList.add('disabled'));
+        clone.classList.add(ok ? 'correct' : 'wrong');
+        if (!ok) q.querySelector('[data-ok="1"]').classList.add('correct');
+        const fb = document.getElementById(id + '-fb');
+        fb.className = 'quiz-fb show ' + (ok ? 'correct' : 'wrong');
+        fb.innerHTML = ok ? QFB[id].ok : QFB[id].no;
+        if (typeof renderMathInElement === 'function') {
+          renderMathInElement(fb, {
+            delimiters: [{ left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false }],
+            throwOnError: false
+          });
+        }
+        if (ok) {
+          quizScore++; updateQuizBar();
+          if (quizScore === quizTotal) markModuleComplete();
+        }
+      });
+    });
+  });
+}
+
+document.getElementById('quiz-reset-all').addEventListener('click', () => {
+  initQuizzes();
+  // Re-render KaTeX in quiz options
+  if (typeof renderMathInElement === 'function') {
+    renderMathInElement(document.getElementById('tab-exercises'), {
+      delimiters: [{ left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false }],
+      throwOnError: false
+    });
+  }
+});
+
+// ═══════════════════ KEYBOARD NAVIGATION (enhanced Pass 4) ═══════════
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  const cur = [...tabBtns].findIndex(b => b.classList.contains('active'));
+  if (e.key === 'ArrowRight' && cur < tabBtns.length-1) goTab(cur+1);
+  if (e.key === 'ArrowLeft' && cur > 0) goTab(cur-1);
+  // Number keys 1-7 jump to tab (Pass 4)
+  const num = parseInt(e.key);
+  if (num >= 1 && num <= tabBtns.length) goTab(num - 1);
+  // R = reset current view
+  if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey) {
+    if (cur === 3) { stopEprPlay(); setEPR(0); }
+    else if (cur === 6) { initQuizzes(); }
+  }
+  // Space = toggle auto-play on EPR tab
+  if (e.key === ' ' && cur === 3) {
+    e.preventDefault();
+    document.getElementById('epr-play').click();
+  }
+});
+
+// ═══════════════════ PARTICLE BACKGROUND ═══════════════════════════
+function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const colors = [
+    'rgba(99,102,241,0.35)',
+    'rgba(34,211,238,0.3)',
+    'rgba(244,114,182,0.25)'
+  ];
+  const particles = [];
+  for (let i = 0; i < 40; i++) {
+    particles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: 1 + Math.random() * 1.5,
+      dx: (Math.random() - 0.5) * 0.3,
+      dy: (Math.random() - 0.5) * 0.3,
+      color: colors[Math.floor(Math.random() * colors.length)]
+    });
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, W, H);
+    for (const p of particles) {
+      p.x += p.dx;
+      p.y += p.dy;
+      if (p.x < 0) p.x = W;
+      if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H;
+      if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+// ═══════════════════ MEASUREMENT HISTOGRAM ═══════════════════════════
+function drawHistogram() {
+  const cv = document.getElementById('meas-histogram');
+  if (!cv) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = 500, H = 140;
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.width = '100%'; cv.style.maxWidth = W + 'px'; cv.style.height = 'auto';
+  cv.style.aspectRatio = W + '/' + H;
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const t = measCounts['00'] + measCounts['11'];
+  const barW = 100, gap = 60, baseY = H - 24;
+  const maxH = baseY - 16;
+  const cx00 = W / 2 - gap / 2 - barW / 2;
+  const cx11 = W / 2 + gap / 2 + barW / 2;
+
+  // Background grid
+  ctx.strokeStyle = 'rgba(42,53,80,0.4)'; ctx.lineWidth = 0.5;
+  for (let p = 0; p <= 1; p += 0.25) {
+    const y = baseY - p * maxH;
+    ctx.beginPath(); ctx.moveTo(cx00 - barW / 2 - 10, y); ctx.lineTo(cx11 + barW / 2 + 10, y); ctx.stroke();
+  }
+
+  // 50% reference line
+  ctx.strokeStyle = 'rgba(250,204,21,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+  const refY = baseY - 0.5 * maxH;
+  ctx.beginPath(); ctx.moveTo(cx00 - barW / 2 - 10, refY); ctx.lineTo(cx11 + barW / 2 + 10, refY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(250,204,21,0.5)'; ctx.font = '10px Inter'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillText('50%', cx00 - barW / 2 - 14, refY);
+
+  if (t === 0) {
+    ctx.fillStyle = '#4a5278'; ctx.font = '13px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Make measurements to see the histogram', W / 2, H / 2 - 8);
+    return;
+  }
+
+  const p00 = measCounts['00'] / t, p11 = measCounts['11'] / t;
+  const h00 = p00 * maxH, h11 = p11 * maxH;
+
+  // |00> bar
+  const grad00 = ctx.createLinearGradient(0, baseY - h00, 0, baseY);
+  grad00.addColorStop(0, '#22d3ee'); grad00.addColorStop(1, 'rgba(34,211,238,0.3)');
+  ctx.fillStyle = grad00;
+  ctx.beginPath(); ctx.roundRect(cx00 - barW / 2, baseY - h00, barW, h00, [6, 6, 0, 0]); ctx.fill();
+
+  // |11> bar
+  const grad11 = ctx.createLinearGradient(0, baseY - h11, 0, baseY);
+  grad11.addColorStop(0, '#f472b6'); grad11.addColorStop(1, 'rgba(244,114,182,0.3)');
+  ctx.fillStyle = grad11;
+  ctx.beginPath(); ctx.roundRect(cx11 - barW / 2, baseY - h11, barW, h11, [6, 6, 0, 0]); ctx.fill();
+
+  // Labels
+  ctx.fillStyle = '#22d3ee'; ctx.font = '600 12px "JetBrains Mono"'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('|00\u27E9', cx00, baseY + 4);
+  ctx.fillStyle = '#f472b6';
+  ctx.fillText('|11\u27E9', cx11, baseY + 4);
+
+  // Percentages
+  ctx.fillStyle = '#e2e8f0'; ctx.font = '600 13px "JetBrains Mono"'; ctx.textBaseline = 'bottom';
+  ctx.fillText((p00 * 100).toFixed(1) + '%', cx00, baseY - h00 - 4);
+  ctx.fillText((p11 * 100).toFixed(1) + '%', cx11, baseY - h11 - 4);
+}
+
+// ═══════════════════ PREDICT THE MEASUREMENT CHALLENGE ════════════════
+const CH_STATES = [
+  { name: '|\\Phi^+\\rangle', display: '|Phi+>', type: 'bell', corr: 'same',
+    desc: 'Bell state \\(|\\Phi^+\\rangle = \\tfrac{1}{\\sqrt2}(|00\\rangle + |11\\rangle)\\): outcomes are always <strong>equal</strong>.' },
+  { name: '|\\Phi^-\\rangle', display: '|Phi->', type: 'bell', corr: 'same',
+    desc: 'Bell state \\(|\\Phi^-\\rangle = \\tfrac{1}{\\sqrt2}(|00\\rangle - |11\\rangle)\\): outcomes are always <strong>equal</strong>.' },
+  { name: '|\\Psi^+\\rangle', display: '|Psi+>', type: 'bell', corr: 'anti',
+    desc: 'Bell state \\(|\\Psi^+\\rangle = \\tfrac{1}{\\sqrt2}(|01\\rangle + |10\\rangle)\\): outcomes are always <strong>opposite</strong>.' },
+  { name: '|\\Psi^-\\rangle', display: '|Psi->', type: 'bell', corr: 'anti',
+    desc: 'Bell state \\(|\\Psi^-\\rangle = \\tfrac{1}{\\sqrt2}(|01\\rangle - |10\\rangle)\\): outcomes are always <strong>opposite</strong>.' },
+  { name: '|+\\rangle\\otimes|0\\rangle', display: '|+>|0>', type: 'sep', corr: 'fixed1',
+    desc: 'Separable state \\(|+\\rangle \\otimes |0\\rangle\\): Qubit 2 is <strong>always</strong> \\(|0\\rangle\\) regardless of Qubit 1.' },
+  { name: '|0\\rangle\\otimes|+\\rangle', display: '|0>|+>', type: 'sep', corr: 'random',
+    desc: 'Separable state \\(|0\\rangle \\otimes |+\\rangle\\): Qubit 2 is in superposition — it could be <strong>either</strong> outcome, independent of Qubit 1.' }
+];
+
+let chScore = 0, chTotal = 0, chStreak = 0, chCurrent = null;
+
+function newChallenge() {
+  const state = CH_STATES[Math.floor(Math.random() * CH_STATES.length)];
+  const q1outcome = Math.random() < 0.5 ? '0' : '1';
+  let answer, certain;
+
+  if (state.corr === 'same') {
+    answer = q1outcome; certain = true;
+  } else if (state.corr === 'anti') {
+    answer = q1outcome === '0' ? '1' : '0'; certain = true;
+  } else if (state.corr === 'fixed1') {
+    answer = '0'; certain = true;
+  } else {
+    answer = Math.random() < 0.5 ? '0' : '1'; certain = false;
+  }
+
+  chCurrent = { state, q1outcome, answer, certain };
+
+  const prompt = document.getElementById('ch-prompt');
+  prompt.innerHTML = `State: <strong>${state.display}</strong><br>Qubit 1 measured <strong style="color:var(--cyan)">|${q1outcome}\u27E9</strong>. What will Qubit 2 be?`;
+  if (typeof renderMathInElement === 'function') {
+    renderMathInElement(prompt, { delimiters: [{ left: '\\(', right: '\\)', display: false }], throwOnError: false });
+  }
+
+  const choices = document.getElementById('ch-choices');
+  choices.style.display = 'flex';
+  choices.querySelectorAll('.ch-choice').forEach(btn => {
+    btn.classList.remove('correct', 'wrong', 'disabled');
+  });
+  document.getElementById('ch-feedback').innerHTML = '';
+}
+
+document.querySelectorAll('#ch-choices .ch-choice').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (!chCurrent) return;
+    const picked = btn.dataset.ch;
+    const isRight = picked === chCurrent.answer;
+
+    chTotal++;
+    document.querySelectorAll('#ch-choices .ch-choice').forEach(b => b.classList.add('disabled'));
+    btn.classList.add(isRight ? 'correct' : 'wrong');
+    if (!isRight) document.querySelector(`#ch-choices .ch-choice[data-ch="${chCurrent.answer}"]`).classList.add('correct');
+
+    if (isRight) { chScore++; chStreak++; } else { chStreak = 0; }
+    document.getElementById('ch-correct').textContent = chScore;
+    document.getElementById('ch-total').textContent = chTotal;
+    document.getElementById('ch-streak').textContent = chStreak;
+
+    const fb = document.getElementById('ch-feedback');
+    if (!chCurrent.certain) {
+      fb.innerHTML = (isRight ? '<strong style="color:var(--green)">Lucky!</strong> ' : '<strong style="color:var(--red)">Unlucky!</strong> ') + chCurrent.state.desc;
+    } else {
+      fb.innerHTML = (isRight ? '<strong style="color:var(--green)">Correct!</strong> ' : '<strong style="color:var(--red)">Not quite.</strong> ') + chCurrent.state.desc;
+    }
+    if (typeof renderMathInElement === 'function') {
+      renderMathInElement(fb, { delimiters: [{ left: '\\(', right: '\\)', display: false }], throwOnError: false });
+    }
+    announce(isRight ? 'Correct' : 'Wrong');
+  });
+});
+
+document.getElementById('ch-new').addEventListener('click', newChallenge);
+document.getElementById('ch-reset-score').addEventListener('click', () => {
+  chScore = 0; chTotal = 0; chStreak = 0;
+  document.getElementById('ch-correct').textContent = '0';
+  document.getElementById('ch-total').textContent = '0';
+  document.getElementById('ch-streak').textContent = '0';
+  document.getElementById('ch-feedback').innerHTML = '';
+  document.getElementById('ch-prompt').innerHTML = 'Click "New Round" to start!';
+  document.getElementById('ch-choices').style.display = 'none';
+});
+
+// ═══════════════════ ONBOARDING HINTS ═════════════════════════════════
+const OB_KEY = 'module06-onboarded';
+const OB_HINTS = [
+  { target: '#tp-btns-a', text: 'Select different qubit states and watch the tensor product update in real time. Try <strong>Custom</strong> for your own amplitudes!', arrow: 'top' },
+  { target: '#epr-timeline', text: 'Step through the EPR circuit to see how entanglement is created from scratch. Use <strong>Auto-play</strong> to animate it.', arrow: 'top', tab: 3 },
+  { target: '#chk-ent', text: 'Enter any amplitudes and test whether the state is entangled using the determinant criterion.', arrow: 'top', tab: 4 },
+  { target: '#meas-q1', text: 'Click to measure a qubit and watch the other collapse instantly. Run <strong>50 measurements</strong> to see the statistics!', arrow: 'top', tab: 3 }
+];
+
+let obStep = 0;
+function showOnboardHint(step) {
+  // Remove existing
+  document.querySelectorAll('.onboard-overlay, .onboard-hint').forEach(el => el.remove());
+  if (step >= OB_HINTS.length) {
+    try { localStorage.setItem(OB_KEY, '1'); } catch(e) {}
+    return;
+  }
+  const hint = OB_HINTS[step];
+  if (hint.tab !== undefined) goTab(hint.tab);
+
+  // Wait a moment for tab switch
+  setTimeout(() => {
+    const targetEl = document.querySelector(hint.target);
+    if (!targetEl) { showOnboardHint(step + 1); return; }
+
+    const rect = targetEl.getBoundingClientRect();
+    const overlay = document.createElement('div');
+    overlay.className = 'onboard-overlay';
+    document.body.appendChild(overlay);
+
+    const box = document.createElement('div');
+    box.className = 'onboard-hint' + (hint.arrow === 'bottom' ? ' arrow-bottom' : '');
+
+    const top = hint.arrow === 'bottom' ? rect.top - 120 : rect.bottom + 12;
+    box.style.top = Math.max(8, Math.min(top, window.innerHeight - 200)) + 'px';
+    box.style.left = Math.max(12, Math.min(rect.left, window.innerWidth - 360)) + 'px';
+
+    box.innerHTML = `
+      <div class="ob-step">Tip ${step + 1} / ${OB_HINTS.length}</div>
+      <div class="ob-text">${hint.text}</div>
+      <div class="ob-actions">
+        <button class="ob-btn ob-skip">Skip all</button>
+        <button class="ob-btn">${step < OB_HINTS.length - 1 ? 'Next' : 'Got it!'}</button>
+      </div>
+    `;
+    document.body.appendChild(box);
+
+    box.querySelector('.ob-skip').addEventListener('click', () => {
+      document.querySelectorAll('.onboard-overlay, .onboard-hint').forEach(el => el.remove());
+      try { localStorage.setItem(OB_KEY, '1'); } catch(e) {}
+      goTab(0);
+    });
+    box.querySelector('.ob-btn:not(.ob-skip)').addEventListener('click', () => {
+      obStep = step + 1;
+      showOnboardHint(obStep);
+    });
+    overlay.addEventListener('click', () => {
+      obStep = step + 1;
+      showOnboardHint(obStep);
+    });
+  }, hint.tab !== undefined ? 400 : 50);
+}
+
+// ═══════════════════ THEME TOGGLE (Pass 4) ═══════════════════════════
+const themeBtn = document.getElementById('theme-toggle');
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  themeBtn.textContent = theme === 'light' ? '☀️' : '🌙';
+  themeBtn.title = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+  // Refresh dynamic color palette
+  COL = getCOL();
+  // Redraw canvases with new theme colors
+  try {
+    const curCnot = document.querySelector('[data-ci].active');
+    if (curCnot) updateCNOT(curCnot.dataset.ci);
+    setEPR(eprStep);
+    const curBell = document.querySelector('[data-bi].active');
+    if (curBell) updateBell(curBell.dataset.bi);
+    drawHistogram();
+  } catch(e) {}
+}
+themeBtn.addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  try { localStorage.setItem('module06-theme', next); } catch(e) {}
+  applyTheme(next);
+});
+// Restore saved theme
+try {
+  const saved = localStorage.getItem('module06-theme');
+  if (saved) applyTheme(saved);
+} catch(e) {}
+
+// ═══════════════════ EPR SPEED CONTROL (Pass 4) ═══════════════════════
+document.querySelectorAll('.speed-btn-ctrl').forEach(btn => {
+  btn.addEventListener('click', () => {
+    eprPlaySpeed = parseInt(btn.dataset.eprSpeed);
+    document.querySelectorAll('.speed-btn-ctrl').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // If currently playing, restart interval with new speed
+    if (eprPlayTimer) {
+      clearInterval(eprPlayTimer);
+      eprPlayTimer = setInterval(() => {
+        if (eprStep < 2) { setEPR(eprStep + 1); }
+        else { stopEprPlay(); }
+      }, eprPlaySpeed);
+    }
+  });
+});
+
+// Note: The original epr-play handler above already references eprPlaySpeed.
+
+// ═══════════════════ CIRCUIT CANVAS TOOLTIPS (Pass 4) ═══════════════════
+function setupCircuitTooltip(canvasId, tooltipId, getRegions) {
+  const cv = document.getElementById(canvasId);
+  const tip = document.getElementById(tooltipId);
+  if (!cv || !tip) return;
+
+  cv.addEventListener('mousemove', (e) => {
+    const rect = cv.getBoundingClientRect();
+    const scaleX = +cv.getAttribute('width') / rect.width;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleX;
+    const regions = getRegions();
+    let found = null;
+    for (const r of regions) {
+      if (mx >= r.x - r.w/2 && mx <= r.x + r.w/2 && my >= r.y - r.h/2 && my <= r.y + r.h/2) {
+        found = r; break;
+      }
+    }
+    if (found) {
+      tip.innerHTML = `<div class="ct-label">${found.label}</div><div>${found.desc}</div>`;
+      tip.style.display = 'block';
+      const tipX = Math.min(e.clientX - rect.left + 12, rect.width - 290);
+      const tipY = e.clientY - rect.top - 60;
+      tip.style.left = Math.max(4, tipX) + 'px';
+      tip.style.top = Math.max(4, tipY) + 'px';
+    } else {
+      tip.style.display = 'none';
+    }
+  });
+
+  cv.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+}
+
+// CNOT circuit tooltip regions
+setupCircuitTooltip('cnot-cv', 'cnot-tooltip', () => [
+  { x: 350, y: 80, w: 40, h: 40, label: 'Control Dot', desc: 'The <strong>control qubit</strong> determines whether the target is flipped. A filled dot indicates the control.' },
+  { x: 350, y: 160, w: 50, h: 50, label: 'Target (XOR)', desc: 'The <strong>target qubit</strong> is flipped (XOR) when the control is |1&#x27E9;. The circle-plus symbol is the standard notation.' },
+  { x: 70, y: 80, w: 40, h: 40, label: 'Input State', desc: 'The initial state of the control qubit before the gate acts.' },
+  { x: 630, y: 80, w: 40, h: 40, label: 'Output State', desc: 'The state of the control qubit after CNOT. The control is never changed by CNOT.' }
+]);
+
+// EPR circuit tooltip regions
+setupCircuitTooltip('epr-cv', 'epr-tooltip', () => [
+  { x: 240, y: 90, w: 50, h: 50, label: 'Hadamard Gate', desc: '<strong>H</strong> creates superposition: |0&#x27E9; becomes (|0&#x27E9;+|1&#x27E9;)/&#x221A;2. This is the first step toward entanglement.' },
+  { x: 420, y: 90, w: 30, h: 30, label: 'Control Dot', desc: 'The first qubit (now in superposition) <strong>controls</strong> whether the second qubit is flipped.' },
+  { x: 420, y: 180, w: 50, h: 50, label: 'Target (XOR)', desc: 'CNOT flips this qubit when the control is |1&#x27E9;, creating the <strong>entangled Bell pair</strong>.' }
+]);
+
+// ═══════════════════ DIMENSION GHOST BARS (Pass 4) ═══════════════════
+let prevDimN = null;
+const origUpdateDim = updateDim;
+updateDim = function(n) {
+  prevDimN = null; // get current n before update
+  document.querySelectorAll('#dim-btns .ctrl-btn.active').forEach(b => {
+    prevDimN = +b.dataset.nq;
+  });
+  origUpdateDim(n);
+  // Add ghost bars for previous value
+  if (prevDimN !== null && prevDimN !== n) {
+    const maxH = 160;
+    const maxDim = 1024;
+    const wraps = document.querySelectorAll('#dim-bars .dim-bar-wrap');
+    wraps.forEach((wrap, idx) => {
+      const i = idx + 1;
+      if (i <= prevDimN) {
+        const d = Math.pow(2, i);
+        const h = Math.max(4, (Math.log2(d) / Math.log2(maxDim)) * maxH);
+        const ghost = document.createElement('div');
+        ghost.className = 'dim-bar-ghost';
+        ghost.style.height = h + 'px';
+        wrap.style.position = 'relative';
+        // Position ghost behind the bar
+        const barEl = wrap.querySelector('.dim-bar');
+        if (barEl) {
+          barEl.parentElement.insertBefore(ghost, barEl);
+        }
+        // Fade out after a moment
+        setTimeout(() => ghost.classList.add('fade'), 800);
+        setTimeout(() => ghost.remove(), 2200);
+      }
+    });
+  }
+};
+
+// ═══════════════════ INIT ═════════════════════════════════════════
+function init() {
+  updateTP();
+  updateDim(2);
+  updateBasis(2);
+  updateCNOT('00');
+  showCnotSup('p0');
+  setEPR(0);
+  updateBell('00');
+  showEnt('sep1');
+  renderMeasState();
+  updateMeasStats();
+  drawHistogram();
+  initQuizzes();
+  initParticles();
+  updateProgress();
+
+  // Show onboarding hints for first-time visitors
+  try {
+    if (!localStorage.getItem(OB_KEY)) {
+      setTimeout(() => showOnboardHint(0), 1200);
+    }
+  } catch(e) {}
+}
+if (document.readyState === 'complete') init();
+else window.addEventListener('load', init);
+</script>
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+</body>
+</html>

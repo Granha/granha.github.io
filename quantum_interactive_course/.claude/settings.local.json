@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r -i \"simon\" /Users/fegranha/quantum* --include=\"*.html\" --include=\"*.js\" --include=\"*.json\")",
+      "Bash(python3 uniformize_theme.py)",
+      "Bash(python3 -c \":*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(node -e \":*)",
+      "Bash(node -e ':*)",
+      "Bash(wc -l /Users/fegranha/course_quantum/modules/*.html)",
+      "Bash(python3 add_footer.py)",
+      "Bash(curl -s http://127.0.0.1:8780/modules/01_qubits.html)",
+      "Bash(lsof -ti:8780)",
+      "Bash(xargs kill)",
+      "Bash(node _validate.js)",
+      "Bash(curl -s http://127.0.0.1:8780/modules/09_state_tomography.html)",
+      "Bash(curl -s http://localhost:8780/modules/14_quantum_key_distribution.html)",
+      "Bash(open http://127.0.0.1:8780/modules/09_state_tomography.html)",
+      "Bash(python3:*)",
+      "Bash(node /tmp/_validate_bb84.js)",
+      "Bash(curl -s http://localhost:8780/modules/01_qubits.html)",
+      "Bash(node -e 'const fs = require\\(\"\"fs\"\"\\); const html = fs.readFileSync\\(\"\"modules/16_complexity_theory.html\"\", \"\"utf8\"\"\\); const topicCount = \\(html.match\\(/topic:/g\\) || []\\).length; const relCards = \\(html.match\\(/class=\"\"relation-card/g\\) || []\\).length; const whatIfs = \\(html.match\\(/class=\"\"what-if-card\"\"/g\\) || []\\).length; const glossaryTerms = \\(html.match\\(/{ term:/g\\) || []\\).length; const circuitEntries = \\(html.match\\(/id: '\"''\"'\\(deutsch|bv|shor|qpe\\)'\"''\"'/g\\) || []\\).length; console.log\\(\"\"Quiz questions:\"\", topicCount\\); console.log\\(\"\"Relation cards:\"\", relCards\\); console.log\\(\"\"What-if cards:\"\", whatIfs\\); console.log\\(\"\"Glossary terms:\"\", glossaryTerms\\); console.log\\(\"\"Circuit entries:\"\", circuitEntries\\);')",
+      "Bash(node -e 'const fs = require\\(\"\"fs\"\"\\); const html = fs.readFileSync\\(\"\"modules/16_complexity_theory.html\"\", \"\"utf8\"\"\\); const circuits = html.match\\(/id: '\"''\"'\\\\w+'\"''\"',\\\\n\\\\s+name:/g\\); console.log\\(\"\"Circuits:\"\", circuits ? circuits.length : 0\\); const relHTML = \\(html.match\\(/data-rel=\"\"/g\\) || []\\).length; console.log\\(\"\"Relation cards \\(data-rel\\):\"\", relHTML\\); const glossaryEntries = \\(html.match\\(/\\\\{ term: '\"''\"'/g\\) || []\\).length; console.log\\(\"\"Glossary entries:\"\", glossaryEntries\\);')",
+      "Bash(done)",
+      "Bash(ls -lS /Users/fegranha/course_quantum/modules/*.html)",
+      "Bash(xxd)",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const h=fs.readFileSync\\(''modules/16_complexity_theory.html'',''utf8''\\); console.log\\(''quiz:'', \\(h.match\\(/q: ''/g\\)||[]\\).length, ''whatif:'', \\(h.match\\(/whatif-card/g\\)||[]\\).length\\)\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const h=fs.readFileSync\\(''modules/16_complexity_theory.html'',''utf8''\\); console.log\\(''whatif class:'', \\(h.match\\(/class=\"\"wi-card\"\"/g\\)||[]\\).length\\)\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const h=fs.readFileSync\\(''modules/16_complexity_theory.html'',''utf8''\\); console.log\\(''what-if-card:'', \\(h.match\\(/what-if-card/g\\)||[]\\).length\\)\")",
+      "Bash(xargs kill -9)",
+      "Bash(node _verify_all.js)",
+      "Bash(lsof -ti:9999)",
+      "Bash(node _check.js)",
+      "Bash(curl -s http://localhost:8780/modules/15_grovers_algorithm.html)",
+      "Bash(node _verify.js)"
+    ]
+  }
+}

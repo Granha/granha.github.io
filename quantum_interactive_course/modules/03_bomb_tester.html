@@ -1,0 +1,2790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elitzur–Vaidman Bomb Tester</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --danger: var(--red);
+    --success: var(--green);
+    --muted: #8888a0;
+    --accent2: #a78bfa;
+    --photon: #fbbf24;
+    --info: #38bdf8;
+    --upper: #38bdf8;
+    --lower: #a78bfa;
+
+    /* Canvas-aware */
+    --canvas-bg: #12151e;
+    --canvas-grid: rgba(255,255,255,0.025);
+    --canvas-text: #aab;
+    --canvas-text-bright: #dde;
+    --canvas-inactive: rgba(255,255,255,0.06);
+    --canvas-wire: #555;
+    --canvas-mirror: #1e293b;
+    --surface-overlay: rgba(0,0,0,0.2);
+    --surface-dim: rgba(0,0,0,0.3);
+    --surface-faint: rgba(0,0,0,0.15);
+    --progress-track: rgba(255,255,255,0.06);
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f5f7fa;
+    --surface: #ffffff;
+    --surface2: #eef1f6;
+    --border: #d1d5db;
+    --text: #1e293b;
+    --text-dim: #64748b;
+    --accent: #4f46e5;
+    --accent-glow: rgba(79, 70, 229, 0.2);
+    --cyan: #0891b2;
+    --cyan-glow: rgba(8, 145, 178, 0.15);
+    --pink: #db2777;
+    --pink-glow: rgba(219, 39, 119, 0.15);
+    --green: #059669;
+    --green-glow: rgba(5, 150, 105, 0.15);
+    --orange: #ea580c;
+    --yellow: #ca8a04;
+    --red: #dc2626;
+    --danger: var(--red);
+    --success: var(--green);
+    --muted: #6b7280;
+    --accent2: #7c3aed;
+    --photon: #b45309;
+    --info: #0284c7;
+    --upper: #0284c7;
+    --lower: #7c3aed;
+
+    --canvas-bg: #e8ecf2;
+    --canvas-grid: rgba(0,0,0,0.04);
+    --canvas-text: #4b5563;
+    --canvas-text-bright: #1e293b;
+    --canvas-inactive: rgba(0,0,0,0.06);
+    --canvas-wire: #9ca3af;
+    --canvas-mirror: #d1d5db;
+    --surface-overlay: rgba(0,0,0,0.05);
+    --surface-dim: rgba(0,0,0,0.06);
+    --surface-faint: rgba(0,0,0,0.04);
+    --progress-track: rgba(0,0,0,0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* --- Theme toggle --- */
+  .theme-toggle {
+    position: fixed;
+    top: 1.2rem;
+    right: 1.5rem;
+    z-index: 1000;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
+
+  /* --- Reading progress bar --- */
+  #reading-progress {
+    position: fixed;
+    top: 0; left: 0;
+    width: 0%; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan), var(--pink));
+    z-index: 1001;
+    transition: width 0.1s linear;
+    pointer-events: none;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+  }
+
+  header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    margin-bottom: 0.5rem;
+  }
+
+  header::after {
+    content: '';
+    display: block;
+    width: 160px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+    margin: 1.5rem auto 0;
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 1.05rem;
+  }
+
+  section { margin-bottom: 3rem; }
+
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--accent);
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--accent2);
+  }
+
+  p, li { color: var(--text); margin-bottom: 0.75rem; }
+  ul { padding-left: 1.5rem; }
+
+  .card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    transition: border-color 0.3s;
+  }
+  .card:hover { border-color: rgba(99, 102, 241, 0.4); }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .highlight {
+    background: rgba(108, 140, 255, 0.08);
+    border-left: 3px solid var(--accent);
+    padding: 1rem 1.25rem;
+    border-radius: 0 8px 8px 0;
+    margin: 1rem 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .highlight.warning {
+    background: rgba(251, 191, 36, 0.08);
+    border-left-color: var(--photon);
+  }
+
+  .highlight.success {
+    background: rgba(34, 197, 94, 0.08);
+    border-left-color: var(--success);
+  }
+
+  /* --- Interferometer Canvas --- */
+  .sim-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .sim-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .sim-header h3 { margin: 0; }
+
+  .controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .controls button { white-space: nowrap; }
+
+  button {
+    font-family: inherit;
+    font-size: 0.85rem;
+    padding: 0.45rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  button:hover { border-color: var(--accent); color: var(--accent); }
+
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  button.primary:hover { background: #5a7ae8; }
+
+  button.active {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    color: #fff;
+  }
+
+  canvas { display: block; width: 100%; cursor: default; }
+
+  .sim-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  /* --- State Display --- */
+  .state-display {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface-dim);
+    border-radius: 8px;
+    text-align: center;
+    min-height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  .state-display .ket { color: var(--accent); font-weight: 600; }
+  .state-display .ket-upper { color: var(--upper); font-weight: 600; }
+  .state-display .ket-lower { color: var(--lower); font-weight: 600; }
+  .state-display .ket-d0 { color: var(--info); font-weight: 600; }
+  .state-display .ket-d1 { color: var(--success); font-weight: 600; }
+  .state-display .coeff { color: var(--photon); }
+  .state-display .phase { color: var(--yellow); font-weight: 600; }
+  .state-display .op { color: var(--muted); margin: 0 0.15rem; }
+  .state-display .label { color: var(--muted); font-size: 0.8rem; font-family: inherit; margin-right: 0.5rem; }
+
+  /* --- Result Banner --- */
+  .result-banner {
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.05rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    animation: fadeIn 0.3s;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  .result-banner.boom { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+  .result-banner.detected { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+  .result-banner.inconclusive { background: rgba(56, 189, 248, 0.15); color: var(--info); }
+  .result-banner.no-bomb { background: rgba(136, 136, 160, 0.15); color: var(--muted); }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+  /* --- Stats --- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+  .zeno-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .stat-box {
+    text-align: center;
+    padding: 0.6rem 0.5rem;
+    background: var(--surface-overlay);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .stat-box .num { font-size: 1.5rem; font-weight: 700; }
+  .stat-box .pct { font-size: 0.75rem; color: var(--muted); margin-top: -2px; }
+  .stat-box .lbl { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; overflow-wrap: break-word; word-break: break-word; }
+  .stat-box.boom .num { color: var(--danger); }
+  .stat-box.detected .num { color: var(--success); }
+  .stat-box.inconclusive .num { color: var(--info); }
+  .stat-box.total .num { color: var(--text); }
+
+  /* --- Legend --- */
+  .legend {
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding: 0.5rem 0 0;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .legend-swatch {
+    width: 14px;
+    height: 3px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .legend-circle {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1.5px solid;
+  }
+
+  /* --- Tabs --- */
+  .tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tab-btn {
+    border: none;
+    background: none;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    cursor: pointer;
+    white-space: nowrap; /* tabs should not wrap */
+  }
+  .tab-btn:hover { color: var(--text); border-color: transparent; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .math {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    color: var(--accent);
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .step-list { counter-reset: steps; list-style: none; padding-left: 0; }
+  .step-list li {
+    counter-increment: steps;
+    padding-left: 2.5rem;
+    position: relative;
+    margin-bottom: 1.25rem;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  .step-list li::before {
+    content: counter(steps);
+    position: absolute;
+    left: 0; top: 0.1rem;
+    width: 1.6rem; height: 1.6rem;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .speed-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .speed-control input[type=range] { width: 80px; accent-color: var(--accent); }
+
+  /* --- Batch progress bar --- */
+  .batch-progress {
+    width: 100%;
+    height: 4px;
+    background: var(--progress-track);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 0.25rem;
+  }
+  .batch-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.1s linear;
+    width: 0%;
+  }
+
+  /* --- Section entrance animation --- */
+  section {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  section.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* --- Disabled button --- */
+  button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* --- Focus-visible --- */
+  button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* --- Keyboard shortcut hints --- */
+  .kbd {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.35rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface-overlay);
+    color: var(--muted);
+    vertical-align: middle;
+    margin-left: 0.3rem;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 600px) {
+    header { padding-top: 3.2rem; }
+    header h1 { font-size: 1.6rem; }
+    .container { padding: 1rem; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .state-display { font-size: 0.75rem; }
+    .result-banner { font-size: 0.9rem; }
+    .sim-header { flex-direction: column; align-items: flex-start; }
+    .sim-footer { padding: 0.75rem 1rem; }
+    .zeno-stats { grid-template-columns: 1fr; }
+    .kbd { display: none; }
+  }
+
+  /* --- Skip link --- */
+  .skip-link {
+    position: absolute;
+    top: -100px;
+    left: 0;
+    background: var(--accent);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    z-index: 1002;
+    font-size: 0.85rem;
+    border-radius: 0 0 8px 0;
+    text-decoration: none;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* --- Print --- */
+  @media print {
+    #particleBg, .theme-toggle, .home-link, .skip-link,
+    #reading-progress, .batch-progress, .kbd { display: none !important; }
+    body { background: #fff; color: #000; }
+    .card, .sim-wrapper, .highlight, .challenge, .comparison-col, .quiz-card {
+      border-color: #ccc; background: #fff; break-inside: avoid;
+    }
+    section { opacity: 1 !important; transform: none !important; }
+    canvas { max-width: 100%; }
+  }
+
+  /* --- Reduced motion --- */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    #particleBg { display: none; }
+    section { opacity: 1; transform: none; }
+  }
+
+  /* Particle background canvas */
+  #particleBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /* --- Quiz --- */
+  .quiz-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.3s;
+  }
+  .quiz-card .question { font-weight: 500; margin-bottom: 1rem; line-height: 1.6; }
+  .quiz-options { display: flex; flex-direction: column; gap: 0.5rem; }
+  .quiz-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-faint);
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1.5;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+  .quiz-option:hover { border-color: var(--accent); background: rgba(99,102,241,0.08); }
+  .quiz-option.correct {
+    border-color: var(--success);
+    background: rgba(34,197,94,0.12);
+    color: var(--success);
+    cursor: default;
+  }
+  .quiz-option.wrong {
+    border-color: var(--danger);
+    background: rgba(239,68,68,0.08);
+    color: var(--danger);
+    opacity: 0.7;
+    cursor: default;
+  }
+  .quiz-option.dimmed {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .quiz-explanation {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    animation: fadeIn 0.3s;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  .quiz-explanation.right {
+    background: rgba(34,197,94,0.08);
+    border-left: 3px solid var(--success);
+    color: var(--text);
+  }
+  .quiz-explanation.wrong-expl {
+    background: rgba(239,68,68,0.08);
+    border-left: 3px solid var(--danger);
+    color: var(--text);
+  }
+
+  /* --- Challenge / Try-this boxes --- */
+  .challenge {
+    background: rgba(251, 191, 36, 0.06);
+    border: 1px dashed var(--photon);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  .challenge-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--photon);
+    margin-bottom: 0.5rem;
+  }
+  .challenge p { margin-bottom: 0.5rem; }
+  .challenge p:last-child { margin-bottom: 0; }
+
+  /* --- Comparison table --- */
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .comparison-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .comparison-col h4 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .comparison-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .comparison-row:last-child { border-bottom: none; }
+  .comparison-row .cl { color: var(--muted); }
+  .comparison-row .cv { font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+  @media (max-width: 600px) {
+    .comparison-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Module navigation */
+  .module-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    max-width: 900px;
+    margin: 3rem auto 0;
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+  }
+  .module-nav-link {
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.2s;
+    white-space: nowrap;
+  }
+  .module-nav-link:hover { color: var(--accent); }
+  .module-nav-link.prev { text-align: left; }
+  .module-nav-link.top { color: var(--muted); }
+  .module-nav-link.next { text-align: right; }
+  @media (max-width: 600px) {
+    .module-nav { flex-direction: column; gap: 0.75rem; }
+  }
+  @media print {
+    .module-nav { display: none; }
+  }
+</style>
+</head>
+<body>
+<a href="#puzzle" class="skip-link">Skip to content</a>
+<div id="reading-progress"></div>
+<canvas id="particleBg"></canvas>
+<a href="../index.html" class="home-link" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:var(--surface);border:1px solid var(--border);backdrop-filter:blur(8px);transition:all 0.2s;opacity:0.85;" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--accent)';this.style.opacity='1'" onmouseout="this.style.color='var(--text-dim)';this.style.borderColor='var(--border)';this.style.opacity='0.85'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+<button class="theme-toggle" id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">&#9790;</button>
+<main class="container">
+
+<header>
+  <h1>Elitzur–Vaidman Bomb Tester</h1>
+  <p>Interaction-free measurement with a Mach-Zehnder interferometer</p>
+</header>
+
+<!-- ===== SECTION 1: INTRO ===== -->
+<section id="puzzle">
+  <h2>The Puzzle</h2>
+  <div class="card">
+    <p>Imagine a factory that produces bombs with ultra-sensitive triggers. Some bombs are <strong>live</strong> (functional) and some are <strong>duds</strong> (broken triggers). The trigger is so sensitive that <em>even a single photon</em> will detonate a live bomb.</p>
+    <p>The challenge: <strong>Can you identify live bombs without detonating them?</strong></p>
+    <div class="highlight warning">
+      <strong>Classically, this is impossible.</strong> Any interaction with the trigger that gives you information also triggers the bomb. But quantum mechanics offers a loophole through <em>interaction-free measurement</em>.
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 2: THE SETUP ===== -->
+<section id="setup">
+  <h2>The Setup: Mach-Zehnder Interferometer</h2>
+
+  <div class="tabs" role="tablist" aria-label="Interferometer explanation tabs">
+    <button class="tab-btn active" data-tab="how-it-works" role="tab" aria-selected="true" aria-controls="tab-how-it-works">How It Works</button>
+    <button class="tab-btn" data-tab="beam-splitter" role="tab" aria-selected="false" aria-controls="tab-beam-splitter">Beam Splitters</button>
+    <button class="tab-btn" data-tab="no-bomb-case" role="tab" aria-selected="false" aria-controls="tab-no-bomb-case">No Bomb</button>
+    <button class="tab-btn" data-tab="bomb-case" role="tab" aria-selected="false" aria-controls="tab-bomb-case">With Bomb</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-how-it-works" role="tabpanel">
+    <div class="card">
+      <p>A <strong>Mach-Zehnder interferometer</strong> splits a photon into two paths using beam splitters and mirrors, then recombines them:</p>
+      <ol class="step-list">
+        <li><strong>Beam Splitter 1 (BS1):</strong> A single photon enters and is put into a superposition of taking the <strong style="color:var(--upper)">upper path</strong> and the <strong style="color:var(--lower)">lower path</strong>.</li>
+        <li><strong>Mirrors:</strong> Each path is reflected by a mirror so the paths converge again.</li>
+        <li><strong>Beam Splitter 2 (BS2):</strong> The two paths recombine. Depending on the phase relationship, the photon exits toward <strong>Detector D0</strong> or <strong>Detector D1</strong>.</li>
+        <li><strong>The bomb</strong> (if present) is placed on the <em>lower path</em>, between the mirror and BS2.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-beam-splitter" role="tabpanel">
+    <div class="card">
+      <h3>What Does a 50/50 Beam Splitter Do?</h3>
+      <p>A balanced beam splitter transforms a photon state as follows:</p>
+      <div class="highlight">
+        <p><span class="math">|upper⟩</span> → <span class="math">1/√2 (|upper⟩ + i|lower⟩)</span></p>
+        <p><span class="math">|lower⟩</span> → <span class="math">1/√2 (i|upper⟩ + |lower⟩)</span></p>
+      </div>
+      <p>The factor of <strong><span class="math">i</span></strong> is a phase shift of π/2 that occurs upon reflection inside the beam splitter. This phase is what makes the interferometer work — it causes constructive and destructive interference at the outputs.</p>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-no-bomb-case" role="tabpanel">
+    <div class="card">
+      <h3>Case 1: No bomb (or dud) on the path</h3>
+      <div class="highlight success">
+        Both paths are open. The photon travels in superposition and interferes with itself at BS2. <strong>Destructive interference</strong> ensures the photon <em>always</em> goes to D0 and <em>never</em> to D1.
+      </div>
+      <p><strong>Step-by-step state evolution:</strong></p>
+      <ol class="step-list">
+        <li><strong>Source:</strong> <span class="math">|upper⟩</span></li>
+        <li><strong>After BS1:</strong> <span class="math">1/√2 (|upper⟩ + i|lower⟩)</span></li>
+        <li><strong>After mirrors</strong> (each reflection adds phase <span class="math">i</span>): <span class="math">i/√2 (|upper⟩ − |lower⟩)</span></li>
+        <li><strong>After BS2:</strong> applying the beam-splitter transform and collecting terms: <span class="math">−|D0⟩</span></li>
+      </ol>
+      <p>Result: the photon exits <strong>100% toward D0</strong>. D1 never clicks.</p>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-bomb-case" role="tabpanel">
+    <div class="card">
+      <h3>Case 2: Live bomb on the lower path</h3>
+      <div class="highlight">
+        The bomb acts as a <strong>measurement device</strong>. If the photon takes the lower path, the bomb detonates — collapsing the superposition. If it takes the upper path, the superposition is destroyed anyway (the bomb <em>could have</em> detected it), and we lose interference.
+      </div>
+      <p><strong>Step-by-step state evolution:</strong></p>
+      <ol class="step-list">
+        <li><strong>Source:</strong> <span class="math">|upper⟩</span></li>
+        <li><strong>After BS1:</strong> <span class="math">1/√2 (|upper⟩ + i|lower⟩)</span></li>
+        <li><strong>Bomb measures "which path":</strong>
+          <ul style="margin-top:0.5rem">
+            <li><strong>50% chance:</strong> photon is on the lower path → <strong>BOOM</strong>. Bomb explodes.</li>
+            <li><strong>50% chance:</strong> photon is on the upper path → photon survives, state collapses to <span class="math">|upper⟩</span>.</li>
+          </ul>
+        </li>
+        <li><strong>If survived, after mirror &amp; BS2:</strong> a single path with no interference gives 50/50 at detectors.
+          <ul style="margin-top:0.5rem">
+            <li><strong>25% overall:</strong> D0 clicks — inconclusive (this also happens with no bomb)</li>
+            <li><strong>25% overall:</strong> D1 clicks — <strong>bomb detected without detonation!</strong></li>
+          </ul>
+        </li>
+      </ol>
+      <div class="highlight success">
+        <strong>Key insight:</strong> D1 <em>never</em> clicks when there is no bomb. So if D1 clicks, a live bomb <em>must</em> be present — and the photon never touched it! This is <strong>interaction-free measurement</strong>.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 3: INTERACTIVE SIM ===== -->
+<section id="simulation">
+  <h2>Interactive Simulation</h2>
+  <p style="margin-bottom:1rem; color:var(--muted);">Choose a scenario and fire a photon to see what happens. Run many trials to build up statistics.</p>
+
+  <div class="sim-wrapper">
+    <div class="sim-header">
+      <h3 style="font-size:1rem;">Mach-Zehnder Interferometer</h3>
+      <div class="controls">
+        <button id="btn-no-bomb" class="active" onclick="setScenario('none')">No Bomb<span class="kbd">1</span></button>
+        <button id="btn-dud" onclick="setScenario('dud')">Dud Bomb<span class="kbd">2</span></button>
+        <button id="btn-live" onclick="setScenario('live')">Live Bomb<span class="kbd">3</span></button>
+        <button id="btn-random" onclick="setScenario('random')">Random<span class="kbd">4</span></button>
+        <span style="color:var(--border);">|</span>
+        <button class="primary" id="btn-fire" onclick="fireSingle()">⚡ Fire Photon<span class="kbd">Space</span></button>
+        <button onclick="fireMany(50)">Fire 50</button>
+        <button onclick="resetStats()">Reset<span class="kbd">R</span></button>
+      </div>
+    </div>
+
+    <canvas id="mzi-canvas" width="880" height="480"></canvas>
+
+    <div class="sim-footer">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+        <div class="speed-control">
+          <label>Speed:</label>
+          <input type="range" id="speed-slider" min="1" max="10" value="5">
+          <span id="speed-label">5x</span>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-swatch" style="background:#38bdf8;"></span> Upper path</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:#a78bfa;"></span> Lower path</div>
+          <div class="legend-item"><span class="legend-circle" style="background:rgba(251,191,36,0.3); border-color:#fbbf24;"></span> Photon</div>
+          <div class="legend-item"><span class="legend-circle" style="background:rgba(239,68,68,0.2); border-color:#ef4444;"></span> Bomb</div>
+        </div>
+      </div>
+
+      <div class="state-display" id="state-display" aria-live="polite">
+        <span class="label">State:</span>
+        <span style="color:var(--muted)">Press "⚡ Fire Photon" to begin</span>
+      </div>
+
+      <div class="result-banner" id="result-banner" aria-live="assertive" style="display:none;"></div>
+
+      <div class="batch-progress" id="batch-progress" style="display:none;">
+        <div class="batch-progress-fill" id="batch-progress-fill"></div>
+      </div>
+
+      <div class="stats" id="stats-panel">
+        <div class="stat-box total">
+          <div class="num" id="stat-total">0</div>
+          <div class="lbl">Total</div>
+        </div>
+        <div class="stat-box inconclusive">
+          <div class="num" id="stat-d0">0</div>
+          <div class="pct" id="stat-d0-pct">&nbsp;</div>
+          <div class="lbl">D0 clicks</div>
+        </div>
+        <div class="stat-box detected">
+          <div class="num" id="stat-d1">0</div>
+          <div class="pct" id="stat-d1-pct">&nbsp;</div>
+          <div class="lbl">D1 (detected!)</div>
+        </div>
+        <div class="stat-box boom">
+          <div class="num" id="stat-boom">0</div>
+          <div class="pct" id="stat-boom-pct">&nbsp;</div>
+          <div class="lbl">Exploded</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="challenge">
+    <div class="challenge-label">Try this</div>
+    <p>Set the scenario to <strong>Random</strong> and fire 50 photons. Does the fraction of D1 clicks match the expected 25% for live bombs? How close do the statistics get to the theoretical predictions?</p>
+  </div>
+</section>
+
+<!-- ===== SECTION 4: SUMMARY TABLE ===== -->
+<section id="outcomes">
+  <h2>Outcome Summary</h2>
+  <div class="card" style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.9rem; min-width:420px;">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border); text-align:left;">
+          <th style="padding:0.6rem;">Scenario</th>
+          <th style="padding:0.6rem;">D0</th>
+          <th style="padding:0.6rem;">D1</th>
+          <th style="padding:0.6rem;">Boom</th>
+          <th style="padding:0.6rem;">Interpretation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.6rem;">No bomb / Dud</td>
+          <td style="padding:0.6rem; color:var(--info);">100%</td>
+          <td style="padding:0.6rem;">0%</td>
+          <td style="padding:0.6rem;">0%</td>
+          <td style="padding:0.6rem; color:var(--muted);">Full interference — always D0</td>
+        </tr>
+        <tr>
+          <td style="padding:0.6rem;">Live bomb</td>
+          <td style="padding:0.6rem; color:var(--info);">25%</td>
+          <td style="padding:0.6rem; color:var(--success);">25%</td>
+          <td style="padding:0.6rem; color:var(--danger);">50%</td>
+          <td style="padding:0.6rem; color:var(--muted);">No interference — D1 click = bomb found safely!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===== SECTION 4b: PROBABILITY TREE ===== -->
+<section id="probability-tree">
+  <h2>Outcome Probability Tree</h2>
+  <div class="card">
+    <p>Here is the full decision tree when a photon meets a <strong>live bomb</strong>:</p>
+    <canvas id="tree-canvas" width="880" height="300" style="display:block; width:100%; border-radius:8px; background:var(--surface-overlay); margin:1rem 0;"></canvas>
+    <p style="color:var(--muted); font-size:0.85rem;">Each branch shows the probability and outcome. Only the <strong style="color:var(--success)">green</strong> branch certifies a bomb without destroying it.</p>
+  </div>
+</section>
+
+<!-- ===== SECTION 5: QUANTUM CIRCUIT ===== -->
+<section id="circuit">
+  <h2>Quantum Circuit Analogy</h2>
+  <div class="card">
+    <p>The Mach-Zehnder interferometer maps directly onto a qubit circuit:</p>
+    <div style="margin:1.25rem 0;">
+      <canvas id="circuit-canvas" width="880" height="160" style="display:block; width:100%; border-radius:8px; background:var(--surface-overlay);"></canvas>
+    </div>
+    <ul>
+      <li>Each <strong>beam splitter</strong> is a <strong>Hadamard gate (H)</strong>.</li>
+      <li>The two paths are the <strong>|0⟩</strong> and <strong>|1⟩</strong> basis states of a qubit.</li>
+      <li>The mirrors contribute phases, analogous to the Z gate.</li>
+      <li><strong>No bomb:</strong> H · H = I, so you always measure <span class="math">|0⟩</span> (= D0).</li>
+      <li><strong>Live bomb:</strong> The bomb is a projective measurement in the computational basis between the two H gates. It collapses the state, destroying the interference, and you get random outcomes — 50/50 for <span class="math">|0⟩</span> or <span class="math">|1⟩</span>.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===== SECTION 5b: SORTING STRATEGY ===== -->
+<section id="sorting">
+  <h2>Bomb-Sorting Strategy</h2>
+  <div class="card">
+    <p>With the basic interferometer, we can use <strong>repeated testing</strong> to sort a stockpile of bombs. Each round, fire a photon at each untested bomb:</p>
+    <ul>
+      <li><strong>D1 clicks →</strong> certified live bomb (keep it!)</li>
+      <li><strong>Boom →</strong> lost forever</li>
+      <li><strong>D0 clicks →</strong> inconclusive — test again next round</li>
+    </ul>
+    <p style="margin-top:0.75rem;">How many live bombs can you save from a stockpile? Adjust the starting count and see:</p>
+
+    <div style="display:flex; align-items:center; gap:1rem; margin:1rem 0; flex-wrap:wrap;">
+      <label style="color:var(--muted); font-size:0.85rem;">Live bombs in stockpile:</label>
+      <input type="range" id="stockpile-slider" min="10" max="500" value="100" style="width:160px; accent-color:var(--accent);">
+      <span id="stockpile-label" style="color:var(--accent); font-weight:600; font-family:'JetBrains Mono',monospace;">100</span>
+      <button class="primary" onclick="runSortingStrategy()">Run Simulation</button>
+    </div>
+
+    <div id="sorting-results" style="display:none;">
+      <div style="overflow-x:auto;">
+      <table id="sorting-table" style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:0.75rem; min-width:480px;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border); text-align:left;">
+            <th style="padding:0.5rem;">Round</th>
+            <th style="padding:0.5rem;">Tested</th>
+            <th style="padding:0.5rem; color:var(--success);">Certified</th>
+            <th style="padding:0.5rem; color:var(--danger);">Exploded</th>
+            <th style="padding:0.5rem; color:var(--info);">Remaining</th>
+            <th style="padding:0.5rem;">Cumulative saved</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      </div>
+      <div class="highlight success" id="sorting-summary" style="margin-top:1rem;"></div>
+    </div>
+
+    <div class="challenge">
+      <div class="challenge-label">Try this</div>
+      <p>Run the sorting simulation with 100 bombs, then try 500. Does the percentage saved stay roughly the same? Why does the theoretical yield converge to ~33%?</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 6: DEEPER – Quantum Zeno ===== -->
+<section id="zeno">
+  <h2>Going Deeper: The Quantum Zeno Approach</h2>
+  <div class="card">
+    <h3>Can We Do Better Than 25%?</h3>
+    <p>With the basic setup, only <strong>25%</strong> of live bombs are successfully identified without detonation, while <strong>50%</strong> explode. That's a terrible yield. But the success rate can be pushed arbitrarily close to <strong>100%</strong> using the <strong>Quantum Zeno Effect</strong>.</p>
+    <div class="highlight">
+      <p><strong>The idea:</strong> Replace each 50/50 beam splitter with a <em>very weak</em> beam splitter that only nudges a tiny fraction of the amplitude into the lower path. Then chain <strong>N</strong> such stages in a loop. Each stage rotates the state by a small angle <span class="math">θ = π/2N</span>.</p>
+    </div>
+    <p>If <strong>no bomb</strong> is present, after N stages the full rotation completes and the photon exits toward the detector — equivalent to a single 50/50 beam splitter.</p>
+    <p>If a <strong>live bomb</strong> is present, each stage acts as a measurement. Because each rotation is tiny, the probability of triggering the bomb at any single stage is only <span class="math">sin²(π/2N)</span> — which shrinks as <span class="math">~1/N²</span>. Over all N stages, the total explosion probability is approximately <span class="math">N × sin²(π/2N) ≈ π²/4N</span>, which vanishes as N grows.</p>
+    <div class="highlight success">
+      <p><strong>Result:</strong> Detection probability → <span class="math">cos<sup>2N</sup>(π/2N) → 1</span> as <span class="math">N → ∞</span>. We can detect live bombs with near-certainty!</p>
+    </div>
+  </div>
+
+  <!-- Zeno interactive -->
+  <div class="sim-wrapper" style="margin-top:1rem;">
+    <div class="sim-header">
+      <h3 style="font-size:1rem;">Quantum Zeno: N-Stage Detection</h3>
+      <div class="controls">
+        <label style="color:var(--muted); font-size:0.85rem;">Stages N:</label>
+        <input type="range" id="zeno-slider" min="1" max="50" value="1" style="width:140px; accent-color:var(--accent);">
+        <span id="zeno-n-label" style="color:var(--accent); font-weight:600; font-family:'JetBrains Mono',monospace; min-width:2.5rem; text-align:center;">1</span>
+        <span style="color:var(--border);">|</span>
+        <button class="primary" id="btn-zeno-run" onclick="runZenoBatch()">Run 1000 Trials</button>
+        <button onclick="resetZeno()">Reset</button>
+      </div>
+    </div>
+
+    <canvas id="zeno-canvas" width="880" height="340"></canvas>
+
+    <div class="sim-footer">
+      <div class="stats zeno-stats">
+        <div class="stat-box detected">
+          <div class="num" id="zeno-detect">—</div>
+          <div class="pct" id="zeno-detect-theory">&nbsp;</div>
+          <div class="lbl">Detected safely</div>
+        </div>
+        <div class="stat-box boom">
+          <div class="num" id="zeno-boom">—</div>
+          <div class="pct" id="zeno-boom-theory">&nbsp;</div>
+          <div class="lbl">Exploded</div>
+        </div>
+        <div class="stat-box inconclusive">
+          <div class="num" id="zeno-d0">—</div>
+          <div class="pct" id="zeno-d0-theory">&nbsp;</div>
+          <div class="lbl">Inconclusive (D0)</div>
+        </div>
+      </div>
+      <div class="state-display" id="zeno-state" aria-live="polite">
+        <span class="label">Theory:</span>
+        <span style="color:var(--muted)">Adjust N and run trials to compare</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Basic vs Zeno comparison -->
+  <div class="comparison-grid" style="margin-top:1.5rem;">
+    <div class="comparison-col" style="border-color: var(--info);">
+      <h4 style="color: var(--info);">Basic (1 stage)</h4>
+      <div class="comparison-row"><span class="cl">Detection</span><span class="cv" style="color:var(--success);">25%</span></div>
+      <div class="comparison-row"><span class="cl">Explosion</span><span class="cv" style="color:var(--danger);">50%</span></div>
+      <div class="comparison-row"><span class="cl">Inconclusive</span><span class="cv" style="color:var(--info);">25%</span></div>
+      <div class="comparison-row"><span class="cl">Verdict</span><span class="cv" style="color:var(--muted); font-size:0.8rem;">Poor</span></div>
+    </div>
+    <div class="comparison-col" id="zeno-comparison-col" style="border-color: var(--accent);">
+      <h4 style="color: var(--accent);">Zeno (N=<span id="compare-n">1</span> stages)</h4>
+      <div class="comparison-row"><span class="cl">Detection</span><span class="cv" style="color:var(--success);" id="compare-detect">50.0%</span></div>
+      <div class="comparison-row"><span class="cl">Explosion</span><span class="cv" style="color:var(--danger);" id="compare-boom">50.0%</span></div>
+      <div class="comparison-row"><span class="cl">Inconclusive</span><span class="cv" style="color:var(--info);" id="compare-d0">0.0%</span></div>
+      <div class="comparison-row"><span class="cl">Verdict</span><span class="cv" style="color:var(--muted); font-size:0.8rem;" id="compare-verdict">Poor</span></div>
+    </div>
+  </div>
+
+  <div class="challenge">
+    <div class="challenge-label">Try this</div>
+    <p>Slide N from 1 to 50 and watch the explosion rate plummet in the chart above. At what value of N does the detection rate first exceed <strong>90%</strong>? Run 1000 trials at that N to verify.</p>
+  </div>
+</section>
+
+<!-- ===== SECTION 7: KEY TAKEAWAYS ===== -->
+<section id="takeaways">
+  <h2>Key Takeaways</h2>
+  <div class="card" style="border-color: var(--accent); border-width: 2px;">
+    <ol class="step-list">
+      <li><strong>Interaction-free measurement is real:</strong> quantum mechanics allows you to learn about an object without any particle ever touching it. The bomb tester is the clearest demonstration.</li>
+      <li><strong>Superposition enables the trick:</strong> the photon travels <em>both</em> paths simultaneously. The bomb's presence on one path collapses the superposition, altering the interference pattern at the output — even when the photon takes the other path.</li>
+      <li><strong>Basic efficiency is low:</strong> the standard Mach-Zehnder setup detects only <strong>25%</strong> of live bombs safely, while <strong>50%</strong> explode. D0 clicks are inconclusive.</li>
+      <li><strong>The Quantum Zeno Effect fixes this:</strong> by replacing one beam splitter with <em>N</em> weak stages, the detection rate approaches <strong>100%</strong> as N&nbsp;→&nbsp;∞. Frequent measurement freezes the state on the safe path.</li>
+      <li><strong>Circuit analogy:</strong> the interferometer maps to H–measure–H on a qubit. The bomb is a projective measurement between two Hadamard gates.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ===== SECTION 8: CHECK YOUR UNDERSTANDING ===== -->
+<section id="quiz">
+  <h2>Check Your Understanding</h2>
+  <div id="quiz-container"></div>
+</section>
+
+<!-- ===== SECTION 9: HISTORICAL CONTEXT & FURTHER READING ===== -->
+<section id="history">
+  <h2>Historical Context</h2>
+  <div class="card">
+    <p>The bomb-testing thought experiment was proposed by <strong>Avshalom Elitzur</strong> and <strong>Lev Vaidman</strong> in 1993. It provided one of the most vivid demonstrations that quantum measurement is not merely a passive reading of pre-existing values — the <em>possibility</em> of an interaction can change outcomes even when no interaction occurs.</p>
+    <div class="highlight">
+      <p><strong>1993</strong> — Elitzur &amp; Vaidman publish <em>"Quantum mechanical interaction-free measurements"</em>, introducing the bomb-testing gedanken experiment.</p>
+    </div>
+    <div class="highlight">
+      <p><strong>1995</strong> — Kwiat, Weinfurter, Herzog, Zeilinger &amp; Kasevich demonstrate interaction-free measurement experimentally using a polarization interferometer, confirming the theoretical predictions.</p>
+    </div>
+    <div class="highlight">
+      <p><strong>1999</strong> — Kwiat et al. implement the Quantum Zeno approach with multiple cycles, achieving detection efficiencies above <strong>73%</strong> — far beyond the 25% basic limit.</p>
+    </div>
+    <p style="margin-top: 1rem;">These experiments established interaction-free measurement as a genuine quantum phenomenon with applications in <strong>quantum imaging</strong>, <strong>counterfactual computation</strong>, and ultra-sensitive <strong>non-destructive testing</strong>.</p>
+  </div>
+</section>
+
+</main>
+
+<nav class="module-nav" aria-label="Module navigation">
+  <a href="02_measurements.html" class="module-nav-link prev">← Single-Qubit Measurements</a>
+  <a href="#" class="module-nav-link top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">↑ Back to Top</a>
+  <a href="05_hadamard_transform.html" class="module-nav-link next">Hadamard Transform →</a>
+</nav>
+
+<script>
+// ============================================================
+//  Simulation engine – Elitzur–Vaidman Bomb Tester
+// ============================================================
+
+const canvas = document.getElementById('mzi-canvas');
+const ctx = canvas.getContext('2d');
+
+function getThemeColor(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function buildCOL() {
+  return {
+    upper: getThemeColor('--upper') || '#38bdf8',
+    lower: getThemeColor('--lower') || '#a78bfa',
+    photon: getThemeColor('--photon') || '#fbbf24',
+    component: '#6c8cff',
+    mirror: getThemeColor('--canvas-mirror') || '#1e293b',
+    bg: getThemeColor('--canvas-bg') || '#12151e',
+    grid: getThemeColor('--canvas-grid') || 'rgba(255,255,255,0.025)',
+    text: getThemeColor('--canvas-text') || '#aab',
+    textBright: getThemeColor('--canvas-text-bright') || '#dde',
+    danger: getThemeColor('--red') || '#ef4444',
+    success: getThemeColor('--green') || '#22c55e',
+    wire: getThemeColor('--canvas-wire') || '#555',
+    inactive: getThemeColor('--canvas-inactive') || 'rgba(255,255,255,0.06)',
+  };
+}
+
+let COL = buildCOL();
+
+// Hi-DPI
+const dpr = window.devicePixelRatio || 1;
+let W, H;
+
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  W = rect.width;
+  H = 480;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawStaticScene();
+}
+window.addEventListener('resize', resizeCanvas);
+
+// Layout
+function layout() {
+  const cx = W / 2, cy = H / 2 - 10;
+  const dx = W * 0.27, dy = H * 0.23;
+  return {
+    source:  { x: cx - dx - 80, y: cy - dy },
+    bs1:     { x: cx - dx,      y: cy - dy },
+    mirrorU: { x: cx + dx,      y: cy - dy },
+    mirrorL: { x: cx - dx,      y: cy + dy },
+    bs2:     { x: cx + dx,      y: cy + dy },
+    d0:      { x: cx + dx + 80, y: cy + dy },
+    d1:      { x: cx + dx,      y: cy + dy + 80 },
+    bomb:    { x: cx,           y: cy + dy },
+  };
+}
+
+let scenario = 'none';
+let animating = false;
+let stats = { total: 0, d0: 0, d1: 0, boom: 0 };
+let currentBombType = 'none';
+let exploded = false;
+let activeDetector = null;
+
+function setScenario(s) {
+  scenario = s;
+  document.querySelectorAll('.controls button[id^=btn-]').forEach(b => b.classList.remove('active'));
+  const map = { none: 'btn-no-bomb', dud: 'btn-dud', live: 'btn-live', random: 'btn-random' };
+  document.getElementById(map[s])?.classList.add('active');
+  currentBombType = s === 'random' ? 'none' : s;
+  activeDetector = null;
+  exploded = false;
+  drawStaticScene();
+}
+
+function hasBomb() {
+  if (scenario === 'live') return 'live';
+  if (scenario === 'dud') return 'dud';
+  if (scenario === 'random') {
+    const r = Math.random();
+    return r < 1/3 ? 'live' : r < 2/3 ? 'dud' : 'none';
+  }
+  return 'none';
+}
+
+function getSpeed() { return parseInt(document.getElementById('speed-slider').value); }
+document.getElementById('speed-slider').addEventListener('input', function() {
+  document.getElementById('speed-label').textContent = this.value + 'x';
+});
+
+// ============================================================
+//  Drawing helpers
+// ============================================================
+
+function drawPath(x1, y1, x2, y2, color, width, dashed) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width || 2;
+  if (dashed) ctx.setLineDash([6, 4]);
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawPathGlow(x1, y1, x2, y2, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 10;
+  ctx.globalAlpha = 0.15;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawArrowhead(x1, y1, x2, y2, color) {
+  const mx = (x1 + x2) / 2;
+  const my = (y1 + y2) / 2;
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  const headLen = 7;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(mx + headLen * Math.cos(angle), my + headLen * Math.sin(angle));
+  ctx.lineTo(mx - headLen * Math.cos(angle - 0.5), my - headLen * Math.sin(angle - 0.5));
+  ctx.lineTo(mx - headLen * Math.cos(angle + 0.5), my - headLen * Math.sin(angle + 0.5));
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawDiamond(x, y, label) {
+  const s = 24;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(Math.PI / 4);
+  // Glow
+  ctx.shadowColor = COL.component;
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = 'rgba(108,140,255,0.2)';
+  ctx.strokeStyle = COL.component;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(-s/2, -s/2, s, s, 3);
+  ctx.fill();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+  // Label
+  ctx.fillStyle = COL.textBright;
+  ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x, y - 24);
+}
+
+function drawMirror(x, y, label) {
+  const s = 30;
+  ctx.fillStyle = COL.mirror;
+  ctx.strokeStyle = COL.mirror;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(x - s/2, y - s/2, s, s, 5);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = COL.textBright;
+  ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x, y);
+}
+
+function drawDetector(x, y, label, active, color) {
+  const r = 20;
+  if (active) {
+    // Pulse rings
+    ctx.save();
+    for (let ring = 0; ring < 3; ring++) {
+      ctx.globalAlpha = 0.08 - ring * 0.02;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, r + 6 + ring * 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+  ctx.fillStyle = active ? color : COL.inactive;
+  ctx.strokeStyle = active ? color : COL.wire;
+  ctx.lineWidth = active ? 2.5 : 1.5;
+  if (active) {
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 15;
+  }
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = active ? COL.textBright : COL.text;
+  ctx.font = 'bold 13px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x, y);
+}
+
+function drawBombZone(x, y) {
+  // Dashed circle showing where bomb goes
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(239, 68, 68, 0.25)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(x, y, 20, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
+  ctx.font = '9px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('bomb?', x, y + 32);
+}
+
+function drawBomb(x, y, type, isExploded) {
+  if (type === 'none') {
+    drawBombZone(x, y);
+    return;
+  }
+  const r = 18;
+  if (isExploded) {
+    // Multi-ring explosion
+    for (let ring = 0; ring < 4; ring++) {
+      ctx.save();
+      ctx.globalAlpha = 0.3 - ring * 0.06;
+      ctx.fillStyle = `hsl(${15 + ring * 10}, 100%, ${55 + ring * 5}%)`;
+      ctx.beginPath();
+      ctx.arc(x, y, r + ring * 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    // Sparks
+    for (let i = 0; i < 12; i++) {
+      const a = (Math.PI * 2 * i) / 12 + Math.random() * 0.3;
+      const len = 16 + Math.random() * 18;
+      ctx.strokeStyle = `hsl(${15 + Math.random()*30}, 100%, ${55 + Math.random()*20}%)`;
+      ctx.lineWidth = 1.5 + Math.random() * 2;
+      ctx.beginPath();
+      ctx.moveTo(x + Math.cos(a) * 8, y + Math.sin(a) * 8);
+      ctx.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#ef4444';
+    ctx.font = 'bold 16px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('💥 BOOM!', x, y - 32);
+    return;
+  }
+  // Draw bomb body
+  const isLive = type === 'live';
+  ctx.save();
+  if (isLive) {
+    ctx.shadowColor = COL.danger;
+    ctx.shadowBlur = 10;
+  }
+  ctx.fillStyle = isLive ? 'rgba(239,68,68,0.25)' : 'rgba(100,100,120,0.2)';
+  ctx.strokeStyle = isLive ? '#ef4444' : '#666';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+  // Fuse
+  ctx.strokeStyle = isLive ? COL.photon : COL.wire;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(x, y - r);
+  ctx.quadraticCurveTo(x + 8, y - r - 12, x + 13, y - r - 6);
+  ctx.stroke();
+  // Spark on fuse for live
+  if (isLive) {
+    ctx.fillStyle = '#fbbf24';
+    ctx.shadowColor = '#fbbf24';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.arc(x + 13, y - r - 6, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  // Label
+  ctx.fillStyle = isLive ? '#ef4444' : '#888';
+  ctx.font = 'bold 10px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(isLive ? 'LIVE' : 'DUD', x, y + 4);
+}
+
+function drawPhoton(x, y, alpha) {
+  alpha = alpha ?? 1;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  // Outer glow
+  const grad = ctx.createRadialGradient(x, y, 0, x, y, 14);
+  grad.addColorStop(0, 'rgba(251,191,36,0.5)');
+  grad.addColorStop(1, 'rgba(251,191,36,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, 14, 0, Math.PI * 2);
+  ctx.fill();
+  // Core
+  ctx.fillStyle = COL.photon;
+  ctx.shadowColor = COL.photon;
+  ctx.shadowBlur = 16;
+  ctx.beginPath();
+  ctx.arc(x, y, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function drawGhostPhoton(x, y, alpha) {
+  alpha = alpha ?? 0.5;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const grad = ctx.createRadialGradient(x, y, 0, x, y, 11);
+  grad.addColorStop(0, 'rgba(251,191,36,0.4)');
+  grad.addColorStop(1, 'rgba(251,191,36,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, 11, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = COL.photon;
+  ctx.shadowColor = COL.photon;
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.arc(x, y, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function drawTrail(trail) {
+  for (let i = 0; i < trail.length; i++) {
+    const t = trail[i];
+    const age = (trail.length - i) / trail.length;
+    ctx.save();
+    ctx.globalAlpha = (1 - age) * 0.25;
+    ctx.fillStyle = COL.photon;
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, 3 * (1 - age * 0.5), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ============================================================
+//  Main scene
+// ============================================================
+
+function drawStaticScene() {
+  const L = layout();
+  ctx.clearRect(0, 0, W, H);
+
+  // Canvas background
+  ctx.fillStyle = COL.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Background grid
+  ctx.strokeStyle = COL.grid;
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+  // Path glows
+  drawPathGlow(L.bs1.x, L.bs1.y, L.mirrorU.x, L.mirrorU.y, COL.upper);
+  drawPathGlow(L.mirrorU.x, L.mirrorU.y, L.bs2.x, L.bs2.y, COL.upper);
+  drawPathGlow(L.bs1.x, L.bs1.y, L.mirrorL.x, L.mirrorL.y, COL.lower);
+  drawPathGlow(L.mirrorL.x, L.mirrorL.y, L.bs2.x, L.bs2.y, COL.lower);
+
+  // Path lines
+  const pw = 2;
+  // Source -> BS1 (neutral)
+  drawPath(L.source.x, L.source.y, L.bs1.x, L.bs1.y, COL.wire, 1.5);
+  drawArrowhead(L.source.x, L.source.y, L.bs1.x, L.bs1.y, COL.wire);
+
+  // Upper path
+  drawPath(L.bs1.x, L.bs1.y, L.mirrorU.x, L.mirrorU.y, COL.upper, pw);
+  drawArrowhead(L.bs1.x, L.bs1.y, L.mirrorU.x, L.mirrorU.y, COL.upper);
+  drawPath(L.mirrorU.x, L.mirrorU.y, L.bs2.x, L.bs2.y, COL.upper, pw);
+  drawArrowhead(L.mirrorU.x, L.mirrorU.y, L.bs2.x, L.bs2.y, COL.upper);
+
+  // Lower path
+  drawPath(L.bs1.x, L.bs1.y, L.mirrorL.x, L.mirrorL.y, COL.lower, pw);
+  drawArrowhead(L.bs1.x, L.bs1.y, L.mirrorL.x, L.mirrorL.y, COL.lower);
+  drawPath(L.mirrorL.x, L.mirrorL.y, L.bs2.x, L.bs2.y, COL.lower, pw);
+  drawArrowhead(L.mirrorL.x, L.mirrorL.y, L.bs2.x, L.bs2.y, COL.lower);
+
+  // BS2 -> D0
+  drawPath(L.bs2.x, L.bs2.y, L.d0.x, L.d0.y, COL.wire, 1.5);
+  drawArrowhead(L.bs2.x, L.bs2.y, L.d0.x, L.d0.y, COL.wire);
+  // BS2 -> D1
+  drawPath(L.bs2.x, L.bs2.y, L.d1.x, L.d1.y, COL.wire, 1.5);
+  drawArrowhead(L.bs2.x, L.bs2.y, L.d1.x, L.d1.y, COL.wire);
+
+  // Path labels
+  ctx.font = '11px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COL.upper;
+  ctx.fillText('upper path', (L.bs1.x + L.mirrorU.x)/2, L.bs1.y - 14);
+  ctx.fillStyle = COL.lower;
+  ctx.fillText('lower path', (L.mirrorL.x + L.bs2.x)/2, L.mirrorL.y + 24);
+
+  // Components
+  drawDiamond(L.bs1.x, L.bs1.y, 'BS₁');
+  drawDiamond(L.bs2.x, L.bs2.y, 'BS₂');
+  drawMirror(L.mirrorU.x, L.mirrorU.y, 'M');
+  drawMirror(L.mirrorL.x, L.mirrorL.y, 'M');
+
+  // Source
+  ctx.fillStyle = COL.photon;
+  ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Source', L.source.x, L.source.y - 18);
+  drawPhoton(L.source.x, L.source.y, 0.35);
+
+  // Detectors
+  drawDetector(L.d0.x, L.d0.y, 'D₀', activeDetector === 'd0', COL.upper);
+  drawDetector(L.d1.x, L.d1.y, 'D₁', activeDetector === 'd1', COL.success);
+
+  // Bomb
+  drawBomb(L.bomb.x, L.bomb.y, currentBombType, exploded);
+}
+
+// ============================================================
+//  State & Stats
+// ============================================================
+
+function setState(html) {
+  document.getElementById('state-display').innerHTML = html;
+}
+
+function setResult(text, cls) {
+  const el = document.getElementById('result-banner');
+  el.textContent = text;
+  el.className = 'result-banner ' + cls;
+  el.style.display = 'block';
+}
+
+function clearResult() {
+  document.getElementById('result-banner').style.display = 'none';
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = stats.total;
+  document.getElementById('stat-d0').textContent = stats.d0;
+  document.getElementById('stat-d1').textContent = stats.d1;
+  document.getElementById('stat-boom').textContent = stats.boom;
+  if (stats.total > 0) {
+    document.getElementById('stat-d0-pct').textContent = (100 * stats.d0 / stats.total).toFixed(1) + '%';
+    document.getElementById('stat-d1-pct').textContent = (100 * stats.d1 / stats.total).toFixed(1) + '%';
+    document.getElementById('stat-boom-pct').textContent = (100 * stats.boom / stats.total).toFixed(1) + '%';
+  } else {
+    document.getElementById('stat-d0-pct').innerHTML = '&nbsp;';
+    document.getElementById('stat-d1-pct').innerHTML = '&nbsp;';
+    document.getElementById('stat-boom-pct').innerHTML = '&nbsp;';
+  }
+}
+
+function resetStats() {
+  stats = { total: 0, d0: 0, d1: 0, boom: 0 };
+  updateStats();
+  clearResult();
+  activeDetector = null;
+  exploded = false;
+  currentBombType = scenario === 'random' ? 'none' : scenario;
+  drawStaticScene();
+  setState('<span class="label">State:</span><span style="color:var(--muted)">Press "⚡ Fire Photon" to begin</span>');
+}
+
+// ============================================================
+//  Animation engine
+// ============================================================
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function lerpPt(a, b, t) { return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) }; }
+
+async function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms / getSpeed()));
+}
+
+// Animate photon along a polyline, with optional second ghost photon path
+async function animateSegment(points, options = {}) {
+  const { duration = 500, isGhost = false, ghostPath = null, trailLen = 8 } = options;
+  const speed = getSpeed();
+  const totalMs = duration / speed;
+  const steps = Math.max(12, Math.round(totalMs / 16));
+  const trail = [];
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    drawStaticScene();
+
+    // Ghost path
+    if (ghostPath) {
+      const gSegLen = 1 / (ghostPath.length - 1);
+      const gIdx = Math.min(Math.floor(t / gSegLen), ghostPath.length - 2);
+      const gT = (t - gIdx * gSegLen) / gSegLen;
+      const gp = lerpPt(ghostPath[gIdx], ghostPath[gIdx + 1], gT);
+      drawGhostPhoton(gp.x, gp.y, 0.65);
+    }
+
+    // Main photon position
+    const segLen = 1 / (points.length - 1);
+    const segIdx = Math.min(Math.floor(t / segLen), points.length - 2);
+    const segT = (t - segIdx * segLen) / segLen;
+    const p = lerpPt(points[segIdx], points[segIdx + 1], segT);
+
+    // Trail
+    trail.push({ x: p.x, y: p.y });
+    if (trail.length > trailLen) trail.shift();
+    drawTrail(trail);
+
+    if (isGhost) {
+      drawGhostPhoton(p.x, p.y, 0.65);
+    } else {
+      drawPhoton(p.x, p.y);
+    }
+
+    await new Promise(r => requestAnimationFrame(r));
+  }
+}
+
+// Animate two simultaneous ghost photons (superposition)
+async function animateDualPaths(pathA, pathB, duration = 500) {
+  const speed = getSpeed();
+  const totalMs = duration / speed;
+  const steps = Math.max(12, Math.round(totalMs / 16));
+  const trailA = [], trailB = [];
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    drawStaticScene();
+
+    const pA = lerpPt(pathA[0], pathA[1], t);
+    const pB = lerpPt(pathB[0], pathB[1], t);
+
+    trailA.push({ x: pA.x, y: pA.y });
+    trailB.push({ x: pB.x, y: pB.y });
+    if (trailA.length > 6) trailA.shift();
+    if (trailB.length > 6) trailB.shift();
+
+    drawTrail(trailA);
+    drawTrail(trailB);
+    drawGhostPhoton(pA.x, pA.y, 0.7);
+    drawGhostPhoton(pB.x, pB.y, 0.7);
+
+    await new Promise(r => requestAnimationFrame(r));
+  }
+}
+
+// ============================================================
+//  Main simulation logic
+// ============================================================
+
+async function runSinglePhoton(bombType) {
+  const L = layout();
+  clearResult();
+  activeDetector = null;
+  exploded = false;
+  currentBombType = bombType;
+
+  // Phase 1: Source -> BS1
+  setState('<span class="label">State:</span> <span class="ket">|photon⟩</span> <span class="op">=</span> <span class="ket-upper">|source⟩</span>');
+  await animateSegment([L.source, L.bs1], { duration: 350 });
+
+  if (bombType === 'none' || bombType === 'dud') {
+    // ---- NO BOMB / DUD ----
+    // BS1 -> mirrors (dual superposition)
+    setState('<span class="label">After BS₁:</span> <span class="coeff">1/√2</span> <span class="ket-upper">|upper⟩</span> <span class="op">+</span> <span class="coeff"><span class="phase">i</span>/√2</span> <span class="ket-lower">|lower⟩</span>');
+    await animateDualPaths([L.bs1, L.mirrorU], [L.bs1, L.mirrorL], 500);
+
+    // Mirrors -> BS2
+    setState('<span class="label">After mirrors:</span> <span class="coeff"><span class="phase">i</span>/√2</span> <span class="ket-upper">|upper⟩</span> <span class="op">−</span> <span class="coeff">1/√2</span> <span class="ket-lower">|lower⟩</span>');
+    await animateDualPaths([L.mirrorU, L.bs2], [L.mirrorL, L.bs2], 500);
+
+    // BS2 -> always D0
+    setState('<span class="label">After BS₂:</span> <span class="op">−</span><span class="ket-d0">|D0⟩</span> <span style="color:var(--muted)">(destructive interference cancels D1)</span>');
+    await animateSegment([L.bs2, L.d0], { duration: 250 });
+
+    activeDetector = 'd0';
+    drawStaticScene();
+    stats.d0++;
+    stats.total++;
+    updateStats();
+    setResult(bombType === 'dud'
+      ? 'D0 clicks (always) — dud bomb behaves like no bomb'
+      : 'D0 clicks (always) — full interference, no bomb on path', 'no-bomb');
+
+  } else {
+    // ---- LIVE BOMB ----
+    setState('<span class="label">After BS₁:</span> <span class="coeff">1/√2</span> <span class="ket-upper">|upper⟩</span> <span class="op">+</span> <span class="coeff"><span class="phase">i</span>/√2</span> <span class="ket-lower">|lower⟩</span>');
+    await animateDualPaths([L.bs1, L.mirrorU], [L.bs1, L.bomb], 500);
+
+    // Bomb measures: collapse!
+    const outcome = Math.random();
+    if (outcome < 0.5) {
+      // BOOM
+      setState('<span class="label">Bomb measures:</span> <span class="ket-lower">|lower⟩</span> <span style="color:var(--danger)">— BOOM! 💥</span>');
+      exploded = true;
+      drawStaticScene();
+      await sleep(700);
+      stats.boom++;
+      stats.total++;
+      updateStats();
+      setResult('💥 BOOM! The photon took the lower path and detonated the bomb.', 'boom');
+    } else {
+      // Survived
+      setState('<span class="label">Bomb measures:</span> photon on <span class="ket-upper">|upper⟩</span> <span style="color:var(--success)">— survived! ✓</span>');
+      await sleep(350);
+
+      // Continue upper path: mirror -> BS2
+      setState('<span class="label">After mirror:</span> <span class="ket-upper">|upper⟩</span> <span style="color:var(--muted)">(no interference — only one path)</span>');
+      await animateSegment([L.mirrorU, L.bs2], { duration: 350 });
+
+      // BS2 with single path: 50/50
+      const det = Math.random() < 0.5 ? 'd0' : 'd1';
+      if (det === 'd0') {
+        setState('<span class="label">After BS₂:</span> <span class="coeff">1/√2</span> <span class="ket-d0">|D0⟩</span> <span class="op">+</span> <span class="coeff"><span class="phase">i</span>/√2</span> <span class="ket-d1">|D1⟩</span> <span style="color:var(--muted)">→ collapsed to</span> <span class="ket-d0">|D0⟩</span>');
+        await animateSegment([L.bs2, L.d0], { duration: 250 });
+        activeDetector = 'd0';
+        drawStaticScene();
+        stats.d0++;
+        stats.total++;
+        updateStats();
+        setResult('D0 clicks — inconclusive (could also happen without a bomb)', 'inconclusive');
+      } else {
+        setState('<span class="label">After BS₂:</span> <span class="coeff">1/√2</span> <span class="ket-d0">|D0⟩</span> <span class="op">+</span> <span class="coeff"><span class="phase">i</span>/√2</span> <span class="ket-d1">|D1⟩</span> <span style="color:var(--muted)">→ collapsed to</span> <span class="ket-d1">|D1⟩</span>');
+        await animateSegment([L.bs2, L.d1], { duration: 250 });
+        activeDetector = 'd1';
+        drawStaticScene();
+        stats.d1++;
+        stats.total++;
+        updateStats();
+        setResult('🎯 D1 clicks — LIVE BOMB DETECTED without detonation!', 'detected');
+      }
+    }
+  }
+}
+
+async function fireSingle() {
+  if (animating) return;
+  animating = true;
+  document.getElementById('btn-fire').disabled = true;
+  await runSinglePhoton(hasBomb());
+  animating = false;
+  document.getElementById('btn-fire').disabled = false;
+}
+
+async function fireMany(n) {
+  if (animating) return;
+  animating = true;
+  document.getElementById('btn-fire').disabled = true;
+
+  const progressBar = document.getElementById('batch-progress');
+  const progressFill = document.getElementById('batch-progress-fill');
+  progressBar.style.display = 'block';
+  progressFill.style.width = '0%';
+
+  for (let i = 0; i < n; i++) {
+    const bombType = hasBomb();
+    if (bombType === 'none' || bombType === 'dud') {
+      stats.d0++;
+    } else {
+      const r = Math.random();
+      if (r < 0.5) stats.boom++;
+      else if (r < 0.75) stats.d0++;
+      else stats.d1++;
+    }
+    stats.total++;
+    updateStats();
+    progressFill.style.width = ((i + 1) / n * 100) + '%';
+    if (i % 5 === 0) await new Promise(r => setTimeout(r, 16));
+  }
+
+  setState('<span class="label">Batch complete:</span> <span style="color:var(--muted)">' + n + ' photons fired</span>');
+  if (stats.d1 > 0) {
+    setResult(`Batch done: ${stats.d1} bombs detected safely out of ${stats.total} total photons`, 'detected');
+  } else if (stats.boom > 0) {
+    setResult(`Batch done: ${stats.boom} explosions, no safe detections yet`, 'boom');
+  } else {
+    setResult(`Batch done: all ${stats.total} photons went to D0 (no bomb / dud)`, 'no-bomb');
+  }
+
+  setTimeout(() => { progressBar.style.display = 'none'; }, 600);
+  animating = false;
+  document.getElementById('btn-fire').disabled = false;
+}
+
+// ============================================================
+//  Tabs
+// ============================================================
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ============================================================
+//  Init
+// ============================================================
+resizeCanvas();
+resetStats();
+
+// ============================================================
+//  Quantum Circuit Diagram (canvas-drawn)
+// ============================================================
+(function initCircuitDiagram() {
+  const cc = document.getElementById('circuit-canvas');
+  if (!cc) return;
+  const ccCtx = cc.getContext('2d');
+  const cdpr = window.devicePixelRatio || 1;
+
+  function drawCircuitDiagram() {
+  const cRect = cc.getBoundingClientRect();
+  const cW = cRect.width;
+  const cH = 160;
+  cc.width = cW * cdpr;
+  cc.height = cH * cdpr;
+  cc.style.height = cH + 'px';
+  ccCtx.setTransform(cdpr, 0, 0, cdpr, 0, 0);
+
+  const y = cH / 2;
+  const pad = cW < 500 ? 35 : 60;
+  const lineStart = pad;
+  const lineEnd = cW - pad;
+  const totalW = lineEnd - lineStart;
+
+  // Wire
+  ccCtx.strokeStyle = COL.wire;
+  ccCtx.lineWidth = 2;
+  ccCtx.beginPath();
+  ccCtx.moveTo(lineStart, y);
+  ccCtx.lineTo(lineEnd, y);
+  ccCtx.stroke();
+
+  // |0⟩ label
+  ccCtx.fillStyle = COL.upper;
+  ccCtx.font = '600 16px JetBrains Mono, monospace';
+  ccCtx.textAlign = 'right';
+  ccCtx.textBaseline = 'middle';
+  ccCtx.fillText('|0⟩', lineStart - 10, y);
+
+  // Gate positions
+  const gateW = 44, gateH = 44;
+  const h1x = lineStart + totalW * 0.2;
+  const bombX = lineStart + totalW * 0.45;
+  const h2x = lineStart + totalW * 0.65;
+  const measX = lineStart + totalW * 0.85;
+
+  function drawGate(x, label, color) {
+    ccCtx.fillStyle = 'rgba(99,102,241,0.15)';
+    ccCtx.strokeStyle = color;
+    ccCtx.lineWidth = 2;
+    ccCtx.shadowColor = color;
+    ccCtx.shadowBlur = 8;
+    ccCtx.beginPath();
+    ccCtx.roundRect(x - gateW/2, y - gateH/2, gateW, gateH, 6);
+    ccCtx.fill();
+    ccCtx.stroke();
+    ccCtx.shadowBlur = 0;
+    ccCtx.fillStyle = COL.textBright;
+    ccCtx.font = 'bold 18px JetBrains Mono, monospace';
+    ccCtx.textAlign = 'center';
+    ccCtx.textBaseline = 'middle';
+    ccCtx.fillText(label, x, y);
+  }
+
+  // H gates
+  drawGate(h1x, 'H', COL.component);
+  drawGate(h2x, 'H', COL.component);
+
+  // Measurement gate (meter icon)
+  ccCtx.fillStyle = 'rgba(99,102,241,0.15)';
+  ccCtx.strokeStyle = COL.component;
+  ccCtx.lineWidth = 2;
+  ccCtx.beginPath();
+  ccCtx.roundRect(measX - gateW/2, y - gateH/2, gateW, gateH, 6);
+  ccCtx.fill();
+  ccCtx.stroke();
+  // Meter arc
+  ccCtx.strokeStyle = COL.textBright;
+  ccCtx.lineWidth = 1.5;
+  ccCtx.beginPath();
+  ccCtx.arc(measX, y + 6, 12, Math.PI, 0);
+  ccCtx.stroke();
+  // Meter needle
+  ccCtx.beginPath();
+  ccCtx.moveTo(measX, y + 6);
+  ccCtx.lineTo(measX + 7, y - 8);
+  ccCtx.stroke();
+
+  // Labels below gates
+  ccCtx.fillStyle = COL.text;
+  ccCtx.font = '11px Inter, system-ui, sans-serif';
+  ccCtx.textAlign = 'center';
+  ccCtx.fillText('BS₁', h1x, y + gateH/2 + 16);
+  ccCtx.fillText('BS₂', h2x, y + gateH/2 + 16);
+  ccCtx.fillText('Detect', measX, y + gateH/2 + 16);
+
+  // Bomb zone (dashed box between H gates)
+  ccCtx.save();
+  ccCtx.setLineDash([4, 3]);
+  ccCtx.strokeStyle = 'rgba(239,68,68,0.5)';
+  ccCtx.lineWidth = 1.5;
+  const bW = 56, bH = 50;
+  ccCtx.beginPath();
+  ccCtx.roundRect(bombX - bW/2, y - bH/2, bW, bH, 6);
+  ccCtx.stroke();
+  ccCtx.restore();
+  // Bomb emoji + label
+  ccCtx.font = '20px serif';
+  ccCtx.textAlign = 'center';
+  ccCtx.fillText('💣', bombX, y + 2);
+  ccCtx.fillStyle = 'rgba(239,68,68,0.7)';
+  ccCtx.font = '10px Inter, system-ui, sans-serif';
+  ccCtx.fillText('bomb?', bombX, y + bH/2 + 14);
+
+  // Output label — use smaller font if canvas is narrow
+  ccCtx.fillStyle = COL.text;
+  const outFontSize = cW < 500 ? 10 : 13;
+  ccCtx.font = outFontSize + 'px JetBrains Mono, monospace';
+  ccCtx.textAlign = 'left';
+  ccCtx.fillText('→ |D₀⟩ / |D₁⟩', lineEnd + 4, y);
+
+  } // end drawCircuitDiagram
+
+  drawCircuitDiagram();
+  window.addEventListener('resize', drawCircuitDiagram);
+})();
+
+// ============================================================
+//  Sorting Strategy Calculator
+// ============================================================
+document.getElementById('stockpile-slider').addEventListener('input', function() {
+  document.getElementById('stockpile-label').textContent = this.value;
+});
+
+function runSortingStrategy() {
+  const N = parseInt(document.getElementById('stockpile-slider').value);
+  let remaining = N;
+  let totalSaved = 0;
+  let totalExploded = 0;
+  const rows = [];
+  let round = 0;
+
+  while (remaining > 0 && round < 20) {
+    round++;
+    let certified = 0, exploded = 0, inconclusive = 0;
+    for (let i = 0; i < remaining; i++) {
+      const r = Math.random();
+      if (r < 0.5) { exploded++; }
+      else if (r < 0.75) { inconclusive++; }
+      else { certified++; }
+    }
+    totalSaved += certified;
+    totalExploded += exploded;
+    remaining = inconclusive;
+    rows.push({ round, tested: certified + exploded + inconclusive, certified, exploded, remaining, totalSaved });
+    if (remaining === 0) break;
+  }
+
+  const tbody = document.querySelector('#sorting-table tbody');
+  tbody.innerHTML = rows.map(r => `
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:0.5rem;">${r.round}</td>
+      <td style="padding:0.5rem;">${r.tested}</td>
+      <td style="padding:0.5rem; color:var(--success);">${r.certified}</td>
+      <td style="padding:0.5rem; color:var(--danger);">${r.exploded}</td>
+      <td style="padding:0.5rem; color:var(--info);">${r.remaining}</td>
+      <td style="padding:0.5rem; font-weight:600;">${r.totalSaved}</td>
+    </tr>
+  `).join('');
+
+  const pct = (100 * totalSaved / N).toFixed(1);
+  document.getElementById('sorting-summary').innerHTML =
+    `<strong>Result:</strong> From <strong>${N}</strong> live bombs, <strong style="color:var(--success)">${totalSaved}</strong> (${pct}%) were certified without detonation. <strong style="color:var(--danger)">${totalExploded}</strong> exploded. ` +
+    `<span style="color:var(--muted)">The theoretical yield with infinite rounds converges to ~<strong>1/3</strong> (33.3%).</span>`;
+  document.getElementById('sorting-results').style.display = 'block';
+}
+
+// ============================================================
+//  Quantum Zeno Interactive
+// ============================================================
+const zenoCanvas = document.getElementById('zeno-canvas');
+const zenoCtx = zenoCanvas.getContext('2d');
+let zenoResults = null;
+
+function resizeZenoCanvas() {
+  const rect = zenoCanvas.getBoundingClientRect();
+  const zW = rect.width;
+  const zH = 340;
+  zenoCanvas.width = zW * dpr;
+  zenoCanvas.height = zH * dpr;
+  zenoCanvas.style.height = zH + 'px';
+  zenoCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawZenoViz();
+}
+
+document.getElementById('zeno-slider').addEventListener('input', function() {
+  document.getElementById('zeno-n-label').textContent = this.value;
+  zenoResults = null;
+  drawZenoViz();
+  updateZenoTheory();
+});
+
+function updateZenoTheory() {
+  const N = parseInt(document.getElementById('zeno-slider').value);
+  const theta = Math.PI / (2 * N);
+  const pDetect = Math.pow(Math.cos(theta), 2 * N);
+  const pBoom = 1 - pDetect;
+  // For the basic scheme, D0 is 0 for live bomb case (it either detects or explodes)
+  // Actually, in the Zeno scheme: if the photon makes it through all N stages without exploding,
+  // it ends up detected (equivalent to D1). The only outcomes are "detected" or "boom".
+  document.getElementById('zeno-detect-theory').textContent = 'theory: ' + (100 * pDetect).toFixed(1) + '%';
+  document.getElementById('zeno-boom-theory').textContent = 'theory: ' + (100 * pBoom).toFixed(1) + '%';
+  document.getElementById('zeno-d0-theory').textContent = 'theory: 0%';
+
+  document.getElementById('zeno-state').innerHTML =
+    '<span class="label">N=' + N + ':</span> ' +
+    '<span class="coeff">P(detect)</span> <span class="op">=</span> <span class="ket-d1">cos<sup>' + (2*N) + '</sup>(π/' + (2*N) + ') = ' + (100*pDetect).toFixed(1) + '%</span>' +
+    ' <span class="op">|</span> ' +
+    '<span class="coeff">P(boom)</span> <span class="op">≈</span> <span style="color:var(--danger)">π²/' + (4*N) + ' = ' + (100*pBoom).toFixed(1) + '%</span>';
+
+  // Update comparison table
+  document.getElementById('compare-n').textContent = N;
+  document.getElementById('compare-detect').textContent = (100 * pDetect).toFixed(1) + '%';
+  document.getElementById('compare-boom').textContent = (100 * pBoom).toFixed(1) + '%';
+  document.getElementById('compare-d0').textContent = '0.0%';
+  const verdict = pDetect > 0.95 ? 'Excellent' : pDetect > 0.8 ? 'Good' : pDetect > 0.5 ? 'Fair' : 'Poor';
+  document.getElementById('compare-verdict').textContent = verdict;
+  document.getElementById('compare-verdict').style.color = pDetect > 0.8 ? 'var(--success)' : pDetect > 0.5 ? 'var(--photon)' : 'var(--muted)';
+}
+
+function simulateZeno(N) {
+  const theta = Math.PI / (2 * N);
+  // At each stage, the state picks up sin(theta) amplitude in the lower path.
+  // The bomb checks: probability of explosion at stage k is sin²(theta) if the photon
+  // has survived all previous stages. After surviving, state is renormalized to |upper>.
+  // Total survival probability = cos^(2N)(theta).
+  let survived = 0, exploded = 0;
+  const trials = 1000;
+  for (let t = 0; t < trials; t++) {
+    let alive = true;
+    for (let stage = 0; stage < N; stage++) {
+      if (Math.random() < Math.sin(theta) * Math.sin(theta)) {
+        alive = false;
+        break;
+      }
+    }
+    if (alive) survived++; else exploded++;
+  }
+  return { detected: survived, boom: exploded, d0: 0, total: trials };
+}
+
+function runZenoBatch() {
+  const N = parseInt(document.getElementById('zeno-slider').value);
+  zenoResults = simulateZeno(N);
+
+  document.getElementById('zeno-detect').textContent = zenoResults.detected;
+  document.getElementById('zeno-boom').textContent = zenoResults.boom;
+  document.getElementById('zeno-d0').textContent = zenoResults.d0;
+
+  updateZenoTheory();
+  drawZenoViz();
+}
+
+function resetZeno() {
+  zenoResults = null;
+  document.getElementById('zeno-detect').textContent = '—';
+  document.getElementById('zeno-boom').textContent = '—';
+  document.getElementById('zeno-d0').textContent = '—';
+  document.getElementById('zeno-detect-theory').innerHTML = '&nbsp;';
+  document.getElementById('zeno-boom-theory').innerHTML = '&nbsp;';
+  document.getElementById('zeno-d0-theory').innerHTML = '&nbsp;';
+  document.getElementById('zeno-state').innerHTML =
+    '<span class="label">Theory:</span><span style="color:var(--muted)">Adjust N and run trials to compare</span>';
+  drawZenoViz();
+}
+
+function drawZenoViz() {
+  const rect = zenoCanvas.getBoundingClientRect();
+  const zW = rect.width;
+  const zH = 340;
+
+  zenoCtx.clearRect(0, 0, zW, zH);
+  zenoCtx.fillStyle = COL.bg;
+  zenoCtx.fillRect(0, 0, zW, zH);
+
+  // Grid
+  zenoCtx.strokeStyle = COL.grid;
+  zenoCtx.lineWidth = 1;
+  for (let x = 0; x < zW; x += 40) { zenoCtx.beginPath(); zenoCtx.moveTo(x, 0); zenoCtx.lineTo(x, zH); zenoCtx.stroke(); }
+  for (let y = 0; y < zH; y += 40) { zenoCtx.beginPath(); zenoCtx.moveTo(0, y); zenoCtx.lineTo(zW, y); zenoCtx.stroke(); }
+
+  const N = parseInt(document.getElementById('zeno-slider').value);
+
+  // Draw probability curve: P(detect) = cos^(2n)(pi/2n) for n = 1..50
+  const chartLeft = 60, chartRight = zW - 40, chartTop = 30, chartBot = zH - 50;
+  const chartW = chartRight - chartLeft, chartH = chartBot - chartTop;
+
+  // Axes
+  zenoCtx.strokeStyle = COL.wire;
+  zenoCtx.lineWidth = 1;
+  zenoCtx.beginPath();
+  zenoCtx.moveTo(chartLeft, chartTop);
+  zenoCtx.lineTo(chartLeft, chartBot);
+  zenoCtx.lineTo(chartRight, chartBot);
+  zenoCtx.stroke();
+
+  // Y-axis labels
+  zenoCtx.fillStyle = COL.text;
+  zenoCtx.font = '11px JetBrains Mono, monospace';
+  zenoCtx.textAlign = 'right';
+  zenoCtx.textBaseline = 'middle';
+  for (let p = 0; p <= 100; p += 25) {
+    const yy = chartBot - (p / 100) * chartH;
+    zenoCtx.fillText(p + '%', chartLeft - 8, yy);
+    if (p > 0 && p < 100) {
+      zenoCtx.strokeStyle = COL.grid;
+      zenoCtx.beginPath();
+      zenoCtx.moveTo(chartLeft, yy);
+      zenoCtx.lineTo(chartRight, yy);
+      zenoCtx.stroke();
+    }
+  }
+
+  // X-axis labels
+  zenoCtx.textAlign = 'center';
+  zenoCtx.textBaseline = 'top';
+  const xTicks = [1, 5, 10, 20, 30, 40, 50];
+  for (const t of xTicks) {
+    const xx = chartLeft + ((t - 1) / 49) * chartW;
+    zenoCtx.fillStyle = COL.text;
+    zenoCtx.fillText(t, xx, chartBot + 6);
+    if (t > 1) {
+      zenoCtx.strokeStyle = COL.grid;
+      zenoCtx.beginPath();
+      zenoCtx.moveTo(xx, chartTop);
+      zenoCtx.lineTo(xx, chartBot);
+      zenoCtx.stroke();
+    }
+  }
+  zenoCtx.fillStyle = COL.text;
+  zenoCtx.font = '11px Inter, system-ui, sans-serif';
+  zenoCtx.fillText('Number of stages (N)', (chartLeft + chartRight) / 2, chartBot + 26);
+
+  // Y-axis title
+  zenoCtx.save();
+  zenoCtx.translate(14, (chartTop + chartBot) / 2);
+  zenoCtx.rotate(-Math.PI / 2);
+  zenoCtx.textAlign = 'center';
+  zenoCtx.fillText('P(detection)', 0, 0);
+  zenoCtx.restore();
+
+  // Detection probability curve (green)
+  zenoCtx.strokeStyle = COL.success;
+  zenoCtx.lineWidth = 2.5;
+  zenoCtx.shadowColor = COL.success;
+  zenoCtx.shadowBlur = 6;
+  zenoCtx.beginPath();
+  for (let n = 1; n <= 50; n++) {
+    const theta = Math.PI / (2 * n);
+    const pDetect = Math.pow(Math.cos(theta), 2 * n);
+    const xx = chartLeft + ((n - 1) / 49) * chartW;
+    const yy = chartBot - pDetect * chartH;
+    if (n === 1) zenoCtx.moveTo(xx, yy);
+    else zenoCtx.lineTo(xx, yy);
+  }
+  zenoCtx.stroke();
+  zenoCtx.shadowBlur = 0;
+
+  // Explosion probability curve (red, dashed)
+  zenoCtx.strokeStyle = COL.danger;
+  zenoCtx.lineWidth = 2;
+  zenoCtx.setLineDash([5, 3]);
+  zenoCtx.beginPath();
+  for (let n = 1; n <= 50; n++) {
+    const theta = Math.PI / (2 * n);
+    const pBoom = 1 - Math.pow(Math.cos(theta), 2 * n);
+    const xx = chartLeft + ((n - 1) / 49) * chartW;
+    const yy = chartBot - pBoom * chartH;
+    if (n === 1) zenoCtx.moveTo(xx, yy);
+    else zenoCtx.lineTo(xx, yy);
+  }
+  zenoCtx.stroke();
+  zenoCtx.setLineDash([]);
+
+  // Current N marker
+  const curTheta = Math.PI / (2 * N);
+  const curPDetect = Math.pow(Math.cos(curTheta), 2 * N);
+  const curX = chartLeft + ((N - 1) / 49) * chartW;
+  const curY = chartBot - curPDetect * chartH;
+
+  // Vertical line at N
+  zenoCtx.strokeStyle = 'rgba(99,102,241,0.3)';
+  zenoCtx.lineWidth = 1;
+  zenoCtx.setLineDash([3, 3]);
+  zenoCtx.beginPath();
+  zenoCtx.moveTo(curX, chartTop);
+  zenoCtx.lineTo(curX, chartBot);
+  zenoCtx.stroke();
+  zenoCtx.setLineDash([]);
+
+  // Point marker on detection curve
+  zenoCtx.fillStyle = COL.success;
+  zenoCtx.shadowColor = COL.success;
+  zenoCtx.shadowBlur = 10;
+  zenoCtx.beginPath();
+  zenoCtx.arc(curX, curY, 6, 0, Math.PI * 2);
+  zenoCtx.fill();
+  zenoCtx.shadowBlur = 0;
+  zenoCtx.fillStyle = COL.bg;
+  zenoCtx.beginPath();
+  zenoCtx.arc(curX, curY, 2.5, 0, Math.PI * 2);
+  zenoCtx.fill();
+
+  // Point marker on explosion curve
+  const curPBoom = 1 - curPDetect;
+  const curYBoom = chartBot - curPBoom * chartH;
+  zenoCtx.fillStyle = COL.danger;
+  zenoCtx.shadowColor = COL.danger;
+  zenoCtx.shadowBlur = 8;
+  zenoCtx.beginPath();
+  zenoCtx.arc(curX, curYBoom, 5, 0, Math.PI * 2);
+  zenoCtx.fill();
+  zenoCtx.shadowBlur = 0;
+  zenoCtx.fillStyle = COL.bg;
+  zenoCtx.beginPath();
+  zenoCtx.arc(curX, curYBoom, 2, 0, Math.PI * 2);
+  zenoCtx.fill();
+
+  // Tooltip labels — flip to left when near right edge
+  const flipLabel = curX > chartRight - 140;
+  const labelX = flipLabel ? curX - 10 : curX + 10;
+  const labelAlign = flipLabel ? 'right' : 'left';
+  zenoCtx.font = 'bold 12px JetBrains Mono, monospace';
+  zenoCtx.textAlign = labelAlign;
+  zenoCtx.fillStyle = COL.success;
+  zenoCtx.fillText((100 * curPDetect).toFixed(1) + '% detect', labelX, Math.max(chartTop + 12, curY - 8));
+  zenoCtx.fillStyle = COL.danger;
+  zenoCtx.fillText((100 * curPBoom).toFixed(1) + '% boom', labelX, Math.min(chartBot - 4, curYBoom + 16));
+
+  // Legend
+  zenoCtx.textAlign = 'right';
+  zenoCtx.font = '11px Inter, system-ui, sans-serif';
+  // Green line
+  zenoCtx.strokeStyle = COL.success;
+  zenoCtx.lineWidth = 2.5;
+  zenoCtx.beginPath();
+  zenoCtx.moveTo(chartRight - 130, chartTop + 10);
+  zenoCtx.lineTo(chartRight - 105, chartTop + 10);
+  zenoCtx.stroke();
+  zenoCtx.fillStyle = COL.success;
+  zenoCtx.textAlign = 'left';
+  zenoCtx.fillText('P(detection)', chartRight - 100, chartTop + 14);
+  // Red dashed line
+  zenoCtx.strokeStyle = COL.danger;
+  zenoCtx.lineWidth = 2;
+  zenoCtx.setLineDash([5, 3]);
+  zenoCtx.beginPath();
+  zenoCtx.moveTo(chartRight - 130, chartTop + 28);
+  zenoCtx.lineTo(chartRight - 105, chartTop + 28);
+  zenoCtx.stroke();
+  zenoCtx.setLineDash([]);
+  zenoCtx.fillStyle = COL.danger;
+  zenoCtx.fillText('P(explosion)', chartRight - 100, chartTop + 32);
+
+  // If we have simulation results, show bar overlays
+  if (zenoResults) {
+    const bW = 6;
+    // Detection bar at current N
+    const simPDetect = zenoResults.detected / zenoResults.total;
+    const simYDetect = chartBot - simPDetect * chartH;
+    zenoCtx.fillStyle = 'rgba(34,197,94,0.4)';
+    zenoCtx.fillRect(curX - bW, simYDetect, bW * 2, chartBot - simYDetect);
+    // Explosion bar
+    const simPBoom = zenoResults.boom / zenoResults.total;
+    const simYBoom = chartBot - simPBoom * chartH;
+    zenoCtx.fillStyle = 'rgba(239,68,68,0.3)';
+    zenoCtx.fillRect(curX - bW - 1, simYBoom, bW * 2, chartBot - simYBoom);
+  }
+}
+
+window.addEventListener('resize', resizeZenoCanvas);
+resizeZenoCanvas();
+updateZenoTheory();
+
+// ============================================================
+//  Quiz / Check Your Understanding
+// ============================================================
+(function initQuiz() {
+  const questions = [
+    {
+      q: 'In the basic Mach-Zehnder setup with no bomb, which detector clicks?',
+      opts: [
+        'Always D0 — destructive interference cancels the D1 path',
+        'Always D1 — constructive interference directs photons there',
+        '50/50 between D0 and D1',
+        'Neither — the photon is absorbed by the beam splitter'
+      ],
+      correct: 0,
+      explanation: 'Without a bomb, both paths are open and the photon interferes with itself at BS₂. The phase relationship causes destructive interference toward D1 and constructive interference toward D0, so D0 always clicks.'
+    },
+    {
+      q: 'If D1 clicks, what can you conclude?',
+      opts: [
+        'A live bomb is present — and the photon never touched it!',
+        'There is no bomb on the path',
+        'The bomb is a dud',
+        'Nothing — D1 clicks randomly regardless of the bomb'
+      ],
+      correct: 0,
+      explanation: 'D1 never clicks when both paths are open (no bomb or dud). D1 can only click when a live bomb blocks the lower path, destroying the interference. This is the magic of interaction-free measurement: the photon detected the bomb without interacting with it.'
+    },
+    {
+      q: 'In the basic scheme, what is the overall probability of successfully detecting a live bomb without detonation?',
+      opts: [
+        '50%',
+        '25%',
+        '75%',
+        '33%'
+      ],
+      correct: 1,
+      explanation: 'After BS₁, there\'s a 50% chance the photon takes the lower path (boom). Of the 50% surviving on the upper path, BS₂ gives 50/50 to D0 or D1. So P(D1) = 50% × 50% = 25% — only a quarter of live bombs are safely detected.'
+    },
+    {
+      q: 'How does the Quantum Zeno approach improve the detection rate?',
+      opts: [
+        'By using many stages with weak beam splitters, each rotating the state by a small angle — the bomb keeps collapsing it back to the safe path',
+        'By using stronger beam splitters that reflect more light',
+        'By sending multiple photons simultaneously',
+        'By placing the bomb on both paths at once'
+      ],
+      correct: 0,
+      explanation: 'With N stages, each beam splitter rotates the state by only π/2N. The bomb acts as a measurement at each stage, collapsing the tiny lower-path amplitude back to zero. The explosion probability per stage is sin²(π/2N) ≈ (π/2N)², and the total explosion probability ≈ π²/4N → 0 as N grows. This is the Quantum Zeno Effect: frequent measurement freezes the state.'
+    },
+    {
+      q: 'Why does a dud bomb behave the same as "no bomb" in the interferometer?',
+      opts: [
+        'Because a dud\'s broken trigger cannot absorb or detect the photon, so it doesn\'t perform a "which-path" measurement — both paths remain open for interference',
+        'Because the dud reflects the photon back to the source',
+        'Because duds are transparent and don\'t interact with light at all',
+        'Because the beam splitter compensates for the dud\'s presence'
+      ],
+      correct: 0,
+      explanation: 'The key is whether the bomb performs a measurement. A live bomb\'s sensitive trigger acts as a which-path detector — if a photon passes, it detonates, collapsing the superposition. A dud\'s broken trigger cannot detect the photon, so the superposition is preserved and interference proceeds normally.'
+    }
+  ];
+
+  const container = document.getElementById('quiz-container');
+  questions.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'quiz-card';
+    card.innerHTML = `
+      <div class="question"><strong>Q${qi + 1}.</strong> ${item.q}</div>
+      <div class="quiz-options" id="quiz-opts-${qi}">
+        ${item.opts.map((opt, oi) => `<button class="quiz-option" data-qi="${qi}" data-oi="${oi}">${opt}</button>`).join('')}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  container.addEventListener('click', function(e) {
+    const btn = e.target.closest('.quiz-option');
+    if (!btn || btn.classList.contains('correct') || btn.classList.contains('wrong')) return;
+    const qi = parseInt(btn.dataset.qi);
+    const oi = parseInt(btn.dataset.oi);
+    const item = questions[qi];
+    const optGroup = document.getElementById('quiz-opts-' + qi);
+    const allBtns = optGroup.querySelectorAll('.quiz-option');
+
+    // Already answered?
+    if (optGroup.querySelector('.correct')) return;
+
+    if (oi === item.correct) {
+      btn.classList.add('correct');
+      allBtns.forEach(b => { if (b !== btn) b.classList.add('dimmed'); });
+      const expl = document.createElement('div');
+      expl.className = 'quiz-explanation right';
+      expl.innerHTML = '<strong>Correct!</strong> ' + item.explanation;
+      optGroup.parentNode.appendChild(expl);
+    } else {
+      btn.classList.add('wrong');
+      allBtns[item.correct].classList.add('correct');
+      allBtns.forEach(b => { if (!b.classList.contains('correct') && !b.classList.contains('wrong')) b.classList.add('dimmed'); });
+      const expl = document.createElement('div');
+      expl.className = 'quiz-explanation wrong-expl';
+      expl.innerHTML = '<strong>Not quite.</strong> ' + item.explanation;
+      optGroup.parentNode.appendChild(expl);
+    }
+  });
+})();
+
+// ============================================================
+//  Probability Tree Canvas
+// ============================================================
+(function drawProbTree() {
+  const tc = document.getElementById('tree-canvas');
+  if (!tc) return;
+  const tCtx = tc.getContext('2d');
+  const tdpr = window.devicePixelRatio || 1;
+
+  function draw() {
+    const tRect = tc.getBoundingClientRect();
+    const tW = tRect.width;
+    const tH = 300;
+    tc.width = tW * tdpr;
+    tc.height = tH * tdpr;
+    tc.style.height = tH + 'px';
+    tCtx.setTransform(tdpr, 0, 0, tdpr, 0, 0);
+
+    // Background
+    tCtx.fillStyle = COL.bg;
+    tCtx.fillRect(0, 0, tW, tH);
+
+    const pad = tW < 450 ? 20 : 40;
+    const rootX = pad + 30;
+    const rootY = tH / 2;
+    const col1X = rootX + (tW - 2 * pad) * 0.35;
+    const col2X = rootX + (tW - 2 * pad) * 0.65;
+    const endX = tW - pad - 30;
+
+    // Branch Y positions
+    const boomY = tH * 0.22;
+    const survY = tH * 0.72;
+    const d0Y = tH * 0.55;
+    const d1Y = tH * 0.88;
+
+    const fontSize = tW < 450 ? 10 : 12;
+    const smallFont = tW < 450 ? 9 : 11;
+
+    // Draw branches as curves
+    function drawBranch(x1, y1, x2, y2, color, width, dashed) {
+      tCtx.save();
+      tCtx.strokeStyle = color;
+      tCtx.lineWidth = width || 2;
+      if (dashed) tCtx.setLineDash([5, 4]);
+      tCtx.beginPath();
+      const cpx = (x1 + x2) / 2;
+      tCtx.moveTo(x1, y1);
+      tCtx.bezierCurveTo(cpx, y1, cpx, y2, x2, y2);
+      tCtx.stroke();
+      tCtx.restore();
+    }
+
+    // Draw node circle
+    function drawNode(x, y, r, color, label) {
+      tCtx.fillStyle = color;
+      tCtx.globalAlpha = 0.2;
+      tCtx.beginPath();
+      tCtx.arc(x, y, r + 4, 0, Math.PI * 2);
+      tCtx.fill();
+      tCtx.globalAlpha = 1;
+      tCtx.fillStyle = color;
+      tCtx.strokeStyle = color;
+      tCtx.lineWidth = 2;
+      tCtx.beginPath();
+      tCtx.arc(x, y, r, 0, Math.PI * 2);
+      tCtx.fill();
+      tCtx.stroke();
+      if (label) {
+        tCtx.fillStyle = COL.bg;
+        tCtx.font = 'bold ' + fontSize + 'px Inter, sans-serif';
+        tCtx.textAlign = 'center';
+        tCtx.textBaseline = 'middle';
+        tCtx.fillText(label, x, y);
+      }
+    }
+
+    // Root: photon enters
+    drawNode(rootX, rootY, 14, COL.photon);
+    tCtx.fillStyle = COL.photon;
+    tCtx.font = 'bold ' + fontSize + 'px Inter, sans-serif';
+    tCtx.textAlign = 'center';
+    tCtx.fillText('Photon', rootX, rootY - 24);
+
+    // Branch 1: 50% boom
+    drawBranch(rootX + 14, rootY, col1X - 14, boomY, COL.danger, 2.5);
+    drawNode(col1X, boomY, 12, COL.danger);
+    // Boom label
+    tCtx.font = 'bold ' + fontSize + 'px Inter, sans-serif';
+    tCtx.textAlign = 'left';
+    tCtx.fillStyle = COL.danger;
+    tCtx.fillText('BOOM', col1X + 20, boomY);
+    tCtx.font = smallFont + 'px JetBrains Mono, monospace';
+    tCtx.fillText('50%', col1X + 20, boomY + 16);
+
+    // Branch 2: 50% survives
+    drawBranch(rootX + 14, rootY, col1X - 14, survY, COL.text, 2);
+    tCtx.fillStyle = COL.text;
+    tCtx.font = smallFont + 'px JetBrains Mono, monospace';
+    tCtx.textAlign = 'center';
+    tCtx.fillText('50% survives', (rootX + col1X) / 2, survY + 22);
+    drawNode(col1X, survY, 10, COL.text, '');
+
+    // BS2 label at col1
+    tCtx.fillStyle = COL.component;
+    tCtx.font = 'bold ' + smallFont + 'px Inter, sans-serif';
+    tCtx.textAlign = 'center';
+    tCtx.fillText('BS₂', col1X, survY - 18);
+
+    // Branch 2a: 25% D0 (inconclusive)
+    drawBranch(col1X + 10, survY, endX - 14, d0Y, COL.upper, 2, true);
+    drawNode(endX, d0Y, 12, COL.upper);
+    tCtx.font = 'bold ' + fontSize + 'px Inter, sans-serif';
+    tCtx.textAlign = 'right';
+    tCtx.fillStyle = COL.upper;
+    tCtx.fillText('D0 — inconclusive', endX - 18, d0Y - 4);
+    tCtx.font = smallFont + 'px JetBrains Mono, monospace';
+    tCtx.fillText('25%', endX + 12, d0Y + 28);
+    tCtx.textAlign = 'left';
+
+    // Branch 2b: 25% D1 (detected!)
+    drawBranch(col1X + 10, survY, endX - 14, d1Y, COL.success, 3);
+    drawNode(endX, d1Y, 14, COL.success);
+    tCtx.font = 'bold ' + fontSize + 'px Inter, sans-serif';
+    tCtx.textAlign = 'right';
+    tCtx.fillStyle = COL.success;
+    tCtx.fillText('D1 — bomb detected!', endX - 20, d1Y - 4);
+    tCtx.font = smallFont + 'px JetBrains Mono, monospace';
+    tCtx.fillText('25%', endX + 14, d1Y + 30);
+    tCtx.textAlign = 'left';
+
+    // Probability labels on first branches
+    tCtx.font = smallFont + 'px JetBrains Mono, monospace';
+    tCtx.textAlign = 'center';
+    tCtx.fillStyle = COL.danger;
+    tCtx.fillText('50%', (rootX + col1X) / 2, (rootY + boomY) / 2 - 6);
+    tCtx.fillStyle = COL.upper;
+    tCtx.fillText('50/50', (col1X + endX) / 2, (survY + d0Y) / 2 - 4);
+  }
+
+  draw();
+  window.addEventListener('resize', draw);
+})();
+
+// ============================================================
+//  Section entrance animations (Intersection Observer)
+// ============================================================
+(function initSectionAnimations() {
+  const sections = document.querySelectorAll('section');
+  if (!('IntersectionObserver' in window)) {
+    sections.forEach(s => s.classList.add('visible'));
+    return;
+  }
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+  sections.forEach(function(s) { observer.observe(s); });
+})();
+
+// ============================================================
+//  Theme Toggle
+// ============================================================
+(function initTheme() {
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  const saved = localStorage.getItem('bomb-tester-theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+    btn.textContent = saved === 'light' ? '\u2600' : '\u263E';
+  }
+  btn.addEventListener('click', function() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'light' ? 'dark' : 'light';
+    if (next === 'dark') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', next);
+    }
+    btn.textContent = next === 'light' ? '\u2600' : '\u263E';
+    localStorage.setItem('bomb-tester-theme', next);
+    // Rebuild canvas colors and redraw
+    COL = buildCOL();
+    if (typeof drawStaticScene === 'function') drawStaticScene();
+    if (typeof drawZenoViz === 'function') drawZenoViz();
+  });
+})();
+
+// ============================================================
+//  Reading Progress Bar
+// ============================================================
+(function initReadingProgress() {
+  const bar = document.getElementById('reading-progress');
+  if (!bar) return;
+  window.addEventListener('scroll', function() {
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = docHeight > 0 ? (scrollTop / docHeight * 100) + '%' : '0%';
+  }, { passive: true });
+})();
+
+// ============================================================
+//  Keyboard Shortcuts
+// ============================================================
+(function initKeyboardShortcuts() {
+  document.addEventListener('keydown', function(e) {
+    if (['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)) return;
+    switch(e.key) {
+      case ' ':
+        e.preventDefault();
+        var fire = document.getElementById('btn-fire');
+        if (fire && !fire.disabled) fire.click();
+        break;
+      case 'r': case 'R':
+        resetStats();
+        break;
+      case '1':
+        setScenario('none');
+        break;
+      case '2':
+        setScenario('dud');
+        break;
+      case '3':
+        setScenario('live');
+        break;
+      case '4':
+        setScenario('random');
+        break;
+    }
+  });
+})();
+</script>
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+
+<!-- Particle Background -->
+<script>
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 45;
+  const CONNECT_DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+</script>
+</body>
+</html>

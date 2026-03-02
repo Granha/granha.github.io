@@ -1,0 +1,2192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modular Arithmetic for the Quantum Fourier Transform</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+:root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --bg-card: var(--surface);
+    --bg-card-hover: #22223a;
+    --text-muted: #8888aa;
+    --accent2: #00d2ff;
+    --accent3: #ff6ec7;
+    --accent4: #00e5a0;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* Navigation */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,26,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+}
+nav ul {
+  list-style: none; display: flex; gap: 0;
+  max-width: 1100px; margin: 0 auto;
+  padding-left: 8rem;
+}
+nav a {
+  display: block; padding: 1rem 1.2rem;
+  color: var(--text-muted); text-decoration: none;
+  font-size: 0.9rem; font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+nav a:hover, nav a.active {
+  color: var(--accent2);
+  border-bottom-color: var(--accent2);
+}
+
+/* Progress bar */
+#progress {
+  position: fixed; top: 0; left: 0; height: 3px; z-index: 101;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  transition: width 0.3s;
+  width: 0%;
+}
+
+/* Main layout */
+main {
+  max-width: 1100px; margin: 0 auto;
+  padding: 2rem 2rem 6rem;
+}
+section {
+  margin-bottom: 5rem;
+  padding-top: 1rem;
+}
+h1 {
+  font-size: 2.4rem; font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+h1 + p { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 3rem; }
+h2 {
+  font-size: 1.6rem; font-weight: 600; color: var(--accent2);
+  margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 0.6rem;
+}
+h2 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-size: 0.9rem; flex-shrink: 0;
+}
+p { margin-bottom: 1rem; }
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  margin: 1.5rem 0;
+  box-shadow: var(--shadow);
+}
+.card h3 {
+  font-size: 1.1rem; color: var(--accent3);
+  margin-bottom: 1rem;
+}
+
+/* Interactive controls */
+.controls {
+  display: flex; align-items: center; gap: 1rem;
+  flex-wrap: wrap; margin: 1rem 0;
+}
+.controls label {
+  font-size: 0.9rem; color: var(--text-muted);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  height: 6px; border-radius: 3px;
+  background: var(--border);
+  outline: none; cursor: pointer;
+  width: 140px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--accent2); cursor: pointer;
+  box-shadow: 0 0 8px rgba(0,210,255,0.4);
+}
+.slider-val {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 36px; height: 36px; border-radius: 8px;
+  background: var(--accent); color: #fff;
+  font-weight: 700; font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+button {
+  padding: 0.5rem 1.2rem; border: none; border-radius: 8px;
+  background: var(--accent); color: #fff; cursor: pointer;
+  font-size: 0.9rem; font-weight: 600;
+  transition: all 0.2s;
+}
+button:hover:not(:disabled) { background: var(--accent2); transform: translateY(-1px); }
+button:disabled { opacity: 0.35; cursor: not-allowed; }
+button.secondary {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+button.secondary:hover:not(:disabled) { border-color: var(--accent2); color: var(--accent2); background: transparent; }
+.toggle-group {
+  display: inline-flex; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--border);
+}
+.toggle-group button {
+  border-radius: 0; border: none; padding: 0.4rem 1rem;
+  background: transparent; color: var(--text-muted);
+  font-size: 0.85rem; transition: all 0.2s;
+}
+.toggle-group button:hover:not(:disabled) { transform: none; }
+.toggle-group button.active {
+  background: var(--accent); color: #fff;
+}
+
+/* Insight callouts */
+.insight {
+  background: linear-gradient(135deg, rgba(108,99,255,0.12), rgba(0,210,255,0.08));
+  border-left: 3px solid var(--accent2);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 1.2rem 1.5rem; margin: 1.5rem 0;
+  font-size: 0.95rem;
+}
+.insight strong { color: var(--accent2); }
+
+/* SVG containers */
+.viz {
+  display: flex; justify-content: center; align-items: flex-start;
+  gap: 2rem; flex-wrap: wrap; margin: 1.5rem 0;
+}
+svg text { font-family: 'Segoe UI', system-ui, sans-serif; }
+svg { overflow: visible; }
+
+/* Clock */
+.clock-display { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+#clock-result {
+  font-size: 1.3rem; min-height: 2.5rem;
+  text-align: center; color: var(--accent2);
+  display: flex; align-items: center; justify-content: center;
+}
+.clock-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+.clock-history {
+  font-size: 0.8rem; color: var(--text-muted);
+  text-align: center; max-width: 300px;
+  min-height: 1.2rem;
+}
+
+/* Congruence classes */
+#cong-svg { display: block; margin: 0 auto; }
+.cong-wrap { overflow-x: auto; margin: 1rem 0; text-align: center; }
+
+/* Multiplication table */
+.mult-table-wrap { overflow-x: auto; margin: 1rem 0; }
+#mult-table {
+  border-collapse: collapse; margin: 0 auto;
+}
+#mult-table th, #mult-table td {
+  width: 42px; height: 42px; text-align: center;
+  font-size: 0.85rem; font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: all 0.2s;
+  font-variant-numeric: tabular-nums;
+}
+#mult-table th {
+  background: rgba(108,99,255,0.2); color: var(--accent2);
+  font-weight: 700;
+}
+#mult-table th.row-header { cursor: pointer; }
+#mult-table th.row-header:hover { background: rgba(108,99,255,0.4); }
+#mult-table th.row-header.selected { background: var(--accent3); color: #fff; }
+#mult-table td.highlight {
+  outline: 2px solid var(--accent3);
+  outline-offset: -2px;
+  font-weight: 700;
+}
+#mult-table td:hover {
+  outline: 1px solid rgba(255,255,255,0.3);
+  outline-offset: -1px;
+}
+#group-info {
+  margin-top: 1rem; text-align: center;
+  min-height: 1.5rem; color: var(--accent3);
+  font-size: 0.95rem;
+}
+#mult-hover-info {
+  margin-top: 0.3rem; text-align: center;
+  min-height: 1.2rem; color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* Roots of unity */
+.roots-panel {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: 0.8rem; min-width: 240px;
+}
+#root-info {
+  font-size: 0.95rem; min-height: 5rem;
+  line-height: 1.8;
+  padding: 0.8rem 1rem;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  width: 100%;
+}
+.root-mult-controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+select {
+  background: var(--bg-card); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.3rem 0.5rem; font-size: 0.9rem;
+}
+#root-mult-result {
+  font-size: 0.9rem; min-height: 2rem;
+  padding: 0.5rem 0.8rem;
+  background: rgba(0,0,0,0.15);
+  border-radius: 6px;
+  width: 100%;
+}
+
+/* QFT matrix */
+#qft-circle { transition: opacity 0.2s ease-out; }
+.qft-grid-wrap { overflow-x: auto; margin: 1rem 0; }
+#qft-grid {
+  border-collapse: separate; border-spacing: 3px; margin: 0 auto;
+}
+#qft-grid th, #qft-grid td {
+  text-align: center;
+  cursor: pointer; position: relative;
+  transition: all 0.2s;
+}
+#qft-grid th {
+  background: rgba(108,99,255,0.15);
+  color: var(--accent2); font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.5rem;
+}
+#qft-grid thead th { cursor: pointer; }
+#qft-grid thead th:hover { background: rgba(108,99,255,0.3); }
+#qft-grid thead th.col-selected { background: var(--accent2); color: #000; }
+#qft-grid td {
+  border-radius: 6px; padding: 0;
+  vertical-align: middle;
+}
+#qft-grid td.col-highlight {
+  outline: 2px solid var(--accent2);
+  outline-offset: 1px;
+}
+.qft-cell {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  width: var(--qft-cell-size, 52px); height: var(--qft-cell-size, 52px);
+  border-radius: 6px; position: relative;
+  transition: transform 0.15s;
+}
+#qft-grid td:hover .qft-cell { transform: scale(1.08); z-index: 2; }
+.qft-cell-label {
+  font-size: 0.95rem; font-weight: 700;
+  color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  line-height: 1;
+}
+.qft-cell-sub {
+  font-size: 0.65rem; color: rgba(255,255,255,0.6);
+  margin-top: 1px;
+}
+.qft-cell-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 3px; border-radius: 0 0 6px 6px;
+}
+#qft-cell-info {
+  margin-top: 1rem; text-align: center;
+  min-height: 2rem; font-size: 0.95rem;
+  padding: 0.5rem; border-radius: 6px;
+  background: rgba(0,0,0,0.15);
+}
+#qft-output-state {
+  margin-top: 0.8rem; text-align: center;
+  min-height: 1.5rem; font-size: 1rem;
+  padding: 0.6rem; border-radius: 8px;
+  background: rgba(0,210,255,0.06);
+  border: 1px solid rgba(0,210,255,0.15);
+}
+.qft-viz-row {
+  display: flex; gap: 2rem; align-items: flex-start;
+  flex-wrap: wrap; justify-content: center;
+}
+
+/* Self-check prompts */
+.self-check {
+  background: rgba(255,110,199,0.08);
+  border: 1px solid rgba(255,110,199,0.2);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.5rem; margin: 2rem 0;
+}
+.self-check h4 {
+  font-size: 0.9rem; color: var(--accent3);
+  margin-bottom: 0.6rem;
+}
+.self-check p { font-size: 0.9rem; margin-bottom: 0.6rem; }
+.self-check .check-answer {
+  font-size: 0.85rem; color: var(--text-muted);
+  padding: 0.6rem 0.8rem; border-radius: 6px;
+  background: rgba(0,0,0,0.2); cursor: pointer;
+  user-select: none;
+}
+.self-check .check-answer .answer-text { display: none; color: var(--accent4); }
+.self-check .check-answer.revealed .answer-text { display: inline; }
+.self-check .check-answer.revealed .answer-prompt { display: none; }
+
+/* Clock hover ghost */
+.clock-ghost { opacity: 0.3; transition: opacity 0.15s; }
+
+/* Root dot entrance animation */
+@keyframes rootPopIn {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.root-dot-enter { animation: rootPopIn 0.35s ease-out forwards; transform-origin: center; }
+
+/* Keyboard shortcut hint */
+.kbd-hint {
+  font-size: 0.75rem; color: var(--text-muted);
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  margin-left: auto;
+}
+.kbd-hint kbd {
+  display: inline-block; padding: 0.1rem 0.4rem;
+  background: rgba(255,255,255,0.08); border: 1px solid var(--border);
+  border-radius: 4px; font-family: inherit; font-size: 0.7rem;
+}
+
+/* Try-it link in self-checks */
+.try-it-link {
+  display: inline-block; margin-top: 0.4rem;
+  color: var(--accent2); cursor: pointer;
+  font-size: 0.8rem; font-weight: 600;
+  text-decoration: underline; text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+.try-it-link:hover { color: var(--accent3); }
+
+/* Flash-highlight on card when scrolled-to from try-it link */
+@keyframes cardFlash {
+  0% { box-shadow: 0 0 0 0 rgba(0,210,255,0.5); }
+  50% { box-shadow: 0 0 24px 4px rgba(0,210,255,0.25); }
+  100% { box-shadow: var(--shadow); }
+}
+.card-flash { animation: cardFlash 1s ease-out; }
+
+/* Dynamic example */
+#dyn-example-steps .example-step {
+  counter-increment: step;
+  padding: 0.6rem 1rem 0.6rem 3rem;
+  position: relative;
+  border-left: 2px solid var(--border);
+  margin-left: 0.5rem;
+  transition: all 0.3s;
+  opacity: 0.35;
+}
+#dyn-example-steps .example-step.active { opacity: 1; }
+#dyn-example-steps .example-step.current {
+  background: rgba(0,210,255,0.08);
+  border-left-color: var(--accent2);
+  border-radius: 0 8px 8px 0;
+}
+
+/* Worked example */
+.example-steps {
+  counter-reset: step;
+  margin: 1rem 0;
+}
+.example-step {
+  counter-increment: step;
+  padding: 0.8rem 1rem 0.8rem 3rem;
+  position: relative;
+  border-left: 2px solid var(--border);
+  margin-left: 0.5rem;
+  transition: all 0.3s;
+  opacity: 0.35;
+}
+.example-step::before {
+  content: counter(step);
+  position: absolute; left: -13px; top: 0.8rem;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--bg-card); border: 2px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700; color: var(--accent);
+  transition: all 0.3s;
+}
+.example-step.active {
+  background: rgba(108,99,255,0.08);
+  border-left-color: var(--accent2);
+  border-radius: 0 8px 8px 0;
+  opacity: 1;
+}
+.example-step.active::before {
+  background: var(--accent2); color: #fff;
+  border-color: var(--accent2);
+}
+.example-step.current {
+  background: rgba(0,210,255,0.12);
+}
+.step-controls {
+  display: flex; gap: 0.5rem; margin-top: 1rem;
+  align-items: center;
+}
+.step-counter {
+  font-size: 0.8rem; color: var(--text-muted);
+  margin-left: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* KaTeX overrides */
+.katex { color: var(--text); }
+.katex-display { margin: 1rem 0; overflow-x: auto; }
+
+/* Particle background handled by #particleBg (standard course script) */
+
+/* ---- Glow pulse on active clock node ---- */
+@keyframes glowPulse {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(0,210,255,0.5)); }
+  50% { filter: drop-shadow(0 0 16px rgba(0,210,255,0.85)); }
+}
+.clock-active-glow { animation: glowPulse 1.6s ease-in-out infinite; }
+
+/* ---- Root dot hover glow ---- */
+@keyframes rootGlow {
+  0%, 100% { filter: drop-shadow(0 0 4px currentColor); }
+  50% { filter: drop-shadow(0 0 14px currentColor); }
+}
+#roots-svg g:hover { animation: rootGlow 1.2s ease-in-out infinite; }
+
+/* ---- Animated gradient border on card hover ---- */
+.card {
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: var(--radius);
+  padding: 1px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3), var(--accent4));
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  animation: borderRotate 4s linear infinite paused;
+  z-index: 1;
+  pointer-events: none;
+}
+.card:hover::before {
+  opacity: 1;
+  animation-play-state: running;
+}
+@keyframes borderRotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ---- SVG arc draw-on animation ---- */
+@keyframes dashDraw {
+  to { stroke-dashoffset: 0; }
+}
+.arc-animate {
+  animation: dashDraw 0.5s ease-out forwards;
+}
+
+/* ---- Scroll-reveal sections ---- */
+section, .insight, .self-check {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+section.revealed, .insight.revealed, .self-check.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---- QFT column ripple animation ---- */
+@keyframes cellRipple {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0,210,255,0.4); }
+  50% { transform: scale(1.06); box-shadow: 0 0 12px 2px rgba(0,210,255,0.25); }
+  100% { transform: scale(1); box-shadow: none; }
+}
+.qft-cell-ripple { animation: cellRipple 0.4s ease-out; }
+
+/* ---- Hero subtitle polish ---- */
+h1 + p {
+  letter-spacing: 0.01em;
+  position: relative;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  nav ul { gap: 0; }
+  nav a { padding: 0.8rem 0.6rem; font-size: 0.8rem; }
+  main { padding: 1rem 1rem 4rem; }
+  h1 { font-size: 1.8rem; }
+  .card { padding: 1.2rem; }
+  #qft-grid th, #qft-grid td { width: 48px; height: 48px; }
+  .roots-panel { min-width: 0; width: 100%; }
+  input[type="range"] { width: 100px; }
+}
+
+  /* Particle background canvas */
+  #particleBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<script>
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.scrollTo(0,0);
+// Force scroll to top repeatedly to defeat browser scroll restoration
+// The browser restores scroll position asynchronously, so we need to fight it
+(function forceTop() {
+  var attempts = 0;
+  function go() {
+    window.scrollTo(0,0);
+    if (++attempts < 20) requestAnimationFrame(go);
+  }
+  requestAnimationFrame(go);
+  // Also fire on DOMContentLoaded and load as backup
+  document.addEventListener('DOMContentLoaded', function() {
+    window.scrollTo(0,0);
+    setTimeout(function(){ window.scrollTo(0,0); }, 50);
+    setTimeout(function(){ window.scrollTo(0,0); }, 150);
+  });
+  window.addEventListener('load', function() {
+    window.scrollTo(0,0);
+    setTimeout(function(){ window.scrollTo(0,0); }, 50);
+  });
+})();
+</script>
+<div id="top"></div>
+<canvas id="particleBg"></canvas>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+<div id="progress"></div>
+
+<nav>
+  <ul>
+    <li><a href="#basics" class="active">Basics</a></li>
+    <li><a href="#groups">Groups</a></li>
+    <li><a href="#roots">Roots of Unity</a></li>
+    <li><a href="#qft">QFT Matrix</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<!-- ==================== HEADER ==================== -->
+<h1>Modular Arithmetic &amp; the Quantum Fourier Transform</h1>
+<p>An interactive guide — from clock arithmetic to the heart of quantum algorithms.</p>
+
+<!-- ==================== SECTION 1: BASICS ==================== -->
+<section id="basics" class="revealed">
+  <h2><span class="num">1</span> Modular Arithmetic Basics</h2>
+
+  <p>Modular arithmetic is "clock arithmetic." When numbers reach a modulus \(N\), they wrap back to zero — just like hours on a clock wrap after 12. Formally, we write \(a \equiv b \pmod{N}\) when \(N\) divides \(a - b\).</p>
+
+  <div class="card">
+    <h3>Interactive Clock Face</h3>
+    <p>Pick a modulus and explore addition mod \(N\). Click any number on the clock to add it to the current value. Watch the arc trace the addition path.</p>
+
+    <div class="controls">
+      <label>Modulus \(N\): <input type="range" id="clock-n" min="2" max="12" value="7"> <span class="slider-val" id="clock-n-val">7</span></label>
+    </div>
+
+    <div class="viz">
+      <div class="clock-display">
+        <svg id="clock-svg" width="320" height="320" viewBox="-160 -160 320 320"></svg>
+        <div id="clock-result"></div>
+        <div class="clock-history" id="clock-history"></div>
+        <div class="clock-buttons">
+          <button id="clock-reset" class="secondary">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Congruence Classes</h3>
+    <p>Every integer belongs to exactly one residue class mod \(N\). Hover over a number to highlight its entire equivalence class — all the numbers that are "the same" mod \(N\).</p>
+    <div class="controls">
+      <label>Modulus: <input type="range" id="cong-n" min="2" max="8" value="5"> <span class="slider-val" id="cong-n-val">5</span></label>
+    </div>
+    <div class="cong-wrap">
+      <svg id="cong-svg" width="780" height="110" viewBox="0 0 780 110"></svg>
+    </div>
+    <div id="cong-info" style="text-align:center;color:var(--text-muted);font-size:0.9rem;min-height:1.5rem;"></div>
+  </div>
+
+  <div class="insight">
+    <strong>Key idea:</strong> In modular arithmetic, we only care about the <em>remainder</em> after dividing by \(N\). Two numbers are "the same" if they share a remainder. This collapsing of infinitely many integers into \(N\) equivalence classes is exactly the periodicity that quantum algorithms exploit.
+  </div>
+
+  <div class="self-check">
+    <h4>Check your understanding</h4>
+    <p>What is \(15 + 19 \pmod{7}\)?</p>
+    <div class="check-answer" onclick="this.classList.add('revealed')">
+      <span class="answer-prompt">Click to reveal answer</span>
+      <span class="answer-text">\(15 + 19 = 34\), and \(34 = 4 \times 7 + 6\), so the answer is <strong>6</strong>. Equivalently, \(15 \equiv 1\) and \(19 \equiv 5\), and \(1 + 5 = 6\). <span class="try-it-link" data-target="clock-n" data-set="7">Try it on the clock!</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 2: GROUPS ==================== -->
+<section id="groups">
+  <h2><span class="num">2</span> Modular Multiplication &amp; Groups</h2>
+
+  <p>The multiplication table mod \(N\) reveals deep structure. It shows which elements generate the entire group and exposes the cyclic patterns that connect to the QFT.</p>
+
+  <div class="card">
+    <h3>Cayley Table mod \(N\)</h3>
+    <p>Toggle between addition and multiplication. <strong>Click a row header</strong> to see the cyclic subgroup generated by that element. Hover any cell to see the computation.</p>
+
+    <div class="controls">
+      <label>Modulus \(N\): <input type="range" id="mult-n" min="2" max="12" value="7"> <span class="slider-val" id="mult-n-val">7</span></label>
+      <div class="toggle-group" id="op-toggle">
+        <button class="active" data-op="add">+ Add</button>
+        <button data-op="mult">&times; Multiply</button>
+      </div>
+    </div>
+
+    <div class="mult-table-wrap">
+      <table id="mult-table"></table>
+    </div>
+    <div id="mult-hover-info"></div>
+    <div id="group-info"></div>
+  </div>
+
+  <div class="insight">
+    <strong>Key idea:</strong> The multiplicative group mod \(N\) has cyclic structure — elements raised to successive powers cycle through a subset of residues. This same cyclic behavior appears in the roots of unity that define the QFT matrix.
+  </div>
+
+  <div class="self-check">
+    <h4>Check your understanding</h4>
+    <p>In the addition table mod 6, what is \(4 + 5\)?</p>
+    <div class="check-answer" onclick="this.classList.add('revealed')">
+      <span class="answer-prompt">Click to reveal answer</span>
+      <span class="answer-text">\(4 + 5 = 9 \equiv 3 \pmod{6}\). The result wraps back around, just like on the clock! <span class="try-it-link" data-target="mult-n" data-set="6">Try it in the table!</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 3: ROOTS OF UNITY ==================== -->
+<section id="roots">
+  <h2><span class="num">3</span> Roots of Unity on the Unit Circle</h2>
+
+  <p>The \(N\)-th roots of unity are the complex numbers \(\omega^k = e^{2\pi i k/N}\) for \(k = 0, 1, \ldots, N-1\). They are evenly spaced on the unit circle and form a group under multiplication.</p>
+
+  <div class="card">
+    <h3>Interactive Unit Circle</h3>
+    <p>Click a root to inspect it. Then select two roots and press <strong>Multiply</strong> to see how complex multiplication corresponds to adding exponents mod \(N\). The arc shows the rotation.</p>
+
+    <div class="controls">
+      <label>Order \(N\): <input type="range" id="roots-n" min="2" max="8" value="4"> <span class="slider-val" id="roots-n-val">4</span></label>
+    </div>
+
+    <div class="viz">
+      <svg id="roots-svg" width="360" height="360" viewBox="-180 -180 360 360"></svg>
+      <div class="roots-panel">
+        <div id="root-info">Click a root on the circle to inspect it.</div>
+        <div class="root-mult-controls">
+          <label style="font-size:0.85rem;color:var(--text-muted);">Multiply:</label>
+          <select id="root-a"></select>
+          <span style="color:var(--text-muted);font-size:1.1rem;">&times;</span>
+          <select id="root-b"></select>
+          <button id="root-mult-btn">Multiply</button>
+        </div>
+        <div id="root-mult-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <strong>The bridge:</strong> Multiplying two roots of unity \(\omega^j \cdot \omega^k = \omega^{(j+k) \bmod N}\) reduces complex multiplication to <em>modular addition of exponents</em>. This is precisely why modular arithmetic is the algebraic engine behind the QFT.
+  </div>
+
+  <div class="self-check">
+    <h4>Check your understanding</h4>
+    <p>For \(N = 6\), what is \(\omega^4 \cdot \omega^5\)? Where does it land on the unit circle?</p>
+    <div class="check-answer" onclick="this.classList.add('revealed')">
+      <span class="answer-prompt">Click to reveal answer</span>
+      <span class="answer-text">\(\omega^4 \cdot \omega^5 = \omega^{4+5} = \omega^{9 \bmod 6} = \omega^3\). Since \(\omega^3 = e^{2\pi i \cdot 3/6} = e^{i\pi} = -1\), it lands at the leftmost point of the unit circle (180°). <span class="try-it-link" data-target="roots-n" data-set="6">Try it on the unit circle!</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- Bridge callout -->
+<div class="insight" style="border-left-color:var(--accent);background:linear-gradient(135deg, rgba(108,99,255,0.08), rgba(255,110,199,0.06));">
+  <strong>Where we are:</strong> We've seen that modular arithmetic wraps numbers (Section 1), creates cyclic groups (Section 2), and governs how roots of unity multiply on the unit circle (Section 3). Now we'll see how the Quantum Fourier Transform packages <em>all</em> of these ideas into a single matrix.
+</div>
+
+<!-- ==================== SECTION 4: QFT ==================== -->
+<section id="qft">
+  <h2><span class="num">4</span> The QFT Matrix Connection</h2>
+
+  <p>The Quantum Fourier Transform on \(N\) states is defined by the unitary matrix:</p>
+  <div style="text-align:center;margin:1rem 0;">
+    $$F_N = \frac{1}{\sqrt{N}} \begin{pmatrix} 1 & 1 & 1 & \cdots & 1 \\ 1 & \omega & \omega^2 & \cdots & \omega^{N-1} \\ 1 & \omega^2 & \omega^4 & \cdots & \omega^{2(N-1)} \\ \vdots & & & \ddots & \vdots \\ 1 & \omega^{N-1} & \omega^{2(N-1)} & \cdots & \omega^{(N-1)^2} \end{pmatrix}$$
+  </div>
+  <p>where \(\omega = e^{2\pi i / N}\). Entry \((j, k)\) is \(\frac{1}{\sqrt{N}}\,\omega^{jk}\), and the exponent \(jk\) is computed <strong>mod \(N\)</strong> — connecting us directly back to Section 1.</p>
+
+  <div class="card">
+    <h3>Interactive QFT Phase Map</h3>
+    <p>Each cell shows the phase \(\omega^{jk \bmod N}\) as a colored disc with the exponent label. <strong>Hover</strong> a cell for the full computation. <strong>Click a column header</strong> \(|k\rangle\) to see the QFT output vector visualized on the unit circle.</p>
+
+    <div class="controls">
+      <label>Dimension \(N\): <input type="range" id="qft-n" min="2" max="8" value="4"> <span class="slider-val" id="qft-n-val">4</span></label>
+    </div>
+
+    <div class="qft-viz-row">
+      <div>
+        <div class="qft-grid-wrap">
+          <table id="qft-grid"></table>
+        </div>
+        <div id="qft-cell-info">&nbsp;</div>
+        <div id="qft-output-state"></div>
+      </div>
+      <div>
+        <svg id="qft-circle" width="280" height="280" viewBox="-140 -140 280 280"></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Worked Example: Step Through the QFT</h3>
+    <p>Choose an input state and watch the QFT decompose it row by row. Each step shows how modular arithmetic determines the phase.</p>
+
+    <div class="controls">
+      <label>Input state \(|k\rangle\): <select id="example-k"></select></label>
+    </div>
+
+    <div class="example-steps" id="dyn-example-steps"></div>
+    <div class="step-controls">
+      <button id="step-prev" class="secondary">Previous</button>
+      <button id="step-next">Next</button>
+      <span class="step-counter" id="step-counter">1 / 1</span>
+      <span class="kbd-hint"><kbd>&larr;</kbd><kbd>&rarr;</kbd> arrow keys</span>
+    </div>
+  </div>
+
+  <div class="self-check">
+    <h4>Check your understanding</h4>
+    <p>In the \(N=4\) QFT matrix, what is the phase of entry \((3, 2)\)? Express it as a power of \(\omega\) and as a complex number.</p>
+    <div class="check-answer" onclick="this.classList.add('revealed')">
+      <span class="answer-prompt">Click to reveal answer</span>
+      <span class="answer-text">The exponent is \(3 \times 2 = 6 \equiv 2 \pmod{4}\), so the entry is \(\frac{1}{\sqrt{4}}\omega^2\). Since \(\omega = e^{2\pi i/4} = i\), we get \(\omega^2 = i^2 = -1\). So the entry is \(\frac{-1}{2}\). <span class="try-it-link" data-target="qft-n" data-set="4">Verify it in the matrix!</span></span>
+    </div>
+  </div>
+
+  <div class="insight">
+    <strong>The punchline:</strong> Every entry of the QFT matrix is determined by a single modular multiplication \(jk \bmod N\). The entire power of the quantum Fourier transform — period finding, phase estimation, Shor's algorithm — rests on this elegant connection between modular arithmetic and the roots of unity.
+  </div>
+</section>
+
+</main>
+
+<script>
+// ============================================================
+// Utility functions
+// ============================================================
+const TAU = 2 * Math.PI;
+
+function hslForValue(val, N) {
+  return `hsl(${(val / N) * 300 + 220}, 75%, 55%)`;
+}
+
+function phaseColor(k, N) {
+  return `hsl(${(k / N) * 360}, 80%, 60%)`;
+}
+
+function phaseColorDark(k, N) {
+  return `hsl(${(k / N) * 360}, 70%, 22%)`;
+}
+
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+function mod(a, n) { return ((a % n) + n) % n; }
+
+function roundSmart(x) {
+  if (Math.abs(x) < 1e-10) return 0;
+  if (Math.abs(x - 1) < 1e-10) return 1;
+  if (Math.abs(x + 1) < 1e-10) return -1;
+  if (Math.abs(x - 0.5) < 1e-10) return 0.5;
+  if (Math.abs(x + 0.5) < 1e-10) return -0.5;
+  const r3 = Math.sqrt(3)/2;
+  if (Math.abs(x - r3) < 1e-10) return '\u221A3/2';
+  if (Math.abs(x + r3) < 1e-10) return '\u2212\u221A3/2';
+  const r2 = Math.SQRT1_2;
+  if (Math.abs(x - r2) < 1e-10) return '\u221A2/2';
+  if (Math.abs(x + r2) < 1e-10) return '\u2212\u221A2/2';
+  return Math.round(x * 1000) / 1000;
+}
+
+function complexStr(re, im) {
+  re = roundSmart(re);
+  im = roundSmart(im);
+  if (im === 0) return `${re}`;
+  if (re === 0) {
+    if (im === 1) return 'i';
+    if (im === -1) return '\u2212i';
+    return `${im}i`;
+  }
+  const sign = (typeof im === 'number' ? im > 0 : !String(im).startsWith('\u2212')) ? '+' : '\u2212';
+  const absIm = typeof im === 'number' ? Math.abs(im) : String(im).replace('\u2212', '');
+  const imPart = absIm === 1 ? 'i' : `${absIm}i`;
+  return `${re} ${sign} ${imPart}`;
+}
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+// Describe an SVG arc path from angle1 to angle2 on a circle of radius R
+function describeArc(cx, cy, R, startAngle, endAngle, counterClockwise) {
+  const start = { x: cx + Math.cos(startAngle) * R, y: cy + Math.sin(startAngle) * R };
+  const end = { x: cx + Math.cos(endAngle) * R, y: cy + Math.sin(endAngle) * R };
+  let sweep = counterClockwise ? 0 : 1;
+  let diff = counterClockwise
+    ? mod(startAngle - endAngle, TAU)
+    : mod(endAngle - startAngle, TAU);
+  const largeArc = diff > Math.PI ? 1 : 0;
+  return `M ${start.x} ${start.y} A ${R} ${R} 0 ${largeArc} ${sweep} ${end.x} ${end.y}`;
+}
+
+// ============================================================
+// SECTION 1: Clock Face
+// ============================================================
+(function() {
+  const slider = document.getElementById('clock-n');
+  const valSpan = document.getElementById('clock-n-val');
+  const svg = document.getElementById('clock-svg');
+  const resultDiv = document.getElementById('clock-result');
+  const historyDiv = document.getElementById('clock-history');
+  const resetBtn = document.getElementById('clock-reset');
+
+  let N = 7, current = 0, history = [];
+
+  function angleForK(k) {
+    return -Math.PI/2 + (TAU * k / N);
+  }
+
+  function draw(arcFrom, arcTo, addedK) {
+    svg.innerHTML = '';
+    const R = 120;
+
+    // Tick marks (subtle)
+    for (let k = 0; k < N; k++) {
+      const a = angleForK(k);
+      const x1 = Math.cos(a) * (R + 12);
+      const y1 = Math.sin(a) * (R + 12);
+      const x2 = Math.cos(a) * (R + 18);
+      const y2 = Math.sin(a) * (R + 18);
+      svg.appendChild(svgEl('line', { x1, y1, x2, y2, stroke: 'var(--border)', 'stroke-width': 1.5 }));
+    }
+
+    // Outer ring
+    svg.appendChild(svgEl('circle', { cx:0, cy:0, r:R+10, fill:'none', stroke:'var(--border)', 'stroke-width':2 }));
+
+    // Addition arc (animated)
+    if (arcFrom !== undefined && arcTo !== undefined && addedK > 0) {
+      const startAngle = angleForK(arcFrom);
+      const endAngle = angleForK(arcTo);
+      const arcR = R - 35;
+      const d = describeArc(0, 0, arcR, startAngle, endAngle, false);
+      const arc = svgEl('path', {
+        d: d, fill: 'none',
+        stroke: 'var(--accent3)', 'stroke-width': 2.5,
+        opacity: 0.8,
+        'marker-end': 'url(#arrowhead)',
+      });
+      svg.appendChild(arc);
+      // Animate arc drawing
+      const len = arc.getTotalLength ? arc.getTotalLength() : 200;
+      arc.style.strokeDasharray = len;
+      arc.style.strokeDashoffset = len;
+      arc.classList.add('arc-animate');
+
+      // Arc label
+      const midStep = addedK / 2;
+      const midAngle = angleForK(arcFrom + midStep);
+      const lx = Math.cos(midAngle) * (arcR - 16);
+      const ly = Math.sin(midAngle) * (arcR - 16);
+      const label = svgEl('text', {
+        x: lx, y: ly, 'text-anchor': 'middle', 'dominant-baseline': 'central',
+        fill: 'var(--accent3)', 'font-size': '12', 'font-weight': '700',
+      });
+      label.textContent = `+${addedK}`;
+      svg.appendChild(label);
+    }
+
+    // Arrowhead marker
+    const defs = svgEl('defs', {});
+    const marker = svgEl('marker', {
+      id: 'arrowhead', markerWidth: 8, markerHeight: 6,
+      refX: 7, refY: 3, orient: 'auto', markerUnits: 'strokeWidth',
+    });
+    const polygon = svgEl('polygon', { points: '0 0, 8 3, 0 6', fill: 'var(--accent3)' });
+    marker.appendChild(polygon);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+
+    // Center dot
+    svg.appendChild(svgEl('circle', { cx:0, cy:0, r:6, fill:'var(--accent2)' }));
+
+    // Numbers
+    for (let k = 0; k < N; k++) {
+      const angle = angleForK(k);
+      const x = Math.cos(angle) * R;
+      const y = Math.sin(angle) * R;
+
+      const g = svgEl('g', { style:'cursor:pointer' });
+
+      const isActive = k === current;
+      const circ = svgEl('circle', {
+        cx:x, cy:y, r:22,
+        fill: isActive ? 'var(--accent2)' : 'var(--bg-card)',
+        stroke: isActive ? 'var(--accent2)' : 'var(--border)',
+        'stroke-width': isActive ? 3 : 2,
+      });
+      g.appendChild(circ);
+
+      if (isActive) {
+        // Glow effect
+        const glow = svgEl('circle', {
+          cx:x, cy:y, r:26,
+          fill: 'none', stroke: 'var(--accent2)',
+          'stroke-width': 1, opacity: 0.4,
+        });
+        svg.insertBefore(glow, svg.firstChild);
+        g.classList.add('clock-active-glow');
+      }
+
+      const txt = svgEl('text', {
+        x:x, y:y, 'text-anchor':'middle', 'dominant-baseline':'central',
+        fill: isActive ? '#000' : 'var(--text)',
+        'font-size': '15', 'font-weight': isActive ? '700' : '500',
+      });
+      txt.textContent = k;
+      g.appendChild(txt);
+
+      g.addEventListener('click', () => addValue(k));
+      g.addEventListener('mouseenter', () => showGhost(k));
+      g.addEventListener('mouseleave', removeGhost);
+      svg.appendChild(g);
+    }
+
+    // Hand
+    const angle = angleForK(current);
+    const hx = Math.cos(angle) * (R - 32);
+    const hy = Math.sin(angle) * (R - 32);
+    svg.appendChild(svgEl('line', {
+      x1:0, y1:0, x2:hx, y2:hy,
+      stroke:'var(--accent2)', 'stroke-width':3, 'stroke-linecap':'round',
+    }));
+  }
+
+  function showGhost(k) {
+    removeGhost();
+    if (k === 0) return;
+    const R = 120;
+    const target = mod(current + k, N);
+    const angle = angleForK(target);
+    const hx = Math.cos(angle) * (R - 32);
+    const hy = Math.sin(angle) * (R - 32);
+
+    // Ghost arc showing addition path
+    const arcR = R - 35;
+    const startAngle = angleForK(current);
+    const endAngle = angleForK(target);
+    const d = describeArc(0, 0, arcR, startAngle, endAngle, false);
+    const ghostArc = svgEl('path', {
+      d: d, fill: 'none',
+      stroke: 'var(--accent3)', 'stroke-width': 1.5,
+      'stroke-dasharray': '3 4', opacity: 0.3,
+    });
+    ghostArc.id = 'clock-ghost-arc';
+    svg.appendChild(ghostArc);
+
+    // Ghost hand
+    const ghost = svgEl('line', {
+      x1:0, y1:0, x2:hx, y2:hy,
+      stroke:'var(--accent3)', 'stroke-width':2, 'stroke-linecap':'round',
+      'stroke-dasharray':'4 3', opacity: 0.5, class: 'clock-ghost',
+    });
+    ghost.id = 'clock-ghost-hand';
+    svg.appendChild(ghost);
+
+    // Ghost circle on target
+    const tx = Math.cos(angle) * R;
+    const ty = Math.sin(angle) * R;
+    const gc = svgEl('circle', {
+      cx:tx, cy:ty, r:22,
+      fill:'none', stroke:'var(--accent3)',
+      'stroke-width':2, 'stroke-dasharray':'4 3', opacity: 0.4,
+    });
+    gc.id = 'clock-ghost-circle';
+    svg.appendChild(gc);
+
+    const wrap = current + k >= N;
+    resultDiv.innerHTML = `<span style="opacity:0.5">${current} + ${k} = ${current+k}${wrap ? ' \u2261 ' + target + ' (mod ' + N + ')' : ''} \u2192 <strong>${target}</strong>?</span>`;
+  }
+
+  function removeGhost() {
+    ['clock-ghost-hand', 'clock-ghost-circle', 'clock-ghost-arc'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+    if (history.length === 0) resultDiv.innerHTML = '';
+    else {
+      const h = history[history.length-1];
+      resultDiv.innerHTML = `${h.from} + ${h.added} = ${h.from + h.added} \u2261 <strong>${h.result}</strong> (mod ${N})`;
+    }
+  }
+
+  function addValue(k) {
+    if (k === 0) return;
+    const prev = current;
+    current = mod(current + k, N);
+    history.push({ from: prev, added: k, result: current });
+    if (history.length > 8) history.shift();
+
+    resultDiv.innerHTML = `${prev} + ${k} = ${prev + k} \\(\\,\\equiv\\,\\) <strong>${current}</strong> (mod ${N})`;
+    renderMathInElement(resultDiv, { delimiters: [{left:'\\(',right:'\\)',display:false}] });
+
+    historyDiv.textContent = history.map(h => `${h.from}+${h.added}=${h.result}`).join('  \u2192  ');
+
+    draw(prev, current, k);
+  }
+
+  slider.addEventListener('input', () => {
+    N = +slider.value;
+    valSpan.textContent = N;
+    current = 0; history = [];
+    resultDiv.innerHTML = '';
+    historyDiv.textContent = '';
+    draw();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    current = 0; history = [];
+    resultDiv.innerHTML = '';
+    historyDiv.textContent = '';
+    draw();
+  });
+
+  draw();
+})();
+
+// ============================================================
+// SECTION 1: Congruence Classes
+// ============================================================
+(function() {
+  const slider = document.getElementById('cong-n');
+  const valSpan = document.getElementById('cong-n-val');
+  const svg = document.getElementById('cong-svg');
+  const info = document.getElementById('cong-info');
+
+  let hoveredClass = -1;
+
+  function draw() {
+    const N = +slider.value;
+    valSpan.textContent = N;
+    svg.innerHTML = '';
+    hoveredClass = -1;
+    info.textContent = '';
+    // Show at least 3 full periods for the pattern to be obvious
+    const count = Math.max(25, N * 3 + 1);
+    const cellW = 30;
+    const startX = 10;
+    const totalW = startX * 2 + count * cellW;
+    svg.setAttribute('width', totalW);
+    svg.setAttribute('viewBox', `0 0 ${totalW} 110`);
+    const groups = [];
+
+    // Create all elements first, then handle hover
+    const rects = [];
+    const texts = [];
+    for (let i = 0; i < count; i++) {
+      const cls = i % N;
+      const x = startX + i * cellW;
+
+      const rect = svgEl('rect', {
+        x: x, y: 20, width: cellW - 2, height: 50,
+        rx: 4, fill: hslForValue(cls, N),
+        opacity: 0.85, style: 'cursor:pointer',
+        'data-class': cls,
+      });
+      svg.appendChild(rect);
+      rects.push(rect);
+
+      const txt = svgEl('text', {
+        x: x + (cellW-2)/2, y: 50,
+        'text-anchor': 'middle', 'dominant-baseline': 'central',
+        fill: '#fff', 'font-size': '12', 'font-weight': '600',
+      });
+      txt.textContent = i;
+      txt.style.pointerEvents = 'none';
+      svg.appendChild(txt);
+      texts.push(txt);
+    }
+
+    // Hover: highlight entire class
+    rects.forEach((rect, i) => {
+      rect.addEventListener('mouseenter', () => {
+        const cls = i % N;
+        hoveredClass = cls;
+        rects.forEach((r, j) => {
+          const c = j % N;
+          r.setAttribute('opacity', c === cls ? '1' : '0.25');
+          if (c === cls) r.setAttribute('stroke', '#fff');
+          else r.removeAttribute('stroke');
+        });
+        const members = [];
+        for (let j = 0; j < count; j++) { if (j % N === cls) members.push(j); }
+        info.textContent = `[${cls}] = {${members.join(', ')}, \u2026}  \u2014  all integers \u2261 ${cls} (mod ${N})`;
+      });
+      rect.addEventListener('mouseleave', () => {
+        hoveredClass = -1;
+        rects.forEach(r => { r.setAttribute('opacity', '0.85'); r.removeAttribute('stroke'); });
+        info.textContent = '';
+      });
+    });
+
+    // Bracket grouping lines
+    for (let g = 0; g < Math.ceil(count / N); g++) {
+      const x1 = startX + g * N * cellW;
+      const x2 = startX + Math.min((g + 1) * N, count) * cellW - 2;
+      if (x1 < x2) {
+        svg.appendChild(svgEl('line', { x1, y1: 75, x2, y2: 75, stroke: 'var(--text-muted)', 'stroke-width': 1, opacity: 0.3 }));
+        // Period bracket
+        if (g < Math.floor(count / N)) {
+          const mid = (x1 + x2) / 2;
+          const perioLabel = svgEl('text', { x: mid, y: 88, 'text-anchor': 'middle', fill: 'var(--text-muted)', 'font-size': '9', opacity: 0.5 });
+          perioLabel.textContent = `period ${g + 1}`;
+          svg.appendChild(perioLabel);
+        }
+      }
+    }
+
+    // Legend
+    const legendY = 100;
+    for (let c = 0; c < N; c++) {
+      const x = startX + c * 50;
+      svg.appendChild(svgEl('rect', { x: x, y: legendY - 6, width: 12, height: 12, rx: 2, fill: hslForValue(c, N) }));
+      const label = svgEl('text', { x: x + 16, y: legendY + 4, fill: 'var(--text-muted)', 'font-size': '11' });
+      label.textContent = `[${c}]`;
+      svg.appendChild(label);
+    }
+  }
+
+  slider.addEventListener('input', draw);
+  draw();
+})();
+
+// ============================================================
+// SECTION 2: Cayley Table (Add/Multiply toggle)
+// ============================================================
+(function() {
+  const slider = document.getElementById('mult-n');
+  const valSpan = document.getElementById('mult-n-val');
+  const table = document.getElementById('mult-table');
+  const groupInfo = document.getElementById('group-info');
+  const hoverInfo = document.getElementById('mult-hover-info');
+  const toggleGroup = document.getElementById('op-toggle');
+
+  let highlightedRow = -1;
+  let operation = 'add'; // 'add' or 'mult'
+
+  toggleGroup.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-op]');
+    if (!btn) return;
+    operation = btn.dataset.op;
+    toggleGroup.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+    draw();
+  });
+
+  function compute(i, j, N) {
+    return operation === 'add' ? (i + j) % N : (i * j) % N;
+  }
+
+  function opSymbol() { return operation === 'add' ? '+' : '\u00D7'; }
+
+  function draw() {
+    const N = +slider.value;
+    valSpan.textContent = N;
+    highlightedRow = -1;
+    groupInfo.innerHTML = '';
+    hoverInfo.innerHTML = '';
+    table.innerHTML = '';
+
+    // Header row
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    const corner = document.createElement('th');
+    corner.textContent = opSymbol();
+    corner.style.background = 'var(--bg)';
+    hr.appendChild(corner);
+    for (let j = 0; j < N; j++) {
+      const th = document.createElement('th');
+      th.textContent = j;
+      hr.appendChild(th);
+    }
+    thead.appendChild(hr);
+    table.appendChild(thead);
+
+    // Body
+    const tbody = document.createElement('tbody');
+    for (let i = 0; i < N; i++) {
+      const tr = document.createElement('tr');
+      const rh = document.createElement('th');
+      rh.textContent = i;
+      rh.className = 'row-header';
+      rh.addEventListener('click', () => highlightGroupFn(i, N));
+      tr.appendChild(rh);
+      for (let j = 0; j < N; j++) {
+        const td = document.createElement('td');
+        const val = compute(i, j, N);
+        td.textContent = val;
+        td.style.background = hslForValue(val, N);
+        td.style.color = '#fff';
+        td.dataset.row = i;
+        td.dataset.col = j;
+        td.dataset.val = val;
+        td.addEventListener('mouseenter', () => {
+          hoverInfo.textContent = `${i} ${opSymbol()} ${j} = ${operation === 'add' ? i+j : i*j} \u2261 ${val} (mod ${N})`;
+        });
+        td.addEventListener('mouseleave', () => { hoverInfo.textContent = ''; });
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+  }
+
+  function highlightGroupFn(g, N) {
+    const cells = table.querySelectorAll('td');
+    const headers = table.querySelectorAll('th.row-header');
+    cells.forEach(c => c.classList.remove('highlight'));
+    headers.forEach(h => h.classList.remove('selected'));
+
+    if (g === highlightedRow) { highlightedRow = -1; groupInfo.innerHTML = ''; return; }
+    highlightedRow = g;
+
+    // Mark the clicked row header
+    headers.forEach(h => { if (h.textContent === String(g)) h.classList.add('selected'); });
+
+    if (operation === 'mult') {
+      if (g === 0) {
+        groupInfo.innerHTML = '\u27E8 0 \u27E9 = {0} under multiplication.';
+        cells.forEach(c => { if (+c.dataset.row === g) c.classList.add('highlight'); });
+        return;
+      }
+
+      // Powers: g^1, g^2, ...
+      const powers = [];
+      let pow = 1;
+      const seen = new Set();
+      for (let i = 0; i < N; i++) {
+        pow = (pow * g) % N;
+        if (seen.has(pow)) break;
+        seen.add(pow);
+        powers.push(pow);
+      }
+
+      // Highlight row
+      cells.forEach(c => { if (+c.dataset.row === g) c.classList.add('highlight'); });
+
+      const coprime = gcd(g, N) === 1;
+      const sorted = [...seen].sort((a,b) => a - b);
+      const powerStr = powers.map((p, i) => `${g}<sup>${i+1}</sup>=${p}`).join(', ');
+      groupInfo.innerHTML = `Powers of ${g}: ${powerStr}<br>{${sorted.join(', ')}} \u2014 ${
+        coprime ? '<span style="color:var(--accent4)">generator (gcd(' + g + ',' + N + ')=1)</span>' :
+        'order ' + powers.length + ', not a generator (gcd(' + g + ',' + N + ')=' + gcd(g,N) + ')'
+      }`;
+    } else {
+      // Addition: cyclic subgroup generated by g
+      const elements = new Set();
+      let val = 0;
+      for (let i = 0; i < N; i++) {
+        elements.add(val);
+        val = (val + g) % N;
+      }
+      cells.forEach(c => { if (+c.dataset.row === g) c.classList.add('highlight'); });
+
+      const sorted = [...elements].sort((a,b) => a - b);
+      const order = sorted.length;
+      const isGen = order === N;
+      const multiples = [];
+      let v = 0;
+      for (let i = 0; i < order; i++) { v = (i * g) % N; multiples.push(`${i}\u00B7${g}=${v}`); }
+      groupInfo.innerHTML = `Multiples of ${g}: {${sorted.join(', ')}} \u2014 ${
+        isGen ? '<span style="color:var(--accent4)">generates all of \u2124/' + N + '</span>' :
+        'order ' + order + ' subgroup'
+      }`;
+    }
+  }
+
+  slider.addEventListener('input', draw);
+  draw();
+})();
+
+// ============================================================
+// SECTION 3: Roots of Unity
+// ============================================================
+(function() {
+  const slider = document.getElementById('roots-n');
+  const valSpan = document.getElementById('roots-n-val');
+  const svg = document.getElementById('roots-svg');
+  const info = document.getElementById('root-info');
+  const selectA = document.getElementById('root-a');
+  const selectB = document.getElementById('root-b');
+  const multBtn = document.getElementById('root-mult-btn');
+  const multResult = document.getElementById('root-mult-result');
+
+  let N = 4;
+  let selectedRoot = -1;
+
+  function rootAngle(k) { return TAU * k / N; }
+  function rootX(k, R) { return Math.cos(rootAngle(k)) * R; }
+  function rootY(k, R) { return -Math.sin(rootAngle(k)) * R; }
+
+  function draw(multData) {
+    N = +slider.value;
+    valSpan.textContent = N;
+    svg.innerHTML = '';
+    selectedRoot = -1;
+    if (!multData) {
+      multResult.innerHTML = '';
+      info.innerHTML = 'Click a root on the circle to inspect it.';
+    }
+
+    const R = 130;
+
+    // Defs for markers and gradients
+    const defs = svgEl('defs', {});
+    const marker = svgEl('marker', {
+      id: 'root-arrow', markerWidth: 8, markerHeight: 6,
+      refX: 7, refY: 3, orient: 'auto', markerUnits: 'strokeWidth',
+    });
+    marker.appendChild(svgEl('polygon', { points: '0 0, 8 3, 0 6', fill: 'var(--accent4)' }));
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+
+    // Unit circle
+    svg.appendChild(svgEl('circle', { cx:0, cy:0, r:R, fill:'none', stroke:'var(--border)', 'stroke-width':1.5 }));
+
+    // Axes
+    svg.appendChild(svgEl('line', { x1:-R-25, y1:0, x2:R+25, y2:0, stroke:'var(--border)', 'stroke-width':0.5 }));
+    svg.appendChild(svgEl('line', { x1:0, y1:-R-25, x2:0, y2:R+25, stroke:'var(--border)', 'stroke-width':0.5 }));
+
+    // Axis labels
+    [
+      { t: 'Re', x: R+14, y: 16 }, { t: 'Im', x: -14, y: -R-18 },
+      { t: '1', x: R+4, y: -8 }, { t: '\u22121', x: -R-8, y: -8, anchor: 'end' },
+      { t: 'i', x: -14, y: -R+6 }, { t: '\u2212i', x: -14, y: R+16 },
+    ].forEach(l => {
+      const txt = svgEl('text', { x:l.x, y:l.y, fill:'var(--text-muted)', 'font-size':'11', 'text-anchor':'start' });
+      txt.textContent = l.t;
+      svg.appendChild(txt);
+    });
+
+    // Polygon connecting roots
+    let points = '';
+    for (let k = 0; k < N; k++) {
+      points += `${rootX(k,R)},${rootY(k,R)} `;
+    }
+    svg.appendChild(svgEl('polygon', {
+      points: points.trim(), fill:'rgba(108,99,255,0.06)',
+      stroke:'rgba(108,99,255,0.25)', 'stroke-width':1
+    }));
+
+    // Multiplication arc
+    if (multData) {
+      const { a, b, product } = multData;
+      // Arc from a to product (shows the rotation by b)
+      const aAngle = rootAngle(a);
+      const pAngle = rootAngle(product);
+      // SVG y is inverted, so negate angles for arc drawing
+      const svgStartAngle = -aAngle;
+      const svgEndAngle = -pAngle;
+
+      // Draw arc at slightly smaller radius
+      const arcR = R - 18;
+      // Always go counterclockwise (positive direction for angles)
+      const d = describeArc(0, 0, arcR, svgStartAngle, svgEndAngle, true);
+      const multArc = svgEl('path', {
+        d: d, fill: 'none',
+        stroke: 'var(--accent4)', 'stroke-width': 2.5,
+        opacity: 0.8,
+        'marker-end': 'url(#root-arrow)',
+      });
+      svg.appendChild(multArc);
+      // Animate arc drawing
+      const arcLen = multArc.getTotalLength ? multArc.getTotalLength() : 200;
+      multArc.style.strokeDasharray = arcLen;
+      multArc.style.strokeDashoffset = arcLen;
+      multArc.classList.add('arc-animate');
+
+      // Label on arc
+      const midAngle = aAngle + mod(rootAngle(b), TAU) / 2;
+      const lx = Math.cos(midAngle) * (arcR - 14);
+      const ly = -Math.sin(midAngle) * (arcR - 14);
+      const arcLabel = svgEl('text', {
+        x: lx, y: ly, 'text-anchor': 'middle', 'dominant-baseline': 'central',
+        fill: 'var(--accent4)', 'font-size': '11', 'font-weight': '700',
+      });
+      arcLabel.textContent = `\u00D7\u03C9${b > 0 ? '\u2070\u00B9\u00B2\u00B3\u2074\u2075\u2076\u2077'[b] || '^'+b : ''}`;
+      // Actually just use simple text
+      arcLabel.textContent = b === 0 ? '\u00D71' : b === 1 ? '\u00D7\u03C9' : '\u00D7\u03C9^' + b;
+      svg.appendChild(arcLabel);
+    }
+
+    // Root points
+    for (let k = 0; k < N; k++) {
+      const x = rootX(k, R);
+      const y = rootY(k, R);
+
+      const g = svgEl('g', { style:'cursor:pointer', class: multData ? '' : 'root-dot-enter' });
+      if (!multData) g.style.animationDelay = (k * 0.06) + 's';
+
+      // Line from center
+      g.appendChild(svgEl('line', {
+        x1:0, y1:0, x2:x, y2:y,
+        stroke: phaseColor(k, N), 'stroke-width':1.5, opacity:0.35
+      }));
+
+      // Highlight if part of multiplication
+      const isMultResult = multData && k === multData.product;
+      const isMultInput = multData && (k === multData.a || k === multData.b);
+      const dotR = isMultResult ? 14 : (isMultInput ? 12 : 10);
+      const strokeW = isMultResult ? 3 : 2;
+
+      const dot = svgEl('circle', {
+        cx:x, cy:y, r:dotR,
+        fill: phaseColor(k, N), stroke:'#fff', 'stroke-width':strokeW,
+      });
+      g.appendChild(dot);
+
+      if (isMultResult) {
+        // Pulse ring
+        const pulse = svgEl('circle', {
+          cx:x, cy:y, r:dotR, fill:'none',
+          stroke: 'var(--accent4)', 'stroke-width':2, opacity: 0.6,
+        });
+        g.appendChild(pulse);
+      }
+
+      // Label
+      const lbl = svgEl('text', {
+        x: x + (x >= 0 ? 16 : -16), y: y + (y > 5 ? 16 : y < -5 ? -12 : 4),
+        'text-anchor': x >= 0 ? 'start' : 'end',
+        fill: 'var(--text)', 'font-size':'13', 'font-weight':'600'
+      });
+      if (k === 0) {
+        lbl.textContent = '1';
+      } else if (k === 1) {
+        lbl.textContent = '\u03C9';
+      } else {
+        lbl.textContent = '';
+        const tspan1 = svgEl('tspan', {});
+        tspan1.textContent = '\u03C9';
+        const tspan2 = svgEl('tspan', { 'font-size':'9', dy:'-6' });
+        tspan2.textContent = k;
+        const tspan3 = svgEl('tspan', { dy:'6' });
+        tspan3.textContent = '';
+        lbl.appendChild(tspan1);
+        lbl.appendChild(tspan2);
+        lbl.appendChild(tspan3);
+      }
+      g.appendChild(lbl);
+
+      g.addEventListener('click', () => selectRoot(k));
+      svg.appendChild(g);
+    }
+
+    // Populate selects (only if not preserving mult state)
+    if (!multData) {
+      selectA.innerHTML = '';
+      selectB.innerHTML = '';
+      for (let k = 0; k < N; k++) {
+        const label = k === 0 ? '1' : k === 1 ? '\u03C9' : '\u03C9^' + k;
+        selectA.add(new Option(label, k));
+        selectB.add(new Option(label, k));
+      }
+      if (N > 1) selectB.value = 1;
+    }
+  }
+
+  function selectRoot(k) {
+    selectedRoot = k;
+    const angle = rootAngle(k);
+    const re = Math.cos(angle);
+    const im = Math.sin(angle);
+    const degStr = roundSmart(k/N * 360);
+    info.innerHTML =
+      `<strong style="color:${phaseColor(k,N)}">\u03C9<sup>${k}</sup></strong> = ` +
+      `e<sup>2\u03C0i\u00B7${k}/${N}</sup><br>` +
+      `= ${complexStr(re, im)}<br>` +
+      `Phase: ${degStr}\u00B0 = ${k}/${N} of full turn`;
+  }
+
+  multBtn.addEventListener('click', () => {
+    const a = +selectA.value;
+    const b = +selectB.value;
+    const product = mod(a + b, N);
+    multResult.innerHTML =
+      `\u03C9<sup>${a}</sup> \u00D7 \u03C9<sup>${b}</sup> = ` +
+      `\u03C9<sup>${a}+${b}</sup> = ` +
+      `\u03C9<sup>${a+b} mod ${N}</sup> = ` +
+      `<strong style="color:${phaseColor(product,N)}">\u03C9<sup>${product}</sup></strong>`;
+
+    draw({ a, b, product });
+  });
+
+  slider.addEventListener('input', () => draw());
+  draw();
+})();
+
+// ============================================================
+// SECTION 4: QFT Matrix
+// ============================================================
+(function() {
+  const slider = document.getElementById('qft-n');
+  const valSpan = document.getElementById('qft-n-val');
+  const table = document.getElementById('qft-grid');
+  const cellInfo = document.getElementById('qft-cell-info');
+  const circleSvg = document.getElementById('qft-circle');
+
+  let N = 4, highlightedCol = -1;
+  const outputState = document.getElementById('qft-output-state');
+
+  const superDigits = ['\u2070','\u00B9','\u00B2','\u00B3','\u2074','\u2075','\u2076','\u2077','\u2078','\u2079'];
+  function expText(e) {
+    if (e === 0) return '1';
+    if (e === 1) return '\u03C9';
+    return '\u03C9' + String(e).split('').map(d => superDigits[+d]).join('');
+  }
+
+  function draw() {
+    N = +slider.value;
+    valSpan.textContent = N;
+    highlightedCol = -1;
+    cellInfo.innerHTML = '&nbsp;';
+    outputState.innerHTML = '';
+    table.innerHTML = '';
+    drawCircle([]);
+
+    // Scale cells for larger N
+    const cellSize = N <= 4 ? 52 : N <= 6 ? 46 : 40;
+    table.style.setProperty('--qft-cell-size', cellSize + 'px');
+    if (N >= 7) {
+      table.style.fontSize = '0.8rem';
+    } else {
+      table.style.fontSize = '';
+    }
+
+    // Header
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    const corner = document.createElement('th');
+    corner.textContent = 'j \\ k';
+    corner.style.cssText = 'background:var(--bg);font-size:0.75rem;';
+    hr.appendChild(corner);
+    for (let k = 0; k < N; k++) {
+      const th = document.createElement('th');
+      th.textContent = '|' + k + '\u27E9';
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', () => selectCol(k));
+      hr.appendChild(th);
+    }
+    thead.appendChild(hr);
+    table.appendChild(thead);
+
+    // Body
+    const tbody = document.createElement('tbody');
+    for (let j = 0; j < N; j++) {
+      const tr = document.createElement('tr');
+      const rh = document.createElement('th');
+      rh.textContent = j;
+      tr.appendChild(rh);
+      for (let k = 0; k < N; k++) {
+        const td = document.createElement('td');
+        const exp = mod(j * k, N);
+
+        // New readable cell structure
+        const cell = document.createElement('div');
+        cell.className = 'qft-cell';
+        cell.style.background = phaseColorDark(exp, N);
+
+        const label = document.createElement('div');
+        label.className = 'qft-cell-label';
+        label.textContent = expText(exp);
+        cell.appendChild(label);
+
+        const sub = document.createElement('div');
+        sub.className = 'qft-cell-sub';
+        sub.textContent = j + '\u00B7' + k + '\u2261' + exp;
+        cell.appendChild(sub);
+
+        const bar = document.createElement('div');
+        bar.className = 'qft-cell-bar';
+        bar.style.background = phaseColor(exp, N);
+        cell.appendChild(bar);
+
+        td.appendChild(cell);
+
+        td.dataset.j = j;
+        td.dataset.k = k;
+        td.dataset.exp = exp;
+
+        td.addEventListener('mouseenter', () => showCellInfo(j, k, exp));
+        td.addEventListener('mouseleave', () => {
+          if (highlightedCol < 0) {
+            cellInfo.innerHTML = '&nbsp;';
+            drawCircle([]);
+          }
+        });
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+  }
+
+  function showCellInfo(j, k, exp) {
+    const angle = TAU * exp / N;
+    const re = Math.cos(angle), im = Math.sin(angle);
+    cellInfo.innerHTML =
+      `<strong>(${j}, ${k})</strong>: ` +
+      `j\u00B7k = ${j}\u00D7${k} = ${j*k} \u2261 <strong style="color:${phaseColor(exp,N)}">${exp}</strong> (mod ${N})` +
+      ` &nbsp;\u2192&nbsp; \u03C9<sup>${exp}</sup> = ${complexStr(re, im)}`;
+    drawCircle([exp]);
+  }
+
+  function selectCol(k) {
+    const headerCells = table.querySelectorAll('thead th');
+
+    if (highlightedCol === k) {
+      highlightedCol = -1;
+      draw();
+      return;
+    }
+    highlightedCol = k;
+
+    // Highlight column header
+    headerCells.forEach((th, i) => {
+      if (i === k + 1) th.classList.add('col-selected');
+      else th.classList.remove('col-selected');
+    });
+
+    // Highlight column cells with staggered ripple
+    table.querySelectorAll('td').forEach(td => {
+      const isCol = +td.dataset.k === k;
+      td.classList.toggle('col-highlight', isCol);
+      if (isCol) {
+        const cell = td.querySelector('.qft-cell');
+        if (cell) {
+          cell.classList.remove('qft-cell-ripple');
+          void cell.offsetWidth;
+          cell.style.animationDelay = (+td.dataset.j * 0.06) + 's';
+          cell.classList.add('qft-cell-ripple');
+          cell.addEventListener('animationend', () => {
+            cell.classList.remove('qft-cell-ripple');
+            cell.style.animationDelay = '';
+          }, { once: true });
+        }
+      }
+    });
+
+    // Show all phases for this column on circle
+    const exponents = [];
+    for (let j = 0; j < N; j++) exponents.push(mod(j * k, N));
+    drawCircle(exponents, k);
+
+    cellInfo.innerHTML = `<strong>QFT |${k}\u27E9</strong>: phases = [\u03C9<sup>${exponents.join('</sup>, \u03C9<sup>')}</sup>]`;
+
+    // Render output state vector with KaTeX
+    const terms = exponents.map((e, j) => {
+      const sign = j === 0 ? '' : '+ ';
+      const coeff = e === 0 ? '' : '\\omega^{' + e + '}';
+      return sign + (coeff || '1') + '|' + j + '\\rangle';
+    }).join(' ');
+    const latex = `\\text{QFT}|${k}\\rangle = \\frac{1}{\\sqrt{${N}}}\\bigl(${terms}\\bigr)`;
+    outputState.innerHTML = '';
+    katex.render(latex, outputState, { displayMode: false, throwOnError: false });
+  }
+
+  function drawCircle(highlights, colK) {
+    // Smooth fade: fade out old content, then rebuild
+    circleSvg.style.opacity = 0.4;
+    circleSvg.innerHTML = '';
+    requestAnimationFrame(() => { circleSvg.style.opacity = 1; });
+    const R = 105;
+
+    // Background circle
+    circleSvg.appendChild(svgEl('circle', { cx:0, cy:0, r:R, fill:'none', stroke:'var(--border)', 'stroke-width':1 }));
+    circleSvg.appendChild(svgEl('line', { x1:-R-12, y1:0, x2:R+12, y2:0, stroke:'var(--border)', 'stroke-width':0.5 }));
+    circleSvg.appendChild(svgEl('line', { x1:0, y1:-R-12, x2:0, y2:R+12, stroke:'var(--border)', 'stroke-width':0.5 }));
+
+    // Axis labels (compact)
+    [
+      { t: '0\u00B0', x: R+6, y: -4 },
+      { t: '90\u00B0', x: 4, y: -R-4 },
+      { t: '180\u00B0', x: -R-6, y: -4, anchor: 'end' },
+      { t: '270\u00B0', x: 4, y: R+12 },
+    ].forEach(l => {
+      const txt = svgEl('text', {
+        x: l.x, y: l.y, 'text-anchor': l.anchor || 'start',
+        fill: 'var(--text-muted)', 'font-size': '9', opacity: 0.5
+      });
+      txt.textContent = l.t;
+      circleSvg.appendChild(txt);
+    });
+
+    // All root positions (faint)
+    for (let k = 0; k < N; k++) {
+      const angle = TAU * k / N;
+      const x = Math.cos(angle) * R;
+      const y = -Math.sin(angle) * R;
+      circleSvg.appendChild(svgEl('circle', {
+        cx:x, cy:y, r:4, fill: phaseColor(k, N), opacity: 0.2
+      }));
+      // Tiny label
+      const lx = Math.cos(angle) * (R + 14);
+      const ly = -Math.sin(angle) * (R + 14);
+      const tl = svgEl('text', {
+        x: lx, y: ly + 3, 'text-anchor': 'middle',
+        fill: 'var(--text-muted)', 'font-size': '8', opacity: 0.4
+      });
+      tl.textContent = k;
+      circleSvg.appendChild(tl);
+    }
+
+    // Highlighted phases
+    highlights.forEach((exp, idx) => {
+      const angle = TAU * exp / N;
+      const x = Math.cos(angle) * R;
+      const y = -Math.sin(angle) * R;
+
+      // Arrow from center
+      circleSvg.appendChild(svgEl('line', {
+        x1:0, y1:0, x2:x, y2:y,
+        stroke: phaseColor(exp, N), 'stroke-width':2, opacity:0.6
+      }));
+
+      // Point
+      circleSvg.appendChild(svgEl('circle', {
+        cx:x, cy:y, r:8, fill: phaseColor(exp, N), stroke:'#fff', 'stroke-width':2
+      }));
+
+      // Row label
+      if (colK !== undefined) {
+        const lx = Math.cos(angle) * (R + 22);
+        const ly = -Math.sin(angle) * (R + 22);
+        const lbl = svgEl('text', {
+          x: lx, y: ly + 4,
+          'text-anchor': 'middle', fill: 'var(--text)', 'font-size': '10', 'font-weight': '600'
+        });
+        lbl.textContent = 'j=' + idx;
+        circleSvg.appendChild(lbl);
+      }
+    });
+  }
+
+  slider.addEventListener('input', draw);
+  draw();
+})();
+
+// ============================================================
+// Dynamic Worked Example Stepper
+// ============================================================
+(function() {
+  const container = document.getElementById('dyn-example-steps');
+  const prevBtn = document.getElementById('step-prev');
+  const nextBtn = document.getElementById('step-next');
+  const counter = document.getElementById('step-counter');
+  const kSelect = document.getElementById('example-k');
+  const qftSlider = document.getElementById('qft-n');
+
+  let N = +qftSlider.value, k = 0, current = 0, stepEls = [];
+
+  function populateK() {
+    N = +qftSlider.value;
+    kSelect.innerHTML = '';
+    for (let i = 0; i < N; i++) {
+      kSelect.add(new Option('|' + i + '\u27E9', i));
+    }
+    kSelect.value = Math.min(k, N - 1);
+    k = +kSelect.value;
+  }
+
+  function generateSteps() {
+    container.innerHTML = '';
+    stepEls = [];
+    current = 0;
+
+    // Step 0: intro
+    addStep(`We compute \\(F_{${N}}|${k}\\rangle\\). The matrix has entries \\(\\tfrac{1}{\\sqrt{${N}}}\\,\\omega^{jk}\\) where \\(\\omega = e^{2\\pi i/${N}}\\).`);
+
+    // Steps 1..N: one per row j
+    for (let j = 0; j < N; j++) {
+      const exp = mod(j * k, N);
+      const angle = TAU * exp / N;
+      const re = roundSmart(Math.cos(angle));
+      const im = roundSmart(Math.sin(angle));
+      const cStr = complexStr(Math.cos(angle), Math.sin(angle));
+      addStep(
+        `<strong>Row j=${j}:</strong> exponent = \\(${j} \\times ${k} = ${j*k} \\equiv ${exp} \\pmod{${N}}\\)` +
+        `<br>\\(\\omega^{${exp}} = e^{2\\pi i \\cdot ${exp}/${N}} = ${cStr}\\)` +
+        `<span style="float:right;color:${phaseColor(exp,N)}">\u25CF phase ${Math.round(exp/N*360)}\u00B0</span>`
+      );
+    }
+
+    // Final step: full output
+    const terms = [];
+    for (let j = 0; j < N; j++) {
+      const exp = mod(j * k, N);
+      const sign = j === 0 ? '' : '+ ';
+      const coeff = exp === 0 ? '' : '\\omega^{' + exp + '}';
+      terms.push(sign + (coeff || '1') + '|' + j + '\\rangle');
+    }
+    addStep(
+      `<strong>Result:</strong> \\(F_{${N}}|${k}\\rangle = \\frac{1}{\\sqrt{${N}}}\\bigl(${terms.join(' ')}\\bigr)\\)`
+    );
+
+    updateDisplay();
+    // KaTeX may not be loaded yet on first call; defer if needed
+    const renderMath = () => {
+      if (typeof renderMathInElement === 'function') {
+        renderMathInElement(container, { delimiters: [{left:'\\(',right:'\\)',display:false}], throwOnError: false });
+      }
+    };
+    if (typeof renderMathInElement === 'function') renderMath();
+    else document.addEventListener('DOMContentLoaded', renderMath);
+  }
+
+  function addStep(html) {
+    const div = document.createElement('div');
+    div.className = 'example-step';
+    div.innerHTML = html;
+    container.appendChild(div);
+    stepEls.push(div);
+  }
+
+  function updateDisplay() {
+    stepEls.forEach((s, i) => {
+      s.classList.toggle('active', i <= current);
+      s.classList.toggle('current', i === current);
+    });
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === stepEls.length - 1;
+    counter.textContent = `${current + 1} / ${stepEls.length}`;
+    if (stepEls[current]) stepEls[current].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  prevBtn.addEventListener('click', () => { if (current > 0) { current--; updateDisplay(); } });
+  nextBtn.addEventListener('click', () => { if (current < stepEls.length - 1) { current++; updateDisplay(); } });
+
+  kSelect.addEventListener('change', () => { k = +kSelect.value; generateSteps(); });
+  qftSlider.addEventListener('input', () => { populateK(); generateSteps(); });
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    const rect = container.getBoundingClientRect();
+    if (rect.top > window.innerHeight || rect.bottom < 0) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      if (current < stepEls.length - 1) { current++; updateDisplay(); e.preventDefault(); }
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      if (current > 0) { current--; updateDisplay(); e.preventDefault(); }
+    }
+  });
+
+  populateK();
+  // Defer initial generation until KaTeX is available (scripts are defer'd)
+  if (typeof renderMathInElement === 'function') {
+    generateSteps();
+  } else {
+    document.addEventListener('DOMContentLoaded', generateSteps);
+  }
+})();
+
+// ============================================================
+// Navigation active state + progress bar
+// ============================================================
+(function() {
+  const sections = document.querySelectorAll('section');
+  const navLinks = document.querySelectorAll('nav a');
+  const progressBar = document.getElementById('progress');
+
+  function update() {
+    const scrollY = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    progressBar.style.width = Math.min(100, (scrollY / docHeight) * 100) + '%';
+
+    let currentId = '';
+    sections.forEach(s => {
+      if (s.offsetTop - 100 <= scrollY) currentId = s.id;
+    });
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + currentId);
+    });
+  }
+
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+
+// ============================================================
+// "Try it" links — scroll to widget and set its value
+// ============================================================
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('.try-it-link');
+  if (!link) return;
+  const target = link.dataset.target;
+  const setVal = link.dataset.set;
+  const slider = document.getElementById(target);
+  if (!slider) return;
+
+  // Set slider value and fire input event
+  slider.value = setVal;
+  slider.dispatchEvent(new Event('input'));
+
+  // If mult table, switch to multiply mode
+  if (link.dataset.op === 'mult') {
+    const multBtn = document.querySelector('#op-toggle button[data-op="mult"]');
+    if (multBtn && !multBtn.classList.contains('active')) multBtn.click();
+  }
+
+  // Scroll to the nearest card ancestor of the slider
+  const card = slider.closest('.card');
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.remove('card-flash');
+    void card.offsetWidth; // force reflow
+    card.classList.add('card-flash');
+    card.addEventListener('animationend', () => card.classList.remove('card-flash'), { once: true });
+  }
+});
+
+// ============================================================
+// KaTeX auto-render on load
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof renderMathInElement !== 'undefined') {
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '\\(', right: '\\)', display: false },
+        { left: '\\[', right: '\\]', display: true },
+      ],
+      throwOnError: false,
+    });
+  }
+});
+
+// ============================================================
+// Scroll-reveal: fade-in sections, insights, self-checks
+// ============================================================
+(function() {
+  const revealTargets = document.querySelectorAll('section, .insight, .self-check');
+  if (!('IntersectionObserver' in window)) {
+    revealTargets.forEach(el => el.classList.add('revealed'));
+    return;
+  }
+
+  // Stagger only *within* each section: reset delay counter at each section boundary
+  let delayIdx = 0;
+  revealTargets.forEach(el => {
+    if (el.tagName === 'SECTION') delayIdx = 0;
+    el.style.transitionDelay = (delayIdx * 0.08) + 's';
+    delayIdx++;
+  });
+
+  const unrevealed = new Set(revealTargets);
+
+  function revealVisible() {
+    unrevealed.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight + 50 && rect.bottom > -50) {
+        el.classList.add('revealed');
+        unrevealed.delete(el);
+      }
+    });
+    if (unrevealed.size === 0) {
+      window.removeEventListener('scroll', onScroll);
+    }
+  }
+
+  // Primary: IntersectionObserver
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+        unrevealed.delete(entry.target);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.05, rootMargin: '0px 0px -20px 0px' });
+
+  revealTargets.forEach(el => observer.observe(el));
+
+  // Backup: scroll listener (throttled) ensures reveals work everywhere
+  let ticking = false;
+  function onScroll() {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(() => { revealVisible(); ticking = false; });
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // Initial reveal for elements already in viewport at load time
+  requestAnimationFrame(revealVisible);
+  setTimeout(revealVisible, 150);
+})();
+
+// Particle background handled by the standard course script below
+</script>
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+
+<!-- Particle Background -->
+<script>
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 45;
+  const CONNECT_DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,2100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The CHSH Game - Interactive Quantum Visualization</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+:root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --bg-primary: var(--bg);
+    --bg-secondary: var(--surface);
+    --bg-card: var(--surface);
+    --text-primary: var(--text);
+    --text-secondary: var(--text-dim);
+    --bg-card-hover: #222a55;
+    --text-muted: #5c6bc0;
+    --alice-color: #00e5ff;
+    --alice-dim: #00838f;
+    --alice-bg: rgba(0,229,255,0.1);
+    --bob-color: #ffab40;
+    --bob-dim: #e65100;
+    --bob-bg: rgba(255,171,64,0.1);
+    --referee-color: #b0bec5;
+    --win-color: #69f0ae;
+    --win-bg: rgba(105,240,174,0.12);
+    --lose-color: #ff5252;
+    --lose-bg: rgba(255,82,82,0.12);
+    --accent-light: #b388ff;
+    --quantum-color: #e040fb;
+    --border-light: rgba(255,255,255,0.15);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --transition: 0.3s ease;
+  }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Header */
+.app-header {
+  text-align: center;
+  padding: 32px 24px 16px;
+  background: linear-gradient(180deg, rgba(124,77,255,0.15) 0%, transparent 100%);
+}
+.app-header h1 {
+  font-size: 2.4rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--alice-color), var(--accent-light), var(--bob-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+}
+.app-header p { color: var(--text-secondary); margin-top: 8px; font-size: 1.05rem; }
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,14,39,0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.tab-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.tab-btn:hover { background: var(--bg-card); color: var(--text-primary); }
+.tab-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px rgba(124,77,255,0.3);
+}
+
+.tab-content { display: none; padding: 24px; max-width: 1100px; margin: 0 auto; }
+.tab-content.active { display: block; animation: fadeInUp 0.3s ease; }
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+  border-color: var(--border-light);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.15);
+}
+.card h2 { font-size: 1.3rem; margin-bottom: 16px; color: var(--text-primary); }
+.card h3 { font-size: 1.1rem; margin-bottom: 12px; color: var(--text-secondary); }
+
+/* SVG Scene */
+.game-scene { width: 100%; max-width: 750px; margin: 0 auto; display: block; }
+
+/* Truth Table */
+.truth-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.95rem; }
+.truth-table th, .truth-table td { padding: 10px 16px; text-align: center; border: 1px solid var(--border); }
+.truth-table th { background: var(--bg-secondary); color: var(--text-secondary); font-weight: 600; }
+.truth-table .win { background: var(--win-bg); color: var(--win-color); }
+.truth-table .lose { background: var(--lose-bg); color: var(--lose-color); }
+
+/* Buttons */
+.btn {
+  padding: 10px 22px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn:disabled { opacity: 0.35; cursor: not-allowed; filter: grayscale(0.5); }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover:not(:disabled) { background: #651fff; box-shadow: 0 2px 12px rgba(124,77,255,0.3); }
+.btn-alice { background: rgba(0,229,255,0.15); color: var(--alice-color); border: 1px solid rgba(0,229,255,0.4); }
+.btn-alice:hover:not(:disabled) { background: rgba(0,229,255,0.25); }
+.btn-alice.selected { background: var(--alice-color); color: var(--bg-primary); font-weight: 700; }
+.btn-bob { background: rgba(255,171,64,0.15); color: var(--bob-color); border: 1px solid rgba(255,171,64,0.4); }
+.btn-bob:hover:not(:disabled) { background: rgba(255,171,64,0.25); }
+.btn-bob.selected { background: var(--bob-color); color: var(--bg-primary); font-weight: 700; }
+.btn-sm { padding: 6px 14px; font-size: 0.85rem; }
+.btn-ghost { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border); }
+.btn-ghost:hover:not(:disabled) { border-color: var(--border-light); color: var(--text-primary); }
+.btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Stats */
+.stats-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 16px 0; }
+.stat-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  text-align: center;
+  flex: 1;
+  min-width: 120px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+}
+.stat-box:hover {
+  border-color: var(--border-light);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+  transform: translateY(-3px) scale(1.01);
+}
+.stat-box .label { font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+.stat-box .value { font-size: 1.6rem; font-weight: 700; margin-top: 4px; }
+
+/* Strategy Grid */
+.strategy-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0; }
+.strategy-cell {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  text-align: center;
+  font-size: 0.82rem;
+  transition: var(--transition);
+  cursor: pointer;
+}
+.strategy-cell:hover { border-color: var(--accent); background: var(--bg-card-hover); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.strategy-cell.best { border-color: var(--win-color); background: rgba(105,240,174,0.08); }
+.strategy-cell .rate { font-size: 1.1rem; font-weight: 700; margin-top: 4px; }
+
+/* Angle Diagram */
+.angle-diagram { width: 100%; max-width: 500px; margin: 16px auto; display: block; }
+
+/* Slider */
+.slider-group { margin: 12px 0; display: flex; align-items: center; gap: 12px; }
+.slider-group label { min-width: 160px; font-size: 0.92rem; color: var(--text-secondary); }
+.slider-group input[type="range"] {
+  flex: 1; -webkit-appearance: none; height: 6px;
+  border-radius: 3px; background: var(--bg-secondary); outline: none;
+}
+.slider-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--accent); cursor: pointer;
+  box-shadow: 0 0 6px rgba(124,77,255,0.5);
+}
+.slider-group .slider-val {
+  min-width: 60px; text-align: right; font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+/* Simulation */
+.sim-container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 20px 0; }
+.sim-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  transition: box-shadow var(--transition);
+}
+.sim-panel:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+.sim-panel h3 { margin-bottom: 12px; font-size: 1rem; }
+.sim-panel .big-rate {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  transition: all 0.4s ease;
+}
+.sim-panel .target-line {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.sim-panel .win-count {
+  font-size: 0.95rem;
+  margin-top: 8px;
+  color: var(--text-secondary);
+}
+.convergence-chart {
+  width: 100%;
+  height: 220px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+/* Animation */
+.anim-controls { display: flex; justify-content: center; gap: 12px; margin: 16px 0; align-items: center; }
+.step-dots { display: flex; gap: 6px; align-items: center; }
+.step-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--bg-secondary); border: 2px solid var(--text-muted);
+  transition: var(--transition);
+}
+.step-dot.active { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px rgba(124,77,255,0.5); }
+.step-dot.done { background: var(--win-color); border-color: var(--win-color); }
+
+/* Round log */
+.round-log {
+  max-height: 200px; overflow-y: auto;
+  background: var(--bg-secondary); border-radius: var(--radius);
+  padding: 12px; font-family: 'Courier New', monospace;
+  font-size: 0.83rem; margin: 12px 0;
+}
+.round-log .entry { padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; gap: 12px; }
+.round-log .entry:last-child { border-bottom: none; }
+.round-log .entry.win { color: var(--win-color); }
+.round-log .entry.lose { color: var(--lose-color); }
+
+/* Math section */
+.math-block {
+  background: var(--bg-secondary); border-radius: var(--radius);
+  padding: 20px; margin: 12px 0; overflow-x: auto;
+}
+.math-block .katex { font-size: 1.15em; }
+
+.explanation { color: var(--text-secondary); line-height: 1.7; margin: 12px 0; font-size: 0.95rem; }
+.explanation strong { color: var(--text-primary); }
+
+.highlight-box {
+  background: rgba(124,77,255,0.12);
+  border-left: 3px solid var(--accent);
+  padding: 14px 18px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 12px 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.highlight-box.win-box {
+  background: var(--win-bg);
+  border-left-color: var(--win-color);
+}
+
+/* Game play area */
+.game-play-area {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  gap: 20px; align-items: start; margin: 20px 0;
+}
+.player-panel {
+  background: var(--bg-secondary); border-radius: var(--radius);
+  padding: 20px; text-align: center;
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+.player-panel.alice { border: 1px solid rgba(0,229,255,0.3); }
+.player-panel.bob { border: 1px solid rgba(255,171,64,0.3); }
+.player-panel.alice:hover { box-shadow: 0 0 20px rgba(0,229,255,0.1); }
+.player-panel.bob:hover { box-shadow: 0 0 20px rgba(255,171,64,0.1); }
+.player-panel h3 { margin-bottom: 12px; }
+.player-panel .question-display { font-size: 2rem; font-weight: 700; margin: 12px 0; min-height: 48px; }
+.vs-divider {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 8px; padding-top: 40px;
+}
+.result-display {
+  text-align: center; padding: 20px; border-radius: var(--radius);
+  margin: 16px 0; font-size: 1.15rem; font-weight: 700;
+  min-height: 70px; display: flex; align-items: center;
+  justify-content: center; transition: var(--transition);
+  flex-direction: column; gap: 4px;
+}
+.result-display.win { background: rgba(105,240,174,0.15); color: var(--win-color); border: 1px solid rgba(105,240,174,0.3); }
+.result-display.lose { background: rgba(255,82,82,0.15); color: var(--lose-color); border: 1px solid rgba(255,82,82,0.3); }
+.result-display.waiting { background: var(--bg-secondary); color: var(--text-muted); border: 1px solid var(--border); }
+.result-hint { font-size: 0.82rem; font-weight: 400; opacity: 0.8; }
+
+select {
+  background: var(--bg-secondary); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 8px 12px; font-size: 0.9rem; cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+select:hover { border-color: var(--border-light); background: var(--bg-card); }
+
+/* Player bases grid */
+.player-bases-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0; }
+
+/* Case-by-case diagram grid */
+.case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+.case-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  background: rgba(255,255,255,0.02);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.case-card:hover { border-color: var(--border-light); box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+.case-card.case-hard {
+  border-color: rgba(255,82,82,0.45);
+  background: rgba(255,82,82,0.06);
+  border-left: 4px solid var(--lose-color);
+}
+.case-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.case-badge { font-weight: 700; font-size: 0.95rem; color: var(--text-primary); }
+.case-need { font-size: 0.8rem; padding: 2px 8px; border-radius: 10px; }
+.case-need-same { background: rgba(105,240,174,0.12); color: var(--win-color); }
+.case-need-diff { background: rgba(255,82,82,0.12); color: var(--lose-color); }
+.case-card .basis-block { margin: 8px 0; }
+.case-card .basis-player { font-weight: 600; font-size: 0.85rem; margin-bottom: 2px; }
+.case-card .basis-kets { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
+.case-svg { width: 100%; max-width: 240px; display: block; margin: 8px auto; }
+.case-result {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid var(--border-light); font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Progress bar */
+.sim-progress-wrap { width: 100%; height: 8px; background: var(--bg-secondary); border-radius: 4px; margin: 12px 0; overflow: hidden; }
+.sim-progress-bar { height: 100%; width: 0; background: linear-gradient(90deg, var(--quantum-color), var(--accent-light)); border-radius: 4px; transition: width 0.3s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 8px rgba(224,64,251,0.4); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app-header h1 { font-size: 1.6rem; }
+  .app-header p { font-size: 0.88rem; }
+  .game-play-area { grid-template-columns: 1fr; }
+  .vs-divider { flex-direction: row; padding-top: 0; }
+  .strategy-grid { grid-template-columns: repeat(2, 1fr); }
+  .sim-container { grid-template-columns: 1fr; }
+  .tab-nav { flex-wrap: wrap; gap: 4px; padding: 6px 10px; justify-content: center; }
+  .tab-btn { font-size: 0.82rem; padding: 8px 14px; }
+  .card { padding: 16px; }
+  .tab-content { padding: 14px; }
+  .slider-group { flex-direction: column; align-items: stretch; gap: 4px; }
+  .slider-group label { min-width: unset; }
+  .slider-group .slider-val { text-align: left; min-width: unset; }
+  .player-bases-grid { grid-template-columns: 1fr; }
+  .case-grid { grid-template-columns: 1fr; }
+  .stat-box { min-width: 80px; padding: 8px 12px; }
+  .stat-box .value { font-size: 1.3rem; }
+  .convergence-chart { height: 180px; }
+  .step-indicator { gap: 12px; }
+  .step-number { width: 32px; height: 32px; font-size: 0.95rem; }
+  .step-indicator::after { left: 15px; top: 36px; }
+  .quantum-insight { padding: 16px; }
+}
+@media (max-width: 480px) {
+  .tab-btn { font-size: 0.75rem; padding: 6px 10px; }
+  .sim-panel .big-rate { font-size: 2.2rem; }
+  .truth-table th, .truth-table td { padding: 6px 8px; font-size: 0.85rem; }
+}
+
+/* Collapsible */
+.collapsible-header {
+  cursor: pointer; display: flex; align-items: center; gap: 8px;
+  user-select: none; padding: 8px 0; margin: 4px 0;
+  border-bottom: 1px solid var(--border);
+  transition: color 0.2s;
+}
+.collapsible-header:hover { color: var(--text-primary); }
+.collapsible-header .chevron {
+  display: inline-block; transition: transform 0.25s ease;
+  font-size: 0.75em; color: var(--text-muted);
+}
+.collapsible-header.open .chevron { transform: rotate(90deg); }
+.collapsible-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+.collapsible-body.open { max-height: 2000px; }
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Focus visible for keyboard navigation */
+.btn:focus-visible, .tab-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+.pulse { animation: pulse 0.5s ease; }
+@keyframes glow-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px currentColor); }
+  50% { filter: drop-shadow(0 0 12px currentColor); }
+}
+
+/* Step progression timeline */
+.step-indicator {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-top: 20px;
+  position: relative;
+}
+.step-indicator::after {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 44px;
+  bottom: -20px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--quantum-color), transparent);
+  opacity: 0.3;
+}
+.step-indicator.step-last::after { display: none; }
+.step-number {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(224, 64, 251, 0.12);
+  border: 2px solid var(--quantum-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--quantum-color);
+  position: relative;
+  z-index: 1;
+}
+.step-content { flex: 1; min-width: 0; }
+.step-content h3 {
+  color: var(--quantum-color);
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+/* Quantum insight box */
+.quantum-insight {
+  background: linear-gradient(135deg, rgba(224,64,251,0.1) 0%, rgba(124,77,255,0.06) 100%);
+  border: 1px solid rgba(224,64,251,0.2);
+  border-left: 4px solid var(--quantum-color);
+  padding: 20px 24px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 24px 0 0;
+  position: relative;
+  overflow: hidden;
+}
+.quantum-insight::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -15%;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(224,64,251,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.quantum-insight-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.quantum-insight p {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* Entanglement visual */
+.entangle-line {
+  stroke-dasharray: 6,4;
+  animation: dash 1.5s linear infinite;
+}
+@keyframes dash { to { stroke-dashoffset: -20; } }
+
+  /* Particle background canvas */
+  #particleBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="particleBg"></canvas>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+
+<header class="app-header">
+  <h1>The CHSH Game</h1>
+  <p>An interactive exploration of Bell inequality and quantum advantage</p>
+</header>
+
+<nav class="tab-nav" id="tabNav">
+  <button class="tab-btn active" data-tab="rules">1. Game Rules</button>
+  <button class="tab-btn" data-tab="classical">2. Play Classical</button>
+  <button class="tab-btn" data-tab="quantum">3. Quantum Strategy</button>
+  <button class="tab-btn" data-tab="simulation">4. Simulation</button>
+  <span style="font-size:0.72rem; color:var(--text-muted); margin-left:4px; align-self:center; white-space:nowrap;">(Keys 1-4)</span>
+</nav>
+
+<!-- ===== TAB 1: GAME RULES ===== -->
+<div class="tab-content active" id="tab-rules">
+  <div class="card">
+    <h2>How the CHSH Game Works</h2>
+    <p class="explanation">
+      The CHSH game is a cooperative game between two players &mdash;
+      <strong style="color:var(--alice-color)">Alice</strong> and
+      <strong style="color:var(--bob-color)">Bob</strong> &mdash; who
+      <strong>cannot communicate</strong> once the game begins. A <strong>Referee</strong>
+      coordinates each round.
+    </p>
+
+    <svg class="game-scene" viewBox="0 0 750 300" id="rulesScene">
+      <defs>
+        <filter id="glow-a"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="glow-b"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <marker id="arrowA" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--alice-color)"/>
+        </marker>
+        <marker id="arrowB" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bob-color)"/>
+        </marker>
+      </defs>
+      <!-- No-communication barrier -->
+      <rect x="368" y="20" width="14" height="240" rx="7" fill="var(--bg-secondary)" stroke="var(--border)" stroke-width="1" opacity="0.5"/>
+      <text x="375" y="282" text-anchor="middle" fill="var(--text-muted)" font-size="11" font-style="italic">No Communication</text>
+      <!-- Alice -->
+      <g id="aliceChar" transform="translate(140,130)">
+        <circle r="40" fill="var(--alice-bg)" stroke="var(--alice-color)" stroke-width="2.5" filter="url(#glow-a)"/>
+        <text y="6" text-anchor="middle" fill="var(--alice-color)" font-size="30" font-weight="700">A</text>
+        <text y="60" text-anchor="middle" fill="var(--alice-color)" font-size="15" font-weight="600">Alice</text>
+      </g>
+      <!-- Bob -->
+      <g id="bobChar" transform="translate(610,130)">
+        <circle r="40" fill="var(--bob-bg)" stroke="var(--bob-color)" stroke-width="2.5" filter="url(#glow-b)"/>
+        <text y="6" text-anchor="middle" fill="var(--bob-color)" font-size="30" font-weight="700">B</text>
+        <text y="60" text-anchor="middle" fill="var(--bob-color)" font-size="15" font-weight="600">Bob</text>
+      </g>
+      <!-- Referee -->
+      <g id="refChar" transform="translate(375,50)">
+        <rect x="-40" y="-28" width="80" height="56" rx="12" fill="var(--bg-card)" stroke="var(--referee-color)" stroke-width="2"/>
+        <text y="6" text-anchor="middle" fill="var(--referee-color)" font-size="15" font-weight="600">Referee</text>
+      </g>
+      <!-- Animated elements -->
+      <g id="animQ-x" opacity="0">
+        <circle r="20" fill="var(--bg-card)" stroke="var(--alice-color)" stroke-width="2.5"/>
+        <text y="6" text-anchor="middle" fill="var(--alice-color)" font-size="15" font-weight="700" id="animX">x=0</text>
+      </g>
+      <g id="animQ-y" opacity="0">
+        <circle r="20" fill="var(--bg-card)" stroke="var(--bob-color)" stroke-width="2.5"/>
+        <text y="6" text-anchor="middle" fill="var(--bob-color)" font-size="15" font-weight="700" id="animY">y=0</text>
+      </g>
+      <g id="animA-a" opacity="0">
+        <circle r="20" fill="rgba(0,229,255,0.15)" stroke="var(--alice-color)" stroke-width="2.5"/>
+        <text y="6" text-anchor="middle" fill="var(--alice-color)" font-size="15" font-weight="700" id="animA">a=0</text>
+      </g>
+      <g id="animA-b" opacity="0">
+        <circle r="20" fill="rgba(255,171,64,0.15)" stroke="var(--bob-color)" stroke-width="2.5"/>
+        <text y="6" text-anchor="middle" fill="var(--bob-color)" font-size="15" font-weight="700" id="animB">b=0</text>
+      </g>
+      <text id="animResult" x="375" y="248" text-anchor="middle" font-size="18" font-weight="700" opacity="0"></text>
+    </svg>
+
+    <div class="anim-controls">
+      <button class="btn btn-primary" id="playAnimBtn" onclick="rulesAnim.play()">&#9654; Play</button>
+      <button class="btn btn-primary" id="stepAnimBtn" onclick="rulesAnim.step()">Step &#8250;</button>
+      <button class="btn btn-ghost btn-sm" onclick="rulesAnim.reset()">Reset</button>
+      <div class="step-dots" id="stepDots">
+        <div class="step-dot" data-step="0"></div>
+        <div class="step-dot" data-step="1"></div>
+        <div class="step-dot" data-step="2"></div>
+        <div class="step-dot" data-step="3"></div>
+      </div>
+    </div>
+    <p id="animNarration" class="explanation" style="text-align:center; min-height:48px; font-weight:500;">
+      Click <strong>Play</strong> or <strong>Step</strong> to watch a round of the CHSH game unfold.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Win Condition</h2>
+    <p class="explanation">
+      The referee&rsquo;s rule is designed to test whether Alice and Bob can truly coordinate without communication. In three of the four cases, they just need to agree. But in the special (1,1) case, they must <em>disagree</em> &mdash; creating a tension that&rsquo;s impossible to resolve perfectly with any classical strategy.
+    </p>
+    <p class="explanation">
+      Formally, Alice and Bob <strong>win</strong> when their answers satisfy:
+    </p>
+    <div class="math-block" style="text-align:center">
+      $$a \oplus b = x \wedge y$$
+    </div>
+    <p class="explanation">
+      The XOR of their answers must equal the AND of their questions:
+    </p>
+    <table class="truth-table">
+      <thead><tr><th>x</th><th>y</th><th>x &and; y</th><th>Need a &oplus; b =</th><th>To Win</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>0</td><td>0</td><td>0</td><td>0</td><td>a = b (same)</td></tr>
+        <tr class="win"><td>0</td><td>1</td><td>0</td><td>0</td><td>a = b (same)</td></tr>
+        <tr class="win"><td>1</td><td>0</td><td>0</td><td>0</td><td>a = b (same)</td></tr>
+        <tr class="lose"><td>1</td><td>1</td><td>1</td><td>1</td><td>a &ne; b (different)</td></tr>
+      </tbody>
+    </table>
+    <div class="highlight-box">
+      <strong>The catch:</strong> If they always give the same answer, they win 3 out of 4 cases (75%) but always lose the (1,1) case. No classical strategy can beat 75%. But quantum entanglement can reach <strong>~85.4%</strong>!
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 2: PLAY CLASSICAL ===== -->
+<div class="tab-content" id="tab-classical">
+  <div class="card">
+    <h2>Play the Classical Game</h2>
+    <p class="explanation">
+      Try to beat the 75% classical limit! Choose answers for Alice and Bob each round, or pick a strategy and run automatically.
+    </p>
+    <div style="margin-bottom: 16px;">
+      <label style="color:var(--text-secondary); font-weight:500;">Mode: </label>
+      <select id="classicalMode" onchange="classicalGame.setMode(this.value)">
+        <option value="manual">Manual (pick answers each round)</option>
+        <option value="auto">Auto (run with strategy)</option>
+      </select>
+    </div>
+
+    <!-- Manual mode -->
+    <div id="manualMode">
+      <div id="manualRoundInfo" class="highlight-box" style="text-align:center; font-size:1.05rem;">
+        Click <strong>"New Round"</strong> to start playing!
+      </div>
+      <div class="game-play-area">
+        <div class="player-panel alice">
+          <h3 style="color:var(--alice-color)">Alice</h3>
+          <div style="color:var(--text-muted); font-size:0.9rem;">Question received:</div>
+          <div class="question-display" id="aliceQuestion" style="color:var(--alice-color)">?</div>
+          <div style="color:var(--text-muted); font-size:0.9rem;">Your answer:</div>
+          <div class="btn-group" style="justify-content:center; margin-top:8px;">
+            <button class="btn btn-alice" id="aliceBtn0" onclick="classicalGame.setAnswer('alice',0)" disabled>a = 0</button>
+            <button class="btn btn-alice" id="aliceBtn1" onclick="classicalGame.setAnswer('alice',1)" disabled>a = 1</button>
+          </div>
+        </div>
+        <div class="vs-divider">
+          <div style="font-size:1.5rem; font-weight:700; color:var(--text-muted)">VS</div>
+        </div>
+        <div class="player-panel bob">
+          <h3 style="color:var(--bob-color)">Bob</h3>
+          <div style="color:var(--text-muted); font-size:0.9rem;">Question received:</div>
+          <div class="question-display" id="bobQuestion" style="color:var(--bob-color)">?</div>
+          <div style="color:var(--text-muted); font-size:0.9rem;">Your answer:</div>
+          <div class="btn-group" style="justify-content:center; margin-top:8px;">
+            <button class="btn btn-bob" id="bobBtn0" onclick="classicalGame.setAnswer('bob',0)" disabled>b = 0</button>
+            <button class="btn btn-bob" id="bobBtn1" onclick="classicalGame.setAnswer('bob',1)" disabled>b = 1</button>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center; display:flex; gap:12px; justify-content:center;">
+        <button class="btn btn-primary" id="newRoundBtn" onclick="classicalGame.newRound()">New Round</button>
+        <button class="btn btn-primary" id="submitRoundBtn" onclick="classicalGame.submitRound()" disabled>Submit Answers</button>
+      </div>
+      <div id="manualResult" class="result-display waiting">Awaiting round...</div>
+    </div>
+
+    <!-- Auto mode -->
+    <div id="autoMode" style="display:none">
+      <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:end; margin-bottom:16px;">
+        <div>
+          <label style="color:var(--alice-color); font-weight:500; display:block; margin-bottom:4px;">Alice's Strategy</label>
+          <select id="aliceStrategy">
+            <option value="0">Always output 0</option>
+            <option value="1">Always output 1</option>
+            <option value="x">Output = x (copy input)</option>
+            <option value="notx">Output = NOT x</option>
+          </select>
+        </div>
+        <div>
+          <label style="color:var(--bob-color); font-weight:500; display:block; margin-bottom:4px;">Bob's Strategy</label>
+          <select id="bobStrategy">
+            <option value="0">Always output 0</option>
+            <option value="1">Always output 1</option>
+            <option value="y">Output = y (copy input)</option>
+            <option value="noty">Output = NOT y</option>
+          </select>
+        </div>
+        <div>
+          <label style="color:var(--text-secondary); font-weight:500; display:block; margin-bottom:4px;">Rounds</label>
+          <select id="autoRounds">
+            <option value="10">10</option>
+            <option value="100" selected>100</option>
+            <option value="1000">1,000</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="classicalGame.runAuto()">Run</button>
+      </div>
+      <div class="round-log" id="autoLog"></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box"><div class="label">Rounds</div><div class="value" id="cRounds">0</div></div>
+      <div class="stat-box"><div class="label">Wins</div><div class="value" style="color:var(--win-color)" id="cWins">0</div></div>
+      <div class="stat-box"><div class="label">Losses</div><div class="value" style="color:var(--lose-color)" id="cLosses">0</div></div>
+      <div class="stat-box"><div class="label">Win Rate</div><div class="value" id="cWinRate" style="color:var(--accent-light)">--%</div></div>
+    </div>
+    <div style="text-align:center">
+      <button class="btn btn-ghost btn-sm" onclick="classicalGame.resetStats()">Reset Stats</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>All 16 Deterministic Strategies</h2>
+    <p class="explanation">
+      Each player has 4 deterministic strategies (a function from input to output). That's 4 &times; 4 = 16 combinations. <strong>None beats 75%.</strong>
+    </p>
+    <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; margin-bottom:8px; align-items:center;">
+      <div></div>
+      <div style="text-align:center; font-size:0.82rem; color:var(--bob-color);">Bob's strategy &darr;</div>
+    </div>
+    <div style="display:grid; grid-template-columns:auto 1fr; gap:8px;">
+      <div style="writing-mode:vertical-lr; transform:rotate(180deg); font-size:0.82rem; color:var(--alice-color); text-align:center; padding:0 4px;">Alice's strategy &darr;</div>
+      <div class="strategy-grid" id="strategyGrid"></div>
+    </div>
+    <div class="highlight-box" id="strategyDetail">
+      Click any cell to see details. The best classical strategy wins exactly <strong>75%</strong> &mdash; no deterministic or randomized strategy can exceed this.
+    </div>
+  </div>
+
+  <div class="card" style="border-color: rgba(224,64,251,0.3);">
+    <h2 style="color:var(--quantum-color)">Can We Do Better?</h2>
+    <p class="explanation">
+      You've seen that every classical strategy maxes out at <strong>75%</strong>.
+      This isn't bad luck or a bad strategy &mdash; it's a <em>provable mathematical ceiling</em>.
+      No amount of cleverness, pre-planning, or shared randomness can push past it.
+    </p>
+    <p class="explanation">
+      But remarkably, quantum mechanics allows Alice and Bob to break this barrier &mdash; not by communicating, but through the correlations hidden in <strong>entanglement</strong>.
+    </p>
+    <div class="highlight-box" style="border-left-color:var(--quantum-color);">
+      If Alice and Bob share an <strong>entangled quantum state</strong> before the game,
+      they can win <strong>~85.4%</strong> of the time &mdash; more than 10 percentage points above the classical limit!
+      This is the essence of <strong>Bell inequality violation</strong>.
+    </div>
+    <div style="text-align:center; margin-top:16px;">
+      <button class="btn btn-primary" style="background:var(--quantum-color)"
+        onclick="document.querySelector('[data-tab=quantum]').click()">
+        See the Quantum Strategy &rarr;
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 3: QUANTUM STRATEGY ===== -->
+<div class="tab-content" id="tab-quantum">
+  <div style="background:rgba(124,77,255,0.08); padding:10px 16px; border-radius:8px; margin-bottom:16px; font-size:0.9rem; color:var(--text-secondary);">
+    Recall: No classical strategy beats 75%. Now let's see how <strong style="color:var(--quantum-color)">entanglement</strong> changes the game.
+  </div>
+
+  <div class="card">
+    <h2>The Quantum Strategy</h2>
+    <p class="explanation">
+      The quantum strategy follows the same rules as the classical game &mdash; Alice and Bob still cannot communicate once the game begins. The difference is what they <em>share</em> beforehand: instead of just a pre-agreed plan, they share an entangled quantum state.
+    </p>
+
+    <div class="step-indicator">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <h3>Share Entanglement</h3>
+        <p class="explanation">
+          Before the game, Alice and Bob prepare a <strong>Bell state</strong> &mdash; a pair of qubits in a specific entangled superposition:
+        </p>
+        <div class="math-block" style="text-align:center">
+          $$|\Phi^+\rangle = \frac{1}{\sqrt{2}}\big(|00\rangle + |11\rangle\big)$$
+        </div>
+        <p class="explanation">
+          Alice takes the first qubit, Bob takes the second. This state means: if both measure in the standard \(|0\rangle, |1\rangle\) basis, they <em>always</em> get the same result &mdash; either both 0 or both 1, with equal probability. But the power of entanglement goes further than perfect correlation in one basis.
+        </p>
+      </div>
+    </div>
+
+    <div class="step-indicator">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <h3>Receive Questions</h3>
+        <p class="explanation">
+          The referee sends a random bit \(x\) to Alice and \(y\) to Bob, exactly as in the classical game. They must each reply with a bit (\(a\) and \(b\)) without communicating.
+        </p>
+      </div>
+    </div>
+
+    <div class="step-indicator">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <h3>Choose a Measurement Basis</h3>
+        <p class="explanation">
+          Here is the key quantum ingredient. Each player picks a <strong>measurement angle</strong> \(\theta\) that depends on their input. This angle defines a <em>rotated basis</em> in the \(|0\rangle / |1\rangle\) plane:
+        </p>
+        <div class="math-block" style="text-align:center; font-size:0.95rem;">
+          $$|0_\theta\rangle = \cos\theta\,|0\rangle + \sin\theta\,|1\rangle \;\to\; \textbf{outcome 0}$$
+          $$|1_\theta\rangle = -\sin\theta\,|0\rangle + \cos\theta\,|1\rangle \;\to\; \textbf{outcome 1}$$
+        </div>
+        <p class="explanation" style="text-align:center; font-size:0.88rem; color:var(--text-muted); margin-top:-4px;">
+          Outcome 0 if the qubit is found in \(|0_\theta\rangle\), outcome 1 if found in \(|1_\theta\rangle\).
+        </p>
+        <p class="explanation">
+          At \(\theta = 0\), this is just the standard basis: \(|0_\theta\rangle = |0\rangle\) and \(|1_\theta\rangle = |1\rangle\). As \(\theta\) increases, the basis rotates &mdash; the &ldquo;0-direction&rdquo; tilts away from \(|0\rangle\) toward \(|1\rangle\).
+        </p>
+      </div>
+    </div>
+
+    <div class="step-indicator step-last">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <h3>Measure &amp; Answer</h3>
+        <p class="explanation">
+          Each player measures their qubit in their chosen basis. The measurement collapses the qubit to one of the two basis states, giving output 0 or 1. That output is their answer to the referee.
+        </p>
+      </div>
+    </div>
+
+    <div class="quantum-insight">
+      <div class="quantum-insight-header">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <circle cx="11" cy="11" r="10" stroke="var(--quantum-color)" stroke-width="1.5" fill="rgba(224,64,251,0.15)"/>
+          <text x="11" y="15.5" text-anchor="middle" fill="var(--quantum-color)" font-size="14" font-weight="700">!</text>
+        </svg>
+        <strong style="color:var(--quantum-color); font-size:1.05rem;">Key Insight</strong>
+      </div>
+      <p>
+        When Alice and Bob measure in <em>similar</em> directions (small angle difference), the entanglement causes their outcomes to <strong>agree</strong> with high probability. When they measure in <em>very different</em> directions (large angle difference), outcomes tend to <strong>disagree</strong>. By carefully choosing which angle to use for each input, they can make agreements happen in the three &ldquo;same answer&rdquo; cases and disagreement happen in the one &ldquo;different answer&rdquo; case &mdash; beating 75%.
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>The Quantum Circuit</h2>
+    <p class="explanation">
+      Here is the circuit that implements the quantum strategy. The left half prepares the shared Bell state; the right half shows each player measuring in their input-dependent basis.
+    </p>
+    <svg class="game-scene" viewBox="0 0 720 190" style="max-width:720px;">
+      <defs>
+        <filter id="glow-q"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <!-- Qubit wires -->
+      <line x1="50" y1="60" x2="630" y2="60" stroke="var(--alice-color)" stroke-width="2" opacity="0.7"/>
+      <line x1="50" y1="130" x2="630" y2="130" stroke="var(--bob-color)" stroke-width="2" opacity="0.7"/>
+      <!-- Wire labels -->
+      <text x="30" y="64" fill="var(--alice-color)" font-size="14" text-anchor="end" font-family="serif" font-style="italic">|0&#x27E9;</text>
+      <text x="30" y="134" fill="var(--bob-color)" font-size="14" text-anchor="end" font-family="serif" font-style="italic">|0&#x27E9;</text>
+      <!-- H gate -->
+      <rect x="90" y="38" width="44" height="44" rx="6" fill="var(--bg-card)" stroke="var(--quantum-color)" stroke-width="2"/>
+      <text x="112" y="66" text-anchor="middle" fill="var(--quantum-color)" font-size="20" font-weight="700">H</text>
+      <!-- CNOT -->
+      <circle cx="190" cy="60" r="6" fill="var(--quantum-color)"/>
+      <line x1="190" y1="66" x2="190" y2="118" stroke="var(--quantum-color)" stroke-width="2"/>
+      <circle cx="190" cy="130" r="14" fill="none" stroke="var(--quantum-color)" stroke-width="2"/>
+      <line x1="176" y1="130" x2="204" y2="130" stroke="var(--quantum-color)" stroke-width="2"/>
+      <line x1="190" y1="116" x2="190" y2="144" stroke="var(--quantum-color)" stroke-width="2"/>
+      <!-- Entanglement region highlight -->
+      <rect x="230" y="30" width="100" height="130" rx="8" fill="rgba(224,64,251,0.06)" stroke="none"/>
+      <line x1="230" y1="60" x2="330" y2="60" stroke="var(--quantum-color)" stroke-width="2" class="entangle-line" filter="url(#glow-q)"/>
+      <line x1="230" y1="130" x2="330" y2="130" stroke="var(--quantum-color)" stroke-width="2" class="entangle-line" filter="url(#glow-q)"/>
+      <text x="280" y="102" text-anchor="middle" fill="var(--quantum-color)" font-size="10" opacity="0.8">entangled</text>
+      <!-- Dashed separator: "Game starts" -->
+      <line x1="355" y1="15" x2="355" y2="175" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="6,4"/>
+      <text x="355" y="188" text-anchor="middle" fill="var(--text-muted)" font-size="10" font-style="italic">Game starts</text>
+      <!-- R(theta_A) gate for Alice -->
+      <rect x="400" y="38" width="56" height="44" rx="6" fill="var(--bg-card)" stroke="var(--alice-color)" stroke-width="2"/>
+      <text x="428" y="66" text-anchor="middle" fill="var(--alice-color)" font-size="14" font-weight="600">R(&#952;<tspan font-size="10" dy="3">A</tspan><tspan dy="-3">)</tspan></text>
+      <!-- R(theta_B) gate for Bob -->
+      <rect x="400" y="108" width="56" height="44" rx="6" fill="var(--bg-card)" stroke="var(--bob-color)" stroke-width="2"/>
+      <text x="428" y="136" text-anchor="middle" fill="var(--bob-color)" font-size="14" font-weight="600">R(&#952;<tspan font-size="10" dy="3">B</tspan><tspan dy="-3">)</tspan></text>
+      <!-- Measurement meters -->
+      <!-- Alice meter -->
+      <rect x="510" y="38" width="44" height="44" rx="6" fill="var(--bg-card)" stroke="var(--alice-color)" stroke-width="2"/>
+      <path d="M 522 70 A 14 14 0 0 1 548 70" fill="none" stroke="var(--alice-color)" stroke-width="1.8"/>
+      <line x1="535" y1="70" x2="543" y2="50" stroke="var(--alice-color)" stroke-width="1.8"/>
+      <!-- Bob meter -->
+      <rect x="510" y="108" width="44" height="44" rx="6" fill="var(--bg-card)" stroke="var(--bob-color)" stroke-width="2"/>
+      <path d="M 522 140 A 14 14 0 0 1 548 140" fill="none" stroke="var(--bob-color)" stroke-width="1.8"/>
+      <line x1="535" y1="140" x2="543" y2="120" stroke="var(--bob-color)" stroke-width="1.8"/>
+      <!-- Output labels: a and b -->
+      <text x="580" y="65" fill="var(--alice-color)" font-size="16" font-weight="700">&#8594; a</text>
+      <text x="580" y="135" fill="var(--bob-color)" font-size="16" font-weight="700">&#8594; b</text>
+      <!-- Player name labels -->
+      <text x="650" y="65" fill="var(--alice-color)" font-size="14" font-weight="600">Alice</text>
+      <text x="650" y="135" fill="var(--bob-color)" font-size="14" font-weight="600">Bob</text>
+    </svg>
+    <p class="explanation" style="text-align:center; font-size:0.88rem;">
+      <strong>H</strong> = Hadamard, <strong>&#8853;</strong> = CNOT, <strong>R(&theta;)</strong> = measurement basis rotation. The rotation angle depends on the input: &theta;<sub>A</sub>(x) for Alice, &theta;<sub>B</sub>(y) for Bob.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Measurement Angles</h2>
+    <p class="explanation">
+      Each angle \(\theta\) defines a measurement basis &mdash; a rotated version of the standard \(|0\rangle / |1\rangle\) basis. The optimal strategy spaces four angles evenly at <strong>\(\pi/8\)</strong> increments. Let's examine each of the four input cases and the exact basis states used.
+    </p>
+
+    <p class="explanation" style="text-align:center">
+      For the Bell state \(|\Phi^+\rangle\), the probability of getting the <strong>same</strong> outcome is:
+    </p>
+    <div class="math-block" style="text-align:center">
+      $$P(a = b) = \cos^2(\theta_A - \theta_B)$$
+    </div>
+    <p class="explanation" style="text-align:center; font-size:0.9rem; color:var(--text-muted);">
+      The closer the two measurement directions, the more likely the outcomes agree. At 0 difference &rarr; 100% agreement. At \(\pi/4\) &rarr; 50%. At \(\pi/2\) &rarr; 0%.
+    </p>
+
+    <div class="case-grid">
+      <!-- Case (0,0) -->
+      <div class="case-card">
+        <div class="case-card-header">
+          <span class="case-badge">x = 0, y = 0</span>
+          <span class="case-need case-need-same">Need: a = b</span>
+        </div>
+        <div class="basis-block">
+          <div class="basis-player" style="color:var(--alice-color)">&theta;<sub>A</sub> = 0&deg;</div>
+          <div class="basis-kets">
+            \(|0_\theta\rangle = |0\rangle \;\to\; \textbf{0}\)<br>
+            \(|1_\theta\rangle = |1\rangle \;\to\; \textbf{1}\)
+          </div>
+        </div>
+        <div class="basis-block">
+          <div class="basis-player" style="color:var(--bob-color)">&theta;<sub>B</sub> = &pi;/8</div>
+          <div class="basis-kets">
+            \(|0_\theta\rangle = \cos\tfrac{\pi}{8}|0\rangle + \sin\tfrac{\pi}{8}|1\rangle \;\to\; \textbf{0}\)<br>
+            \(|1_\theta\rangle = -\sin\tfrac{\pi}{8}|0\rangle + \cos\tfrac{\pi}{8}|1\rangle \;\to\; \textbf{1}\)
+          </div>
+        </div>
+        <svg class="case-svg" viewBox="0 0 240 240" id="caseDiag00" role="img" aria-label="Angle diagram: Alice at 0° and Bob at 22.5°, separated by 22.5°"></svg>
+        <div class="case-result">
+          <span>&Delta;&theta; = &pi;/8</span>
+          <span style="color:var(--win-color)"><strong>P(win) &asymp; 85.4%</strong> &ensp;&#10003;</span>
+        </div>
+      </div>
+
+      <!-- Case (0,1) -->
+      <div class="case-card">
+        <div class="case-card-header">
+          <span class="case-badge">x = 0, y = 1</span>
+          <span class="case-need case-need-same">Need: a = b</span>
+        </div>
+        <div class="basis-block">
+          <div class="basis-player" style="color:var(--alice-color)">&theta;<sub>A</sub> = 0&deg;</div>
+          <div class="basis-kets">
+            \(|0_\theta\rangle = |0\rangle \;\to\; \textbf{0}\)<br>
+            \(|1_\theta\rangle = |1\rangle \;\to\; \textbf{1}\)
+          </div>
+        </div>
+        <div class="basis-block">
+          <div class="basis-player" style="color:var(--bob-color)">&theta;<sub>B</sub> = &minus;&pi;/8</div>
+          <div class="basis-kets">
+            \(|0_\theta\rangle = \cos\tfrac{\pi}{8}|0\rangle - \sin\tfrac{\pi}{8}|1\rangle \;\to\; \textbf{0}\)<br>
+            \(|1_\theta\rangle = \sin\tfrac{\pi}{8}|0\rangle + \cos\tfrac{\pi}{8}|1\rangle \;\to\; \textbf{1}\)
+          </div>
+        </div>
+        <svg class="case-svg" viewBox="0 0 240 240" id="caseDiag01" role="img" aria-label="Angle diagram: Alice at 0° and Bob at −22.5°, separated by 22.5°"></svg>
+        <div class="case-result">
+          <span>&Delta;&theta; = &pi;/8</span>
+          <span style="color:var(--win-color)"><strong>P(win) &asymp; 85.4%</strong> &ensp;&#10003;</span>
+        </div>
+      </div>
+
+      <!-- Case (1,0) -->
+      <div class="case-card">
+        <div class="case-card-header">
+          <span class="case-badge">x = 1, y = 0</span>
+          <span class="case-need case-need-same">Need: a = b</span>
+        </div>
+        <div class="basis-block">
+          <div class="basis-player" style="color:var(--alice-color)">&theta;<sub>A</sub> = &pi;/4</div>
+          <div class="basis-kets">
+            \(|0_\theta\rangle = \tfrac{1}{\sqrt{2}}(|0\rangle + |1\rangle) \;\to\; \textbf{0}\)<br>
+            \(|1_\theta\rangle = \tfrac{1}{\sqrt{2}}(-|0\rangle + |1\rangle) \;\to\; \textbf{1}\)
+          </div>
+        </div>
+        <div class="basis-block">
+          <div class="basis-player" style="color:var(--bob-color)">&theta;<sub>B</sub> = &pi;/8</div>
+          <div class="basis-kets">
+            \(|0_\theta\rangle = \cos\tfrac{\pi}{8}|0\rangle + \sin\tfrac{\pi}{8}|1\rangle \;\to\; \textbf{0}\)<br>
+            \(|1_\theta\rangle = -\sin\tfrac{\pi}{8}|0\rangle + \cos\tfrac{\pi}{8}|1\rangle \;\to\; \textbf{1}\)
+          </div>
+        </div>
+        <svg class="case-svg" viewBox="0 0 240 240" id="caseDiag10" role="img" aria-label="Angle diagram: Alice at 45° and Bob at 22.5°, separated by 22.5°"></svg>
+        <div class="case-result">
+          <span>&Delta;&theta; = &pi;/8</span>
+          <span style="color:var(--win-color)"><strong>P(win) &asymp; 85.4%</strong> &ensp;&#10003;</span>
+        </div>
+      </div>
+
+      <!-- Case (1,1) — the hard case -->
+      <div class="case-card case-hard">
+        <div class="case-card-header">
+          <span class="case-badge" style="color:var(--lose-color)">x = 1, y = 1 &ensp;&#9733;</span>
+          <span class="case-need case-need-diff" style="font-weight:600; font-size:0.85rem;">Need: a &ne; b</span>
+        </div>
+        <div style="font-size:0.8rem; color:var(--lose-color); opacity:0.8; margin-bottom:8px;">&#9888; The hard case &mdash; requires <em>disagreement</em></div>
+        <div class="basis-block">
+          <div class="basis-player" style="color:var(--alice-color)">&theta;<sub>A</sub> = &pi;/4</div>
+          <div class="basis-kets">
+            \(|0_\theta\rangle = \tfrac{1}{\sqrt{2}}(|0\rangle + |1\rangle) \;\to\; \textbf{0}\)<br>
+            \(|1_\theta\rangle = \tfrac{1}{\sqrt{2}}(-|0\rangle + |1\rangle) \;\to\; \textbf{1}\)
+          </div>
+        </div>
+        <div class="basis-block">
+          <div class="basis-player" style="color:var(--bob-color)">&theta;<sub>B</sub> = &minus;&pi;/8</div>
+          <div class="basis-kets">
+            \(|0_\theta\rangle = \cos\tfrac{\pi}{8}|0\rangle - \sin\tfrac{\pi}{8}|1\rangle \;\to\; \textbf{0}\)<br>
+            \(|1_\theta\rangle = \sin\tfrac{\pi}{8}|0\rangle + \cos\tfrac{\pi}{8}|1\rangle \;\to\; \textbf{1}\)
+          </div>
+        </div>
+        <svg class="case-svg" viewBox="0 0 240 240" id="caseDiag11" role="img" aria-label="Angle diagram: Alice at 45° and Bob at −22.5°, separated by 67.5° — the hard case"></svg>
+        <div class="case-result">
+          <span>&Delta;&theta; = 3&pi;/8</span>
+          <span style="color:var(--win-color)"><strong>P(win) &asymp; 85.4%</strong> &ensp;&#10003;</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="explanation" style="text-align:center; margin-top:16px; font-size:0.92rem;">
+      Notice the elegant symmetry: the first three cases need <strong>agreement</strong> (small angle \(\pi/8\) &rarr; high cos&sup2;), while the special (1,1) case needs <strong>disagreement</strong> (large angle \(3\pi/8\) &rarr; high sin&sup2;). All four cases achieve the same &asymp;&nbsp;85.4% win rate!
+    </p>
+
+    <h3 style="text-align:center; margin: 24px 0 8px; color: var(--text-muted); font-size: 1rem;">Combined View &mdash; All Four Directions</h3>
+    <svg class="angle-diagram" viewBox="0 0 500 500" id="angleDiagram" role="img" aria-label="Combined diagram showing all four measurement directions in the ket-0/ket-1 plane"></svg>
+  </div>
+
+  <div class="card">
+    <h2>Interactive: Explore Angles</h2>
+    <p class="explanation">
+      Adjust the measurement angles and see how the win probability changes. The optimal angles are pre-set &mdash; try moving them to see why they're special!
+    </p>
+    <div class="slider-group">
+      <label style="color:var(--alice-color)">Alice x=0: &theta;<sub>A0</sub></label>
+      <input type="range" id="sliderA0" min="-90" max="90" value="0" step="0.5" oninput="quantumViz.updateAngles()">
+      <span class="slider-val" id="valA0">0&deg;</span>
+    </div>
+    <div class="slider-group">
+      <label style="color:var(--alice-color)">Alice x=1: &theta;<sub>A1</sub></label>
+      <input type="range" id="sliderA1" min="-90" max="90" value="45" step="0.5" oninput="quantumViz.updateAngles()">
+      <span class="slider-val" id="valA1">45&deg;</span>
+    </div>
+    <div class="slider-group">
+      <label style="color:var(--bob-color)">Bob y=0: &theta;<sub>B0</sub></label>
+      <input type="range" id="sliderB0" min="-90" max="90" value="22.5" step="0.5" oninput="quantumViz.updateAngles()">
+      <span class="slider-val" id="valB0">22.5&deg;</span>
+    </div>
+    <div class="slider-group">
+      <label style="color:var(--bob-color)">Bob y=1: &theta;<sub>B1</sub></label>
+      <input type="range" id="sliderB1" min="-90" max="90" value="-22.5" step="0.5" oninput="quantumViz.updateAngles()">
+      <span class="slider-val" id="valB1">-22.5&deg;</span>
+    </div>
+    <div style="text-align:center; margin:8px 0;">
+      <button class="btn btn-sm btn-primary" onclick="quantumViz.resetOptimal()">Reset to Optimal</button>
+    </div>
+
+    <table class="truth-table" id="quantumTable">
+      <thead><tr><th>x</th><th>y</th><th>&Delta;&theta;</th><th>P(win)</th><th>Need</th></tr></thead>
+      <tbody id="quantumTableBody"></tbody>
+    </table>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="label">Overall Win Probability</div>
+        <div class="value" style="color:var(--quantum-color)" id="qWinProb">85.36%</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">Classical Best</div>
+        <div class="value" style="color:var(--accent-light)">75.00%</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">Quantum Advantage</div>
+        <div class="value" style="color:var(--win-color)" id="qAdvantage">+10.36%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Why &pi;/8? Finding the Optimal Angles</h2>
+    <p class="explanation">
+      For three of the four (x,y) cases, Alice and Bob need the <strong>same</strong> output. The probability of agreement is \(\cos^2(\Delta\theta)\), which is maximized when the angle difference is <strong>small</strong>. But for the (1,1) case they need <strong>different</strong> outputs, with probability \(\sin^2(\Delta\theta)\), maximized when the angle difference is <strong>large</strong>.
+    </p>
+    <p class="explanation">
+      The geometry forces a tradeoff: the four angular gaps between measurement bases are constrained. If you space them evenly at <strong>\(\pi/8\)</strong> increments around the circle, three gaps are small (\(\pi/8\) each, giving \(\cos^2(\pi/8) \approx 85.4\%\) agreement) and the remaining gap is \(3\pi/8\) (giving \(\sin^2(3\pi/8) \approx 85.4\%\) disagreement). Every case wins with the same high probability!
+    </p>
+    <div style="text-align:center; margin:12px 0; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn btn-primary" style="background:var(--quantum-color)" onclick="quantumViz.animateToOptimal()">
+        &#9654; Animate to Optimal
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="quantumViz.randomizeAngles()">
+        Randomize Angles
+      </button>
+    </div>
+
+    <h3 class="collapsible-header" onclick="toggleCollapse(this)" aria-expanded="false"><span class="chevron">&#9654;</span> Calculus Answer</h3>
+    <div class="collapsible-body">
+      <p class="explanation">
+        Let \(d\) be the angular spacing. With evenly spaced angles, the average win probability over all four cases is:
+      </p>
+      <div class="math-block" style="text-align:center">
+        $$P_{\text{win}} = \frac{3\cos^2(d) + \sin^2(3d)}{4}$$
+      </div>
+      <p class="explanation">
+        Taking the derivative and setting it to zero, the optimum is at \(d = \pi/8 = 22.5°\), giving \(P_{\text{win}} = \cos^2(\pi/8) \approx 85.36\%\).
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 4: SIMULATION ===== -->
+<div class="tab-content" id="tab-simulation">
+  <div class="card">
+    <h2>Classical vs Quantum: Head-to-Head</h2>
+    <p class="explanation">
+      Run the same random questions against both strategies simultaneously. The classical strategy always outputs 0; the quantum strategy uses optimal entangled measurements. Watch the gap emerge!
+    </p>
+
+    <div class="btn-group" id="simButtons" style="justify-content:center; margin:16px 0;">
+      <button class="btn btn-primary" onclick="simulator.run(100)">Run 100</button>
+      <button class="btn btn-primary" onclick="simulator.run(1000)">Run 1,000</button>
+      <button class="btn btn-primary" onclick="simulator.run(10000)">Run 10,000</button>
+      <button class="btn btn-ghost btn-sm" onclick="simulator.reset()">Reset</button>
+    </div>
+    <div class="sim-progress-wrap"><div class="sim-progress-bar" id="simProgress"></div></div>
+
+    <div class="sim-container">
+      <div class="sim-panel" style="border-color:rgba(124,77,255,0.3);">
+        <h3 style="color:var(--accent-light)">Classical Strategy</h3>
+        <div class="big-rate" style="color:var(--accent-light)" id="simClassicalVal">--</div>
+        <div class="target-line">Target: 75.00%</div>
+        <div class="win-count" id="simCDetail">0 / 0 rounds</div>
+      </div>
+      <div class="sim-panel" style="border-color:rgba(224,64,251,0.3);">
+        <h3 style="color:var(--quantum-color)">Quantum Strategy</h3>
+        <div class="big-rate" style="color:var(--quantum-color)" id="simQuantumVal">--</div>
+        <div class="target-line">Target: 85.36%</div>
+        <div class="win-count" id="simQDetail">0 / 0 rounds</div>
+      </div>
+    </div>
+
+    <div id="simVarianceWarning" style="display:none; background:rgba(255,171,64,0.08); border:1px solid rgba(255,171,64,0.2); border-radius:var(--radius); padding:10px 16px; margin-bottom:12px; font-size:0.85rem; color:var(--bob-color);">
+      &#9888; <strong>Small sample</strong> &mdash; results may vary significantly due to randomness. Run more rounds to see the quantum advantage emerge reliably.
+    </div>
+
+    <canvas class="convergence-chart" id="convergenceChart"></canvas>
+
+    <div class="highlight-box">
+      <strong>Theoretical limits:</strong> Classical = 75.00% | Quantum = cos&sup2;(&pi;/8) &asymp; 85.36% (Tsirelson's bound). Run more rounds to see tighter convergence.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Per-Case Breakdown</h2>
+    <p class="explanation">
+      How does each (x,y) input pair contribute? Watch how the quantum advantage concentrates on the special (1,1) case.
+    </p>
+    <table class="truth-table" id="caseTable">
+      <thead><tr><th>Case</th><th>Classical</th><th>Quantum</th><th>&Delta;</th></tr></thead>
+      <tbody id="caseTableBody">
+        <tr><td>x=0, y=0</td><td colspan="3" style="color:var(--text-muted)">Run a simulation to see results</td></tr>
+      </tbody>
+    </table>
+    <div class="highlight-box" id="caseInsight" style="display:none; border-left-color:var(--quantum-color);">
+      <strong>Key insight:</strong> Classical wins 100% of (0,0), (0,1), and (1,0) but <strong>0%</strong> of (1,1) &mdash; because "always output 0" means a=b always, which loses when x&and;y=1 requires a&ne;b. Quantum sacrifices some wins on the easy cases (~85% each) to gain ~85% on the hard case.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Round-by-Round Log (last 50)</h2>
+    <div class="round-log" id="simLog" style="max-height:300px;"></div>
+  </div>
+</div>
+
+
+<script>
+// ===== TAB NAVIGATION =====
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = document.getElementById('tab-' + btn.dataset.tab);
+    tab.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Re-render KaTeX for newly visible content
+    if (btn.dataset.tab === 'quantum') katexRender();
+  });
+});
+
+function katexRender() {
+  try {
+    if (typeof renderMathInElement === 'function') {
+      renderMathInElement(document.body, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$', right: '$', display: false },
+          { left: '\\(', right: '\\)', display: false },
+          { left: '\\[', right: '\\]', display: true }
+        ],
+        throwOnError: false
+      });
+    }
+  } catch (e) {
+    console.warn('KaTeX rendering failed:', e.message);
+  }
+}
+
+// ===== COLLAPSIBLE =====
+function toggleCollapse(header) {
+  const body = header.nextElementSibling;
+  if (body.classList.contains('open')) {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    body.offsetHeight; // force reflow so transition starts from exact height
+    body.style.maxHeight = '0';
+    body.classList.remove('open');
+    header.classList.remove('open');
+    header.setAttribute('aria-expanded', 'false');
+  } else {
+    body.classList.add('open');
+    body.style.maxHeight = body.scrollHeight + 'px';
+    header.classList.add('open');
+    header.setAttribute('aria-expanded', 'true');
+  }
+}
+
+// ===== CORE GAME LOGIC =====
+function chshWin(x, y, a, b) { return (a ^ b) === (x & y); }
+function randBit() { return Math.random() < 0.5 ? 0 : 1; }
+
+function classicalStrategy(input, strategy) {
+  switch (strategy) {
+    case '0': return 0; case '1': return 1;
+    case 'x': case 'y': return input;
+    case 'notx': case 'noty': return 1 - input;
+  }
+}
+
+// ===== SVG ANIMATION HELPER =====
+function animateEl(id, x1, y1, x2, y2, dur, onDone) {
+  const el = document.getElementById(id);
+  const start = performance.now();
+  (function tick(now) {
+    const t = Math.min((now - start) / dur, 1);
+    const e = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+    el.setAttribute('transform', `translate(${x1+(x2-x1)*e},${y1+(y2-y1)*e})`);
+    if (t < 1) requestAnimationFrame(tick);
+    else if (onDone) onDone();
+  })(performance.now());
+}
+
+// ===== TAB 1: RULES ANIMATION =====
+const rulesAnim = (() => {
+  let step = 0, playing = false, timer = null;
+  let cx = 0, cy = 0, ca, cb;
+
+  function setNarr(html) { document.getElementById('animNarration').innerHTML = html; }
+  function setDots() {
+    document.querySelectorAll('.step-dot').forEach((d, i) => {
+      d.className = 'step-dot' + (i < step ? ' done' : '') + (i === step ? ' active' : '');
+    });
+  }
+
+  const steps = [
+    { narr: '<strong>Step 1:</strong> The Referee picks random questions x and y (each 0 or 1).', fn() {
+      cx = randBit(); cy = randBit();
+      document.getElementById('animX').textContent = 'x=' + cx;
+      document.getElementById('animY').textContent = 'y=' + cy;
+      ['animQ-x','animQ-y'].forEach(id => {
+        const el = document.getElementById(id);
+        el.setAttribute('opacity', '1');
+        el.setAttribute('transform', 'translate(375,50)');
+      });
+    }},
+    { narr: '<strong>Step 2:</strong> Referee sends x to Alice, y to Bob. They cannot see each other\'s question.', fn() {
+      animateEl('animQ-x', 375, 50, 140, 130, 700);
+      animateEl('animQ-y', 375, 50, 610, 130, 700);
+    }},
+    { narr: '<strong>Step 3:</strong> Alice outputs a, Bob outputs b &mdash; without communicating.', fn() {
+      ca = randBit(); cb = randBit();
+      document.getElementById('animA').textContent = 'a=' + ca;
+      document.getElementById('animB').textContent = 'b=' + cb;
+      const aa = document.getElementById('animA-a');
+      const ab = document.getElementById('animA-b');
+      aa.setAttribute('opacity', '1'); ab.setAttribute('opacity', '1');
+      aa.setAttribute('transform', 'translate(140,130)');
+      ab.setAttribute('transform', 'translate(610,130)');
+      setTimeout(() => {
+        animateEl('animA-a', 140, 130, 280, 200, 600);
+        animateEl('animA-b', 610, 130, 470, 200, 600);
+      }, 250);
+    }},
+    { narr: '', fn() {
+      const win = chshWin(cx, cy, ca, cb);
+      const xr = ca ^ cb, ar = cx & cy;
+      const el = document.getElementById('animResult');
+      el.setAttribute('opacity', '1');
+      el.setAttribute('fill', win ? 'var(--win-color)' : 'var(--lose-color)');
+      el.textContent = (win ? 'WIN!' : 'LOSE!') + `  (a\u2295b=${xr}, x\u2227y=${ar})`;
+      setNarr(`<strong>Step 4:</strong> Check: a\u2295b = ${xr}, x\u2227y = ${ar}. ` +
+        (win ? `<span style="color:var(--win-color)"><strong>They match \u2014 WIN!</strong></span>`
+              : `<span style="color:var(--lose-color)"><strong>Mismatch \u2014 LOSE!</strong></span>`));
+    }}
+  ];
+
+  function doStep() {
+    if (step >= steps.length) return;
+    const s = steps[step];
+    if (s.narr) setNarr(s.narr);
+    s.fn();
+    step++;
+    setDots();
+  }
+
+  return {
+    play() {
+      if (playing) return;
+      if (step >= steps.length) this.reset();
+      playing = true;
+      (function go() {
+        if (step >= steps.length) { playing = false; return; }
+        doStep();
+        timer = setTimeout(go, 1400);
+      })();
+    },
+    step() {
+      if (step >= steps.length) this.reset();
+      doStep();
+    },
+    reset() {
+      playing = false; clearTimeout(timer); step = 0;
+      ['animQ-x','animQ-y','animA-a','animA-b','animResult'].forEach(id =>
+        document.getElementById(id).setAttribute('opacity', '0'));
+      setNarr('Click <strong>Play</strong> or <strong>Step</strong> to watch a round of the CHSH game unfold.');
+      setDots();
+    }
+  };
+})();
+
+// ===== TAB 2: CLASSICAL GAME =====
+const classicalGame = (() => {
+  let stats = { rounds: 0, wins: 0 };
+  let curX = null, curY = null, aAns = null, bAns = null;
+
+  function updStats() {
+    document.getElementById('cRounds').textContent = stats.rounds;
+    document.getElementById('cWins').textContent = stats.wins;
+    document.getElementById('cLosses').textContent = stats.rounds - stats.wins;
+    document.getElementById('cWinRate').textContent = stats.rounds > 0
+      ? (100 * stats.wins / stats.rounds).toFixed(1) + '%' : '--%';
+  }
+
+  return {
+    setMode(m) {
+      document.getElementById('manualMode').style.display = m === 'manual' ? '' : 'none';
+      document.getElementById('autoMode').style.display = m === 'auto' ? '' : 'none';
+    },
+    newRound() {
+      curX = randBit(); curY = randBit(); aAns = null; bAns = null;
+      document.getElementById('aliceQuestion').textContent = 'x = ' + curX;
+      document.getElementById('bobQuestion').textContent = 'y = ' + curY;
+      document.getElementById('manualRoundInfo').innerHTML =
+        `Round ${stats.rounds + 1}: Alice got <strong style="color:var(--alice-color)">x = ${curX}</strong>, Bob got <strong style="color:var(--bob-color)">y = ${curY}</strong>. Pick answers!`;
+      ['aliceBtn0','aliceBtn1','bobBtn0','bobBtn1'].forEach(id => {
+        document.getElementById(id).disabled = false;
+        document.getElementById(id).classList.remove('selected');
+      });
+      document.getElementById('submitRoundBtn').disabled = true;
+      const r = document.getElementById('manualResult');
+      r.className = 'result-display waiting';
+      r.innerHTML = 'Choose answers for both players...';
+    },
+    setAnswer(who, val) {
+      if (who === 'alice') {
+        aAns = val;
+        document.getElementById('aliceBtn0').classList.toggle('selected', val === 0);
+        document.getElementById('aliceBtn1').classList.toggle('selected', val === 1);
+      } else {
+        bAns = val;
+        document.getElementById('bobBtn0').classList.toggle('selected', val === 0);
+        document.getElementById('bobBtn1').classList.toggle('selected', val === 1);
+      }
+      document.getElementById('submitRoundBtn').disabled = (aAns === null || bAns === null);
+    },
+    submitRound() {
+      if (aAns === null || bAns === null) return;
+      const win = chshWin(curX, curY, aAns, bAns);
+      stats.rounds++; if (win) stats.wins++;
+      const el = document.getElementById('manualResult');
+      el.className = 'result-display ' + (win ? 'win' : 'lose');
+      const xor = aAns ^ bAns, and = curX & curY;
+      // Show hint about optimal play
+      const optA = 0, optB = 0; // optimal classical: always 0
+      const optWin = chshWin(curX, curY, optA, optB);
+      const hintText = (win === optWin) ? '' :
+        (optWin ? 'The optimal classical strategy (always 0) would have won this round.' :
+                  'Nice! The optimal classical strategy (always 0) would have lost this round too.');
+      el.innerHTML = `<span>${win ? 'WIN!' : 'LOSE!'} \u2014 a\u2295b = ${xor}, x\u2227y = ${and}</span>` +
+        (hintText ? `<span class="result-hint">${hintText}</span>` : '');
+      el.classList.add('pulse');
+      setTimeout(() => el.classList.remove('pulse'), 500);
+      ['aliceBtn0','aliceBtn1','bobBtn0','bobBtn1'].forEach(id => document.getElementById(id).disabled = true);
+      document.getElementById('submitRoundBtn').disabled = true;
+      updStats();
+    },
+    runAuto() {
+      const aS = document.getElementById('aliceStrategy').value;
+      const bS = document.getElementById('bobStrategy').value;
+      const n = parseInt(document.getElementById('autoRounds').value);
+      const log = document.getElementById('autoLog');
+      log.innerHTML = '';
+      let lw = 0;
+      for (let i = 0; i < n; i++) {
+        const x = randBit(), y = randBit();
+        const a = classicalStrategy(x, aS), b = classicalStrategy(y, bS);
+        const win = chshWin(x, y, a, b);
+        stats.rounds++; if (win) { stats.wins++; lw++; }
+        if (n <= 100 || i < 20 || i >= n - 10) {
+          const e = document.createElement('div');
+          e.className = 'entry ' + (win ? 'win' : 'lose');
+          e.innerHTML = `<span>#${i+1}</span><span>x=${x} y=${y}</span><span>a=${a} b=${b}</span><span>${win?'WIN':'LOSE'}</span>`;
+          log.appendChild(e);
+        } else if (i === 20) {
+          const e = document.createElement('div');
+          e.className = 'entry';
+          e.innerHTML = '<span>\u2026</span><span>showing first 20 and last 10</span>';
+          log.appendChild(e);
+        }
+      }
+      log.scrollTop = log.scrollHeight;
+      updStats();
+    },
+    resetStats() {
+      stats = { rounds: 0, wins: 0 }; updStats();
+      document.getElementById('autoLog').innerHTML = '';
+      const r = document.getElementById('manualResult');
+      r.className = 'result-display waiting'; r.innerHTML = 'Awaiting round...';
+    }
+  };
+})();
+
+// Build strategy grid
+(() => {
+  const grid = document.getElementById('strategyGrid');
+  const aS = [{l:'a=0',f:()=>0},{l:'a=1',f:()=>1},{l:'a=x',f:x=>x},{l:'a=\u00ACx',f:x=>1-x}];
+  const bS = [{l:'b=0',f:()=>0},{l:'b=1',f:()=>1},{l:'b=y',f:y=>y},{l:'b=\u00ACy',f:y=>1-y}];
+  let mx = 0; const cells = [];
+  for (let ai = 0; ai < 4; ai++) for (let bi = 0; bi < 4; bi++) {
+    let w = 0;
+    for (let x = 0; x < 2; x++) for (let y = 0; y < 2; y++)
+      if (chshWin(x, y, aS[ai].f(x), bS[bi].f(y))) w++;
+    const r = w / 4; if (r > mx) mx = r;
+    cells.push({ ai, bi, r, w });
+  }
+  cells.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'strategy-cell' + (c.r === mx ? ' best' : '');
+    d.innerHTML = `<div style="font-weight:500">${aS[c.ai].l}, ${bS[c.bi].l}</div><div class="rate" style="color:${c.r===mx?'var(--win-color)':'var(--text-secondary)'}">${(100*c.r).toFixed(0)}%</div><div style="font-size:0.75rem;color:var(--text-muted)">${c.w}/4 wins</div>`;
+    d.onclick = () => {
+      document.getElementById('strategyDetail').innerHTML =
+        `Strategy: <strong style="color:var(--alice-color)">${aS[c.ai].l}</strong>, <strong style="color:var(--bob-color)">${bS[c.bi].l}</strong> \u2014 wins <strong>${c.w}/4</strong> cases (${(100*c.r).toFixed(0)}%).` +
+        (c.r === mx ? ' <span style="color:var(--win-color)">This is optimal!</span>' : '');
+    };
+    grid.appendChild(d);
+  });
+})();
+
+// ===== TAB 3: QUANTUM STRATEGY =====
+const quantumViz = (() => {
+  // ---- Case-by-case mini diagrams (static, optimal angles) ----
+  function drawCaseDiagram(svgId, aliceDeg, bobDeg, arcColor) {
+    const svg = document.getElementById(svgId);
+    if (!svg) return;
+    const cx = 120, cy = 120, R = 85;
+    const toRad = d => d * Math.PI / 180;
+    // Counterclockwise: positive angles go upward from |0⟩
+    const ep = d => { const r = toRad(d); return { x: cx + R*Math.cos(r), y: cy - R*Math.sin(r) }; };
+
+    let h = '';
+    h += `<defs><filter id="glow-c-${svgId}"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+    // Reference circle
+    h += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--border-light)" stroke-width="1" opacity="0.5"/>`;
+    // |0⟩ axis (horizontal right)
+    h += `<line x1="${cx-R-8}" y1="${cy}" x2="${cx+R+8}" y2="${cy}" stroke="var(--border)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5"/>`;
+    h += `<text x="${cx+R+12}" y="${cy+4}" fill="var(--text-muted)" font-size="10" font-style="italic">|0⟩</text>`;
+    // |1⟩ axis (vertical up)
+    h += `<line x1="${cx}" y1="${cy-R-8}" x2="${cx}" y2="${cy+R+8}" stroke="var(--border)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5"/>`;
+    h += `<text x="${cx+4}" y="${cy-R-12}" fill="var(--text-muted)" font-size="10" font-style="italic">|1⟩</text>`;
+
+    // Arc between the two directions
+    const diff = Math.abs(aliceDeg - bobDeg);
+    const r2 = 45;
+    const r1a = toRad(aliceDeg), r2a = toRad(bobDeg);
+    // In SVG with flipped y, CCW in math = CW in SVG (sweep=1 means CW in SVG)
+    // We want the arc to go the short way between the two angles
+    const sweep = ((bobDeg - aliceDeg + 360) % 360 <= 180) ? 0 : 1;
+    const lf = diff > 180 ? 1 : 0;
+    h += `<path d="M${cx+r2*Math.cos(r1a)},${cy-r2*Math.sin(r1a)} A${r2},${r2} 0 ${lf},${sweep} ${cx+r2*Math.cos(r2a)},${cy-r2*Math.sin(r2a)}" fill="none" stroke="${arcColor}" stroke-width="2" opacity="0.5"/>`;
+    // Arc label
+    const mid = (aliceDeg + bobDeg) / 2;
+    const mr = toRad(mid);
+    const lr = r2 + 14;
+    h += `<text x="${cx+lr*Math.cos(mr)}" y="${cy-lr*Math.sin(mr)}" fill="${arcColor}" font-size="11" font-weight="600" text-anchor="middle" dominant-baseline="middle">${diff.toFixed(1)}°</text>`;
+
+    // Alice line
+    const pA = ep(aliceDeg);
+    h += `<line x1="${cx}" y1="${cy}" x2="${pA.x}" y2="${pA.y}" stroke="var(--alice-color)" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>`;
+    h += `<circle cx="${pA.x}" cy="${pA.y}" r="5" fill="var(--alice-color)" filter="url(#glow-c-${svgId})"/>`;
+    const rdA = toRad(aliceDeg);
+    h += `<text x="${pA.x+16*Math.cos(rdA)}" y="${pA.y-16*Math.sin(rdA)}" fill="var(--alice-color)" font-size="12" font-weight="700" text-anchor="middle" dominant-baseline="middle">A</text>`;
+
+    // Bob line
+    const pB = ep(bobDeg);
+    h += `<line x1="${cx}" y1="${cy}" x2="${pB.x}" y2="${pB.y}" stroke="var(--bob-color)" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>`;
+    h += `<circle cx="${pB.x}" cy="${pB.y}" r="5" fill="var(--bob-color)" filter="url(#glow-c-${svgId})"/>`;
+    const rdB = toRad(bobDeg);
+    h += `<text x="${pB.x+16*Math.cos(rdB)}" y="${pB.y-16*Math.sin(rdB)}" fill="var(--bob-color)" font-size="12" font-weight="700" text-anchor="middle" dominant-baseline="middle">B</text>`;
+
+    // Center dot
+    h += `<circle cx="${cx}" cy="${cy}" r="2.5" fill="var(--text-primary)"/>`;
+
+    svg.innerHTML = h;
+  }
+
+  function drawCaseDiagrams() {
+    drawCaseDiagram('caseDiag00', 0, 22.5, 'var(--win-color)');
+    drawCaseDiagram('caseDiag01', 0, -22.5, 'var(--win-color)');
+    drawCaseDiagram('caseDiag10', 45, 22.5, 'var(--win-color)');
+    drawCaseDiagram('caseDiag11', 45, -22.5, 'var(--lose-color)');
+  }
+
+  // ---- Combined interactive diagram ----
+  function drawDiagram() {
+    const svg = document.getElementById('angleDiagram');
+    const cx = 250, cy = 250, R = 180;
+    const a0 = +document.getElementById('sliderA0').value;
+    const a1 = +document.getElementById('sliderA1').value;
+    const b0 = +document.getElementById('sliderB0').value;
+    const b1 = +document.getElementById('sliderB1').value;
+
+    const toRad = d => d * Math.PI / 180;
+    // Counterclockwise: positive angles go upward from |0⟩
+    const ep = d => { const r = toRad(d); return { x: cx + R*Math.cos(r), y: cy - R*Math.sin(r) }; };
+
+    let h = '';
+    // Glow filter for endpoints
+    h += `<defs><filter id="glow-ep"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+    // Circle
+    h += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--border-light)" stroke-width="1.5"/>`;
+    // |0⟩ axis (horizontal right)
+    h += `<line x1="${cx-R-15}" y1="${cy}" x2="${cx+R+15}" y2="${cy}" stroke="var(--border)" stroke-width="1" stroke-dasharray="4,4"/>`;
+    h += `<text x="${cx+R+20}" y="${cy+18}" fill="var(--text-muted)" font-size="12" font-style="italic">|0\u27E9</text>`;
+    // |1⟩ axis (vertical up)
+    h += `<line x1="${cx}" y1="${cy-R-15}" x2="${cx}" y2="${cy+R+15}" stroke="var(--border)" stroke-width="1" stroke-dasharray="4,4"/>`;
+    h += `<text x="${cx+4}" y="${cy-R-22}" fill="var(--text-muted)" font-size="12" font-style="italic">|1\u27E9</text>`;
+
+    // Draw angle arcs between pairs
+    function arc(d1, d2, r2, color, label) {
+      const r1 = toRad(d1), r2a = toRad(d2);
+      const sweep = ((d2 - d1 + 360) % 360 <= 180) ? 0 : 1;
+      const lf = Math.abs(d1 - d2) > 180 ? 1 : 0;
+      h += `<path d="M${cx+r2*Math.cos(r1)},${cy-r2*Math.sin(r1)} A${r2},${r2} 0 ${lf},${sweep} ${cx+r2*Math.cos(r2a)},${cy-r2*Math.sin(r2a)}" fill="none" stroke="${color}" stroke-width="2" opacity="0.5"/>`;
+      const mid = (d1 + d2) / 2;
+      const mr = toRad(mid);
+      const lbl_r = r2 + 18;
+      h += `<text x="${cx+lbl_r*Math.cos(mr)}" y="${cy-lbl_r*Math.sin(mr)}" fill="${color}" font-size="12" font-weight="600" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
+    }
+
+    const diff00 = Math.abs(a0 - b0), diff01 = Math.abs(a0 - b1);
+    const diff10 = Math.abs(a1 - b0), diff11 = Math.abs(a1 - b1);
+    arc(a0, b0, 55, 'var(--win-color)', diff00.toFixed(1)+'\u00B0');
+    arc(a0, b1, 75, 'var(--win-color)', diff01.toFixed(1)+'\u00B0');
+    arc(a1, b0, 95, 'var(--win-color)', diff10.toFixed(1)+'\u00B0');
+    arc(a1, b1, 115, 'var(--lose-color)', diff11.toFixed(1)+'\u00B0');
+
+    // Angle lines — solid for input=0, dashed for input=1
+    function line(deg, color, label, dashed) {
+      const p = ep(deg);
+      const dash = dashed ? ' stroke-dasharray="8,5"' : '';
+      h += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="${color}" stroke-width="3" stroke-linecap="round" opacity="0.9"${dash}/>`;
+      h += `<circle cx="${p.x}" cy="${p.y}" r="6" fill="${color}" filter="url(#glow-ep)"/>`;
+      const rd = toRad(deg);
+      h += `<text x="${p.x+20*Math.cos(rd)}" y="${p.y-20*Math.sin(rd)}" fill="${color}" font-size="13" font-weight="700" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
+    }
+
+    line(a0, 'var(--alice-color)', 'A\u2080', false);
+    line(a1, 'var(--alice-color)', 'A\u2081', true);
+    line(b0, 'var(--bob-color)', 'B\u2080', false);
+    line(b1, 'var(--bob-color)', 'B\u2081', true);
+    h += `<circle cx="${cx}" cy="${cy}" r="3" fill="var(--text-primary)"/>`;
+
+    // Legend at bottom
+    const ly = 478;
+    h += `<line x1="15" y1="${ly}" x2="40" y2="${ly}" stroke="var(--alice-color)" stroke-width="2.5"/>`;
+    h += `<text x="44" y="${ly+4}" fill="var(--alice-color)" font-size="11" font-weight="600">A\u2080 (x=0)</text>`;
+    h += `<line x1="130" y1="${ly}" x2="155" y2="${ly}" stroke="var(--alice-color)" stroke-width="2.5" stroke-dasharray="6,4"/>`;
+    h += `<text x="159" y="${ly+4}" fill="var(--alice-color)" font-size="11" font-weight="600">A\u2081 (x=1)</text>`;
+    h += `<line x1="265" y1="${ly}" x2="290" y2="${ly}" stroke="var(--bob-color)" stroke-width="2.5"/>`;
+    h += `<text x="294" y="${ly+4}" fill="var(--bob-color)" font-size="11" font-weight="600">B\u2080 (y=0)</text>`;
+    h += `<line x1="380" y1="${ly}" x2="405" y2="${ly}" stroke="var(--bob-color)" stroke-width="2.5" stroke-dasharray="6,4"/>`;
+    h += `<text x="409" y="${ly+4}" fill="var(--bob-color)" font-size="11" font-weight="600">B\u2081 (y=1)</text>`;
+
+    svg.innerHTML = h;
+  }
+
+  function updateAngles() {
+    const a0 = +document.getElementById('sliderA0').value;
+    const a1 = +document.getElementById('sliderA1').value;
+    const b0 = +document.getElementById('sliderB0').value;
+    const b1 = +document.getElementById('sliderB1').value;
+
+    document.getElementById('valA0').textContent = a0 + '\u00B0';
+    document.getElementById('valA1').textContent = a1 + '\u00B0';
+    document.getElementById('valB0').textContent = b0 + '\u00B0';
+    document.getElementById('valB1').textContent = b1 + '\u00B0';
+
+    const cases = [
+      { x:0, y:0, tA:a0, tB:b0, same:true },
+      { x:0, y:1, tA:a0, tB:b1, same:true },
+      { x:1, y:0, tA:a1, tB:b0, same:true },
+      { x:1, y:1, tA:a1, tB:b1, same:false }
+    ];
+
+    const tbody = document.getElementById('quantumTableBody');
+    tbody.innerHTML = '';
+    let tot = 0;
+
+    cases.forEach(c => {
+      const diff = c.tA - c.tB;
+      const pSame = Math.cos(diff * Math.PI / 180) ** 2;
+      const pW = c.same ? pSame : (1 - pSame);
+      tot += pW;
+      const tr = document.createElement('tr');
+      tr.className = pW > 0.6 ? 'win' : (pW < 0.4 ? 'lose' : '');
+      tr.innerHTML = `<td>${c.x}</td><td>${c.y}</td><td>${diff.toFixed(1)}\u00B0</td><td><strong>${(100*pW).toFixed(1)}%</strong></td><td>${c.same ? 'a = b' : 'a \u2260 b'}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    const avg = tot / 4;
+    document.getElementById('qWinProb').textContent = (100 * avg).toFixed(2) + '%';
+    const adv = avg - 0.75;
+    document.getElementById('qAdvantage').textContent = (adv >= 0 ? '+' : '') + (100 * adv).toFixed(2) + '%';
+    document.getElementById('qAdvantage').style.color = adv >= 0 ? 'var(--win-color)' : 'var(--lose-color)';
+
+    drawDiagram();
+  }
+
+  function lerpSliders(targets, duration) {
+    const ids = ['sliderA0','sliderA1','sliderB0','sliderB1'];
+    const starts = ids.map(id => +document.getElementById(id).value);
+    const startTime = performance.now();
+    (function tick(now) {
+      const t = Math.min((now - startTime) / duration, 1);
+      const e = t < 0.5 ? 2*t*t : -1+(4-2*t)*t; // easeInOutQuad
+      ids.forEach((id, i) => {
+        document.getElementById(id).value = starts[i] + (targets[i] - starts[i]) * e;
+      });
+      updateAngles();
+      if (t < 1) requestAnimationFrame(tick);
+    })(performance.now());
+  }
+
+  return {
+    updateAngles,
+    resetOptimal() {
+      document.getElementById('sliderA0').value = 0;
+      document.getElementById('sliderA1').value = 45;
+      document.getElementById('sliderB0').value = 22.5;
+      document.getElementById('sliderB1').value = -22.5;
+      updateAngles();
+    },
+    animateToOptimal() {
+      lerpSliders([0, 45, 22.5, -22.5], 1200);
+    },
+    randomizeAngles() {
+      const r = () => Math.round((Math.random() * 180 - 90) * 2) / 2;
+      lerpSliders([r(), r(), r(), r()], 800);
+    },
+    init() { drawCaseDiagrams(); updateAngles(); }
+  };
+})();
+
+// ===== TAB 4: SIMULATION =====
+const simulator = (() => {
+  let cW = 0, qW = 0, tot = 0;
+  let isRunning = false;
+  const log = [];
+  // History for convergence chart (sampled every N rounds)
+  const history = []; // [{total, cRate, qRate}]
+  // Per-case tracking: caseCounts[caseIdx] = {total, cWins, qWins}
+  const caseCounts = [
+    {total:0, cWins:0, qWins:0}, // x=0,y=0
+    {total:0, cWins:0, qWins:0}, // x=0,y=1
+    {total:0, cWins:0, qWins:0}, // x=1,y=0
+    {total:0, cWins:0, qWins:0}  // x=1,y=1
+  ];
+
+  function qRound(x, y) {
+    const tA = [0, Math.PI/4][x], tB = [Math.PI/8, -Math.PI/8][y];
+    const pSame = Math.cos(tA - tB) ** 2;
+    const a = randBit();
+    return { a, b: (Math.random() < pSame) ? a : 1-a };
+  }
+
+  function updUI() {
+    const cr = tot > 0 ? cW/tot : 0, qr = tot > 0 ? qW/tot : 0;
+    document.getElementById('simClassicalVal').textContent = tot > 0 ? (100*cr).toFixed(1)+'%' : '--';
+    document.getElementById('simQuantumVal').textContent = tot > 0 ? (100*qr).toFixed(1)+'%' : '--';
+    document.getElementById('simCDetail').textContent = `${cW.toLocaleString()} / ${tot.toLocaleString()} rounds`;
+    document.getElementById('simQDetail').textContent = `${qW.toLocaleString()} / ${tot.toLocaleString()} rounds`;
+    // Show/hide small-sample variance warning
+    const warn = document.getElementById('simVarianceWarning');
+    warn.style.display = (tot > 0 && tot <= 100) ? 'block' : 'none';
+  }
+
+  function updCaseTable() {
+    const tbody = document.getElementById('caseTableBody');
+    if (tot === 0) {
+      tbody.innerHTML = '<tr><td>x=0, y=0</td><td colspan="3" style="color:var(--text-muted)">Run a simulation to see results</td></tr>';
+      document.getElementById('caseInsight').style.display = 'none';
+      return;
+    }
+    const labels = ['x=0, y=0','x=0, y=1','x=1, y=0','x=1, y=1'];
+    tbody.innerHTML = caseCounts.map((c, i) => {
+      const cR = c.total > 0 ? (100*c.cWins/c.total).toFixed(1) : '--';
+      const qR = c.total > 0 ? (100*c.qWins/c.total).toFixed(1) : '--';
+      const delta = c.total > 0 ? (100*(c.qWins - c.cWins)/c.total).toFixed(1) : '--';
+      const deltaNum = c.total > 0 ? (c.qWins - c.cWins)/c.total : 0;
+      const isSpecial = (i === 3);
+      const rowStyle = isSpecial ? ' style="background:rgba(224,64,251,0.08)"' : '';
+      const deltaColor = deltaNum > 0 ? 'var(--win-color)' : (deltaNum < 0 ? 'var(--lose-color)' : 'var(--text-secondary)');
+      return `<tr${rowStyle}><td>${labels[i]}${isSpecial ? ' <span style="font-size:0.75rem;color:var(--quantum-color)">&#9733;</span>' : ''}</td><td>${cR}%</td><td>${qR}%</td><td style="color:${deltaColor};font-weight:600">${deltaNum > 0 ? '+' : ''}${delta}%</td></tr>`;
+    }).join('');
+    document.getElementById('caseInsight').style.display = '';
+  }
+
+  function updLog() {
+    const el = document.getElementById('simLog');
+    const last = log.slice(-50);
+    el.innerHTML = last.map((e, i) => {
+      const idx = Math.max(1, log.length - 49 + i);
+      const cls = e.qWin && !e.cWin ? 'win' : (!e.qWin && e.cWin ? 'lose' : '');
+      return `<div class="entry ${cls}"><span>#${idx}</span><span>x=${e.x} y=${e.y}</span><span style="color:${e.cWin?'var(--win-color)':'var(--lose-color)'}">C:${e.cWin?'W':'L'}</span><span style="color:${e.qWin?'var(--win-color)':'var(--lose-color)'}">Q:${e.qWin?'W':'L'}</span></div>`;
+    }).join('');
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function drawChart() {
+    const canvas = document.getElementById('convergenceChart');
+    if (!canvas) return;
+    // Read CSS vars for consistent theming
+    const rs = getComputedStyle(document.documentElement);
+    const cMuted = rs.getPropertyValue('--text-muted').trim();
+    const cAccent = rs.getPropertyValue('--accent-light').trim();
+    const cQuantum = rs.getPropertyValue('--quantum-color').trim();
+    function withAlpha(hex, a) {
+      const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const W = rect.width, H = rect.height;
+    const pad = { t: 20, r: 16, b: 30, l: 50 };
+    const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Y axis (50% to 100%)
+    const yMin = 0.5, yMax = 1.0;
+    const toY = v => pad.t + ph * (1 - (v - yMin) / (yMax - yMin));
+    const toX = i => pad.l + (history.length > 1 ? pw * i / (history.length - 1) : pw/2);
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    for (let v = 0.5; v <= 1.0; v += 0.05) {
+      const y = toY(v);
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W-pad.r, y); ctx.stroke();
+    }
+    // Y labels
+    ctx.fillStyle = cMuted;
+    ctx.font = '11px system-ui';
+    ctx.textAlign = 'right';
+    for (let v = 0.5; v <= 1.0; v += 0.1) {
+      ctx.fillText((v*100).toFixed(0)+'%', pad.l - 6, toY(v) + 4);
+    }
+    // X label
+    ctx.textAlign = 'center';
+    ctx.fillText('Rounds', W/2, H - 4);
+
+    if (history.length < 2) {
+      ctx.fillStyle = cMuted;
+      ctx.font = '14px system-ui';
+      ctx.fillText('Run a simulation to see convergence', W/2, H/2);
+      return;
+    }
+
+    // Reference lines
+    ctx.setLineDash([6, 4]);
+    ctx.lineWidth = 1.5;
+    // 75% classical
+    ctx.strokeStyle = withAlpha(cAccent, 0.5);
+    ctx.beginPath(); ctx.moveTo(pad.l, toY(0.75)); ctx.lineTo(W-pad.r, toY(0.75)); ctx.stroke();
+    ctx.fillStyle = withAlpha(cAccent, 0.7);
+    ctx.textAlign = 'left';
+    ctx.font = '10px system-ui';
+    ctx.fillText('75%', W-pad.r+2, toY(0.75)+3);
+    // 85.36% quantum
+    ctx.strokeStyle = withAlpha(cQuantum, 0.5);
+    ctx.beginPath(); ctx.moveTo(pad.l, toY(0.8536)); ctx.lineTo(W-pad.r, toY(0.8536)); ctx.stroke();
+    ctx.fillStyle = withAlpha(cQuantum, 0.7);
+    ctx.fillText('85.4%', W-pad.r+2, toY(0.8536)+3);
+    ctx.setLineDash([]);
+
+    // Classical line
+    ctx.strokeStyle = cAccent;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    history.forEach((p, i) => { const fn = i===0?'moveTo':'lineTo'; ctx[fn](toX(i), toY(p.cRate)); });
+    ctx.stroke();
+
+    // Quantum line
+    ctx.strokeStyle = cQuantum;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    history.forEach((p, i) => { const fn = i===0?'moveTo':'lineTo'; ctx[fn](toX(i), toY(p.qRate)); });
+    ctx.stroke();
+
+    // Legend
+    ctx.font = '11px system-ui';
+    const lx = pad.l + 10;
+    ctx.fillStyle = cAccent; ctx.fillRect(lx, pad.t+4, 14, 3);
+    ctx.fillText('Classical', lx+20, pad.t+9);
+    ctx.fillStyle = cQuantum; ctx.fillRect(lx+90, pad.t+4, 14, 3);
+    ctx.fillText('Quantum', lx+110, pad.t+9);
+  }
+
+  function setButtonsEnabled(enabled) {
+    document.querySelectorAll('#simButtons .btn').forEach(b => b.disabled = !enabled);
+    const bar = document.getElementById('simProgress');
+    bar.style.width = enabled ? '0' : bar.style.width;
+  }
+
+  function runBatch(n, i, sampleInterval, resolve) {
+    const batchSize = Math.min(200, n - i);
+    const end = i + batchSize;
+    for (; i < end; i++) {
+      const x = randBit(), y = randBit();
+      const cWin = chshWin(x, y, 0, 0);
+      const { a: qa, b: qb } = qRound(x, y);
+      const qWin = chshWin(x, y, qa, qb);
+      tot++; if (cWin) cW++; if (qWin) qW++;
+      const ci = x * 2 + y;
+      caseCounts[ci].total++; if (cWin) caseCounts[ci].cWins++; if (qWin) caseCounts[ci].qWins++;
+      log.push({ x, y, cWin, qWin });
+      if (i % sampleInterval === 0 || i === n - 1) {
+        history.push({ total: tot, cRate: cW/tot, qRate: qW/tot });
+      }
+    }
+    // Update progress bar
+    document.getElementById('simProgress').style.width = (100 * i / n) + '%';
+    updUI();
+    if (i < n) {
+      setTimeout(() => runBatch(n, i, sampleInterval, resolve), 0);
+    } else {
+      // Keep history manageable
+      while (history.length > 500) {
+        const newH = [];
+        for (let j = 0; j < history.length; j += 2) newH.push(history[j]);
+        history.length = 0; history.push(...newH);
+      }
+      updLog(); drawChart(); updCaseTable();
+      setButtonsEnabled(true);
+      isRunning = false;
+      // Completion flash
+      const bar = document.getElementById('simProgress');
+      bar.style.background = 'var(--win-color)';
+      bar.style.boxShadow = '0 0 12px rgba(105,240,174,0.5)';
+      setTimeout(() => { bar.style.background = ''; bar.style.boxShadow = ''; }, 800);
+      resolve();
+    }
+  }
+
+  return {
+    run(n) {
+      if (isRunning) return;
+      isRunning = true;
+      setButtonsEnabled(false);
+      const sampleInterval = Math.max(1, Math.floor(n / 50));
+      return new Promise(resolve => {
+        runBatch(n, 0, sampleInterval, resolve);
+      });
+    },
+    reset() {
+      cW = 0; qW = 0; tot = 0; log.length = 0; history.length = 0;
+      caseCounts.forEach(c => { c.total = 0; c.cWins = 0; c.qWins = 0; });
+      updUI(); updCaseTable();
+      document.getElementById('simLog').innerHTML = '';
+      drawChart();
+    },
+    drawChart
+  };
+})();
+
+// ===== KEYBOARD NAVIGATION =====
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+  const tabMap = {'1':'rules','2':'classical','3':'quantum','4':'simulation'};
+  const tab = tabMap[e.key];
+  if (tab) document.querySelector(`[data-tab="${tab}"]`).click();
+});
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  quantumViz.init();
+  simulator.drawChart();
+  // Wait for KaTeX to load (timeout after 10s)
+  let katexAttempts = 0;
+  const tryKatex = () => {
+    if (typeof renderMathInElement === 'function') {
+      katexRender();
+    } else if (++katexAttempts < 100) {
+      setTimeout(tryKatex, 100);
+    } else {
+      console.warn('KaTeX failed to load after 10s — math formulas may display as raw LaTeX');
+    }
+  };
+  tryKatex();
+});
+window.addEventListener('resize', () => simulator.drawChart());
+</script>
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+
+<!-- Particle Background -->
+<script>
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 45;
+  const CONNECT_DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+</script>
+</body>
+</html>

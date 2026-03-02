@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "course-server",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8780"],
+      "port": 8780,
+      "url": "http://localhost:8780/modules/15_grovers_algorithm.html"
+    }
+  ]
+}

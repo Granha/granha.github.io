@@ -1,0 +1,2491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shor's Algorithm - Interactive Visualization</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --blue: #58a6ff;
+    --purple: #818cf8;
+    --anim-fast: 0.2s;
+    --anim-med: 0.35s;
+    --anim-slow: 0.5s;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  header {
+    text-align: center; padding: 24px 20px 16px;
+    position: relative;
+  }
+  header::after {
+    content: '';
+    display: block; width: 120px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), transparent);
+    margin: 12px auto 0;
+  }
+  header h1 {
+    font-size: 1.8em; font-weight: 700; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent), var(--cyan), var(--pink));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  header p { color: var(--text-dim); font-size: 0.95em; margin-top: 6px; font-weight: 300; }
+
+  /* Step Indicator */
+  #step-indicator {
+    display: flex; justify-content: center; align-items: center;
+    padding: 20px 20px 24px; position: relative;
+  }
+  .step-track { display: flex; align-items: center; gap: 0; }
+  .step-dot {
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 50%; font-size: 0.75em;
+    font-weight: 600; cursor: pointer; position: relative; z-index: 1;
+    background: var(--surface); border: 2px solid var(--border);
+    color: var(--text-dim); transition: all var(--anim-med);
+  }
+  .step-dot:hover { border-color: var(--accent); color: var(--text); transform: scale(1.1); }
+  .step-dot.active {
+    background: var(--accent); border-color: var(--accent);
+    color: #fff; box-shadow: 0 0 16px var(--accent-glow);
+  }
+  .step-dot.completed {
+    background: var(--green); border-color: var(--green); color: #fff;
+    box-shadow: 0 0 10px var(--green-glow);
+  }
+  .step-label {
+    position: absolute; top: 42px; left: 50%; transform: translateX(-50%);
+    font-size: 0.65em; color: var(--text-dim); white-space: nowrap;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .step-dot:hover .step-label,
+  .step-dot.active .step-label { opacity: 1; }
+  .step-line {
+    width: 40px; height: 2px; background: var(--border);
+    transition: background 0.5s;
+  }
+  .step-line.done { background: var(--green); }
+
+  /* Main Content */
+  #main { flex: 1; display: flex; flex-direction: column; max-width: 1100px; width: 100%; margin: 0 auto; padding: 20px; }
+  #viz-area {
+    flex: 1; min-height: 360px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; position: relative; overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  #viz-area::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+  #explanation {
+    margin-top: 16px; padding: 20px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 16px;
+    line-height: 1.7; font-size: 0.95em; position: relative;
+    overflow: hidden;
+  }
+  #explanation::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.4;
+  }
+  #explanation h3 { color: var(--accent); margin-bottom: 8px; font-size: 1.1em; }
+  .math {
+    font-family: 'JetBrains Mono', 'Georgia', serif;
+    font-style: italic; color: var(--purple); white-space: nowrap;
+  }
+  .math-block {
+    display: block; text-align: center; margin: 12px 0;
+    font-size: 1.2em; font-family: 'JetBrains Mono', 'Georgia', serif;
+    font-style: italic; color: var(--purple);
+  }
+  .highlight { color: var(--orange); font-weight: 600; }
+  .success { color: var(--green); font-weight: 600; }
+
+  /* Navigation */
+  #nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 16px; gap: 12px;
+  }
+  .nav-btn {
+    padding: 10px 24px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text); cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 0.95em; font-weight: 500;
+    transition: all 0.2s; letter-spacing: 0.01em;
+  }
+  .nav-btn:hover:not(:disabled) { border-color: var(--accent); box-shadow: 0 4px 16px rgba(99,102,241,0.1); }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .nav-btn.primary {
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    border-color: transparent; color: #fff; font-weight: 600;
+  }
+  .nav-btn.primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
+  .nav-btn.primary:active:not(:disabled) { transform: translateY(0); }
+  #step-counter { color: var(--text-dim); font-size: 0.85em; }
+
+  /* ============ Visualization Components ============ */
+
+  /* Flow Diagram */
+  .flow { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: nowrap; overflow-x: auto; margin: 20px 0; padding: 4px 0; }
+  .flow-box {
+    padding: 12px 14px; border-radius: 10px; font-weight: 600;
+    font-size: 0.9em; text-align: center; min-width: 100px;
+    border: 2px solid; transition: all 0.4s; opacity: 0;
+    animation: flowIn 0.5s forwards; flex-shrink: 0;
+  }
+  .flow-box.classical { background: rgba(63,185,80,0.1); border-color: var(--green); color: var(--green); }
+  .flow-box.quantum { background: rgba(188,140,255,0.1); border-color: var(--purple); color: var(--purple); }
+  .flow-box.result { background: rgba(248,120,174,0.1); border-color: var(--pink); color: var(--pink); }
+  .flow-box.input { background: rgba(88,166,255,0.1); border-color: var(--blue); color: var(--blue); }
+  .flow-arrow { font-size: 1.5em; color: var(--text-dim); margin: 0 6px; opacity: 0; animation: flowIn 0.3s forwards; }
+  @keyframes flowIn { to { opacity: 1; } }
+
+  /* Bar Chart */
+  .bar-chart-container { margin: 10px 0; }
+  .bar-chart-title { font-size: 0.85em; color: var(--text-dim); margin-bottom: 6px; }
+
+  /* Parameter Selector */
+  .param-section { margin: 16px 0; }
+  .param-label { font-size: 0.85em; color: var(--text-dim); margin-bottom: 8px; display: block; }
+  .param-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+  .param-btn {
+    padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text); cursor: pointer;
+    font-size: 0.9em; transition: all 0.2s; font-family: 'JetBrains Mono', 'Georgia', serif;
+  }
+  .param-btn:hover { border-color: var(--accent); box-shadow: 0 2px 12px rgba(99,102,241,0.1); }
+  .param-btn.selected {
+    background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(34,211,238,0.1));
+    border-color: var(--accent); color: var(--text); font-weight: 600;
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+  .param-btn.invalid { opacity: 0.3; text-decoration: line-through; cursor: not-allowed; }
+  .param-btn .gcd-tag {
+    display: block; font-size: 0.7em; margin-top: 2px;
+    font-family: 'Inter', sans-serif; font-style: normal;
+  }
+
+  /* Period Table */
+  .period-table { display: flex; flex-wrap: wrap; gap: 3px; margin: 12px 0; }
+  .period-cell {
+    width: 60px; height: 54px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; border-radius: 6px;
+    font-size: 0.75em; border: 2px solid transparent;
+    transition: all 0.3s; opacity: 0; animation: cellIn 0.3s forwards;
+  }
+  .period-cell .x-val { color: var(--text-dim); font-size: 0.85em; }
+  .period-cell .fx-val { font-weight: 700; font-size: 1.25em; }
+  @keyframes cellIn { to { opacity: 1; } }
+
+  /* Circuit Diagram */
+  .circuit {
+    display: flex; flex-direction: column; gap: 0;
+    background: var(--bg); border-radius: 12px; padding: 24px;
+    border: 1px solid var(--border); margin: 10px 0; overflow-x: auto;
+  }
+  .circuit-register { display: flex; align-items: center; position: relative; }
+  .circuit-label {
+    width: 100px; font-size: 0.8em; color: var(--text-dim);
+    text-align: right; padding-right: 12px; flex-shrink: 0;
+  }
+  .circuit-label strong { color: var(--text); display: block; }
+  .circuit-wire {
+    flex: 1; height: 50px; display: flex; align-items: center;
+    position: relative;
+  }
+  .circuit-wire::before {
+    content: ''; position: absolute; left: 0; right: 0;
+    top: 50%; height: 2px; background: var(--border);
+  }
+  .wire-ket {
+    position: relative; z-index: 1; background: var(--bg);
+    padding: 2px 6px; font-family: 'JetBrains Mono', 'Georgia', serif; font-size: 0.9em;
+    color: var(--cyan);
+  }
+  .circuit-gate {
+    position: relative; z-index: 1; padding: 8px 16px;
+    border-radius: 6px; font-size: 0.8em; font-weight: 600;
+    text-align: center; border: 2px solid; margin: 0 12px;
+    transition: all 0.3s; background: var(--bg);
+  }
+  .circuit-gate.h-gate { border-color: var(--blue); color: var(--blue); }
+  .circuit-gate.oracle-gate { border-color: var(--purple); color: var(--purple); min-width: 70px; }
+  .circuit-gate.qft-gate { border-color: var(--orange); color: var(--orange); }
+  .circuit-gate.measure-gate { border-color: var(--pink); color: var(--pink); }
+  .circuit-gate.active-gate {
+    box-shadow: 0 0 20px var(--accent-glow);
+    transform: scale(1.08);
+  }
+  .circuit-spacer { width: 60px; display: inline-block; margin: 0 12px; }
+  .circuit-separator {
+    border: none; border-top: 1px dashed var(--border);
+    margin: 4px 100px 4px 100px;
+  }
+  .circuit-brace {
+    position: absolute; right: -30px; top: 0; bottom: 0;
+    display: flex; align-items: center; font-size: 0.75em; color: var(--text-dim);
+  }
+
+  /* Sub-step controls */
+  .substep-controls {
+    display: flex; justify-content: center; gap: 8px; margin: 12px 0;
+  }
+  .substep-btn {
+    padding: 6px 16px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text-dim); cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 0.8em; font-weight: 500;
+    transition: all 0.25s;
+  }
+  .substep-btn:hover { border-color: var(--accent); color: var(--text); }
+  .substep-btn.active {
+    background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(34,211,238,0.1));
+    border-color: var(--accent); color: var(--text);
+  }
+  .substep-btn.active::after {
+    content: ''; display: block; height: 2px; margin-top: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
+    border-radius: 1px;
+  }
+
+  /* Measurement result */
+  .measure-result {
+    text-align: center; padding: 20px; margin: 16px 0;
+    background: var(--bg); border-radius: 12px; border: 1px solid var(--border);
+    position: relative; overflow: hidden;
+  }
+  .measure-result::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--pink), transparent);
+    opacity: 0.5;
+  }
+  .measure-value {
+    font-size: 2.5em; font-weight: 700; font-family: 'JetBrains Mono', 'Georgia', serif;
+    margin: 8px 0;
+  }
+  .cf-steps { margin: 12px 0; font-size: 0.9em; line-height: 1.8; }
+  .cf-step { padding: 4px 12px; border-radius: 4px; display: inline-block; margin: 2px; }
+
+  /* Factor reveal */
+  .factor-reveal {
+    text-align: center; padding: 30px; animation: factorPulse 2s ease-in-out infinite;
+  }
+  .factor-reveal .big-equation {
+    font-size: 2.8em; font-family: 'JetBrains Mono', 'Georgia', serif;
+    font-weight: 700; margin: 20px 0;
+  }
+  .factor-reveal .factor { color: var(--green); }
+  .factor-reveal .equals { color: var(--text-dim); margin: 0 8px; }
+  .factor-reveal .times { color: var(--orange); margin: 0 8px; }
+  @keyframes factorPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+  .info-card {
+    padding: 16px; background: var(--bg); border-radius: 10px;
+    border: 1px solid var(--border); position: relative; overflow: hidden;
+  }
+  .info-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.3;
+  }
+  .info-card h4 { font-size: 0.78em; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+  .info-card .value { font-size: 1.4em; font-family: 'JetBrains Mono', 'Georgia', serif; font-weight: 600; }
+
+  .tooltip {
+    position: fixed; background: var(--surface2); color: var(--text);
+    padding: 6px 12px; border-radius: 8px; font-size: 0.82em;
+    pointer-events: none; z-index: 1000; border: 1px solid var(--border);
+    display: none; white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+
+  .fade-in { animation: fadeIn var(--anim-med) ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  /* Evolution sub-step transitions */
+  .evo-canvas-wrapper { position: relative; }
+  .evo-transition-out { animation: evoOut var(--anim-fast) ease-in forwards; }
+  .evo-transition-in { animation: evoIn var(--anim-fast) ease-out forwards; }
+  @keyframes evoOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-20px); } }
+  @keyframes evoIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* Measurement collapse animation */
+  .collapse-anim { animation: collapseFlash 0.8s ease-out forwards; }
+  @keyframes collapseFlash {
+    0% { opacity: 0; filter: brightness(3) blur(6px); }
+    30% { opacity: 1; filter: brightness(2) blur(2px); }
+    100% { opacity: 1; filter: brightness(1) blur(0); }
+  }
+  .collapse-delay { animation: collapseFlash 0.8s 0.4s ease-out both; }
+  .measure-pop { animation: measurePop 0.6s 0.3s ease-out both; }
+  @keyframes measurePop {
+    0% { transform: scale(0.7); opacity: 0; }
+    60% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Complexity bar grow */
+  @keyframes barGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+  /* ============ Utility Classes ============ */
+  .text-center { text-align: center; }
+  .text-dim { color: var(--text-dim); }
+  .text-sm { font-size: 0.85em; }
+  .text-xs { font-size: 0.78em; }
+  .mt-8 { margin-top: 8px; }
+  .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; }
+  .mt-20 { margin-top: 20px; }
+  .mt-24 { margin-top: 24px; }
+  .mb-8 { margin-bottom: 8px; }
+  .mb-12 { margin-bottom: 12px; }
+  .mb-20 { margin-bottom: 20px; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+  .max-w-500 { max-width: 500px; }
+  .max-w-600 { max-width: 600px; }
+
+  /* ============ Component Classes ============ */
+
+  /* Overview */
+  .overview-wrapper { text-align: center; padding: 10px 0; }
+  .overview-subtitle { font-size: 1.1em; color: var(--text-dim); margin-bottom: 20px; }
+  .overview-bars-title { font-size: 0.85em; color: var(--text-dim); margin-bottom: 12px; text-align: center; }
+  .overview-bars-note { font-size: 0.7em; color: var(--text-dim); text-align: center; margin-top: 4px; }
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .bar-label { width: 130px; text-align: right; font-size: 0.78em; color: var(--text-dim); flex-shrink: 0; }
+  .bar-track { flex: 1; height: 26px; background: var(--surface2); border-radius: 6px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 6px; animation: barGrow 1s ease-out forwards; transform-origin: left; }
+  .bar-note { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.72em; color: var(--text); }
+
+  /* Callout */
+  .callout-orange {
+    margin-top: 14px; padding: 12px 16px;
+    background: rgba(240,136,62,0.08);
+    border-left: 3px solid var(--orange); border-radius: 0 8px 8px 0;
+  }
+  .callout-orange strong { color: var(--orange); }
+
+  /* Chart canvases */
+  .chart-canvas { width: 100%; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); display: block; }
+  .chart-canvas-sm { height: 120px; }
+  .chart-canvas-md { height: 160px; }
+  .chart-canvas-lg { height: 200px; }
+
+  /* Period indicator */
+  .period-indicator { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+  .period-line { flex: 1; height: 3px; }
+  .period-value { color: var(--orange); font-weight: 700; font-size: 1.1em; }
+
+  /* Evolution controls */
+  .evo-controls { display: flex; justify-content: center; gap: 16px; margin-top: 12px; }
+
+  /* Evo stage label */
+  .evo-stage-label { text-align: center; font-weight: 600; margin: 10px 0; font-size: 1.05em; }
+
+  /* Measurement */
+  .measure-label { color: var(--text-dim); font-size: 0.9em; }
+  .measure-history { margin-top: 12px; font-size: 0.85em; color: var(--text-dim); }
+  .measure-history-pills { margin-top: 6px; }
+  .measure-pill {
+    display: inline-block; margin: 2px 4px; padding: 4px 10px;
+    border-radius: 4px; background: var(--surface2);
+    border: 1px solid var(--border); color: var(--text-dim);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .measure-pill.latest {
+    background: rgba(247,120,186,0.15); border-color: var(--pink); color: var(--pink);
+  }
+  .measure-confirm { margin-top: 6px; }
+
+  /* Factor reveal */
+  .factor-subtitle { font-size: 1em; color: var(--text-dim); margin-bottom: 12px; }
+  .factor-success-msg { margin-top: 16px; font-size: 1.1em; color: var(--green); }
+  .factor-fail-title { font-size: 1.2em; margin-bottom: 12px; }
+  .factor-fail-reason { color: var(--text); font-size: 0.95em; }
+  .factor-fail-note { color: var(--text-dim); font-size: 0.9em; margin-top: 12px; }
+
+  /* Algorithm recap */
+  .recap-box { margin-top: 20px; padding: 16px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border); }
+  .recap-title { color: var(--accent); margin-bottom: 10px; }
+  .recap-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 0.88em; line-height: 1.6; }
+  .recap-step { font-weight: 600; }
+
+  /* Intuition */
+  .intuition { color: var(--text-dim); font-size: 0.9em; margin-top: 8px; }
+
+  /* Setup info */
+  .setup-gcd { font-size: 0.8em; color: var(--text-dim); margin-top: 4px; }
+
+  /* Global focus-visible */
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  :focus:not(:focus-visible) { outline: none; }
+
+  /* Hover: period cells */
+  .period-cell:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border-color: var(--text-dim) !important;
+  }
+
+  /* Hover: info cards */
+  .info-card { transition: all 0.2s; }
+  .info-card:hover {
+    border-color: rgba(99,102,241,0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+
+  /* Hover: CF steps */
+  .cf-step { transition: all 0.2s; }
+  .cf-step:hover { transform: scale(1.08); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+
+  /* Hover: measure pills */
+  .measure-pill:hover { border-color: var(--pink); color: var(--pink); }
+
+  /* Focus rings on interactive elements */
+  .circuit-gate:focus-visible { box-shadow: 0 0 0 3px var(--accent-glow); }
+  .nav-btn:focus-visible { box-shadow: 0 0 0 3px var(--accent-glow); }
+  .substep-btn:focus-visible { box-shadow: 0 0 0 3px var(--accent-glow); }
+  .param-btn:focus-visible { box-shadow: 0 0 0 3px var(--accent-glow); }
+  .step-dot:focus-visible { box-shadow: 0 0 0 3px var(--accent-glow); }
+
+  /* Circuit gate interactive */
+  .circuit-gate-interactive { cursor: pointer; }
+
+  /* Card desc */
+  .card-desc { font-size: 0.9em; }
+
+  /* Confidence note */
+  .confidence-note { margin-top: 8px; color: var(--text-dim); font-size: 0.85em; }
+
+  /* Color utility classes */
+  .color-blue { color: var(--blue); }
+  .color-purple { color: var(--purple); }
+  .color-green { color: var(--green); }
+  .color-orange { color: var(--orange); }
+  .color-pink { color: var(--pink); }
+  .color-cyan { color: var(--cyan); }
+  .color-red { color: var(--red); }
+
+  /* Inline style extractions */
+  .circuit-gate-dim { opacity: 0.5; }
+  .text-md { font-size: 0.9em; }
+  .step-list { margin: 8px 0 0 20px; line-height: 1.8; }
+  .math-block-sm { font-size: 1em; }
+
+  /* Canvas fade-in */
+  .canvas-fade-in { animation: canvasFade var(--anim-med) ease-out forwards; }
+  @keyframes canvasFade { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Notation glossary tooltip */
+  .notation-tip { border-bottom: 1px dashed var(--text-dim); cursor: help; }
+
+  /* Step transition banner */
+  .step-transition-banner {
+    text-align: center; padding: 16px; margin-bottom: 12px;
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(34,211,238,0.08));
+    border: 1px solid var(--border); border-radius: 10px;
+    animation: bannerSlideIn var(--anim-slow) ease-out;
+    position: relative; overflow: hidden;
+  }
+  .step-transition-banner::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), transparent);
+    opacity: 0.5;
+  }
+  @keyframes bannerSlideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  .step-transition-text { font-size: 0.9em; color: var(--text-dim); }
+  .step-transition-text .highlight-link { color: var(--purple); font-weight: 600; }
+
+  /* Custom parameter input */
+  .custom-input-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .custom-input {
+    width: 80px; padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text); font-size: 0.9em; font-family: 'JetBrains Mono', 'Georgia', serif; text-align: center;
+  }
+  .custom-input:focus { border-color: var(--accent); outline: none; }
+  .custom-input-feedback { font-size: 0.8em; min-height: 1.2em; margin-top: 4px; }
+
+  /* Wave interference canvas */
+  .wave-canvas-container { margin-top: 12px; }
+  .wave-legend { display: flex; justify-content: center; gap: 16px; font-size: 0.78em; color: var(--text-dim); margin-top: 6px; }
+  .wave-legend-item { display: flex; align-items: center; gap: 4px; }
+  .wave-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Period scatter canvas */
+  .chart-canvas-scatter { height: 140px; }
+
+  /* CF tree */
+  .cf-tree-container { margin: 16px 0; }
+  .cf-verify-result {
+    margin-top: 8px; padding: 8px 12px;
+    background: var(--surface2); border-radius: 6px;
+    font-size: 0.88em; animation: fadeIn var(--anim-med) ease;
+  }
+  .cf-verify-result.is-period { border-left: 3px solid var(--green); }
+  .cf-verify-result.not-period { border-left: 3px solid var(--red); }
+
+  /* Expandable sections */
+  .expandable-section {
+    margin-top: 16px; border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden;
+  }
+  .expandable-section summary {
+    padding: 12px 16px; cursor: pointer; font-weight: 600;
+    color: var(--accent); background: var(--surface2);
+    list-style: none; display: flex; align-items: center; gap: 8px;
+  }
+  .expandable-section summary::before {
+    content: '\25B6'; font-size: 0.7em; transition: transform 0.2s;
+  }
+  .expandable-section[open] summary::before {
+    transform: rotate(90deg);
+  }
+  .expandable-section summary::-webkit-details-marker { display: none; }
+  .expandable-section .expand-body {
+    padding: 16px; line-height: 1.7; font-size: 0.92em;
+  }
+
+  /* Keyboard hints bar */
+  .kbd-hints {
+    display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;
+    margin-top: 8px; font-size: 0.72em; color: var(--text-dim);
+    opacity: 0.6; transition: opacity 0.3s;
+  }
+  .kbd-hints:hover { opacity: 1; }
+  .kbd {
+    display: inline-block; padding: 1px 6px; border-radius: 4px;
+    background: var(--surface2); border: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace; font-size: 0.95em; color: var(--text-dim);
+  }
+  .kbd-hint-group { display: flex; align-items: center; gap: 4px; }
+
+  /* Help overlay */
+  .help-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2000; animation: fadeIn 0.2s ease;
+  }
+  .help-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px 32px; max-width: 420px; width: 90%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .help-card h3 { color: var(--accent); margin-bottom: 16px; }
+  .help-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .help-row:last-child { border-bottom: none; }
+  .help-keys { display: flex; gap: 4px; }
+
+  @media (max-width: 700px) {
+    .step-dot { width: 30px; height: 30px; font-size: 0.65em; }
+    .step-line { width: 20px; }
+    .step-label { display: none; }
+    .info-grid { grid-template-columns: 1fr; }
+    .flow-box { min-width: 80px; padding: 10px 10px; font-size: 0.8em; }
+    .flow-arrow { font-size: 1.2em; margin: 0 2px; }
+    .period-cell { width: 50px; height: 46px; }
+    .circuit-label { width: 70px; font-size: 0.7em; }
+    .circuit-gate { padding: 6px 10px; font-size: 0.7em; margin: 0 6px; }
+    .substep-btn, .nav-btn, .param-btn { min-height: 44px; }
+    .measure-pill { min-height: 36px; padding: 8px 12px; }
+  }
+
+  @media (max-width: 480px) {
+    header h1 { font-size: 1.2em; }
+    header p { font-size: 0.78em; }
+    #main { padding: 12px; }
+    #viz-area { padding: 14px; min-height: 280px; }
+    #explanation { padding: 14px; font-size: 0.88em; }
+    .step-dot { width: 26px; height: 26px; font-size: 0.6em; }
+    .step-line { width: 12px; }
+    .nav-btn { padding: 8px 14px; font-size: 0.85em; }
+    .param-btn { padding: 6px 12px; font-size: 0.8em; }
+    .param-grid { gap: 6px; }
+    .info-card .value { font-size: 1.1em; }
+    .flow { flex-wrap: wrap; gap: 4px; justify-content: center; }
+    .flow-box { min-width: 70px; padding: 8px; font-size: 0.75em; }
+    .flow-arrow { font-size: 1em; margin: 0; }
+    .circuit { padding: 12px; }
+    .circuit-label { width: 55px; font-size: 0.65em; }
+    .circuit-gate { padding: 5px 8px; font-size: 0.65em; margin: 0 4px; }
+    .substep-btn { padding: 5px 10px; font-size: 0.72em; }
+    .measure-value { font-size: 1.8em; }
+    .big-equation { font-size: 2em; }
+    .help-card { padding: 16px 20px; max-width: 320px; }
+    .kbd-hints { gap: 10px; font-size: 0.65em; }
+    .recap-grid { font-size: 0.8em; }
+    .period-cell { width: 42px; height: 40px; font-size: 0.7em; }
+  }
+
+  @media (pointer: coarse) {
+    .step-dot { width: 40px; height: 40px; }
+    .substep-btn { min-height: 44px; padding: 8px 16px; }
+    .nav-btn { min-height: 44px; }
+    .param-btn { min-height: 44px; }
+    .circuit-gate-interactive { min-height: 44px; min-width: 44px; }
+    .measure-pill { min-height: 40px; padding: 8px 14px; }
+  }
+
+  /* Particle background canvas */
+  #particleBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="particleBg"></canvas>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+
+<header>
+  <h1>Shor's Factoring Algorithm</h1>
+  <p>An interactive step-by-step visualization</p>
+</header>
+
+<div id="step-indicator"></div>
+
+<div id="main">
+  <div id="viz-area"></div>
+  <div id="explanation"></div>
+  <div id="nav">
+    <button class="nav-btn" id="btn-prev">&#9664; Back</button>
+    <span id="step-counter"></span>
+    <button class="nav-btn primary" id="btn-next">Next &#9654;</button>
+  </div>
+  <div class="kbd-hints" id="kbd-hints"></div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ==================== CONSTANTS & STATE ====================
+const N_QUBITS = 8;
+const Q_STATES = 1 << N_QUBITS; // 256
+
+const S = {
+  step: 0,
+  N: 15,
+  a: 7,
+  period: null,
+  subStep: 0,
+  measured: null,
+  measureHistory: [],
+  _distCache: null,
+  _autoPlayTimer: null,
+  _prevStep: null,
+};
+
+const GLOSSARY = {
+  'ket': '|x\u27E9 ("ket x") \u2014 represents a quantum state vector',
+  'tensor': '\u2297 ("tensor product") \u2014 combines independent quantum systems',
+  'dagger': '\u2020 ("dagger") \u2014 the inverse/adjoint of an operation',
+  'superposition': 'A quantum state existing in multiple basis states simultaneously',
+  'entangled': 'Quantum states whose measurements are correlated regardless of distance',
+  'QFT': 'Quantum Fourier Transform \u2014 converts periodic patterns to frequency peaks',
+};
+
+const STEPS = [
+  { title: 'Overview',      short: 'Intro' },
+  { title: 'Parameters',    short: 'Setup' },
+  { title: 'Period Pattern', short: 'Period' },
+  { title: 'Quantum Circuit', short: 'Circuit' },
+  { title: 'State Evolution', short: 'States' },
+  { title: 'Measurement',   short: 'Measure' },
+  { title: 'Factors!',      short: 'Result' },
+];
+
+const VALID_N = [15, 21, 35, 77, 91, 143];
+
+function clearTimers() {
+  if (S._autoPlayTimer) { clearInterval(S._autoPlayTimer); S._autoPlayTimer = null; }
+}
+
+function resetState(opts = {}) {
+  S.measured = null;
+  S.measureHistory = [];
+  S._distCache = null;
+  S.subStep = 0;
+  clearTimers();
+  if (opts.step !== undefined) S.step = opts.step;
+  if (opts.N !== undefined) S.N = opts.N;
+  if (opts.a !== undefined) S.a = opts.a;
+}
+
+// ==================== MATH ====================
+function gcd(a, b) { while (b) { [a, b] = [b, a % b]; } return a; }
+
+function modPow(base, exp, mod) {
+  let result = 1n;
+  base = BigInt(base) % BigInt(mod);
+  exp = BigInt(exp);
+  const m = BigInt(mod);
+  while (exp > 0n) {
+    if (exp % 2n === 1n) result = (result * base) % m;
+    exp >>= 1n;
+    base = (base * base) % m;
+  }
+  return Number(result);
+}
+
+function findPeriod(a, N) {
+  for (let r = 1; r <= N * N; r++) {
+    if (modPow(a, r, N) === 1) return r;
+  }
+  return null;
+}
+
+function getCoprimes(N) {
+  const res = [];
+  for (let a = 2; a < N; a++) {
+    if (gcd(a, N) === 1) res.push(a);
+  }
+  return res;
+}
+
+function continuedFraction(num, den, maxIter = 20) {
+  const coeffs = [];
+  const convergents = [];
+  let a = num, b = den;
+  for (let i = 0; i < maxIter && b !== 0; i++) {
+    const q = Math.floor(a / b);
+    coeffs.push(q);
+    [a, b] = [b, a - q * b];
+    // compute convergent
+    let pn = coeffs[coeffs.length - 1], qn = 1;
+    for (let j = coeffs.length - 2; j >= 0; j--) {
+      [pn, qn] = [coeffs[j] * pn + qn, pn];
+    }
+    convergents.push({ p: pn, q: qn });
+  }
+  return { coeffs, convergents };
+}
+
+// Compute quantum distributions (cached)
+function computeDistributions(a, N) {
+  if (S._distCache && S._distCache._a === a && S._distCache._N === N && S._distCache._Q === Q_STATES) return S._distCache;
+  const Q = Q_STATES;
+  const r = findPeriod(a, N);
+  if (!r) return null;
+
+  // Initial: all probability at |0>
+  const initial = new Float64Array(Q);
+  initial[0] = 1;
+
+  // After Hadamard: uniform
+  const hadamard = new Float64Array(Q);
+  hadamard.fill(1 / Q);
+
+  // After oracle (conditioned on measuring work register = 1 i.e. f(x)=a^0 mod N =1 → x multiples of r)
+  const oracle = new Float64Array(Q);
+  const numPeaks = Math.floor((Q - 1) / r) + 1;
+  for (let k = 0; k < Q; k++) {
+    if (k % r === 0) oracle[k] = 1 / numPeaks;
+  }
+
+  // After QFT: peaks at multiples of Q/r
+  // Computed via DFT of the oracle amplitudes
+  const amplitudes = new Float64Array(Q);
+  for (let k = 0; k < Q; k++) {
+    if (k % r === 0) amplitudes[k] = 1 / Math.sqrt(numPeaks);
+  }
+
+  const peakIndices = [];
+  for (let k = 0; k < Q; k++) { if (amplitudes[k] !== 0) peakIndices.push(k); }
+
+  const qftProbs = new Float64Array(Q);
+  for (let j = 0; j < Q; j++) {
+    let realPart = 0, imagPart = 0;
+    for (const k of peakIndices) {
+      const angle = -2 * Math.PI * j * k / Q;
+      realPart += amplitudes[k] * Math.cos(angle) / Math.sqrt(Q);
+      imagPart += amplitudes[k] * Math.sin(angle) / Math.sqrt(Q);
+    }
+    qftProbs[j] = realPart * realPart + imagPart * imagPart;
+  }
+
+  const result = { initial, hadamard, oracle, qft: qftProbs, period: r, Q, _a: a, _N: N, _Q: Q_STATES };
+  S._distCache = result;
+  return result;
+}
+
+// ==================== RENDERING ====================
+const viz = () => document.getElementById('viz-area');
+const expl = () => document.getElementById('explanation');
+
+function render() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  S.period = findPeriod(S.a, S.N);
+  const renderers = [renderOverview, renderSetup, renderPeriod, renderCircuit, renderEvolution, renderMeasurement, renderFactors];
+  const v = viz();
+  v.innerHTML = '';
+  v.className = 'fade-in';
+  v.setAttribute('role', 'tabpanel');
+  v.setAttribute('aria-label', STEPS[S.step].title);
+  v.setAttribute('tabindex', '-1');
+  renderers[S.step]();
+  renderStepIndicator();
+  renderNav();
+  // Reset animation class
+  void v.offsetWidth;
+  v.focus({ preventScroll: true });
+}
+
+function renderStepIndicator() {
+  const el = document.getElementById('step-indicator');
+  const items = STEPS.map((s, i) => {
+    const cls = i === S.step ? 'active' : i < S.step ? 'completed' : '';
+    const icon = i < S.step ? '&#10003;' : (i + 1);
+    const dot = `<div class="step-dot ${cls}" data-step="${i}" role="tab" tabindex="${i === S.step ? '0' : '-1'}" aria-selected="${i === S.step}" aria-label="Step ${i+1}: ${s.title}${i < S.step ? ' (completed)' : ''}">${icon}<span class="step-label">${s.short}</span></div>`;
+    const line = i < STEPS.length - 1
+      ? `<div class="step-line ${i < S.step ? 'done' : ''}"></div>`
+      : '';
+    return dot + line;
+  }).join('');
+  el.innerHTML = `<div class="step-track" role="tablist" aria-label="Algorithm steps">${items}</div>`;
+}
+
+function renderNav() {
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const isLast = S.step === STEPS.length - 1;
+
+  btnPrev.disabled = S.step === 0;
+
+  if (isLast) {
+    btnNext.textContent = 'Start Over \u21BB';
+    btnNext.disabled = false;
+    btnNext.classList.remove('primary');
+    btnNext.dataset.navAction = 'start-over';
+  } else {
+    btnNext.textContent = S.step === STEPS.length - 2 ? 'Reveal Factors!' : 'Next \u25B6';
+    btnNext.disabled = false;
+    btnNext.classList.add('primary');
+    btnNext.dataset.navAction = 'next';
+  }
+
+  document.getElementById('step-counter').textContent = `Step ${S.step + 1} of ${STEPS.length}`;
+
+  // Keyboard hints
+  const hasSubSteps = S.step === 3 || S.step === 4;
+  document.getElementById('kbd-hints').innerHTML = `
+    <span class="kbd-hint-group"><kbd class="kbd">\u2190</kbd><kbd class="kbd">\u2192</kbd> steps</span>
+    ${hasSubSteps ? '<span class="kbd-hint-group"><kbd class="kbd">\u2191</kbd><kbd class="kbd">\u2193</kbd> sub-steps</span>' : ''}
+    <span class="kbd-hint-group"><kbd class="kbd">?</kbd> help</span>
+  `;
+}
+
+// ==================== STEP 0: OVERVIEW ====================
+function renderOverview() {
+  const v = viz();
+  v.innerHTML = `
+    <div class="overview-wrapper">
+      <div class="overview-subtitle">
+        Given a large composite number <span class="math">N</span>, find its prime factors
+      </div>
+      <div class="flow">
+        <div class="flow-box input" style="animation-delay:0s">N = ???</div>
+        <span class="flow-arrow" style="animation-delay:0.2s">&rarr;</span>
+        <div class="flow-box classical" style="animation-delay:0.3s">Classical<br>Setup</div>
+        <span class="flow-arrow" style="animation-delay:0.5s">&rarr;</span>
+        <div class="flow-box quantum" style="animation-delay:0.6s">Quantum<br>Period Finding</div>
+        <span class="flow-arrow" style="animation-delay:0.8s">&rarr;</span>
+        <div class="flow-box classical" style="animation-delay:0.9s">Classical<br>Post-Processing</div>
+        <span class="flow-arrow" style="animation-delay:1.1s">&rarr;</span>
+        <div class="flow-box result" style="animation-delay:1.2s">p &times; q</div>
+      </div>
+      <div class="info-grid mt-24 max-w-600 mx-auto">
+        <div class="info-card">
+          <h4>Classical Part</h4>
+          <div class="card-desc color-green">Random choice + GCD + number theory</div>
+        </div>
+        <div class="info-card">
+          <h4>Quantum Part</h4>
+          <div class="card-desc color-purple">Period finding via QFT &mdash; exponential speedup</div>
+        </div>
+      </div>
+      <div class="mt-24 max-w-600 mx-auto">
+        <div class="overview-bars-title">
+          Operations needed to factor an n-digit number
+        </div>
+        ${[
+          { label: 'Trial Division', pct: 100, color: 'var(--red)', note: 'O(10^(n/2))' },
+          { label: 'Number Field Sieve', pct: 45, color: 'var(--orange)', note: 'O(e^(n&#x2153;))' },
+          { label: "Shor's (Quantum)", pct: 5, color: 'var(--green)', note: 'O(n\u00B3)' },
+        ].map(b => `
+          <div class="bar-row">
+            <div class="bar-label">${b.label}</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${b.pct}%; background:${b.color}"></div>
+              <span class="bar-note">${b.note}</span>
+            </div>
+          </div>
+        `).join('')}
+        <div class="overview-bars-note">
+          Illustrative scale for a 300-digit number (true difference is astronomical)
+        </div>
+      </div>
+    </div>`;
+
+  expl().innerHTML = `<h3>Why Shor's Algorithm Matters</h3>
+    <p>Integer factorization &mdash; breaking <span class="math">N</span> into its prime factors &mdash; is believed to be
+    intractable for classical computers when <span class="math">N</span> is large. RSA encryption relies on this difficulty.</p>
+    <p>Peter Shor showed in 1994 that a quantum computer can factor <span class="math">N</span> in
+    <span class="math">O((log N)<sup>3</sup>)</span> time, an <span class="highlight">exponential speedup</span>
+    over the best known classical algorithms.</p>
+    <p>The key insight: factoring reduces to <strong>period finding</strong>, and quantum computers excel at finding periods via the <strong>Quantum Fourier Transform</strong>.</p>
+    <div class="callout-orange">
+      <strong>Real-world significance:</strong>
+      RSA-2048, used to secure most internet traffic, relies on the difficulty of
+      factoring a 617-digit number. A sufficiently large quantum computer running
+      Shor's algorithm could break this in hours. Current quantum hardware is still
+      far from this scale, but the threat drives active research into
+      post-quantum cryptography.
+    </div>`;
+}
+
+// ==================== STEP 1: SETUP ====================
+function renderSetup() {
+  const v = viz();
+  const coprimes = getCoprimes(S.N);
+  const aValues = [];
+  for (let i = 2; i < S.N; i++) aValues.push(i);
+
+  v.innerHTML = `
+    <div class="param-section">
+      <span class="param-label">Choose <span class="math">N</span> to factor:</span>
+      <div class="param-grid" id="n-grid">
+        ${VALID_N.map(n => `<button class="param-btn ${n === S.N ? 'selected' : ''}" data-action="select-n" data-value="${n}">${n} <span class="gcd-tag text-dim">${factorHint(n)}</span></button>`).join('')}
+      </div>
+      <div class="custom-input-row mt-8">
+        <span class="text-dim text-sm">Or try your own:</span>
+        <input type="number" class="custom-input" id="custom-n" placeholder="e.g. 33" min="6" max="999" aria-label="Custom N value">
+        <button class="nav-btn" data-action="apply-custom-n" style="padding:6px 14px; font-size:0.85em">Try</button>
+      </div>
+      <div class="custom-input-feedback" id="custom-n-feedback"></div>
+    </div>
+    <div class="param-section">
+      <span class="param-label">Choose <span class="math">a</span> (must be coprime to <span class="math">N = ${S.N}</span>):</span>
+      <div class="param-grid" id="a-grid">
+        ${aValues.map(a => {
+          const g = gcd(a, S.N);
+          const coprime = g === 1;
+          const cls = a === S.a ? 'selected' : (!coprime ? 'invalid' : '');
+          return `<button class="param-btn ${cls}" ${coprime ? `data-action="select-a" data-value="${a}"` : 'disabled'}>
+            ${a}
+            <span class="gcd-tag" style="color:${coprime ? 'var(--green)' : 'var(--red)'}">
+              gcd=${g}${!coprime ? ' \u2717' : ''}
+            </span>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="info-grid mt-16">
+      <div class="info-card">
+        <h4>Selected N</h4>
+        <div class="value color-blue">${S.N}</div>
+      </div>
+      <div class="info-card">
+        <h4>Selected a</h4>
+        <div class="value color-purple">${S.a}</div>
+        <div class="setup-gcd">gcd(${S.a}, ${S.N}) = ${gcd(S.a, S.N)}</div>
+      </div>
+    </div>`;
+
+  expl().innerHTML = `<h3>Step 1: Classical Setup</h3>
+    <p>We want to factor <span class="math">N = ${S.N}</span>. First, pick a random integer
+    <span class="math">a</span> with <span class="math">1 &lt; a &lt; N</span>.</p>
+    <p>Check <span class="math">gcd(a, N)</span>. If it's greater than 1, we already found a factor! (Lucky case.)
+    Otherwise, <span class="math">a</span> and <span class="math">N</span> are coprime, and we proceed to quantum period finding.</p>
+    <p>Currently: <span class="math">a = ${S.a}</span>, <span class="math">gcd(${S.a}, ${S.N}) = ${gcd(S.a, S.N)}</span>
+    ${gcd(S.a, S.N) === 1 ? '&mdash; coprime, we proceed to quantum period finding.' : '&mdash; <span class="highlight">not coprime! We found a factor directly.</span>'}</p>`;
+}
+
+function factorHint(n) {
+  for (let i = 2; i * i <= n; i++) {
+    if (n % i === 0) return `${i}\u00D7${n/i}`;
+  }
+  return 'prime';
+}
+
+function validateCustomN(n) {
+  if (isNaN(n) || n < 6) return { ok: false, msg: 'N must be at least 6' };
+  if (n > 999) return { ok: false, msg: 'N must be \u2264 999 for this demo' };
+  if (n % 2 === 0) return { ok: false, msg: `${n} is even \u2014 trivially divisible by 2` };
+  // Check primality
+  for (let i = 2; i * i <= n; i++) {
+    if (n % i === 0) return { ok: true, msg: `\u2705 ${n} = ${i} \u00D7 ${n / i}` };
+  }
+  return { ok: false, msg: `${n} is prime \u2014 cannot be factored` };
+}
+
+function selectN(n) {
+  resetState({ N: n, a: getCoprimes(n)[0] || 2 });
+  render();
+}
+
+function selectA(a) {
+  resetState({ a });
+  render();
+}
+
+function applyCustomN() {
+  const input = document.getElementById('custom-n');
+  const feedback = document.getElementById('custom-n-feedback');
+  if (!input || !feedback) return;
+  const n = parseInt(input.value, 10);
+  const result = validateCustomN(n);
+  feedback.textContent = result.msg;
+  feedback.style.color = result.ok ? 'var(--green)' : 'var(--red)';
+  if (result.ok) {
+    setTimeout(() => selectN(n), 400);
+  }
+}
+
+// ==================== STEP 2: PERIOD PATTERN ====================
+function renderPeriod() {
+  const v = viz();
+  const r = S.period;
+  const numShow = Math.min(3 * (r || 4) + 2, 32);
+
+  // Compute values
+  const vals = [];
+  for (let x = 0; x < numShow; x++) {
+    vals.push({ x, fx: modPow(S.a, x, S.N) });
+  }
+
+  // Color palette for residues
+  const residues = [...new Set(vals.map(v => v.fx))];
+  const colors = ['var(--blue)', 'var(--purple)', 'var(--orange)', 'var(--pink)', 'var(--cyan)', 'var(--green)', 'var(--red)', '#e6db74'];
+  const bgColors = [
+    'rgba(88,166,255,0.08)', 'rgba(188,140,255,0.08)', 'rgba(240,136,62,0.08)',
+    'rgba(247,120,186,0.08)', 'rgba(57,210,192,0.08)', 'rgba(63,185,80,0.08)',
+    'rgba(248,81,73,0.08)', 'rgba(230,219,116,0.08)'
+  ];
+
+  v.innerHTML = `
+    <div class="mb-8 text-dim text-md">
+      Values of <span class="math">f(x) = ${S.a}<sup>x</sup> mod ${S.N}</span>:
+    </div>
+    <div class="period-table" id="period-table">
+      ${vals.map((v, i) => {
+        const cIdx = residues.indexOf(v.fx) % colors.length;
+        const isStart = v.x % r === 0 && v.x > 0;
+        return `<div class="period-cell" style="background:${bgColors[cIdx]}; border-color:${isStart ? 'var(--orange)' : 'transparent'}; animation-delay:${i * 0.04}s">
+          <span class="x-val">x=${v.x}</span>
+          <span class="fx-val" style="color:${colors[cIdx]}">${v.fx}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="period-indicator">
+      <div class="period-line" style="background: repeating-linear-gradient(90deg, var(--orange) 0, var(--orange) ${100/((numShow-1)/r)}%, transparent ${100/((numShow-1)/r)}%, transparent ${200/((numShow-1)/r)}%)"></div>
+      <div class="period-value">Period r = ${r}</div>
+      <div class="period-line" style="background: repeating-linear-gradient(90deg, var(--orange) 0, var(--orange) ${100/((numShow-1)/r)}%, transparent ${100/((numShow-1)/r)}%, transparent ${200/((numShow-1)/r)}%)"></div>
+    </div>
+    <div class="bar-chart-container">
+      <div class="bar-chart-title">f(x) values showing periodicity</div>
+      <canvas id="period-canvas" class="chart-canvas chart-canvas-sm canvas-fade-in" aria-label="Bar chart showing periodic values of ${S.a} to the x mod ${S.N}">Period pattern: values repeat every ${r} steps</canvas>
+    </div>
+    <div class="bar-chart-container mt-12">
+      <div class="bar-chart-title">Scatter view: same f(x) values align horizontally</div>
+      <canvas id="scatter-canvas" class="chart-canvas chart-canvas-scatter canvas-fade-in" aria-label="Scatter plot showing same residue values aligned horizontally">Same residues align at period boundaries</canvas>
+    </div>`;
+
+  drawPeriodCanvas('period-canvas', vals, S.N, residues, colors);
+  drawPeriodScatter('scatter-canvas', vals, r, residues, colors);
+
+  const r2 = r / 2;
+  const aR2 = modPow(S.a, r2, S.N);
+  const rEven = r % 2 === 0;
+
+  expl().innerHTML = `<h3>Step 2: The Period</h3>
+    <p>The function <span class="math">f(x) = ${S.a}<sup>x</sup> mod ${S.N}</span> is <strong>periodic</strong> with period
+    <span class="highlight">r = ${r}</span>. This means <span class="math">${S.a}<sup>r</sup> &equiv; 1 (mod ${S.N})</span>.</p>
+    <p>The colored cells above show how the values repeat every ${r} steps. Finding this period is the
+    quantum computer's job!</p>
+    ${rEven ? `<p>Since <span class="math">r = ${r}</span> is even, we can compute:
+    <span class="math">${S.a}<sup>${r}/2</sup> = ${S.a}<sup>${r2}</sup> &equiv; ${aR2} (mod ${S.N})</span>.
+    Then <span class="math">gcd(${aR2}&minus;1, ${S.N})</span> and <span class="math">gcd(${aR2}+1, ${S.N})</span> should give us the factors.</p>` :
+    `<p>Note: <span class="math">r = ${r}</span> is odd, so this choice of <span class="math">a</span> won't directly work. In practice we'd retry with a different <span class="math">a</span>.</p>`}
+    <details class="expandable-section">
+      <summary>Why does the period help us factor?</summary>
+      <div class="expand-body">
+        <p>If <span class="math">a<sup>r</sup> &equiv; 1 (mod N)</span>, then:</p>
+        <span class="math-block">a<sup>r</sup> &minus; 1 &equiv; 0 (mod N)</span>
+        <p>If <span class="math">r</span> is <strong>even</strong>, we can write this as a <strong>difference of squares</strong>:</p>
+        <span class="math-block">(a<sup>r/2</sup> &minus; 1)(a<sup>r/2</sup> + 1) &equiv; 0 (mod N)</span>
+        <p><span class="math">N</span> divides the product. Unless one factor is itself a multiple of <span class="math">N</span>
+        (the trivial case <span class="math">a<sup>r/2</sup> &equiv; &plusmn;1 mod N</span>), the prime factors of <span class="math">N</span> must be
+        <strong>split between the two terms</strong>.</p>
+        <p>Therefore, <span class="math">gcd(a<sup>r/2</sup> &minus; 1, N)</span> and
+        <span class="math">gcd(a<sup>r/2</sup> + 1, N)</span> give us <strong>non-trivial factors</strong>!</p>
+        <p class="intuition">This algebraic trick works with probability &ge; 1/2 for a randomly chosen <span class="math">a</span>,
+        which is why Shor's algorithm is probabilistic but highly efficient.</p>
+      </div>
+    </details>`;
+}
+
+// ==================== STEP 3: CIRCUIT ====================
+function renderCircuit() {
+  const v = viz();
+  const nW = Math.ceil(Math.log2(S.N));
+  const activeGate = S.subStep;
+
+  const gateClass = (idx) => `circuit-gate ${['h-gate','oracle-gate','qft-gate','measure-gate'][idx]} ${activeGate === idx ? 'active-gate' : ''}`;
+
+  const transitionBanner = S._prevStep === 2 ? `
+    <div class="step-transition-banner">
+      <div class="step-transition-text">
+        We found the period <span class="highlight-link">r = ${S.period}</span>. Now let's build the quantum circuit that discovers this period.
+      </div>
+    </div>` : '';
+  S._prevStep = null;
+
+  v.innerHTML = `
+    ${transitionBanner}
+    <div class="text-dim text-center mb-12 text-md">
+      Click a gate to learn about it
+    </div>
+    <div class="circuit">
+      <div class="circuit-register">
+        <div class="circuit-label"><strong>Counting</strong>${N_QUBITS} qubits</div>
+        <div class="circuit-wire">
+          <span class="wire-ket">|0&rang;<sup>&otimes;${N_QUBITS}</sup></span>
+          <div class="${gateClass(0)} circuit-gate-interactive" data-action="circuit-sel" data-value="0" tabindex="0" role="button" aria-label="Hadamard gate">H<sup>&otimes;${N_QUBITS}</sup></div>
+          <div class="${gateClass(1)} circuit-gate-interactive" data-action="circuit-sel" data-value="1" tabindex="0" role="button" aria-label="Oracle gate">U<sub>f</sub></div>
+          <div class="${gateClass(2)} circuit-gate-interactive" data-action="circuit-sel" data-value="2" tabindex="0" role="button" aria-label="Inverse QFT gate">QFT<sup>&dagger;</sup></div>
+          <div class="${gateClass(3)} circuit-gate-interactive" data-action="circuit-sel" data-value="3" tabindex="0" role="button" aria-label="Measurement gate">&Mscr;</div>
+        </div>
+      </div>
+      <hr class="circuit-separator">
+      <div class="circuit-register">
+        <div class="circuit-label"><strong>Work</strong>${nW} qubits</div>
+        <div class="circuit-wire">
+          <span class="wire-ket">|0&rang;<sup>&otimes;${nW}</sup></span>
+          <div class="circuit-spacer"></div>
+          <div class="circuit-gate oracle-gate circuit-gate-dim">U<sub>f</sub></div>
+        </div>
+      </div>
+    </div>
+    <div class="substep-controls">
+      ${['Hadamard', 'Oracle', 'Inv. QFT', 'Measure'].map((name, i) =>
+        `<button class="substep-btn ${S.subStep === i ? 'active' : ''}" data-action="circuit-sel" data-value="${i}">${name}</button>`
+      ).join('')}
+    </div>
+    <div id="gate-info" class="info-card mt-8" aria-live="polite" role="status">
+      ${gateInfoHTML(S.subStep)}
+    </div>`;
+
+  renderCircuitExplanation();
+}
+
+function circuitSelect(i) {
+  S.subStep = i;
+  renderCircuit();
+}
+
+function gateInfoHTML(idx) {
+  const Q = Q_STATES;
+  const info = [
+    { title: 'Hadamard Gates (H)', color: 'var(--blue)',
+      desc: `Apply Hadamard to each of the ${N_QUBITS} counting qubits, creating an equal superposition of all ${Q} basis states. This is the starting point for quantum parallelism.`,
+      math: `|0\u27E9\u2297${N_QUBITS} \u2192 (1/\u221A${Q}) \u2211|x\u27E9` },
+    { title: 'Modular Exponentiation Oracle (U\u2086)', color: 'var(--purple)',
+      desc: `Computes f(x) = ${S.a}^x mod ${S.N} into the work register, controlled by the counting register. This entangles the two registers and encodes the periodic structure.`,
+      math: `|x\u27E9|0\u27E9 \u2192 |x\u27E9|${S.a}^x mod ${S.N}\u27E9` },
+    { title: 'Inverse Quantum Fourier Transform (QFT\u2020)', color: 'var(--orange)',
+      desc: `Converts the periodic structure in the counting register into sharp peaks at multiples of ${Q}/${S.period} = ${Math.round(Q/S.period)}. This is where the quantum speedup happens!`,
+      math: `Periodic state \u2192 Peaked state at multiples of ${Q}/r` },
+    { title: 'Measurement', color: 'var(--pink)',
+      desc: `Measure the counting register. The result will be close to a multiple of ${Q}/r = ${Math.round(Q/S.period)}. Using continued fractions, we can extract the period r = ${S.period}.`,
+      math: `Collapse to |j\u27E9 where j \u2248 s\u00B7${Q}/${S.period}` },
+  ];
+  const g = info[idx];
+  const colorCls = ['color-blue', 'color-purple', 'color-orange', 'color-pink'][idx];
+  return `<h4 class="${colorCls}">${g.title}</h4>
+    <p class="card-desc mt-8">${g.desc}</p>
+    <div class="math-block math-block-sm">${g.math}</div>`;
+}
+
+function renderCircuitExplanation() {
+  expl().innerHTML = `<h3>Step 3: The Quantum Circuit</h3>
+    <p>The circuit has two registers: a <strong>counting register</strong> (${N_QUBITS} qubits) and a
+    <strong>work register</strong> (${Math.ceil(Math.log2(S.N))} qubits).</p>
+    <p>Click on each gate above to learn what it does. The algorithm proceeds left to right:</p>
+    <ol class="step-list">
+      <li><span class="color-blue">Hadamard</span> &mdash; create <span class="notation-tip" data-glossary="superposition">superposition</span></li>
+      <li><span class="color-purple">Oracle</span> &mdash; encode the periodic function (<span class="notation-tip" data-glossary="entangled">entangle</span> registers)</li>
+      <li><span class="color-orange">Inverse <span class="notation-tip" data-glossary="QFT">QFT</span></span> &mdash; extract the period</li>
+      <li><span class="color-pink">Measurement</span> &mdash; read out a value encoding the period</li>
+    </ol>`;
+}
+
+// ==================== CANVAS BAR CHARTS ====================
+
+const _colorCache = {};
+function resolveColor(cssColor) {
+  if (_colorCache[cssColor]) return _colorCache[cssColor];
+  const tmp = document.createElement('div');
+  tmp.style.color = cssColor;
+  document.body.appendChild(tmp);
+  const color = getComputedStyle(tmp).color;
+  document.body.removeChild(tmp);
+  _colorCache[cssColor] = color;
+  return color;
+}
+
+function setupCanvas(canvasId, opts = {}) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return null;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  const pad = { top: 10, bottom: 28, left: opts.yAxis ? 42 : 8, right: 8 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+  ctx.fillStyle = '#0a0e1a';
+  ctx.fillRect(0, 0, W, H);
+  return { canvas, ctx, W, H, pad, plotW, plotH };
+}
+
+function canvasFont(size, weight, canvas) {
+  const baseW = 600;
+  const rect = canvas.getBoundingClientRect();
+  const scale = Math.max(0.7, Math.min(1.2, rect.width / baseW));
+  const px = Math.round(size * scale);
+  const w = weight ? weight + ' ' : '';
+  return `${w}${px}px 'Inter', -apple-system, sans-serif`;
+}
+
+function drawGridlines(ctx, pad, plotW, plotH, maxVal, formatLabel, canvas) {
+  const ticks = 4;
+  ctx.strokeStyle = 'rgba(136,146,168,0.15)';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#8892a8';
+  ctx.font = canvasFont(9, null, canvas);
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= ticks; i++) {
+    const frac = i / ticks;
+    const y = pad.top + plotH - frac * plotH;
+    if (i > 0) {
+      ctx.beginPath();
+      ctx.setLineDash([4, 4]);
+      ctx.moveTo(pad.left, y);
+      ctx.lineTo(pad.left + plotW, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    const label = formatLabel(frac * maxVal);
+    ctx.fillText(label, pad.left - 4, y);
+  }
+}
+
+function drawPeriodCanvas(canvasId, vals, maxN, residues, cssColors) {
+  const s = setupCanvas(canvasId, { yAxis: true });
+  if (!s) return;
+  const { canvas, ctx, pad, plotW, plotH } = s;
+
+  drawGridlines(ctx, pad, plotW, plotH, maxN, v => String(Math.round(v)), canvas);
+
+  const resolvedColors = cssColors.map(resolveColor);
+  const barW = plotW / vals.length;
+
+  vals.forEach((v, i) => {
+    const cIdx = residues.indexOf(v.fx) % resolvedColors.length;
+    const h = (v.fx / maxN) * plotH;
+    const x = pad.left + i * barW;
+    const y = pad.top + plotH - h;
+
+    ctx.shadowColor = resolvedColors[cIdx];
+    ctx.shadowBlur = 6;
+    ctx.fillStyle = resolvedColors[cIdx];
+    ctx.fillRect(x + 1, y, Math.max(barW - 2, 2), h);
+  });
+  ctx.shadowBlur = 0;
+
+  // X-axis labels
+  ctx.fillStyle = '#8892a8';
+  ctx.font = canvasFont(11, null, canvas);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const labelStep = vals.length > 20 ? 4 : (vals.length > 10 ? 2 : 1);
+  for (let i = 0; i < vals.length; i += labelStep) {
+    const x = pad.left + (i + 0.5) * barW;
+    ctx.fillText(String(vals[i].x), x, pad.top + plotH + 6);
+  }
+
+  // Store data for tooltip + base image for hover highlight
+  canvas._data = vals;
+  canvas._barW = barW;
+  canvas._pad = pad;
+  canvas._maxN = maxN;
+  canvas._baseImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+}
+
+function drawPeriodScatter(canvasId, vals, period, residues, cssColors) {
+  const s = setupCanvas(canvasId, { yAxis: false });
+  if (!s) return;
+  const { canvas, ctx, pad, plotW, plotH } = s;
+
+  const resolvedColors = cssColors.map(resolveColor);
+  const colW = plotW / vals.length;
+  const rowH = plotH / residues.length;
+
+  // Draw horizontal guide lines connecting same-residue points
+  residues.forEach((res, ri) => {
+    const y = pad.top + ri * rowH + rowH / 2;
+    ctx.strokeStyle = 'rgba(136,146,168,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(pad.left + plotW, y);
+    ctx.stroke();
+  });
+
+  // Draw period boundary lines
+  for (let b = period; b < vals.length; b += period) {
+    const x = pad.left + b * colW;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = resolveColor('var(--orange)');
+    ctx.globalAlpha = 0.35;
+    ctx.beginPath();
+    ctx.moveTo(x, pad.top);
+    ctx.lineTo(x, pad.top + plotH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }
+
+  // Draw dots
+  vals.forEach((v, i) => {
+    const ri = residues.indexOf(v.fx);
+    const cIdx = ri % resolvedColors.length;
+    const x = pad.left + i * colW + colW / 2;
+    const y = pad.top + ri * rowH + rowH / 2;
+    const radius = Math.min(colW / 2.5, rowH / 3, 8);
+
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = resolvedColors[cIdx];
+    ctx.shadowColor = resolvedColors[cIdx];
+    ctx.shadowBlur = 6;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+
+  // Connect same-residue dots with faint lines
+  residues.forEach((res, ri) => {
+    const points = vals.filter(v => v.fx === res);
+    if (points.length < 2) return;
+    const cIdx = ri % resolvedColors.length;
+    ctx.strokeStyle = resolvedColors[cIdx];
+    ctx.globalAlpha = 0.2;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    points.forEach((p, pi) => {
+      const x = pad.left + p.x * colW + colW / 2;
+      const y = pad.top + ri * rowH + rowH / 2;
+      if (pi === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+
+  // X-axis labels
+  ctx.fillStyle = resolveColor('var(--text-dim)');
+  ctx.font = canvasFont(9, null, canvas);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const step = vals.length > 20 ? 4 : (vals.length > 10 ? 2 : 1);
+  for (let i = 0; i < vals.length; i += step) {
+    ctx.fillText(String(i), pad.left + i * colW + colW / 2, pad.top + plotH + 4);
+  }
+
+  // Y-axis: residue labels
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.font = canvasFont(8, null, canvas);
+  residues.forEach((res, ri) => {
+    const y = pad.top + ri * rowH + rowH / 2;
+    ctx.fillText(String(res), pad.left - 4, y);
+  });
+}
+
+function drawDistributionCanvas(canvasId, probs, Q, cssColor, period) {
+  const color = resolveColor(cssColor);
+  const maxP = Math.max(...probs) || 1;
+  const threshold = maxP * 0.005;
+  const nonZeroCount = probs.reduce((c, v) => c + (v > threshold ? 1 : 0), 0);
+  const isDense = nonZeroCount > Q / 2;
+
+  const s = setupCanvas(canvasId, { yAxis: !isDense });
+  if (!s) return;
+  const { canvas, ctx, W, H, pad, plotW, plotH } = s;
+
+  if (isDense) {
+    // Uniform distribution: solid filled rectangle
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.65;
+    ctx.fillRect(pad.left, pad.top, plotW, plotH);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#fff';
+    ctx.font = canvasFont(14, 'bold', canvas);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(`All ${Q} states equal: P = 1/${Q}`, pad.left + plotW / 2, pad.top + plotH / 2);
+    ctx.shadowBlur = 0;
+  } else {
+    drawGridlines(ctx, pad, plotW, plotH, maxP, v => (v * 100).toFixed(0) + '%', canvas);
+
+    const barW = plotW / Q;
+    const minBarW = Math.max(barW, 4);
+
+    for (let i = 0; i < Q; i++) {
+      if (probs[i] <= threshold) continue;
+      const h = (probs[i] / maxP) * plotH;
+      const x = pad.left + (i / Q) * plotW;
+      const y = pad.top + plotH - h;
+
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = color;
+      ctx.fillRect(x - minBarW / 2 + barW / 2, y, minBarW, h);
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  // X-axis labels
+  ctx.fillStyle = '#8892a8';
+  ctx.font = canvasFont(11, null, canvas);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const labelStep = Q >= 128 ? 64 : (Q >= 32 ? 8 : 1);
+  for (let i = 0; i < Q; i += labelStep) {
+    const x = pad.left + (i / Q) * plotW;
+    ctx.fillText(String(i), x, pad.top + plotH + 6);
+  }
+
+  // Store data for tooltips + base image for hover highlight
+  canvas._tooltipType = 'distribution';
+  canvas._probs = probs;
+  canvas._Q = Q;
+  canvas._pad = pad;
+  canvas._plotW = plotW;
+  canvas._baseImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+}
+
+function drawMeasurementCanvas(canvasId, probs, Q, measured) {
+  const s = setupCanvas(canvasId, { yAxis: true });
+  if (!s) return;
+  const { canvas, ctx, pad, plotW, plotH } = s;
+
+  const maxP = Math.max(...probs) || 1;
+  drawGridlines(ctx, pad, plotW, plotH, maxP, v => (v * 100).toFixed(0) + '%', canvas);
+
+  const barW = plotW / Q;
+  const minBarW = Math.max(barW, 5);
+
+  for (let i = 0; i < Q; i++) {
+    if (probs[i] < 0.005) continue;
+    const h = (probs[i] / maxP) * plotH;
+    const x = pad.left + (i / Q) * plotW;
+    const y = pad.top + plotH - h;
+    const isMeasured = i === measured;
+
+    ctx.shadowColor = isMeasured ? '#f778ba' : '#f0883e';
+    ctx.shadowBlur = isMeasured ? 12 : 6;
+    ctx.fillStyle = isMeasured ? '#f778ba' : 'rgba(240,136,62,0.5)';
+    ctx.fillRect(x - minBarW / 2 + barW / 2, y, minBarW, h);
+  }
+  ctx.shadowBlur = 0;
+
+  // Label the measured peak
+  const mx = pad.left + (measured / Q) * plotW + barW / 2;
+  ctx.fillStyle = '#f778ba';
+  ctx.font = canvasFont(11, 'bold', canvas);
+  ctx.textAlign = 'center';
+  ctx.fillText('\u25BC ' + measured, mx, pad.top - 1);
+
+  // X-axis labels
+  ctx.fillStyle = '#8892a8';
+  ctx.font = canvasFont(11, null, canvas);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const labelStep = Q >= 128 ? 64 : 8;
+  for (let i = 0; i < Q; i += labelStep) {
+    ctx.fillText(String(i), pad.left + (i / Q) * plotW, pad.top + plotH + 6);
+  }
+
+  // Store data for tooltips + base image for hover highlight
+  canvas._tooltipType = 'measurement';
+  canvas._probs = probs;
+  canvas._Q = Q;
+  canvas._measured = measured;
+  canvas._pad = pad;
+  canvas._plotW = plotW;
+  canvas._baseImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+}
+
+function highlightCanvasBar(canvas, mx) {
+  if (!canvas._baseImage) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+
+  let idx = -1;
+  if (canvas._data) {
+    idx = Math.floor((mx - canvas._pad.left) / canvas._barW);
+    if (idx < 0 || idx >= canvas._data.length) idx = -1;
+  } else if (canvas._tooltipType && canvas._probs) {
+    const Q = canvas._Q;
+    idx = Math.round(((mx - canvas._pad.left) / canvas._plotW) * Q);
+    if (idx < 0 || idx >= Q || canvas._probs[idx] < 0.001) idx = -1;
+  }
+
+  if (idx === canvas._hlIdx) return;
+  canvas._hlIdx = idx;
+
+  ctx.putImageData(canvas._baseImage, 0, 0);
+
+  if (idx >= 0) {
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    const plotH = rect.height - canvas._pad.top - canvas._pad.bottom;
+    if (canvas._data) {
+      const x = canvas._pad.left + idx * canvas._barW;
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.fillRect(x, canvas._pad.top, canvas._barW, plotH);
+    } else if (canvas._tooltipType) {
+      const Q = canvas._Q;
+      const bw = canvas._plotW / Q;
+      const minBW = Math.max(bw, 5);
+      const x = canvas._pad.left + (idx / Q) * canvas._plotW + bw / 2 - minBW / 2;
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.fillRect(x - 2, canvas._pad.top, minBW + 4, plotH);
+    }
+    ctx.restore();
+  }
+}
+
+// Canvas rounded rect helper
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawWaveInterference(canvasId, period, Q) {
+  const s = setupCanvas(canvasId, { yAxis: false });
+  if (!s) return;
+  const { canvas, ctx, pad, plotW, plotH } = s;
+
+  const numWaves = Math.min(period, 6);
+  const waveColors = [
+    resolveColor('var(--blue)'), resolveColor('var(--purple)'),
+    resolveColor('var(--cyan)'), resolveColor('var(--pink)'),
+    resolveColor('var(--green)'), resolveColor('var(--red)')
+  ];
+  const combinedColor = resolveColor('var(--orange)');
+  const points = 200;
+
+  // Draw individual wave contributions (faint)
+  for (let w = 0; w < numWaves; w++) {
+    ctx.beginPath();
+    ctx.strokeStyle = waveColors[w % waveColors.length];
+    ctx.globalAlpha = 0.25;
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= points; i++) {
+      const x = pad.left + (i / points) * plotW;
+      const freq = w * Q / period;
+      const val = Math.cos(2 * Math.PI * freq * i / points);
+      const y = pad.top + plotH / 2 - val * plotH * 0.35;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // Draw combined interference pattern (bold)
+  const combined = new Float64Array(points + 1);
+  let maxAmp = 0;
+  for (let i = 0; i <= points; i++) {
+    let sum = 0;
+    for (let w = 0; w < numWaves; w++) {
+      const freq = w * Q / period;
+      sum += Math.cos(2 * Math.PI * freq * i / points);
+    }
+    combined[i] = sum;
+    maxAmp = Math.max(maxAmp, Math.abs(sum));
+  }
+
+  ctx.beginPath();
+  ctx.strokeStyle = combinedColor;
+  ctx.lineWidth = 2.5;
+  for (let i = 0; i <= points; i++) {
+    const x = pad.left + (i / points) * plotW;
+    const y = pad.top + plotH / 2 - (combined[i] / maxAmp) * plotH * 0.4;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Mark constructive interference peaks
+  const peakSpacing = points / period;
+  for (let p = 0; p < period; p++) {
+    const peakX = pad.left + (p * peakSpacing / points) * plotW;
+    ctx.fillStyle = combinedColor;
+    ctx.globalAlpha = 0.12;
+    ctx.fillRect(peakX - 3, pad.top, 6, plotH);
+    ctx.globalAlpha = 1;
+
+    // Peak label
+    const peakVal = Math.round(p * Q / period);
+    ctx.fillStyle = combinedColor;
+    ctx.font = canvasFont(8, '600', canvas);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(String(peakVal), peakX, pad.top + plotH + 4);
+  }
+
+  // Axis line
+  ctx.strokeStyle = 'rgba(136,146,168,0.2)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 3]);
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top + plotH / 2);
+  ctx.lineTo(pad.left + plotW, pad.top + plotH / 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// ==================== STEP 4: STATE EVOLUTION ====================
+function renderEvolution() {
+  const v = viz();
+  const dist = computeDistributions(S.a, S.N);
+  if (!dist) { v.innerHTML = '<p>Could not compute distributions.</p>'; return; }
+
+  const subSteps = [
+    { key: 'initial', title: 'Initial State |0\u27E9', color: 'var(--cyan)', label: 'All probability at |0\u27E9' },
+    { key: 'hadamard', title: 'After Hadamard', color: 'var(--blue)', label: 'Uniform superposition' },
+    { key: 'oracle', title: 'After Oracle (work reg \u2192 1)', color: 'var(--purple)', label: `Periodic with r = ${dist.period}` },
+    { key: 'qft', title: 'After Inverse QFT', color: 'var(--orange)', label: `Peaks at multiples of ${dist.Q}/${dist.period}` },
+  ];
+
+  const ss = Math.min(S.subStep, 3);
+  const currentDist = dist[subSteps[ss].key];
+
+  v.innerHTML = `
+    <div class="substep-controls">
+      ${subSteps.map((s, i) => `<button class="substep-btn ${ss === i ? 'active' : ''}" data-action="evo-step" data-value="${i}">${s.title}</button>`).join('')}
+    </div>
+    <div class="evo-canvas-wrapper">
+      <div class="evo-stage-label" aria-live="polite" style="color:${subSteps[ss].color}">
+        ${subSteps[ss].label}
+      </div>
+      <div class="bar-chart-container">
+        <div class="bar-chart-title">P(x) &mdash; Probability distribution of counting register (${dist.Q} states)</div>
+        <canvas id="evo-canvas" class="chart-canvas chart-canvas-lg canvas-fade-in" aria-label="Probability distribution of ${dist.Q} quantum states">${subSteps[ss].label}</canvas>
+      </div>
+      ${ss === 3 ? `
+      <div class="wave-canvas-container">
+        <div class="bar-chart-title">Wave interference: individual contributions combine to form peaks</div>
+        <canvas id="wave-canvas" class="chart-canvas chart-canvas-md canvas-fade-in" aria-label="Wave interference visualization showing how periodic waves combine">Constructive interference at multiples of Q/r</canvas>
+        <div class="wave-legend">
+          <span class="wave-legend-item"><span class="wave-legend-dot" style="background:var(--blue)"></span> Individual waves</span>
+          <span class="wave-legend-item"><span class="wave-legend-dot" style="background:var(--orange)"></span> Combined pattern</span>
+          <span class="wave-legend-item"><span class="wave-legend-dot" style="background:rgba(251,146,60,0.3)"></span> Peak positions</span>
+        </div>
+      </div>` : ''}
+    </div>
+    <div class="evo-controls">
+      <button class="nav-btn" data-action="evo-prev" ${ss===0?'disabled':''}>&#9664; Prev Stage</button>
+      <button class="nav-btn" data-action="toggle-auto">${S._autoPlayTimer ? '\u23F8 Pause' : '\u25B6 Auto-Play'}</button>
+      <button class="nav-btn primary" data-action="evo-next" ${ss===3?'disabled':''}>Next Stage &#9654;</button>
+    </div>`;
+
+  drawDistributionCanvas('evo-canvas', currentDist, dist.Q, subSteps[ss].color, dist.period);
+  if (ss === 3) drawWaveInterference('wave-canvas', dist.period, dist.Q);
+
+  renderEvolutionExplanation(ss, dist);
+}
+
+function evoStep(i) {
+  if (i === S.subStep) return;
+  const wrapper = document.querySelector('.evo-canvas-wrapper');
+  if (wrapper) {
+    wrapper.classList.add('evo-transition-out');
+    setTimeout(() => {
+      S.subStep = i;
+      renderEvolution();
+      const newWrapper = document.querySelector('.evo-canvas-wrapper');
+      if (newWrapper) newWrapper.classList.add('evo-transition-in');
+    }, 200);
+  } else {
+    S.subStep = i;
+    renderEvolution();
+  }
+}
+
+function toggleAutoPlay() {
+  if (S._autoPlayTimer) {
+    clearTimers();
+    renderEvolution();
+  } else {
+    if (S.subStep >= 3) S.subStep = -1; // reset to start if at end
+    S._autoPlayTimer = setInterval(() => {
+      if (S.subStep < 3) {
+        evoStep(S.subStep + 1);
+      } else {
+        clearTimers();
+        renderEvolution();
+      }
+    }, 2000);
+    renderEvolution();
+  }
+}
+
+function renderEvolutionExplanation(ss, dist) {
+  const Q = dist.Q;
+  const r = dist.period;
+  const texts = [
+    `<h3>Initial State</h3>
+     <p>Both registers start in the all-zeros state <span class="math">|0\u27E9<sup>\u2297n</sup></span>.
+     All probability is concentrated at <span class="math">|0\u27E9</span> in the counting register.</p>
+     <p class="intuition"><strong>Intuition:</strong> Think of this as all qubits pointing "up" &mdash; a single definite configuration with no quantum behavior yet.</p>`,
+
+    `<h3>After Hadamard Gates</h3>
+     <p>Hadamard gates on the counting register create an <strong>equal <span class="notation-tip" data-glossary="superposition">superposition</span></strong> of all
+     <span class="math">${Q}</span> basis states. Each state has probability
+     <span class="math">1/${Q} = ${(1/Q*100).toFixed(2)}%</span>.</p>
+     <p>This is quantum parallelism: the register simultaneously encodes every input to the function!</p>
+     <p class="intuition"><strong>Intuition:</strong> Each qubit is now in a coin-flip state. With ${N_QUBITS} qubits, we explore ${Q} inputs simultaneously &mdash; like testing every possible exponent at once.</p>`,
+
+    `<h3>After Modular Exponentiation</h3>
+     <p>The oracle computes <span class="math">${S.a}<sup>x</sup> mod ${S.N}</span> into the work register.
+     The registers become <strong>entangled</strong>.</p>
+     <p>If we imagine measuring the work register and getting 1 (where <span class="math">f(x) = 1</span>),
+     the counting register collapses to a <strong>periodic</strong> pattern: states
+     <span class="math">|0\u27E9, |${r}\u27E9, |${2*r}\u27E9, \u2026</span>
+     each with probability <span class="math">1/${Q/r}</span>.</p>
+     <p class="intuition"><strong>Intuition:</strong> The oracle "tags" each input with its function value. States with the same output become linked. The counting register now carries a hidden periodic pattern, but we can't see it directly.</p>`,
+
+    `<h3>After Inverse QFT</h3>
+     <p>The inverse QFT converts the periodic state into sharp
+     <span class="highlight">peaks at multiples of ${Q}/${r} = ${Q/r}</span>.</p>
+     <p>Through constructive and destructive interference, probability concentrates at positions
+     <span class="math">j = 0, ${Q/r}, ${2*Q/r}, ${3*Q/r}${r > 4 ? ', \u2026' : ''}</span>.
+     Each peak has probability <span class="math">1/${r} = ${(100/r).toFixed(1)}%</span>.</p>
+     <p>This is the heart of the quantum speedup &mdash; the QFT reveals the hidden period!</p>
+     <p class="intuition"><strong>Intuition:</strong> The QFT is like pointing a prism at a wave &mdash; it decomposes the periodic signal into its frequency components. The peaks correspond to the frequency (1/r) of the hidden pattern.</p>`
+  ];
+  expl().innerHTML = texts[ss];
+}
+
+// ==================== STEP 5: MEASUREMENT ====================
+function renderMeasurement() {
+  const v = viz();
+  const dist = computeDistributions(S.a, S.N);
+  if (!dist) return;
+  const Q = dist.Q;
+  const r = dist.period;
+
+  // Find peak positions
+  const peaks = [];
+  for (let j = 0; j < Q; j++) {
+    if (dist.qft[j] > 0.01) peaks.push(j);
+  }
+
+  if (S.measured === null) {
+    // Pick a random non-zero peak for more interesting result
+    const nonZeroPeaks = peaks.filter(p => p > 0);
+    S.measured = nonZeroPeaks[Math.floor(Math.random() * nonZeroPeaks.length)] || peaks[1] || peaks[0];
+    if (S.measureHistory.length < 12) S.measureHistory.push(S.measured);
+  }
+
+  const j = S.measured;
+  const cf = continuedFraction(j, Q);
+  const rCandidates = cf.convergents.filter(c => c.q > 0 && c.q <= S.N).map(c => c.q);
+
+  v.innerHTML = `
+    <div class="bar-chart-container collapse-anim">
+      <div class="bar-chart-title">Post-QFT probability distribution (measurement collapses to one peak)</div>
+      <canvas id="meas-canvas" class="chart-canvas chart-canvas-md canvas-fade-in" aria-label="Post-QFT distribution with measured value ${j}">Measurement collapsed to value ${j}</canvas>
+    </div>
+    <div class="measure-result" aria-live="polite">
+      <div class="measure-label">Measured value:</div>
+      <div class="measure-value measure-pop color-pink">${j}</div>
+      <button class="nav-btn mt-8" data-action="re-measure">Re-measure \u21BB</button>
+      ${S.measureHistory.length > 1 ? `
+      <div class="measure-history">
+        <strong>Measurement history:</strong>
+        <div class="measure-history-pills">
+        ${S.measureHistory.map((m, i) => {
+          const isLatest = m === S.measured;
+          return `<span class="measure-pill ${isLatest ? 'latest' : ''}" data-action="show-measurement" data-value="${m}">${m}</span>`;
+        }).join('')}
+        </div>
+        <div class="measure-confirm">All values are multiples of ${Q}/${r} = ${Math.round(Q/r)}, confirming the period <span class="math">r = ${r}</span>.</div>
+      </div>` : ''}
+      ${S.measureHistory.length >= 3 ? (() => {
+        const expectedPeaks = [];
+        for (let s = 0; s < r; s++) expectedPeaks.push(Math.round(s * Q / r));
+        const onPeak = S.measureHistory.filter(m => expectedPeaks.includes(m)).length;
+        const gcdAll = S.measureHistory.reduce((g, m) => gcd(g, m), S.measureHistory[0]);
+        const expectedGCD = Math.round(Q / r);
+        return `<div class="info-card mt-12">
+          <h4>Measurement Analysis (${S.measureHistory.length} samples)</h4>
+          <div class="text-md mt-8">
+            <span class="success">${onPeak}/${S.measureHistory.length}</span> measurements fell on expected peaks
+            (multiples of ${Q}/${r} = ${expectedGCD}).
+            <div class="mt-8">GCD of all measurements: <span class="math">${gcdAll}</span>
+            ${gcdAll === expectedGCD ? ` = ${Q}/${r} <span class="success">&#10003; consistent with r = ${r}</span>` :
+              gcdAll % expectedGCD === 0 ? ` (multiple of ${expectedGCD})` : ''}</div>
+          </div>
+        </div>`;
+      })() : ''}
+    </div>
+    <div class="info-card collapse-delay mt-12">
+      <h4>Continued Fraction Expansion of ${j}/${Q}</h4>
+      <div class="cf-steps">
+        <span class="math">${j}/${Q}</span>
+        ${cf.convergents.map((c, i) => `<span class="cf-step" style="background:${c.q === r ? 'rgba(63,185,80,0.2)' : 'var(--surface2)'}; ${c.q === r ? 'border:1px solid var(--green);color:var(--green)' : ''}">
+          ${c.p}/${c.q}${c.q === r ? ' \u2190 r!' : ''}
+        </span>`).join(' \u2192 ')}
+      </div>
+      <div class="mt-8 text-md">
+        Period candidates (denominators \u2264 ${S.N}): ${rCandidates.map(rc =>
+          `<span style="color:${rc === r ? 'var(--green)' : 'var(--text)'};font-weight:${rc === r ? '700' : '400'}">${rc}</span>`
+        ).join(', ')}
+      </div>
+    </div>
+    <div class="cf-tree-container">
+      <div class="bar-chart-title">Continued fraction tree — click a convergent to verify</div>
+      <canvas id="cf-tree-canvas" class="chart-canvas canvas-fade-in" style="height:110px" aria-label="Continued fraction tree visualization">CF coefficients and convergents</canvas>
+      <div id="cf-verify-output"></div>
+    </div>`;
+
+  // Draw measurement chart with highlighted peak
+  drawMeasurementCanvas('meas-canvas', dist.qft, Q, j);
+  drawCFTree('cf-tree-canvas', cf, Q, S.a, S.N, r);
+
+  expl().innerHTML = `<h3>Step 5: Measurement & Continued Fractions</h3>
+    <p>We measure the counting register and get <span class="math">j = ${j}</span>.</p>
+    <p>We know <span class="math">j/${Q} = ${j}/${Q} \u2248 s/r</span> for some integer <span class="math">s</span>.
+    To extract <span class="math">r</span>, we use the <strong>continued fraction expansion</strong> of
+    <span class="math">${j}/${Q}</span>.</p>
+    <p>The convergents give us candidate periods. We check each: does
+    <span class="math">${S.a}<sup>r</sup> \u2261 1 (mod ${S.N})</span>?</p>
+    <p>Result: <span class="success">r = ${r}</span> ${rCandidates.includes(r) ? '(found in convergents!)' : '(may need multiple measurements)'}</p>
+    <details class="expandable-section">
+      <summary>How do continued fractions work?</summary>
+      <div class="expand-body">
+        <p>A <strong>continued fraction</strong> expresses a rational number as a nested sequence of integer divisions.
+        The algorithm repeatedly takes the integer part, then inverts the remainder:</p>
+        <ol class="step-list">
+          ${cf.coeffs.map((c, i) => {
+            const conv = cf.convergents[i];
+            return `<li><span class="math">a<sub>${i}</sub> = ${c}</span> &rarr; convergent
+              <span class="math">${conv.p}/${conv.q}</span>
+              ${conv.q === r ? '<span class="success"> &larr; this is r!</span>' : ''}</li>`;
+          }).join('')}
+        </ol>
+        <p>Each <strong>convergent</strong> is the best rational approximation with
+        that denominator size or smaller. Since <span class="math">j/Q &asymp; s/r</span>,
+        the denominator of a convergent gives us a candidate for <span class="math">r</span>.</p>
+        <p>We test each candidate: does <span class="math">${S.a}<sup>r</sup> &equiv; 1 (mod ${S.N})</span>?
+        The smallest passing denominator is our period.</p>
+      </div>
+    </details>`;
+}
+
+function drawCFTree(canvasId, cf, Q, a, N, period) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+
+  ctx.fillStyle = '#0a0e1a';
+  ctx.fillRect(0, 0, W, H);
+
+  const numCoeffs = Math.min(cf.coeffs.length, 8);
+  const nodeW = Math.min(60, (W - 40) / numCoeffs - 8);
+  const nodeH = 28;
+  const totalNodesW = numCoeffs * (nodeW + 8) - 8;
+  const startX = (W - totalNodesW) / 2;
+  const topY = 16;
+  const bottomY = H - 40;
+  const arrowColor = resolveColor('var(--text-dim)');
+  const purpleColor = resolveColor('var(--purple)');
+  const greenColor = resolveColor('var(--green)');
+  const dimColor = resolveColor('var(--text-dim)');
+
+  canvas._clickRegions = [];
+
+  // Draw coefficient nodes (top row)
+  for (let i = 0; i < numCoeffs; i++) {
+    const x = startX + i * (nodeW + 8);
+    const y = topY;
+
+    ctx.fillStyle = 'rgba(129,140,248,0.15)';
+    ctx.strokeStyle = purpleColor;
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, x, y, nodeW, nodeH, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = purpleColor;
+    ctx.font = canvasFont(9, '600', canvas);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`a\u2080=${cf.coeffs[i]}`.replace('a\u2080', `a${i}`), x + nodeW / 2, y + nodeH / 2);
+  }
+
+  // Draw convergent nodes (bottom row) and arrows
+  for (let i = 0; i < numCoeffs; i++) {
+    const conv = cf.convergents[i];
+    if (!conv) continue;
+    const x = startX + i * (nodeW + 8);
+    const y = bottomY;
+    const isPeriod = conv.q === period;
+
+    // Arrow from coeff to convergent
+    ctx.strokeStyle = arrowColor;
+    ctx.globalAlpha = 0.4;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + nodeW / 2, topY + nodeH + 2);
+    ctx.lineTo(x + nodeW / 2, y - 2);
+    ctx.stroke();
+    // Arrow head
+    ctx.beginPath();
+    ctx.moveTo(x + nodeW / 2 - 3, y - 6);
+    ctx.lineTo(x + nodeW / 2, y - 1);
+    ctx.lineTo(x + nodeW / 2 + 3, y - 6);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Convergent node
+    const bgColor = isPeriod ? 'rgba(52,211,153,0.15)' : 'rgba(136,146,168,0.08)';
+    const borderColor = isPeriod ? greenColor : dimColor;
+    ctx.fillStyle = bgColor;
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = isPeriod ? 2 : 1;
+    roundRect(ctx, x, y, nodeW, nodeH, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = isPeriod ? greenColor : resolveColor('var(--text)');
+    ctx.font = canvasFont(9, isPeriod ? '700' : '500', canvas);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${conv.p}/${conv.q}`, x + nodeW / 2, y + nodeH / 2);
+
+    // Store click region
+    canvas._clickRegions.push({ x, y, w: nodeW, h: nodeH, conv, isPeriod });
+  }
+
+  // Title labels
+  ctx.fillStyle = dimColor;
+  ctx.font = canvasFont(8, null, canvas);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('CF coefficients:', 4, topY + 6);
+  ctx.fillText('Convergents:', 4, bottomY + 6);
+}
+
+function reMeasure() {
+  S.measured = null;
+  renderMeasurement();
+}
+
+// ==================== STEP 6: FACTORS ====================
+function renderFactors() {
+  const v = viz();
+  const r = S.period;
+  const rEven = r % 2 === 0;
+  let p = null, q = null, success = false;
+
+  if (rEven) {
+    const aR2 = modPow(S.a, r / 2, S.N);
+    if (aR2 !== S.N - 1) {
+      p = gcd(aR2 - 1, S.N);
+      q = gcd(aR2 + 1, S.N);
+      success = p > 1 && q > 1 && p !== S.N && q !== S.N;
+    }
+  }
+
+  if (success) {
+    v.innerHTML = `
+      <div class="factor-reveal fade-in">
+        <div class="factor-subtitle">
+          From period <span class="math">r = ${r}</span> and <span class="math">a = ${S.a}</span>:
+        </div>
+        <div class="info-grid max-w-500 mx-auto mb-20">
+          <div class="info-card">
+            <h4>gcd(a<sup>r/2</sup> &minus; 1, N)</h4>
+            <div class="value color-green">
+              gcd(${modPow(S.a, r/2, S.N)} &minus; 1, ${S.N}) = <strong>${p}</strong>
+            </div>
+          </div>
+          <div class="info-card">
+            <h4>gcd(a<sup>r/2</sup> + 1, N)</h4>
+            <div class="value color-green">
+              gcd(${modPow(S.a, r/2, S.N)} + 1, ${S.N}) = <strong>${q}</strong>
+            </div>
+          </div>
+        </div>
+        <div class="big-equation">
+          <span class="color-blue">${S.N}</span>
+          <span class="equals">=</span>
+          <span class="factor">${p}</span>
+          <span class="times">&times;</span>
+          <span class="factor">${q}</span>
+        </div>
+        <div class="factor-success-msg" role="alert">\u2714 Successfully factored!</div>
+        <button class="nav-btn mt-20" data-action="try-again">Try Different Parameters \u21BB</button>
+      </div>`;
+  } else {
+    const reason = !rEven ? `r = ${r} is odd` : `a^(r/2) \u2261 -1 (mod N)`;
+    v.innerHTML = `
+      <div class="factor-reveal fade-in color-orange">
+        <div class="factor-fail-title">\u26A0 This attempt didn't yield factors</div>
+        <div class="factor-fail-reason">Reason: ${reason}</div>
+        <div class="factor-fail-note">
+          In practice, we'd pick a different <span class="math">a</span> and try again.
+          Shor's algorithm succeeds with probability \u2265 1/2 per attempt.
+        </div>
+        <button class="nav-btn primary mt-20" data-action="try-again">Try Different a \u21BB</button>
+      </div>`;
+  }
+
+  const aR2 = rEven ? modPow(S.a, r/2, S.N) : '?';
+  expl().innerHTML = `<h3>Step 6: Classical Post-Processing</h3>
+    <p>With period <span class="math">r = ${r}</span>, the factoring recipe is:</p>
+    <ol class="step-list">
+      <li>Check: is <span class="math">r</span> even? <strong>${rEven ? 'Yes!' : 'No \u2014 retry'}</strong></li>
+      ${rEven ? `<li>Compute <span class="math">a<sup>r/2</sup> mod N = ${S.a}<sup>${r/2}</sup> mod ${S.N} = ${aR2}</span></li>
+      <li>Check: is <span class="math">${aR2} \u2261 &minus;1 (mod ${S.N})</span>? <strong>${Number(aR2) === S.N - 1 ? 'Yes \u2014 retry' : 'No \u2014 proceed!'}</strong></li>
+      <li>Compute <span class="math">gcd(${aR2} &minus; 1, ${S.N}) = ${p}</span> and <span class="math">gcd(${aR2} + 1, ${S.N}) = ${q}</span></li>` : ''}
+    </ol>
+    ${success ? `<p class="mt-12">The factors of <span class="math">${S.N}</span> are
+    <span class="success">${p}</span> and <span class="success">${q}</span>.</p>` : ''}
+    <p class="confidence-note">Note: A real quantum computer would repeat the full quantum subroutine O(log log N) times to boost confidence.</p>
+    <div class="recap-box">
+      <h4 class="recap-title">Algorithm Recap</h4>
+      <div class="recap-grid">
+        <span class="recap-step color-blue">1. Setup</span>
+        <span>Chose N = ${S.N}, a = ${S.a} (coprime to N)</span>
+        <span class="recap-step color-cyan">2. Superposition</span>
+        <span>Hadamard gates created ${Q_STATES}-state superposition</span>
+        <span class="recap-step color-purple">3. Oracle</span>
+        <span>Encoded f(x) = ${S.a}<sup>x</sup> mod ${S.N}, creating periodic entanglement</span>
+        <span class="recap-step color-orange">4. QFT</span>
+        <span>Inverse QFT revealed period as peaks at multiples of ${Q_STATES}/${r}</span>
+        <span class="recap-step color-pink">5. Measurement</span>
+        <span>Measured j = ${S.measured || '?'}, used continued fractions to find r = ${r}</span>
+        <span class="recap-step color-green">6. Factors</span>
+        <span>${success
+          ? `gcd(${aR2}\u22121, ${S.N})=${p} and gcd(${aR2}+1, ${S.N})=${q}`
+          : `Period r=${r} ${!rEven ? 'was odd' : 'gave trivial factors'} \u2014 retry needed`}</span>
+      </div>
+    </div>`;
+}
+
+function tryAgain() {
+  resetState({ step: 1 });
+  render();
+}
+
+// ==================== NAVIGATION ====================
+function goToStep(n) {
+  clearTimers();
+  S._prevStep = S.step;
+  S.step = n;
+  S.subStep = 0;
+  if (n !== 5) S.measured = null;
+  render();
+}
+
+function nextStep() {
+  if (S.step < STEPS.length - 1) goToStep(S.step + 1);
+}
+
+function prevStep() {
+  if (S.step > 0) goToStep(S.step - 1);
+}
+
+// Help overlay
+function toggleHelpOverlay() {
+  let overlay = document.getElementById('help-overlay');
+  if (overlay) { overlay.remove(); return; }
+
+  overlay = document.createElement('div');
+  overlay.id = 'help-overlay';
+  overlay.className = 'help-overlay';
+  overlay.innerHTML = `
+    <div class="help-card">
+      <h3>Keyboard Shortcuts</h3>
+      <div class="help-row">
+        <span>Navigate steps</span>
+        <span class="help-keys"><kbd class="kbd">\u2190</kbd><kbd class="kbd">\u2192</kbd></span>
+      </div>
+      <div class="help-row">
+        <span>Sub-steps (Steps 4&ndash;5)</span>
+        <span class="help-keys"><kbd class="kbd">\u2191</kbd><kbd class="kbd">\u2193</kbd></span>
+      </div>
+      <div class="help-row">
+        <span>Next step</span>
+        <span class="help-keys"><kbd class="kbd">Space</kbd></span>
+      </div>
+      <div class="help-row">
+        <span>This help</span>
+        <span class="help-keys"><kbd class="kbd">?</kbd></span>
+      </div>
+      <div class="help-row">
+        <span>Close overlay</span>
+        <span class="help-keys"><kbd class="kbd">Esc</kbd></span>
+      </div>
+      <div class="text-center mt-16">
+        <button class="nav-btn" id="help-close-btn">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay || e.target.id === 'help-close-btn') overlay.remove();
+  });
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  // Handle Enter on custom N input
+  if (e.target.id === 'custom-n' && e.key === 'Enter') { e.preventDefault(); applyCustomN(); return; }
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'Escape') {
+    const overlay = document.getElementById('help-overlay');
+    if (overlay) { overlay.remove(); e.preventDefault(); return; }
+  }
+  if (e.key === '?') { e.preventDefault(); toggleHelpOverlay(); return; }
+  if (e.key === 'Home') { e.preventDefault(); goToStep(0); return; }
+  if (e.key === 'End') { e.preventDefault(); goToStep(STEPS.length - 1); return; }
+  // Trap Tab inside help overlay
+  const helpOverlay = document.getElementById('help-overlay');
+  if (helpOverlay && e.key === 'Tab') {
+    const closeBtn = document.getElementById('help-close-btn');
+    if (closeBtn) { e.preventDefault(); closeBtn.focus(); }
+    return;
+  }
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextStep(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); prevStep(); }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (S.step === 3 && S.subStep < 3) circuitSelect(S.subStep + 1);
+    else if (S.step === 4 && S.subStep < 3) evoStep(S.subStep + 1);
+  }
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (S.step === 3 && S.subStep > 0) circuitSelect(S.subStep - 1);
+    else if (S.step === 4 && S.subStep > 0) evoStep(S.subStep - 1);
+  }
+});
+
+// Tooltip for canvas charts
+document.addEventListener('mousemove', (e) => {
+  const tooltip = document.getElementById('tooltip');
+
+  // Notation glossary tooltips
+  const notationTip = e.target.closest('.notation-tip');
+  if (notationTip && notationTip.dataset.glossary) {
+    const def = GLOSSARY[notationTip.dataset.glossary];
+    if (def) {
+      tooltip.textContent = def;
+      tooltip.style.display = 'block';
+      tooltip.style.left = Math.min(e.clientX + 12, window.innerWidth - 280) + 'px';
+      tooltip.style.top = (e.clientY - 30) + 'px';
+      return;
+    }
+  }
+
+  const canvas = e.target.closest('canvas');
+
+  if (!canvas) { tooltip.style.display = 'none'; return; }
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  let text = null;
+
+  if (canvas._data) {
+    // Period canvas
+    const barIdx = Math.floor((mx - canvas._pad.left) / canvas._barW);
+    if (barIdx >= 0 && barIdx < canvas._data.length) {
+      const v = canvas._data[barIdx];
+      text = `x=${v.x}: ${S.a}^${v.x} mod ${S.N} = ${v.fx}`;
+    }
+  } else if (canvas._tooltipType === 'distribution' && canvas._probs) {
+    const Q = canvas._Q;
+    const idx = Math.round(((mx - canvas._pad.left) / canvas._plotW) * Q);
+    if (idx >= 0 && idx < Q) {
+      const prob = canvas._probs[idx];
+      text = prob > 0.001
+        ? `|${idx}\u27E9: P = ${(prob * 100).toFixed(2)}%`
+        : `|${idx}\u27E9: P \u2248 0`;
+    }
+  } else if (canvas._tooltipType === 'measurement' && canvas._probs) {
+    const Q = canvas._Q;
+    const idx = Math.round(((mx - canvas._pad.left) / canvas._plotW) * Q);
+    if (idx >= 0 && idx < Q && canvas._probs[idx] > 0.001) {
+      const isMeas = idx === canvas._measured;
+      text = `|${idx}\u27E9: P = ${(canvas._probs[idx] * 100).toFixed(2)}%${isMeas ? ' \u2190 MEASURED' : ''}`;
+    }
+  }
+
+  // Hover highlight on canvas bar
+  highlightCanvasBar(canvas, mx);
+
+  if (text) {
+    tooltip.textContent = text;
+    tooltip.style.display = 'block';
+    tooltip.style.left = Math.min(e.clientX + 12, window.innerWidth - 220) + 'px';
+    tooltip.style.top = (e.clientY - 30) + 'px';
+  } else {
+    tooltip.style.display = 'none';
+  }
+});
+
+// Clear canvas hover highlight on mouse leave
+document.addEventListener('mouseout', (e) => {
+  if (e.target.tagName === 'CANVAS' && e.target._baseImage) {
+    const ctx = e.target.getContext('2d');
+    ctx.putImageData(e.target._baseImage, 0, 0);
+    e.target._hlIdx = undefined;
+  }
+});
+
+// ==================== INIT ====================
+document.getElementById('step-indicator').addEventListener('click', (e) => {
+  const dot = e.target.closest('.step-dot');
+  if (!dot || dot.dataset.step === undefined) return;
+  goToStep(parseInt(dot.dataset.step, 10));
+});
+
+// Event delegation for viz-area actions
+document.getElementById('viz-area').addEventListener('click', (e) => {
+  // CF tree canvas click handling
+  const cfCanvas = document.getElementById('cf-tree-canvas');
+  if (cfCanvas && e.target === cfCanvas && cfCanvas._clickRegions) {
+    const rect = cfCanvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    for (const region of cfCanvas._clickRegions) {
+      if (mx >= region.x && mx <= region.x + region.w && my >= region.y && my <= region.y + region.h) {
+        const conv = region.conv;
+        const result = modPow(S.a, conv.q, S.N);
+        const isPeriod = result === 1;
+        const output = document.getElementById('cf-verify-output');
+        if (output) {
+          output.innerHTML = `<div class="cf-verify-result ${isPeriod ? 'is-period' : 'not-period'}">
+            <strong>${S.a}<sup>${conv.q}</sup> mod ${S.N} = ${result}</strong>
+            ${isPeriod ? `<span class="success"> \u2714 ${conv.q} is the period!</span>` : `<span class="color-red"> \u2717 Not 1, so ${conv.q} is not the period</span>`}
+          </div>`;
+        }
+        return;
+      }
+    }
+  }
+
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const val = btn.dataset.value;
+  switch (action) {
+    case 'select-n':        selectN(Number(val)); break;
+    case 'select-a':        selectA(Number(val)); break;
+    case 'circuit-sel':     circuitSelect(Number(val)); break;
+    case 'evo-step':        evoStep(Number(val)); break;
+    case 'evo-prev':        evoStep(Math.max(0, S.subStep - 1)); break;
+    case 'evo-next':        evoStep(Math.min(3, S.subStep + 1)); break;
+    case 'toggle-auto':     toggleAutoPlay(); break;
+    case 're-measure':      reMeasure(); break;
+    case 'try-again':       tryAgain(); break;
+    case 'show-measurement': S.measured = Number(val); renderMeasurement(); break;
+    case 'apply-custom-n':  applyCustomN(); break;
+  }
+});
+
+// Event delegation for nav buttons
+document.getElementById('nav').addEventListener('click', (e) => {
+  const btn = e.target.closest('.nav-btn');
+  if (!btn || btn.disabled) return;
+  if (btn.id === 'btn-prev') prevStep();
+  if (btn.id === 'btn-next') {
+    if (btn.dataset.navAction === 'start-over') { resetState({ step: 0 }); render(); }
+    else nextStep();
+  }
+});
+
+// Debounced canvas resize on window resize / orientation change
+let _resizeTimer = null;
+function handleResize() {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    if (S.step === 2 || S.step === 4 || S.step === 5) {
+      const renderers = { 2: renderPeriod, 4: renderEvolution, 5: renderMeasurement };
+      renderers[S.step]();
+    }
+  }, 250);
+}
+window.addEventListener('resize', handleResize);
+window.addEventListener('orientationchange', () => setTimeout(handleResize, 300));
+
+render();
+</script>
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+
+<!-- Particle Background -->
+<script>
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 45;
+  const CONNECT_DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,4344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Complexity Theory — Interactive Guide</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --text-muted: #a0afc0;
+    --p-color: #22c55e;
+    --bpp-color: #eab308;
+    --bqp-color: #6366f1;
+    --qma-color: #ec4899;
+    --pspace-color: #f97316;
+    --np-color: #a78bfa;
+    --exp-color: #ef4444;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* --- Header --- */
+  header {
+    text-align: center;
+    padding: 3rem 1.5rem 2rem;
+    background: linear-gradient(180deg, #0f1629 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  #particle-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+  header h1 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700;
+    background: linear-gradient(135deg, #818cf8, #c084fc, #f472b6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+    position: relative;
+  }
+  header p {
+    color: var(--text-muted);
+    max-width: 640px;
+    margin: 0 auto;
+    font-size: 1.05rem;
+    position: relative;
+  }
+
+  /* --- Layout --- */
+  .container {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* --- Sticky Tabs --- */
+  .tabs-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(10,14,26,0.92);
+  }
+  .tabs {
+    display: flex;
+    gap: 0.25rem;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    position: relative;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    padding: 0.75rem 1.25rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-family: var(--font);
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+    background: rgba(99,102,241,0.06);
+    border-radius: 6px 6px 0 0;
+  }
+
+  /* --- Tab Panel Transitions --- */
+  .tab-panel {
+    display: none;
+    padding: 2rem 0;
+    animation: fadeSlideIn 0.35s ease;
+  }
+  .tab-panel.active { display: block; }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* --- Scroll entrance animation --- */
+  .animate-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .animate-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .animate-in.stagger-1 { transition-delay: 0.05s; }
+  .animate-in.stagger-2 { transition-delay: 0.10s; }
+  .animate-in.stagger-3 { transition-delay: 0.15s; }
+  .animate-in.stagger-4 { transition-delay: 0.20s; }
+  .animate-in.stagger-5 { transition-delay: 0.25s; }
+  .animate-in.stagger-6 { transition-delay: 0.30s; }
+
+  /* --- Diagram Section --- */
+  .diagram-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .diagram-container {
+    width: 100%;
+    max-width: 700px;
+    position: relative;
+  }
+  .diagram-svg {
+    width: 100%;
+    height: auto;
+  }
+  .diagram-svg .class-region {
+    cursor: pointer;
+    transition: opacity 0.25s, filter 0.3s;
+  }
+  .diagram-svg .class-region:hover {
+    opacity: 0.85;
+  }
+  .diagram-svg .class-region.glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+  @keyframes pulseGlow {
+    0%, 100% { filter: url(#glow); opacity: 1; }
+    50% { filter: url(#glow-strong); opacity: 0.9; }
+  }
+  .diagram-svg .class-label {
+    font-family: var(--mono);
+    font-weight: 700;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* --- Venn Diagram Hover Tooltip --- */
+  .venn-tooltip {
+    position: absolute;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.6rem 0.85rem;
+    max-width: 260px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 50;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  }
+  .venn-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .venn-tooltip .vt-name {
+    font-family: var(--mono);
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+  }
+  .venn-tooltip .vt-full {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+  }
+  .venn-tooltip .vt-fact {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .venn-tooltip .vt-hint {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-top: 0.3rem;
+    font-style: italic;
+    opacity: 0.7;
+  }
+
+  .diagram-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .legend-item:hover { background: var(--surface2); }
+  .legend-item.active { background: var(--surface2); color: var(--text); }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* --- Info Card --- */
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    max-width: 700px;
+    width: 100%;
+    margin-top: 1rem;
+    min-height: 200px;
+    transition: border-color 0.3s, box-shadow 0.3s, min-height 0.3s ease;
+    overflow: hidden;
+  }
+  .info-card.glow-border {
+    box-shadow: 0 0 20px var(--current-glow, var(--accent-glow));
+  }
+  .info-card-content {
+    transition: opacity 0.2s ease;
+  }
+  .info-card-content.fading { opacity: 0; }
+  .info-card h2 {
+    font-family: var(--mono);
+    font-size: 1.3rem;
+    margin-bottom: 0.25rem;
+  }
+  .info-card .subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+  .info-card .description {
+    margin-bottom: 1rem;
+    line-height: 1.8;
+  }
+  .info-card .formal-def {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    padding: 0.75rem 1rem;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+    line-height: 2;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+  }
+  .info-card .insight-box {
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(192,132,252,0.08));
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .info-card .insight-box .insight-label {
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #a5b4fc;
+    margin-bottom: 0.2rem;
+  }
+  .info-card .tag {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: var(--mono);
+    margin-right: 0.3rem;
+  }
+  .info-card .examples-heading {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin: 0.75rem 0 0.35rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .info-card ul {
+    padding-left: 1.25rem;
+    color: var(--text);
+  }
+  .info-card ul li {
+    margin-bottom: 0.3rem;
+  }
+  .info-card ul li code {
+    font-family: var(--mono);
+    background: var(--surface2);
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    font-size: 0.88rem;
+  }
+
+  /* --- Relations Section --- */
+  .relations-flow-container {
+    max-width: 700px;
+    margin: 0 auto 1.5rem;
+  }
+  .relations-flow-svg {
+    width: 100%;
+    height: auto;
+  }
+  .relations-flow-svg .rel-node {
+    cursor: pointer;
+    transition: filter 0.3s, opacity 0.3s;
+  }
+  .relations-flow-svg .rel-node:hover { filter: brightness(1.2); }
+  .relations-flow-svg .rel-node.dimmed { opacity: 0.35; }
+  .relations-flow-svg .rel-edge { transition: opacity 0.3s, stroke-width 0.3s; }
+  .relations-flow-svg .rel-edge.dimmed { opacity: 0.1; }
+  .relations-flow-svg .rel-edge.highlighted { stroke-width: 3; }
+  .relations-flow-svg .rel-node-label {
+    font-family: var(--mono);
+    font-weight: 700;
+    pointer-events: none;
+    user-select: none;
+  }
+  .relations-flow-svg .rel-edge-label {
+    font-size: 11px;
+    fill: var(--text-muted);
+    pointer-events: none;
+  }
+  .relations-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .relation-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .relation-card:hover { border-color: var(--accent); }
+  .relation-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+  }
+  .relation-card-header h4 {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    color: var(--accent);
+    margin: 0;
+  }
+  .relation-card-header .chain-mini {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .relation-card-header .header-status {
+    display: inline-flex;
+    gap: 0.3rem;
+    margin-left: 0.5rem;
+  }
+  .relation-card-header .header-status .status-badge {
+    font-size: 0.6rem;
+    padding: 0.08rem 0.3rem;
+  }
+  .relation-card-header .toggle-icon {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    transition: transform 0.3s;
+    flex-shrink: 0;
+    margin-left: 0.75rem;
+  }
+  .relation-card.open .toggle-icon { transform: rotate(180deg); }
+  .relation-card-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+  }
+  .relation-card.open .relation-card-body {
+    max-height: 600px;
+  }
+  .relation-card-body-inner {
+    padding: 0 1.25rem 1rem;
+  }
+  .relation-card-body-inner .chain {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    background: var(--surface2);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 0.6rem;
+    text-align: center;
+    letter-spacing: 0.03em;
+  }
+  .relation-card-body-inner .status-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-family: var(--mono);
+  }
+  .status-badge.proven {
+    background: rgba(34,197,94,0.15);
+    color: #4ade80;
+  }
+  .status-badge.open {
+    background: rgba(249,115,22,0.15);
+    color: #f97316;
+  }
+  .relation-card-body-inner p {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* --- Quiz Section --- */
+  .quiz-progress {
+    max-width: 720px;
+    margin-bottom: 1.25rem;
+  }
+  .quiz-progress-bar {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .quiz-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #a78bfa);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+  .quiz-progress-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+    font-family: var(--mono);
+  }
+
+  .quiz-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.25rem;
+    max-width: 720px;
+  }
+  .quiz-card h4 {
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    line-height: 1.6;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .quiz-card .q-number {
+    color: var(--accent);
+    font-family: var(--mono);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .quiz-card .difficulty-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.1rem 0.45rem;
+    border-radius: 3px;
+    font-family: var(--mono);
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+  .difficulty-badge.easy { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .difficulty-badge.medium { background: rgba(234,179,8,0.15); color: #facc15; }
+  .difficulty-badge.hard { background: rgba(239,68,68,0.15); color: #f87171; }
+  .quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  .quiz-option {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    font-size: 0.92rem;
+  }
+  .quiz-option:hover:not(.disabled) {
+    border-color: var(--accent);
+    background: rgba(99,102,241,0.08);
+    transform: translateX(3px);
+  }
+  .quiz-option.selected { border-color: var(--accent); background: rgba(99,102,241,0.12); }
+  .quiz-option.correct { border-color: #22c55e; background: rgba(34,197,94,0.12); }
+  .quiz-option.incorrect { border-color: #ef4444; background: rgba(239,68,68,0.12); }
+  .quiz-option.disabled { cursor: default; opacity: 0.7; }
+  .quiz-option .radio {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s;
+  }
+  .quiz-option.selected .radio { border-color: var(--accent); }
+  .quiz-option.selected .radio::after {
+    content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+  }
+  .quiz-option.correct .radio { border-color: #22c55e; }
+  .quiz-option.correct .radio::after {
+    content: ''; width: 8px; height: 8px; border-radius: 50%; background: #22c55e;
+  }
+  .quiz-option.incorrect .radio { border-color: #ef4444; }
+
+  .quiz-hint-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: border-color 0.2s, color 0.2s;
+    margin-bottom: 0.5rem;
+  }
+  .quiz-hint-btn:hover { border-color: var(--accent); color: var(--text); }
+  .quiz-hint-btn.used { opacity: 0.5; cursor: default; }
+  .quiz-hint {
+    font-size: 0.85rem;
+    color: #a5b4fc;
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.2);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    display: none;
+  }
+  .quiz-hint.show { display: block; animation: fadeSlideIn 0.3s ease; }
+
+  .quiz-feedback {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease;
+    padding: 0;
+  }
+  .quiz-feedback.show {
+    max-height: 200px;
+    opacity: 1;
+    padding: 0.75rem 1rem;
+  }
+  .quiz-feedback.correct-fb {
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.3);
+    color: #86efac;
+  }
+  .quiz-feedback.incorrect-fb {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #fca5a5;
+  }
+
+  .quiz-score {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    text-align: center;
+    max-width: 720px;
+    margin-top: 1rem;
+  }
+  .quiz-score .score-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    font-family: var(--mono);
+    background: linear-gradient(135deg, #818cf8, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .quiz-reset-btn {
+    margin-top: 0.75rem;
+    padding: 0.5rem 1.5rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: var(--font);
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .quiz-reset-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .quiz-score-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 0.75rem;
+  }
+  .quiz-score-breakdown .topic-stat {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.78rem;
+    font-family: var(--mono);
+    color: var(--text-muted);
+  }
+  .quiz-score-breakdown .topic-correct { color: #4ade80; font-weight: 600; }
+
+  /* --- Simulation Section --- */
+  .sim-container { max-width: 720px; }
+  .sim-description {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.7;
+  }
+  .sim-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1rem;
+  }
+  .sim-panel h4 {
+    font-family: var(--mono);
+    margin-bottom: 0.75rem;
+    color: var(--accent);
+  }
+  .sim-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .sim-controls label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+  .sim-controls select, .sim-controls input[type="number"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 0.88rem;
+  }
+  .sim-btn {
+    padding: 0.5rem 1.25rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-family: var(--font);
+    font-weight: 600;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .sim-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .sim-btn.secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .sim-output {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    line-height: 1.8;
+    min-height: 60px;
+    white-space: pre-wrap;
+  }
+  .sim-chart-area {
+    margin-top: 1rem;
+  }
+  .sim-chart-area h5 {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+  .sim-bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 90px;
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 8px 6px 4px;
+  }
+  .sim-bar {
+    flex: 1;
+    border-radius: 2px 2px 0 0;
+    min-width: 3px;
+    position: relative;
+    transition: height 0.5s ease;
+  }
+  .sim-bar:hover::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    color: var(--text);
+    z-index: 10;
+  }
+  .convergence-canvas {
+    width: 100%;
+    height: 160px;
+    border-radius: 6px;
+    background: var(--surface2);
+    margin-top: 0.5rem;
+  }
+  .sim-formula {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-top: 0.75rem;
+    text-align: center;
+    font-size: 0.95rem;
+  }
+  .sim-comparison-list {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .sim-comparison-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    padding: 0.3rem 0.5rem;
+    background: var(--surface2);
+    border-radius: 4px;
+  }
+  .sim-comparison-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* --- Open Questions --- */
+  .open-questions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 720px;
+  }
+  .oq-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .oq-card:hover { border-color: var(--accent); }
+  .oq-card-header {
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    user-select: none;
+  }
+  .oq-card-header h4 {
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .oq-card-header .oq-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 0.3rem;
+  }
+  .oq-stars {
+    display: flex;
+    gap: 2px;
+    font-size: 0.75rem;
+  }
+  .oq-star { color: #3b3f54; }
+  .oq-star.filled { color: #fbbf24; }
+  .oq-year {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+  .oq-card-header p {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-top: 0.4rem;
+  }
+  .oq-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .oq-tags {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+  .oq-tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(99,102,241,0.15);
+    color: #818cf8;
+    font-family: var(--mono);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .oq-tag:hover { background: rgba(99,102,241,0.3); }
+  .oq-expand-btn {
+    font-size: 0.8rem;
+    color: var(--accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font);
+    padding: 0.3rem 0;
+    transition: opacity 0.2s;
+  }
+  .oq-expand-btn:hover { opacity: 0.8; }
+  .oq-deep-dive {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .oq-card.expanded .oq-deep-dive { max-height: 600px; }
+  .oq-deep-dive-inner {
+    padding: 0.75rem 1.5rem 1.25rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  /* --- Sliding Tab Indicator --- */
+  .tab-indicator {
+    position: absolute;
+    bottom: 0;
+    height: 2px;
+    background: var(--accent);
+    transition: left 0.3s ease, width 0.3s ease;
+    border-radius: 1px;
+    pointer-events: none;
+  }
+
+  /* --- Back to Top --- */
+  .back-to-top {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(99,102,241,0.35);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+    z-index: 200;
+  }
+  .back-to-top.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .back-to-top:hover { opacity: 0.85; transform: translateY(-2px); }
+
+  /* --- Glossary Tab --- */
+  .glossary-search {
+    position: relative;
+    max-width: 500px;
+    margin-bottom: 1.25rem;
+  }
+  .glossary-search input {
+    width: 100%;
+    padding: 0.6rem 1rem 0.6rem 2.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.92rem;
+    font-family: var(--font);
+    transition: border-color 0.2s;
+  }
+  .glossary-search input:focus { outline: none; border-color: var(--accent); }
+  .glossary-search .search-icon {
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 1rem;
+    pointer-events: none;
+  }
+  .glossary-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    margin-bottom: 0.75rem;
+  }
+  .glossary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 720px;
+  }
+  .glossary-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    transition: border-color 0.2s;
+  }
+  .glossary-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-style: italic;
+  }
+  .glossary-item:hover { border-color: var(--accent); }
+  .glossary-item.hidden { display: none; }
+  .glossary-item h4 {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+  }
+  .glossary-item p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+  .glossary-item .glossary-tags {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    margin-top: 0.4rem;
+  }
+  .glossary-item .glossary-tag {
+    font-size: 0.72rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-weight: 600;
+    background: rgba(99,102,241,0.12);
+    color: #a5b4fc;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .glossary-item .glossary-tag:hover { background: rgba(99,102,241,0.25); }
+
+  /* --- Compare Mode (Class Diagram) --- */
+  .compare-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    justify-content: center;
+    position: relative;
+  }
+  .compare-toggle label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .compare-toggle input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+  .compare-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    max-width: 700px;
+    width: 100%;
+    margin-top: 1rem;
+  }
+  .compare-side {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    min-height: 180px;
+  }
+  .compare-side h4 {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    margin-bottom: 0.3rem;
+  }
+  .compare-side .subtitle { color: var(--text-muted); font-size: 0.82rem; margin-bottom: 0.5rem; }
+  .compare-side .formal-def { background: var(--surface2); border-left: 3px solid var(--accent); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-size: 0.85rem; line-height: 1.8; margin-bottom: 0.5rem; overflow-x: auto; }
+  .compare-side .description { font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+  .compare-select-msg { text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 2rem; }
+
+  /* --- What If Section (Relations) --- */
+  .what-if-section {
+    max-width: 700px;
+    margin: 1.5rem auto 0;
+  }
+  .what-if-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 0.88rem;
+    transition: border-color 0.2s, color 0.2s;
+    width: 100%;
+    text-align: left;
+  }
+  .what-if-toggle:hover { border-color: var(--accent); color: var(--text); }
+  .what-if-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .what-if-section.open .what-if-content { max-height: 1200px; }
+  .what-if-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+  }
+  .what-if-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+  }
+  .what-if-card h4 {
+    font-family: var(--mono);
+    font-size: 0.92rem;
+    color: #f97316;
+    margin-bottom: 0.4rem;
+  }
+  .what-if-card p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* --- Preset Buttons (Simulator) --- */
+  .sim-presets {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+  .sim-preset-btn {
+    padding: 0.35rem 0.75rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-family: var(--mono);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .sim-preset-btn:hover { border-color: var(--accent); color: var(--text); }
+
+  /* --- Error Decay Chart --- */
+  .error-decay-canvas {
+    width: 100%;
+    height: 160px;
+    border-radius: 6px;
+    background: var(--surface2);
+    margin-top: 0.5rem;
+  }
+
+  /* --- Quiz Topic Filters --- */
+  .quiz-filters {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    max-width: 720px;
+  }
+  .quiz-filter-btn {
+    padding: 0.3rem 0.7rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-family: var(--mono);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+  .quiz-filter-btn:hover { border-color: var(--accent); color: var(--text); }
+  .quiz-filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(99,102,241,0.08); }
+
+  /* --- Quiz Streak --- */
+  .quiz-streak {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    max-width: 720px;
+  }
+  .streak-flame { font-size: 1.1rem; }
+  .streak-count { font-weight: 700; color: #fbbf24; }
+
+  /* --- Open Problems Enhancements --- */
+  .oq-consequences {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .oq-card.show-consequences .oq-consequences { max-height: 400px; }
+  .oq-consequences-inner {
+    padding: 0.75rem 1.5rem 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .oq-consequence-tree {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .oq-consequence-branch {
+    flex: 1;
+    min-width: 200px;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+  }
+  .oq-consequence-branch h5 {
+    font-size: 0.82rem;
+    font-family: var(--mono);
+    margin-bottom: 0.4rem;
+  }
+  .oq-consequence-branch.yes h5 { color: #4ade80; }
+  .oq-consequence-branch.no h5 { color: #f87171; }
+  .oq-consequence-branch p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .oq-timeline {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.3rem;
+    margin-bottom: 0.3rem;
+  }
+  .oq-milestone {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+  .oq-papers {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+    font-style: italic;
+  }
+
+  /* --- Footer --- */
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+
+  /* --- Mobile Tab Select --- */
+  .mobile-tab-select {
+    display: none;
+    width: 100%;
+    padding: 0.6rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 0.92rem;
+    margin: 0.5rem auto;
+    max-width: 1120px;
+    cursor: pointer;
+  }
+
+  /* --- Responsive --- */
+  @media (max-width: 640px) {
+    .info-card, .quiz-card, .sim-panel, .quiz-score { padding: 1rem 1.25rem; }
+    .oq-card-header, .oq-card-footer, .oq-deep-dive-inner { padding-left: 1rem; padding-right: 1rem; }
+    .relation-card-header, .relation-card-body-inner { padding-left: 1rem; padding-right: 1rem; }
+    .tabs { display: none; }
+    .mobile-tab-select { display: block; }
+    .compare-card { grid-template-columns: 1fr; }
+    .oq-consequence-tree { flex-direction: column; }
+    .glossary-search { max-width: 100%; }
+    .sim-presets { flex-wrap: wrap; gap: 0.35rem; }
+    .oq-timeline { font-size: 0.8rem; }
+    .oq-papers { font-size: 0.8rem; padding: 0.4rem 0.6rem; }
+  }
+
+  /* --- Print Styles --- */
+  @media print {
+    body { background: #fff; color: #000; }
+    header, .tabs-wrapper, .back-to-top, .mobile-tab-select, #particle-canvas { display: none; }
+    .tab-panel { display: block !important; page-break-inside: avoid; padding: 1rem 0; border-bottom: 1px solid #ccc; }
+    .tab-panel h2, .info-card h2 { page-break-after: avoid; }
+    .info-card, .quiz-card, .sim-panel, .oq-card, .relation-card, .glossary-item,
+    .compare-card, .compare-side, .what-if-card {
+      background: #f9f9f9; border: 1px solid #ccc; break-inside: avoid;
+    }
+    .sim-bar-chart, .convergence-canvas, .error-decay-canvas { border: 1px solid #ccc; }
+    .quiz-filters, .quiz-streak, .glossary-search, .quiz-difficulty-filters, .compare-tooltip, .reset-progress-btn { display: none; }
+    .what-if-section, .what-if-content { display: block; max-height: none; }
+    .oq-consequences, .oq-timeline, .oq-papers { border: 1px solid #ddd; break-inside: avoid; }
+    .container { max-width: 100%; padding: 0 1rem; }
+    footer { border-top: 1px solid #ccc; color: #666; }
+  }
+
+  /* --- Keyboard focus styles --- */
+  .tab-btn:focus-visible, .quiz-filter-btn:focus-visible,
+  .sim-preset-btn:focus-visible, .oq-expand-btn:focus-visible, .quiz-hint-btn:focus-visible,
+  .what-if-toggle:focus-visible, .back-to-top:focus-visible, .sim-btn:focus-visible,
+  .sim-controls select:focus-visible, .sim-controls input:focus-visible,
+  .glossary-search input:focus-visible,
+  .quiz-option:focus-visible, .class-region:focus-visible, .rel-node:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* --- Skip link --- */
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    background: var(--accent);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 0 0 6px 6px;
+    font-size: 0.9rem;
+    z-index: 200;
+    transition: top 0.2s;
+    text-decoration: none;
+  }
+  .skip-link:focus {
+    top: 0;
+  }
+
+  /* --- Tab panel focus (suppress ring on programmatic focus) --- */
+  .tab-panel:focus { outline: none; }
+
+  /* --- Open problem tag hover polish --- */
+  .oq-tag {
+    transition: background 0.2s, transform 0.15s;
+  }
+  .oq-tag:hover {
+    background: rgba(99,102,241,0.3);
+    transform: translateY(-1px);
+  }
+
+  /* --- Reduced Motion Accessibility --- */
+  @media (prefers-reduced-motion: reduce) {
+    .tab-panel { animation: none; }
+    .animate-in { opacity: 1; transform: none; transition: none; }
+    .animate-in.stagger-1, .animate-in.stagger-2, .animate-in.stagger-3,
+    .animate-in.stagger-4, .animate-in.stagger-5, .animate-in.stagger-6 { transition-delay: 0s; }
+    .class-region.glow { animation: none; }
+    .quiz-option:hover:not(.disabled) { transform: none; }
+    .sim-bar { transition: none; }
+    .info-card-content { transition: none; }
+    .info-card { transition: border-color 0.3s, box-shadow 0.3s; }
+    .oq-tag:hover { transform: none; }
+    .quiz-hint.show { animation: none; }
+    .relation-card-body { transition: none; }
+    .oq-deep-dive { transition: none; }
+    .tab-indicator { transition: none; }
+    .quiz-feedback { transition: none; }
+    .what-if-content { transition: none; }
+    .oq-consequences { transition: none; }
+  }
+
+  /* --- Quiz Difficulty Filters --- */
+  .quiz-difficulty-filters {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    max-width: 720px;
+  }
+  .quiz-diff-btn {
+    padding: 0.3rem 0.7rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-family: var(--mono);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+  .quiz-diff-btn:hover { border-color: var(--accent); color: var(--text); }
+  .quiz-diff-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(99,102,241,0.08); }
+
+  /* --- Compare Mode Tooltip --- */
+  .compare-tooltip {
+    position: absolute;
+    top: -2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.8rem;
+    color: var(--text);
+    white-space: nowrap;
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: opacity 0.3s;
+  }
+  .compare-tooltip.visible { opacity: 1; pointer-events: auto; cursor: pointer; }
+  .compare-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: var(--surface);
+    border-right: 1px solid var(--accent);
+    border-bottom: 1px solid var(--accent);
+  }
+
+  /* --- Footer Enrichment --- */
+  .footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .footer-links {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .footer-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--accent); }
+  .footer-meta { font-size: 0.78rem; color: #667788; }
+  .reset-progress-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-family: var(--font);
+    cursor: pointer;
+    margin-top: 0.25rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .reset-progress-btn:hover { border-color: #ef4444; color: #ef4444; }
+
+  /* --- Glossary Cross-References --- */
+  .glossary-xref {
+    color: #a5b4fc;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+    transition: color 0.2s;
+  }
+  .glossary-xref:hover { color: var(--accent); text-decoration-style: solid; }
+
+  /* --- Keyboard Shortcuts Modal --- */
+  .shortcuts-fab {
+    position: fixed;
+    bottom: 4.5rem;
+    right: 1.5rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 1rem;
+    font-family: var(--mono);
+    cursor: pointer;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+  }
+  .shortcuts-fab:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 12px rgba(99,102,241,0.25);
+  }
+  .shortcuts-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+  .shortcuts-overlay.visible { display: flex; }
+  .shortcuts-modal {
+    max-width: 420px;
+    width: 90%;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .shortcuts-modal h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .shortcuts-modal .close-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+  .shortcuts-modal .close-btn:hover { color: var(--text); }
+  .shortcuts-modal table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .shortcuts-modal td {
+    padding: 0.45rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .shortcuts-modal td:first-child { width: 45%; }
+  .key-badge {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    min-width: 1.4em;
+    text-align: center;
+  }
+
+  /* --- Copy Link Button --- */
+  .copy-link-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.75rem;
+    font-family: var(--font);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+  .copy-link-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-link-btn.copied { border-color: #4ade80; color: #4ade80; }
+
+  /* --- Progress Dashboard --- */
+  .progress-dashboard {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.85rem;
+  }
+  .progress-dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    user-select: none;
+  }
+  .progress-dashboard-header:hover { color: var(--text); }
+  .progress-chevron {
+    transition: transform 0.2s;
+    font-size: 0.7rem;
+  }
+  .progress-dashboard.collapsed .progress-chevron { transform: rotate(-90deg); }
+  .progress-dashboard.collapsed .progress-dashboard-body { display: none; }
+  .progress-dashboard-body {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding-top: 0.6rem;
+  }
+  .progress-stat { text-align: center; flex: 1; min-width: 80px; }
+  .progress-stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    font-family: var(--mono);
+  }
+  .progress-stat-label {
+    font-size: 0.73rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+  .progress-bar-mini {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 0.3rem;
+  }
+  .progress-bar-mini-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  /* --- Tablet Breakpoint --- */
+  @media (max-width: 1024px) {
+    .compare-card { grid-template-columns: 1fr; }
+    .container { padding: 1.25rem 1.5rem; }
+  }
+
+  /* 640px additions for Round 8 */
+  @media (max-width: 640px) {
+    .shortcuts-fab { bottom: 3.5rem; right: 1rem; width: 32px; height: 32px; font-size: 0.9rem; }
+    .progress-dashboard-body { gap: 0.75rem; }
+  }
+
+  @media print {
+    .shortcuts-fab, .shortcuts-overlay, .progress-dashboard, .copy-link-btn { display: none !important; }
+  }
+
+  /* Particle background canvas */
+  #particleBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="particleBg"></canvas>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<header>
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+  <h1>Quantum Complexity Theory</h1>
+  <p>An interactive exploration of computational complexity classes at the frontier of quantum computing.</p>
+</header>
+
+<div class="tabs-wrapper">
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" id="tab-diagram" data-tab="diagram" role="tab" aria-controls="panel-diagram" aria-selected="true">Class Diagram</button>
+    <button class="tab-btn" id="tab-relations" data-tab="relations" role="tab" aria-controls="panel-relations" aria-selected="false">Containment Relations</button>
+    <button class="tab-btn" id="tab-simulation" data-tab="simulation" role="tab" aria-controls="panel-simulation" aria-selected="false">BQP Simulator</button>
+    <button class="tab-btn" id="tab-quiz" data-tab="quiz" role="tab" aria-controls="panel-quiz" aria-selected="false">Quiz</button>
+    <button class="tab-btn" id="tab-open" data-tab="open" role="tab" aria-controls="panel-open" aria-selected="false">Open Problems</button>
+    <button class="tab-btn" id="tab-glossary" data-tab="glossary" role="tab" aria-controls="panel-glossary" aria-selected="false">Glossary</button>
+  </nav>
+  <select class="mobile-tab-select" id="mobile-tab-select">
+    <option value="diagram">Class Diagram</option>
+    <option value="relations">Containment Relations</option>
+    <option value="simulation">BQP Simulator</option>
+    <option value="quiz">Quiz</option>
+    <option value="open">Open Problems</option>
+    <option value="glossary">Glossary</option>
+  </select>
+</div>
+
+<div class="container" id="main-content">
+
+  <!-- ====== DIAGRAM TAB ====== -->
+  <section class="tab-panel active" id="panel-diagram" role="tabpanel" aria-labelledby="tab-diagram">
+    <div class="diagram-wrapper">
+      <div class="diagram-container">
+        <svg class="diagram-svg" viewBox="0 0 600 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Venn diagram of quantum and classical complexity classes showing containment relationships">
+          <title>Complexity Class Containment Diagram</title>
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="4" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="glow-strong">
+              <feGaussianBlur stdDeviation="8" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <!-- Clip path for BQP ∩ NP overlap highlight -->
+            <clipPath id="clip-bqp">
+              <ellipse cx="320" cy="300" rx="100" ry="70"/>
+            </clipPath>
+            <clipPath id="clip-np">
+              <ellipse cx="370" cy="310" rx="95" ry="76"/>
+            </clipPath>
+          </defs>
+
+          <!-- EXP -->
+          <ellipse class="class-region" data-class="EXP" cx="300" cy="270" rx="280" ry="240"
+            fill="rgba(239,68,68,0.08)" stroke="#ef4444" stroke-width="2" stroke-dasharray="6 3"
+            role="button" aria-label="EXP: Exponential Time" tabindex="0">
+            <title>EXP — Exponential Time</title>
+          </ellipse>
+          <text class="class-label" x="540" y="60" fill="#ef4444" font-size="16">EXP</text>
+
+          <!-- PSPACE -->
+          <ellipse class="class-region" data-class="PSPACE" cx="300" cy="280" rx="220" ry="190"
+            fill="rgba(249,115,22,0.08)" stroke="#f97316" stroke-width="2"
+            role="button" aria-label="PSPACE: Polynomial Space" tabindex="0">
+            <title>PSPACE — Polynomial Space</title>
+          </ellipse>
+          <text class="class-label" x="480" y="140" fill="#f97316" font-size="15">PSPACE</text>
+
+          <!-- QMA -->
+          <ellipse class="class-region" data-class="QMA" cx="340" cy="290" rx="140" ry="110"
+            fill="rgba(236,72,153,0.06)" stroke="#ec4899" stroke-width="1.5" stroke-dasharray="4 2"
+            role="button" aria-label="QMA: Quantum Merlin-Arthur" tabindex="0">
+            <title>QMA — Quantum Merlin-Arthur</title>
+          </ellipse>
+          <text class="class-label" x="440" y="220" fill="#ec4899" font-size="14">QMA</text>
+
+          <!-- NP -->
+          <ellipse class="class-region" data-class="NP" cx="370" cy="310" rx="95" ry="76"
+            fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4 2"
+            role="button" aria-label="NP: Nondeterministic Polynomial Time" tabindex="0">
+            <title>NP — Nondeterministic Polynomial Time</title>
+          </ellipse>
+          <text class="class-label" x="425" y="285" fill="#a78bfa" font-size="14">NP</text>
+
+          <!-- BQP -->
+          <ellipse class="class-region" data-class="BQP" cx="320" cy="300" rx="100" ry="70"
+            fill="rgba(99,102,241,0.1)" stroke="#6366f1" stroke-width="2"
+            role="button" aria-label="BQP: Bounded-Error Quantum Polynomial Time" tabindex="0">
+            <title>BQP — Bounded-Error Quantum Polynomial Time</title>
+          </ellipse>
+          <text class="class-label" x="248" y="275" fill="#6366f1" font-size="15">BQP</text>
+
+          <!-- BPP (conjectured P=BPP, so placed inside NP ∩ BQP) -->
+          <ellipse class="class-region" data-class="BPP" cx="350" cy="318" rx="48" ry="32"
+            fill="rgba(234,179,8,0.08)" stroke="#eab308" stroke-width="1.5"
+            role="button" aria-label="BPP: Bounded-Error Probabilistic Polynomial Time (conjectured equal to P)" tabindex="0">
+            <title>BPP — Bounded-Error Probabilistic Polynomial Time (conjectured = P)</title>
+          </ellipse>
+          <text class="class-label" x="325" y="300" fill="#eab308" font-size="13">BPP</text>
+
+          <!-- P -->
+          <ellipse class="class-region" data-class="P" cx="352" cy="325" rx="30" ry="22"
+            fill="rgba(34,197,94,0.12)" stroke="#22c55e" stroke-width="2"
+            role="button" aria-label="P: Polynomial Time" tabindex="0">
+            <title>P — Polynomial Time</title>
+          </ellipse>
+          <text class="class-label" x="345" y="329" fill="#22c55e" font-size="15">P</text>
+
+          <!-- BQP ∩ NP overlap highlight -->
+          <ellipse cx="370" cy="310" rx="95" ry="76" clip-path="url(#clip-bqp)"
+            fill="rgba(140,120,230,0.07)" stroke="none" pointer-events="none"/>
+
+          <!-- Annotations for open relationships -->
+          <g class="diagram-annotations" pointer-events="none">
+            <!-- "?" markers at BQP-NP boundary crossings -->
+            <text x="388" y="256" fill="#8892a8" font-size="11" font-family="inherit" opacity="0.6" font-weight="600">?</text>
+            <text x="358" y="378" fill="#8892a8" font-size="11" font-family="inherit" opacity="0.6" font-weight="600">?</text>
+          </g>
+
+          <!-- Decorative circuit lines -->
+          <g opacity="0.12" stroke="#6366f1" stroke-width="1">
+            <line x1="50" y1="490" x2="550" y2="490"/>
+            <line x1="50" y1="500" x2="550" y2="500"/>
+            <line x1="50" y1="510" x2="550" y2="510"/>
+            <circle cx="120" cy="490" r="6" fill="none"/>
+            <circle cx="250" cy="500" r="6" fill="none"/>
+            <circle cx="400" cy="510" r="6" fill="none"/>
+            <rect x="180" y="486" width="16" height="8" fill="none" rx="1"/>
+            <rect x="320" y="496" width="16" height="8" fill="none" rx="1"/>
+            <rect x="450" y="486" width="16" height="8" fill="none" rx="1"/>
+          </g>
+        </svg>
+        <div class="venn-tooltip" id="venn-tooltip"></div>
+      </div>
+
+      <div class="diagram-legend">
+        <div class="legend-item" data-class="P"><span class="legend-dot" style="background:var(--p-color)"></span> P</div>
+        <div class="legend-item" data-class="BPP"><span class="legend-dot" style="background:var(--bpp-color)"></span> BPP</div>
+        <div class="legend-item" data-class="BQP"><span class="legend-dot" style="background:var(--bqp-color)"></span> BQP</div>
+        <div class="legend-item" data-class="QMA"><span class="legend-dot" style="background:var(--qma-color)"></span> QMA</div>
+        <div class="legend-item" data-class="NP"><span class="legend-dot" style="background:var(--np-color)"></span> NP</div>
+        <div class="legend-item" data-class="PSPACE"><span class="legend-dot" style="background:var(--pspace-color)"></span> PSPACE</div>
+        <div class="legend-item" data-class="EXP"><span class="legend-dot" style="background:var(--exp-color)"></span> EXP</div>
+      </div>
+
+      <div class="compare-toggle">
+        <input type="checkbox" id="compare-mode-toggle">
+        <label for="compare-mode-toggle">Compare Two Classes</label>
+        <div class="compare-tooltip" id="compare-tooltip">Tip: Enable Compare Mode to compare two classes side by side</div>
+      </div>
+
+      <div class="progress-dashboard" id="progress-dashboard">
+        <div class="progress-dashboard-header" id="progress-dashboard-toggle">
+          <span>&#128202; Your Progress</span>
+          <span class="progress-chevron">&#9660;</span>
+        </div>
+        <div class="progress-dashboard-body" id="progress-dashboard-body">
+          <div class="progress-stat">
+            <div class="progress-stat-value" id="prog-classes">0/7</div>
+            <div class="progress-stat-label">Classes Studied</div>
+            <div class="progress-bar-mini"><div class="progress-bar-mini-fill" id="prog-classes-bar" style="width:0%"></div></div>
+          </div>
+          <div class="progress-stat">
+            <div class="progress-stat-value" id="prog-quiz">—</div>
+            <div class="progress-stat-label">Quiz Best</div>
+            <div class="progress-bar-mini"><div class="progress-bar-mini-fill" id="prog-quiz-bar" style="width:0%"></div></div>
+          </div>
+          <div class="progress-stat">
+            <div class="progress-stat-value" id="prog-streak">0</div>
+            <div class="progress-stat-label">Best Streak</div>
+            <div class="progress-bar-mini"><div class="progress-bar-mini-fill" id="prog-streak-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card" id="class-info">
+        <div class="info-card-content" id="info-content">
+          <h2 id="info-name" style="font-size:1.3rem">Select a Class<button class="copy-link-btn" id="copy-class-link" style="display:none" title="Copy link to this class">&#128203; Copy Link</button></h2>
+          <div class="subtitle" id="info-subtitle">Click on any region in the diagram or legend item above.</div>
+          <div class="description" id="info-desc">
+            The Venn diagram shows the widely believed containment relationships. BPP and P are placed inside NP &cap; BQP, reflecting the conjecture P = BPP. The dashed boundaries for NP and QMA indicate that their exact relationship to BQP is open. Click any class to explore.
+          </div>
+          <div id="info-formal" class="formal-def" style="display:none"></div>
+          <div id="info-insight" class="insight-box" style="display:none"></div>
+          <div id="info-tags" style="margin-bottom:0.5rem"></div>
+          <div id="info-examples"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== RELATIONS TAB ====== -->
+  <section class="tab-panel" id="panel-relations" role="tabpanel" aria-labelledby="tab-relations">
+    <h2 style="margin-bottom:0.5rem">Containment Relations</h2>
+    <p style="color:var(--text-muted);margin-bottom:1.25rem">Click a node to highlight its containment chains. Click the cards below for details.</p>
+
+    <div class="relations-flow-container">
+      <svg class="relations-flow-svg" viewBox="0 0 700 370" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow graph showing containment relations between complexity classes. Larger classes at top, inclusions go upward.">
+        <title>Complexity Class Containment Relations Graph</title>
+        <!-- Edges (drawn first, behind nodes) — all inclusions flow upward (smaller → larger) -->
+
+        <!-- P → BPP (proven) -->
+        <line class="rel-edge" data-from="P" data-to="BPP" x1="180" y1="317" x2="180" y2="293" stroke="#4ade80" stroke-width="2"/>
+        <text class="rel-edge-label" x="148" y="308">proven</text>
+        <!-- P → NP (proven containment, strict separation open) -->
+        <line class="rel-edge" data-from="P" data-to="NP" x1="215" y1="325" x2="490" y2="228" stroke="#4ade80" stroke-width="2"/>
+        <text class="rel-edge-label" x="410" y="290" fill="#4ade80">proven</text>
+        <text class="rel-edge-label" x="410" y="302" fill="#fb923c" font-size="9">(strict? open)</text>
+        <!-- BPP → BQP (proven) -->
+        <line class="rel-edge" data-from="BPP" data-to="BQP" x1="180" y1="257" x2="180" y2="228" stroke="#4ade80" stroke-width="2"/>
+        <text class="rel-edge-label" x="148" y="246">proven</text>
+        <!-- BPP → NP (conjectured via P = BPP) -->
+        <line class="rel-edge" data-from="BPP" data-to="NP" x1="215" y1="265" x2="490" y2="228" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="5 3"/>
+        <text class="rel-edge-label" x="330" y="240" fill="#fb923c">conjectured</text>
+        <!-- BQP → QMA (proven) -->
+        <line class="rel-edge" data-from="BQP" data-to="QMA" x1="220" y1="200" x2="310" y2="163" stroke="#4ade80" stroke-width="2"/>
+        <text class="rel-edge-label" x="245" y="172">proven</text>
+        <!-- BQP → PSPACE (proven, direct containment) -->
+        <line class="rel-edge" data-from="BQP" data-to="PSPACE" x1="145" y1="200" x2="305" y2="100" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="1 0" opacity="0.5"/>
+        <text class="rel-edge-label" x="190" y="145" fill="#4ade80" font-size="9" opacity="0.6">proven (direct)</text>
+        <!-- NP → QMA (proven) -->
+        <line class="rel-edge" data-from="NP" data-to="QMA" x1="490" y1="200" x2="390" y2="163" stroke="#4ade80" stroke-width="2"/>
+        <text class="rel-edge-label" x="452" y="172">proven</text>
+        <!-- QMA → PSPACE (proven) -->
+        <line class="rel-edge" data-from="QMA" data-to="PSPACE" x1="350" y1="127" x2="350" y2="103" stroke="#4ade80" stroke-width="2"/>
+        <text class="rel-edge-label" x="362" y="118">proven</text>
+        <!-- PSPACE → EXP (proven) -->
+        <line class="rel-edge" data-from="PSPACE" data-to="EXP" x1="350" y1="67" x2="350" y2="48" stroke="#4ade80" stroke-width="2"/>
+        <text class="rel-edge-label" x="362" y="60">proven</text>
+        <!-- BQP ↔ NP (incomparable, open) -->
+        <line class="rel-edge" data-from="BQP" data-to="NP" x1="220" y1="210" x2="490" y2="210" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text class="rel-edge-label" x="350" y="203" fill="#fb923c" text-anchor="middle">incomparable?</text>
+
+        <!-- Arrowheads (upward direction indicators) -->
+        <defs>
+          <marker id="arr" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+            <polygon points="0 0, 6 2.5, 0 5" fill="#4ade80" opacity="0.6"/>
+          </marker>
+          <marker id="arr-open" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+            <polygon points="0 0, 6 2.5, 0 5" fill="#fb923c" opacity="0.6"/>
+          </marker>
+        </defs>
+
+        <!-- Nodes (positioned bottom-to-top: smallest class at bottom, largest at top) -->
+        <g class="rel-node" data-class="P" transform="translate(180,335)" role="button" aria-label="P: Polynomial Time" tabindex="0">
+          <rect x="-35" y="-18" width="70" height="36" rx="8" fill="#111827" stroke="#22c55e" stroke-width="2"/>
+          <text class="rel-node-label" text-anchor="middle" y="6" fill="#22c55e" font-size="15">P</text>
+        </g>
+        <g class="rel-node" data-class="BPP" transform="translate(180,275)" role="button" aria-label="BPP: Bounded-Error Probabilistic Polynomial Time" tabindex="0">
+          <rect x="-35" y="-18" width="70" height="36" rx="8" fill="#111827" stroke="#eab308" stroke-width="2"/>
+          <text class="rel-node-label" text-anchor="middle" y="6" fill="#eab308" font-size="14">BPP</text>
+        </g>
+        <g class="rel-node" data-class="BQP" transform="translate(180,210)" role="button" aria-label="BQP: Bounded-Error Quantum Polynomial Time" tabindex="0">
+          <rect x="-40" y="-18" width="80" height="36" rx="8" fill="#111827" stroke="#6366f1" stroke-width="2"/>
+          <text class="rel-node-label" text-anchor="middle" y="6" fill="#6366f1" font-size="14">BQP</text>
+        </g>
+        <g class="rel-node" data-class="NP" transform="translate(520,210)" role="button" aria-label="NP: Nondeterministic Polynomial Time" tabindex="0">
+          <rect x="-30" y="-18" width="60" height="36" rx="8" fill="#111827" stroke="#a78bfa" stroke-width="2" stroke-dasharray="4 2"/>
+          <text class="rel-node-label" text-anchor="middle" y="6" fill="#a78bfa" font-size="14">NP</text>
+        </g>
+        <g class="rel-node" data-class="QMA" transform="translate(350,145)" role="button" aria-label="QMA: Quantum Merlin-Arthur" tabindex="0">
+          <rect x="-40" y="-18" width="80" height="36" rx="8" fill="#111827" stroke="#ec4899" stroke-width="2"/>
+          <text class="rel-node-label" text-anchor="middle" y="6" fill="#ec4899" font-size="14">QMA</text>
+        </g>
+        <g class="rel-node" data-class="PSPACE" transform="translate(350,85)" role="button" aria-label="PSPACE: Polynomial Space" tabindex="0">
+          <rect x="-48" y="-18" width="96" height="36" rx="8" fill="#111827" stroke="#f97316" stroke-width="2"/>
+          <text class="rel-node-label" text-anchor="middle" y="6" fill="#f97316" font-size="13">PSPACE</text>
+        </g>
+        <g class="rel-node" data-class="EXP" transform="translate(350,30)" role="button" aria-label="EXP: Exponential Time" tabindex="0">
+          <rect x="-35" y="-18" width="70" height="36" rx="8" fill="#111827" stroke="#ef4444" stroke-width="2"/>
+          <text class="rel-node-label" text-anchor="middle" y="6" fill="#ef4444" font-size="14">EXP</text>
+        </g>
+
+        <!-- Legend -->
+        <line x1="30" y1="358" x2="55" y2="358" stroke="#4ade80" stroke-width="2"/>
+        <text x="60" y="362" fill="#8892a8" font-size="10">Proven</text>
+        <line x1="130" y1="358" x2="155" y2="358" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text x="160" y="362" fill="#8892a8" font-size="10">Open / Conjectured</text>
+        <text x="310" y="362" fill="#8892a8" font-size="10" font-style="italic">Larger classes higher</text>
+      </svg>
+      <p style="text-align:center;color:var(--text-muted);font-size:0.82rem;font-style:italic;margin-top:0.4rem">Click a node to highlight containment paths. Click the background to reset.</p>
+    </div>
+
+    <div class="relations-cards">
+      <div class="relation-card animate-in" data-rel="classical">
+        <div class="relation-card-header">
+          <div>
+            <h4>The Classical Backbone</h4>
+            <span class="chain-mini">P &sube; BPP &sube; PSPACE &sube; EXP</span>
+            <span class="header-status"><span class="status-badge proven">&#10003; proven</span></span>
+          </div>
+          <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="relation-card-body">
+          <div class="relation-card-body-inner">
+            <div class="status-row">
+              <span class="status-badge proven">&#10003; All proven</span>
+              <span class="status-badge proven">&#10003; P &ne; EXP (time hierarchy)</span>
+            </div>
+            <p>Every polynomial-time deterministic algorithm is also a randomized one (P &sube; BPP). BPP can be simulated in polynomial space, and PSPACE in exponential time. These inclusions are unconditional. The time hierarchy theorem gives us the only unconditional strict separation: P &ne; EXP.</p>
+            <p style="font-size:0.82rem;margin-top:0.5rem;color:var(--text-muted)"><strong style="color:var(--text)">Examples:</strong> Sorting &isin; P &bull; Polynomial Identity Testing &isin; BPP &bull; TQBF &isin; PSPACE-complete</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="relation-card animate-in" data-rel="quantum-chain">
+        <div class="relation-card-header">
+          <div>
+            <h4>Quantum in the Landscape</h4>
+            <span class="chain-mini">P &sube; BPP &sube; BQP &sube; PSPACE</span>
+            <span class="header-status"><span class="status-badge proven">&#10003; proven</span></span>
+          </div>
+          <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="relation-card-body">
+          <div class="relation-card-body-inner">
+            <div class="status-row">
+              <span class="status-badge proven">&#10003; All proven</span>
+            </div>
+            <p>Quantum computers can simulate classical probabilistic machines (BPP &sube; BQP). Conversely, any quantum computation can be simulated in polynomial space by tracking amplitudes path by path &mdash; giving BQP &sube; PSPACE. Whether any of these inclusions are strict remains one of the central open questions.</p>
+            <p style="font-size:0.82rem;margin-top:0.5rem;color:var(--text-muted)"><strong style="color:var(--text)">Examples:</strong> Dijkstra&rsquo;s algorithm &isin; P &bull; Miller-Rabin primality &isin; BPP &bull; Factoring &isin; BQP</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="relation-card animate-in" data-rel="verification">
+        <div class="relation-card-header">
+          <div>
+            <h4>Verification Power</h4>
+            <span class="chain-mini">BQP &sube; QMA &sube; PSPACE</span>
+            <span class="header-status"><span class="status-badge proven">&#10003;</span><span class="status-badge open">?</span></span>
+          </div>
+          <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="relation-card-body">
+          <div class="relation-card-body-inner">
+            <div class="status-row">
+              <span class="status-badge proven">&#10003; Proven</span>
+              <span class="status-badge open">? Strictness open</span>
+            </div>
+            <p>BQP problems need no witness, so they're trivially in QMA. QMA sits inside PSPACE because a PSPACE machine can iterate over all possible quantum witnesses and simulate the verifier. Whether BQP = QMA or QMA = PSPACE remains unknown.</p>
+            <p style="font-size:0.82rem;margin-top:0.5rem;color:var(--text-muted)"><strong style="color:var(--text)">Examples:</strong> Factoring &isin; BQP &bull; Local Hamiltonian &isin; QMA-complete &bull; TQBF &isin; PSPACE-complete</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="relation-card animate-in" data-rel="qma-np">
+        <div class="relation-card-header">
+          <div>
+            <h4>QMA vs NP</h4>
+            <span class="chain-mini">NP &sube; QMA</span>
+            <span class="header-status"><span class="status-badge proven">&#10003;</span><span class="status-badge open">?</span></span>
+          </div>
+          <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="relation-card-body">
+          <div class="relation-card-body-inner">
+            <div class="status-row">
+              <span class="status-badge proven">&#10003; NP &sube; QMA proven</span>
+              <span class="status-badge open">? NP &ne; QMA open</span>
+            </div>
+            <p>A classical proof is a special case of a quantum proof &mdash; the QMA verifier can read classical bits. Whether this inclusion is strict (i.e., whether quantum proofs are more powerful than classical ones) remains an important open question.</p>
+            <p style="font-size:0.82rem;margin-top:0.5rem;color:var(--text-muted)"><strong style="color:var(--text)">Examples:</strong> SAT &isin; NP-complete &bull; Local Hamiltonian &isin; QMA-complete</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="relation-card animate-in" data-rel="quantum-advantage">
+        <div class="relation-card-header">
+          <div>
+            <h4>BQP vs BPP &mdash; The Quantum Advantage?</h4>
+            <span class="chain-mini">BPP &sube; BQP (strict?)</span>
+            <span class="header-status"><span class="status-badge open">? open</span></span>
+          </div>
+          <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="relation-card-body">
+          <div class="relation-card-body-inner">
+            <div class="status-row">
+              <span class="status-badge open">? Separation open</span>
+            </div>
+            <p>We believe quantum computers can solve problems that classical randomized algorithms cannot (e.g., factoring via Shor's algorithm). Proving BPP &ne; BQP would confirm quantum computational advantage unconditionally. This is arguably the most important open question in quantum complexity theory.</p>
+            <p style="font-size:0.82rem;margin-top:0.5rem;color:var(--text-muted)"><strong style="color:var(--text)">Examples:</strong> Factoring &isin; BQP &cap; NP &bull; Miller-Rabin primality &isin; BPP</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="relation-card animate-in" data-rel="p-bpp">
+        <div class="relation-card-header">
+          <div>
+            <h4>P vs BPP &mdash; Derandomization</h4>
+            <span class="chain-mini">P &sube; BPP (P = BPP?)</span>
+            <span class="header-status"><span class="status-badge proven">&#10003;</span><span class="status-badge open">? conj.</span></span>
+          </div>
+          <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="relation-card-body">
+          <div class="relation-card-body-inner">
+            <div class="status-row">
+              <span class="status-badge proven">&#10003; P &sube; BPP proven</span>
+              <span class="status-badge open">? P = BPP conjectured</span>
+            </div>
+            <p>It is widely conjectured that P = BPP &mdash; randomness can be removed from any efficient algorithm (derandomization). This would mean BPP &sube; NP, since P &sube; NP is trivially true. The best evidence comes from the Impagliazzo&ndash;Wigderson theorem: if any problem in E = DTIME($2^{O(n)}$) requires exponential-size circuits, then P = BPP. This is believed to hold, making the conjecture strongly supported.</p>
+            <p style="font-size:0.82rem;margin-top:0.5rem;color:var(--text-muted)"><strong style="color:var(--text)">Key result:</strong> Sipser&ndash;Lautemann theorem: BPP &sube; &Sigma;<sub>2</sub> &cap; &Pi;<sub>2</sub> (second level of the polynomial hierarchy)</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="relation-card animate-in" data-rel="bqp-np">
+        <div class="relation-card-header">
+          <div>
+            <h4>BQP vs NP &mdash; Orthogonal Power?</h4>
+            <span class="chain-mini">BQP &nsub; NP? &ensp; NP &nsub; BQP?</span>
+            <span class="header-status"><span class="status-badge open">? open</span></span>
+          </div>
+          <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="relation-card-body">
+          <div class="relation-card-body-inner">
+            <div class="status-row">
+              <span class="status-badge open">? Both directions open</span>
+            </div>
+            <p>BQP and NP are believed to be incomparable. Quantum computers can solve some problems outside NP (like certain sampling problems with no short classical certificate), and NP contains problems (like NP-complete ones) believed to be outside BQP. Oracle separations support both directions.</p>
+            <p style="font-size:0.82rem;margin-top:0.5rem;color:var(--text-muted)"><strong style="color:var(--text)">Examples:</strong> Factoring &isin; BQP &cap; NP &bull; SAT &isin; NP-complete (probably &notin; BQP) &bull; Forrelation &isin; BQP (probably &notin; NP)</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="relation-card animate-in" data-rel="bqp-pspace">
+        <div class="relation-card-header">
+          <div>
+            <h4>BQP vs PSPACE &mdash; Limits of Quantum</h4>
+            <span class="chain-mini">BQP &sube; PSPACE (strict?)</span>
+            <span class="header-status"><span class="status-badge proven">&#10003;</span><span class="status-badge open">?</span></span>
+          </div>
+          <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="relation-card-body">
+          <div class="relation-card-body-inner">
+            <div class="status-row">
+              <span class="status-badge proven">&#10003; BQP &sube; PSPACE proven</span>
+              <span class="status-badge open">? BQP &ne; PSPACE open</span>
+            </div>
+            <p>A classical machine with polynomial space can simulate any quantum circuit by computing amplitudes via the Feynman path-sum method: enumerate all $2^n$ computational paths one at a time, each requiring only polynomial space. The space is reused between paths. Whether quantum computers are strictly weaker than PSPACE remains open, but most researchers believe BQP &ne; PSPACE.</p>
+            <p style="font-size:0.82rem;margin-top:0.5rem;color:var(--text-muted)"><strong style="color:var(--text)">Key insight:</strong> Space is reusable but time is not &mdash; this is why PSPACE can simulate quantum computation despite the exponential state space.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="what-if-section" id="what-if-section">
+      <button class="what-if-toggle" id="what-if-toggle">&#9881; "What If...?" Thought Experiments</button>
+      <div class="what-if-content">
+        <div class="what-if-cards">
+          <div class="what-if-card">
+            <h4>What if P = NP?</h4>
+            <p>Cryptography as we know it would collapse. Every NP problem (including SAT, graph coloring, scheduling) would have efficient solutions. Mathematical proof search would become tractable. However, it would <em>not</em> directly affect quantum classes &mdash; BQP's relationship to NP would remain unclear.</p>
+          </div>
+          <div class="what-if-card">
+            <h4>What if BQP = BPP?</h4>
+            <p>Quantum computers would offer <em>no</em> super-polynomial speedup over classical probabilistic computation. Shor's algorithm would imply classical polynomial-time factoring. Billions invested in quantum hardware would be "only" for constant-factor improvements. Most researchers believe this is false.</p>
+          </div>
+          <div class="what-if-card">
+            <h4>What if BQP &supe; NP?</h4>
+            <p>Quantum computers could solve NP-complete problems efficiently. This would be revolutionary but is considered very unlikely &mdash; there's strong oracle evidence against it. It would imply quantum computers can solve problems like 3-SAT and the traveling salesman problem in polynomial time.</p>
+          </div>
+          <div class="what-if-card">
+            <h4>What if P &ne; BPP?</h4>
+            <p>Randomness would be a genuinely useful computational resource &mdash; there would exist problems solvable efficiently with coin flips but not deterministically. This would contradict the prevailing conjecture and imply that no problem in E = DTIME($2^{O(n)}$) requires exponential-size circuits, undermining longstanding beliefs in circuit complexity.</p>
+          </div>
+          <div class="what-if-card">
+            <h4>What if QMA = NP?</h4>
+            <p>Quantum proofs would be no more powerful than classical proofs. The Local Hamiltonian Problem would reduce to SAT. Ground-state energy estimation could be verified with a classical certificate. This would imply quantum entanglement in witnesses is computationally useless, which is considered unlikely given the structure of quantum mechanics.</p>
+          </div>
+          <div class="what-if-card">
+            <h4>What if PSPACE = P?</h4>
+            <p>All of NP, BQP, QMA, and PSPACE would collapse into P. Every game, every quantified formula, every quantum computation would be efficiently solvable deterministically. This is considered extremely unlikely.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== SIMULATION TAB ====== -->
+  <section class="tab-panel" id="panel-simulation" role="tabpanel" aria-labelledby="tab-simulation">
+    <div class="sim-container">
+      <h2 style="margin-bottom:0.5rem">BQP Simulator</h2>
+      <p class="sim-description">Explore the key idea behind BQP: a quantum algorithm produces the correct answer with probability $\ge 2/3$. Run a simulated quantum algorithm and observe how repeating the computation amplifies success probability via majority vote.</p>
+
+      <div class="sim-panel animate-in">
+        <h4>Bounded-Error Amplification</h4>
+        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:1rem">
+          A BQP algorithm answers correctly with probability $\ge 2/3$.
+          By running it $k$ times and taking a majority vote,
+          the error probability drops exponentially: $\varepsilon \le e^{-\Omega(k)}$.
+        </p>
+        <div class="sim-presets">
+          <button class="sim-preset-btn" data-p="0.51" data-k="5">Low confidence (p=0.51, k=5)</button>
+          <button class="sim-preset-btn" data-p="0.667" data-k="20">Standard BQP (p=2/3, k=20)</button>
+          <button class="sim-preset-btn" data-p="0.667" data-k="100">High amplification (p=2/3, k=100)</button>
+        </div>
+        <div class="sim-controls">
+          <label>Problem:</label>
+          <select id="sim-problem">
+            <option value="deutsch">Deutsch-Jozsa (Constant vs Balanced)</option>
+            <option value="grover">Grover Search (Unstructured, N=16)</option>
+            <option value="simon">Simon's Problem (Hidden Subgroup)</option>
+          </select>
+        </div>
+        <div class="sim-controls">
+          <label>Success probability per run:</label>
+          <select id="sim-prob">
+            <option value="0.667">2/3 &approx; 0.667 (BQP threshold)</option>
+            <option value="0.75">3/4 = 0.75</option>
+            <option value="0.9">0.9</option>
+            <option value="0.51">0.51 (barely above 1/2)</option>
+          </select>
+        </div>
+        <div class="sim-controls">
+          <label>Repetitions (k):</label>
+          <input type="number" id="sim-reps" value="20" min="1" max="200" style="width:70px">
+          <button class="sim-btn" id="sim-run">Run Simulation</button>
+          <button class="sim-btn secondary" id="sim-compare">Add to Comparison</button>
+        </div>
+        <div class="sim-output" id="sim-output">Click "Run Simulation" to start.</div>
+
+        <div class="sim-chart-area">
+          <h5>Individual Run Results</h5>
+          <div class="sim-bar-chart" id="sim-chart"></div>
+        </div>
+
+        <div class="sim-chart-area">
+          <h5>Cumulative Success Rate (convergence to $p$)</h5>
+          <canvas class="convergence-canvas" id="convergence-canvas" aria-label="Chart showing cumulative success rate converging to true probability"></canvas>
+        </div>
+
+        <div class="sim-chart-area">
+          <h5>Error Probability Decay (log scale)</h5>
+          <canvas class="error-decay-canvas" id="error-decay-canvas" aria-label="Chart showing error probability decay on logarithmic scale as repetitions increase"></canvas>
+        </div>
+
+        <div class="sim-formula" id="sim-formula"></div>
+
+        <div class="sim-comparison-list" id="sim-comparisons"></div>
+      </div>
+
+      <div class="sim-panel animate-in">
+        <h4>Why This Matters</h4>
+        <p style="font-size:0.9rem;color:var(--text-muted);line-height:1.7;">
+          The amplification lemma is what makes BQP robust: the exact threshold ($2/3$) doesn't matter.
+          Any constant probability strictly above $1/2$ can be boosted to $1 - 2^{-n}$ with only a polynomial number of repetitions. By the Chernoff bound, $k = O(\log(1/\delta))$ repetitions suffice to achieve error $\delta$. This is why BQP is defined with bounded error &mdash; the "B" in BQP.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== QUIZ TAB ====== -->
+  <section class="tab-panel" id="panel-quiz" role="tabpanel" aria-labelledby="tab-quiz">
+    <h2 style="margin-bottom:0.5rem">Test Your Knowledge</h2>
+    <p style="color:var(--text-muted);margin-bottom:1rem">Answer these questions to check your understanding. Use hints if needed (costs 0.5 points).</p>
+    <div class="quiz-filters" id="quiz-filters">
+      <button class="quiz-filter-btn active" data-topic="all">All</button>
+      <button class="quiz-filter-btn" data-topic="BQP">BQP</button>
+      <button class="quiz-filter-btn" data-topic="QMA">QMA</button>
+      <button class="quiz-filter-btn" data-topic="Relations">Relations</button>
+      <button class="quiz-filter-btn" data-topic="PSPACE">PSPACE</button>
+      <button class="quiz-filter-btn" data-topic="General">General</button>
+    </div>
+    <div class="quiz-difficulty-filters" id="quiz-difficulty-filters">
+      <button class="quiz-diff-btn active" data-difficulty="all">All Levels</button>
+      <button class="quiz-diff-btn" data-difficulty="easy">Easy</button>
+      <button class="quiz-diff-btn" data-difficulty="medium">Medium</button>
+      <button class="quiz-diff-btn" data-difficulty="hard">Hard</button>
+    </div>
+    <div class="quiz-streak" id="quiz-streak" style="display:none">
+      <span class="streak-flame">&#128293;</span>
+      <span>Streak: <span class="streak-count" id="streak-count">0</span></span>
+      <span id="best-streak" style="display:none;margin-left:0.75rem;color:var(--text-muted);font-size:0.82rem">Best: <span id="best-streak-count">0</span></span>
+    </div>
+    <div class="quiz-progress" id="quiz-progress">
+      <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quiz-progress-fill"></div></div>
+      <div class="quiz-progress-text" id="quiz-progress-text">0 / 8 answered</div>
+    </div>
+    <div id="quiz-container"></div>
+    <div class="quiz-score" id="quiz-score" style="display:none" role="status" aria-live="polite">
+      <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem">Final Score</div>
+      <div class="score-value" id="score-value"></div>
+      <div style="color:var(--text-muted);margin-top:0.25rem;font-size:0.9rem" id="score-text"></div>
+      <button class="quiz-reset-btn" id="quiz-reset">Try Again</button>
+    </div>
+  </section>
+
+  <!-- ====== OPEN PROBLEMS TAB ====== -->
+  <section class="tab-panel" id="panel-open" role="tabpanel" aria-labelledby="tab-open">
+    <h2 style="margin-bottom:0.5rem">Major Open Problems</h2>
+    <p style="color:var(--text-muted);margin-bottom:1rem">Some of the deepest unsolved questions in quantum complexity theory. Click to expand the deep dive.</p>
+    <div class="quiz-filters" id="oq-filters" style="margin-bottom:1.25rem">
+      <button class="quiz-filter-btn active" data-oq-filter="all">All</button>
+      <button class="quiz-filter-btn" data-oq-filter="P">P</button>
+      <button class="quiz-filter-btn" data-oq-filter="BPP">BPP</button>
+      <button class="quiz-filter-btn" data-oq-filter="BQP">BQP</button>
+      <button class="quiz-filter-btn" data-oq-filter="NP">NP</button>
+      <button class="quiz-filter-btn" data-oq-filter="QMA">QMA</button>
+      <button class="quiz-filter-btn" data-oq-filter="PSPACE">PSPACE</button>
+    </div>
+    <div class="open-questions-list" id="open-questions-list"></div>
+  </section>
+
+
+  <!-- ====== GLOSSARY TAB ====== -->
+  <section class="tab-panel" id="panel-glossary" role="tabpanel" aria-labelledby="tab-glossary">
+    <h2 style="margin-bottom:0.5rem">Glossary &amp; Reference</h2>
+    <p style="color:var(--text-muted);margin-bottom:1rem">Searchable reference of key terms in quantum complexity theory.</p>
+    <div class="glossary-search">
+      <span class="search-icon">&#128269;</span>
+      <input type="text" id="glossary-search-input" placeholder="Search terms...">
+    </div>
+    <div class="glossary-count" id="glossary-count"></div>
+    <div class="glossary-list" id="glossary-list"></div>
+  </section>
+</div>
+
+<button class="back-to-top" id="back-to-top" aria-label="Back to top">&#8593;</button>
+<button class="shortcuts-fab" id="shortcuts-fab" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
+
+<div class="shortcuts-overlay" id="shortcuts-overlay">
+  <div class="shortcuts-modal">
+    <h3>Keyboard Shortcuts <button class="close-btn" id="shortcuts-close" aria-label="Close">&times;</button></h3>
+    <table>
+      <tr><td><span class="key-badge">&larr;</span> <span class="key-badge">&rarr;</span></td><td>Switch between tabs</td></tr>
+      <tr><td><span class="key-badge">Enter</span> / <span class="key-badge">Space</span></td><td>Activate focused element</td></tr>
+      <tr><td><span class="key-badge">Tab</span></td><td>Move focus forward</td></tr>
+      <tr><td><span class="key-badge">Shift</span>+<span class="key-badge">Tab</span></td><td>Move focus backward</td></tr>
+      <tr><td><span class="key-badge">?</span></td><td>Show this help</td></tr>
+      <tr><td><span class="key-badge">Esc</span></td><td>Close modal / dismiss</td></tr>
+    </table>
+  </div>
+</div>
+
+
+
+<script>
+// ========================================
+// Particle Background
+// ========================================
+(function() {
+  const canvas = document.getElementById('particle-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  const SYMBOLS = ['|0\u27E9','|1\u27E9','|+\u27E9','|\u2212\u27E9','H','\u2297'];
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function resize() {
+    const header = canvas.parentElement;
+    canvas.width = header.offsetWidth;
+    canvas.height = header.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  for (let i = 0; i < 18; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.2,
+      symbol: SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+      opacity: 0.06 + Math.random() * 0.1,
+      size: 10 + Math.random() * 8
+    });
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      if (!prefersReducedMotion.matches) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < -20) p.x = canvas.width + 20;
+        if (p.x > canvas.width + 20) p.x = -20;
+        if (p.y < -20) p.y = canvas.height + 20;
+        if (p.y > canvas.height + 20) p.y = -20;
+      }
+      ctx.font = `${p.size}px "SF Mono", "Fira Code", monospace`;
+      ctx.fillStyle = `rgba(165, 180, 252, ${p.opacity})`;
+      ctx.fillText(p.symbol, p.x, p.y);
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+
+// ========================================
+// Scroll-triggered entrance animations
+// ========================================
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+  });
+}, { threshold: 0.1 });
+// Apply stagger classes to relation cards for cascading entrance
+document.querySelectorAll('.relations-cards .relation-card.animate-in').forEach((card, i) => {
+  card.classList.add(`stagger-${Math.min(i + 1, 6)}`);
+});
+document.querySelectorAll('.animate-in').forEach(el => observer.observe(el));
+
+
+// ========================================
+// Progress Persistence (localStorage)
+// ========================================
+const STORAGE_KEY = 'qc-progress';
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function saveProgress(updates) {
+  try {
+    const current = loadProgress();
+    Object.assign(current, updates);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+  } catch {}
+}
+
+function clearProgress() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+}
+
+// ========================================
+// Progress Dashboard
+// ========================================
+function updateProgressDashboard() {
+  const prog = loadProgress();
+  const studied = (prog.studiedClasses || []).length;
+  const totalClasses = 7;
+  document.getElementById('prog-classes').textContent = `${studied}/${totalClasses}`;
+  document.getElementById('prog-classes-bar').style.width = (studied / totalClasses * 100) + '%';
+
+  // Best quiz score across all categories
+  const scores = prog.quizScores || {};
+  const scoreVals = Object.values(scores);
+  const bestScore = scoreVals.length > 0 ? Math.max(...scoreVals) : 0;
+  document.getElementById('prog-quiz').textContent = scoreVals.length > 0 ? bestScore + '%' : '\u2014';
+  document.getElementById('prog-quiz-bar').style.width = bestScore + '%';
+
+  const bestStreak = prog.bestStreak || 0;
+  document.getElementById('prog-streak').textContent = bestStreak;
+  // Max possible streak based on total questions (guard for early call before quizQuestions defined)
+  let totalQ = 15;
+  try { totalQ = quizQuestions.length; } catch {}
+  document.getElementById('prog-streak-bar').style.width = Math.min(bestStreak / totalQ * 100, 100) + '%';
+}
+
+// Toggle dashboard collapse
+document.getElementById('progress-dashboard-toggle').addEventListener('click', () => {
+  const dash = document.getElementById('progress-dashboard');
+  dash.classList.toggle('collapsed');
+  saveProgress({ dashboardCollapsed: dash.classList.contains('collapsed') });
+});
+
+// Restore collapsed state
+(function() {
+  const prog = loadProgress();
+  if (prog.dashboardCollapsed) {
+    document.getElementById('progress-dashboard').classList.add('collapsed');
+  }
+  updateProgressDashboard();
+})();
+
+// ========================================
+// Tab switching
+// ========================================
+function switchToTab(tabName, fromHash) {
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+  if (btn) { btn.classList.add('active'); btn.setAttribute('aria-selected', 'true'); }
+  const panel = document.getElementById('panel-' + tabName);
+  if (panel) {
+    panel.classList.add('active');
+    panel.setAttribute('tabindex', '-1');
+    panel.focus({ preventScroll: true });
+  }
+  // Update mobile select
+  const mobileSel = document.getElementById('mobile-tab-select');
+  if (mobileSel) mobileSel.value = tabName;
+  // Re-observe animate-in
+  if (panel) panel.querySelectorAll('.animate-in:not(.visible)').forEach(el => observer.observe(el));
+  // KaTeX
+  if (typeof renderMathInElement === 'function' && panel) {
+    renderMathInElement(panel, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});
+  }
+  // Sim tab
+  if (tabName === 'simulation' && !window._simRanOnce) {
+    window._simRanOnce = true;
+    requestAnimationFrame(() => runSimulation(false));
+  }
+  if (tabName === 'simulation' && lastSimData) {
+    requestAnimationFrame(() => {
+      drawConvergenceChart(lastSimData.runs, lastSimData.p);
+      drawErrorDecayChart(lastSimData.p);
+    });
+  }
+  // Update tab indicator
+  // Update URL hash
+  if (!fromHash) {
+    const hashStr = currentClass ? `#${tabName}/${currentClass}` : `#${tabName}`;
+    if (location.hash !== hashStr) {
+      history.pushState(null, '', hashStr);
+    }
+  }
+  // Save to localStorage
+  saveProgress({ lastTab: tabName });
+  updateTabIndicator();
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchToTab(btn.dataset.tab));
+});
+
+// Mobile tab dropdown
+document.getElementById('mobile-tab-select').addEventListener('change', (e) => {
+  switchToTab(e.target.value);
+});
+
+// ========================================
+// Class Data (with KaTeX formal defs, insights)
+// ========================================
+const classData = {
+  P: {
+    name: 'P',
+    subtitle: 'Polynomial Time',
+    color: 'var(--p-color)',
+    rawColor: '#22c55e',
+    description: 'The class of decision problems solvable by a deterministic Turing machine in polynomial time. P represents the set of problems we consider "efficiently solvable" in the classical sense. It is the foundation upon which all other complexity classes are compared.',
+    formal: '$$\\mathsf{P} = \\bigcup_{c \\ge 1} \\mathsf{DTIME}(n^c)$$',
+    insight: 'P is the "gold standard" of tractability. If your problem is in P, it has an algorithm that scales gracefully with input size.',
+    tags: ['Classical', 'Deterministic'],
+    tagColors: ['#22c55e', '#22c55e'],
+    examples: [
+      '<code>Sorting</code> — Sort $n$ numbers in $O(n \\log n)$',
+      '<code>Shortest Path</code> — Dijkstra\'s algorithm',
+      '<code>Linear Programming</code> — via interior point methods',
+      '<code>Primality Testing</code> — AKS algorithm (unconditionally in P)'
+    ]
+  },
+  BPP: {
+    name: 'BPP',
+    subtitle: 'Bounded-Error Probabilistic Polynomial Time',
+    color: 'var(--bpp-color)',
+    rawColor: '#eab308',
+    description: 'The class of decision problems solvable by a probabilistic Turing machine in polynomial time with error probability at most 1/3 on both YES and NO instances. BPP captures efficient randomized classical computation. It is widely conjectured that P = BPP (randomness can be derandomized), but this remains unproven.',
+    formal: '$$\\mathsf{BPP} = \\{ L \\mid \\exists \\text{ prob. TM } M,\\, \\text{poly } p : \\Pr[M(x) = L(x)] \\ge \\tfrac{2}{3},\\, \\text{time } p(n) \\}$$',
+    insight: 'Randomness seems to help in practice, but most experts conjecture P = BPP &mdash; meaning efficient deterministic and randomized computation are equally powerful.',
+    tags: ['Classical', 'Randomized'],
+    tagColors: ['#eab308', '#eab308'],
+    examples: [
+      '<code>Polynomial Identity Testing</code> — Schwartz-Zippel lemma',
+      '<code>Miller-Rabin Primality</code> — randomized primality test',
+      '<code>Approximate Counting</code> — estimating $\\#\\text{SAT}$ solutions'
+    ]
+  },
+  BQP: {
+    name: 'BQP',
+    subtitle: 'Bounded-Error Quantum Polynomial Time',
+    color: 'var(--bqp-color)',
+    rawColor: '#6366f1',
+    description: 'The class of decision problems solvable by a quantum computer in polynomial time with error probability at most 1/3. BQP is the quantum analog of BPP and the central class in quantum computing. The key speedup comes from superposition, entanglement, and &mdash; crucially &mdash; interference that amplifies correct answers while cancelling wrong ones.',
+    formal: '$$\\mathsf{BQP} = \\{ L \\mid \\exists \\text{ uniform poly-size quantum circuits } \\{C_n\\} : \\Pr[C_n(x) = L(x)] \\ge \\tfrac{2}{3} \\}$$',
+    insight: 'Quantum interference is the key: it allows a quantum algorithm to amplify correct computation paths while destructively cancelling incorrect ones.',
+    tags: ['Quantum', 'Bounded Error'],
+    tagColors: ['#6366f1', '#6366f1'],
+    examples: [
+      '<code>Integer Factoring</code> — Shor\'s algorithm, $O((\\log N)^3)$',
+      '<code>Discrete Logarithm</code> — also via Shor\'s algorithm',
+      '<code>Pell\'s Equation</code> — finding fundamental solutions',
+      '<code>Jones Polynomial</code> — approximating the Jones polynomial of knots'
+    ]
+  },
+  QMA: {
+    name: 'QMA',
+    subtitle: 'Quantum Merlin-Arthur',
+    color: 'var(--qma-color)',
+    rawColor: '#ec4899',
+    description: 'The quantum analog of NP (more precisely, MA). An all-powerful prover (Merlin) sends a polynomial-size quantum state as a witness to a polynomial-time quantum verifier (Arthur). Arthur must accept YES instances with high probability and reject NO instances with high probability. QMA captures the power of quantum proofs.',
+    formal: '$$\\mathsf{QMA}: \\begin{cases} x \\in L \\Rightarrow \\exists |\\psi\\rangle : \\Pr[V(x,|\\psi\\rangle) \\text{ accepts}] \\ge \\tfrac{2}{3} \\\\ x \\notin L \\Rightarrow \\forall |\\psi\\rangle : \\Pr[V(x,|\\psi\\rangle) \\text{ accepts}] \\le \\tfrac{1}{3} \\end{cases}$$',
+    insight: 'Quantum proofs can encode exponentially much information in polynomial qubits via entanglement &mdash; but the verifier can only extract limited information through measurement.',
+    tags: ['Quantum', 'Verification'],
+    tagColors: ['#ec4899', '#ec4899'],
+    examples: [
+      '<code>Local Hamiltonian</code> — QMA-complete (quantum analog of SAT)',
+      '<code>Consistency of Density Matrices</code> — quantum constraint satisfaction',
+      '<code>N-representability</code> — fundamental problem in quantum chemistry'
+    ]
+  },
+  PSPACE: {
+    name: 'PSPACE',
+    subtitle: 'Polynomial Space',
+    color: 'var(--pspace-color)',
+    rawColor: '#f97316',
+    description: 'The class of decision problems solvable using a polynomial amount of memory with no time restriction. PSPACE is powerful &mdash; it can solve problems requiring exponential time. By Savitch\'s theorem, PSPACE = NPSPACE, so nondeterminism does not help in the space-bounded setting.',
+    formal: '$$\\mathsf{PSPACE} = \\bigcup_{c \\ge 1} \\mathsf{DSPACE}(n^c)$$',
+    insight: 'Space is reusable but time is not. A PSPACE machine can explore exponentially many configurations by reusing its polynomial workspace.',
+    tags: ['Classical', 'Space-Bounded'],
+    tagColors: ['#f97316', '#f97316'],
+    examples: [
+      '<code>TQBF</code> — True Quantified Boolean Formulas (PSPACE-complete)',
+      '<code>Generalized Chess/Go</code> — determining the winner on $n \\times n$ boards',
+      '<code>Regular Expression Equivalence</code> — testing if two regexes define the same language'
+    ]
+  },
+  EXP: {
+    name: 'EXP',
+    subtitle: 'Exponential Time',
+    color: 'var(--exp-color)',
+    rawColor: '#ef4444',
+    description: 'The class of decision problems solvable by a deterministic Turing machine in exponential time. EXP is the largest class in our hierarchy. The time hierarchy theorem gives P &ne; EXP unconditionally &mdash; one of the few strict separations we know.',
+    formal: '$$\\mathsf{EXP} = \\bigcup_{c \\ge 1} \\mathsf{DTIME}(2^{n^c})$$',
+    insight: 'EXP is the one class we can provably separate from P. The time hierarchy theorem guarantees problems exist in EXP \\ P &mdash; but we cannot pinpoint specific natural ones.',
+    tags: ['Classical', 'Exponential'],
+    tagColors: ['#ef4444', '#ef4444'],
+    examples: [
+      '<code>Generalized Hex</code> — determining the winner (EXP-complete)',
+      '<code>Succinct Circuit Value</code> — evaluating a compactly described circuit',
+      '<code>Some two-player games</code> — optimal play in certain combinatorial games'
+    ]
+  },
+  NP: {
+    name: 'NP',
+    subtitle: 'Nondeterministic Polynomial Time',
+    color: 'var(--np-color)',
+    rawColor: '#a78bfa',
+    description: 'The class of decision problems for which a YES answer can be verified in polynomial time given a suitable certificate (witness). NP is the cornerstone of computational complexity theory. Whether P = NP is the most famous open problem in all of mathematics and computer science, and a Clay Millennium Prize Problem worth $1 million.',
+    formal: '$$\\mathsf{NP} = \\{ L \\mid \\exists \\text{ poly-time verifier } V,\\, \\text{poly } p : x \\in L \\Leftrightarrow \\exists w,\\, |w| \\le p(|x|),\\, V(x,w) = 1 \\}$$',
+    insight: 'NP captures the profound asymmetry between finding and checking: solutions to NP problems may be extraordinarily hard to find, but once found, they are easy to verify.',
+    tags: ['Classical', 'Verification'],
+    tagColors: ['#a78bfa', '#a78bfa'],
+    examples: [
+      '<code>SAT</code> &mdash; Boolean Satisfiability (NP-complete, Cook&ndash;Levin theorem)',
+      '<code>Traveling Salesman</code> &mdash; Is there a tour of length $\\le k$?',
+      '<code>Graph Coloring</code> &mdash; Can the graph be properly 3-colored?',
+      '<code>Subset Sum</code> &mdash; Does a subset summing to target exist?'
+    ]
+  }
+};
+
+
+// ========================================
+// Diagram Interaction (with glow + smooth transitions)
+// ========================================
+let currentClass = null;
+
+function showClassInfo(cls) {
+  const d = classData[cls];
+  if (!d) return;
+
+  // Remove glow from previous
+  document.querySelectorAll('.class-region').forEach(r => r.classList.remove('glow'));
+  // Add glow to current
+  const region = document.querySelector(`.class-region[data-class="${cls}"]`);
+  if (region) region.classList.add('glow');
+
+  const content = document.getElementById('info-content');
+  const card = document.querySelector('.info-card');
+
+  // Capture current height for smooth transition
+  const startHeight = card.offsetHeight;
+  card.style.minHeight = startHeight + 'px';
+
+  // Fade out
+  content.classList.add('fading');
+
+  setTimeout(() => {
+    const nameEl = document.getElementById('info-name');
+    nameEl.innerHTML = '';
+    nameEl.textContent = d.name;
+    nameEl.style.color = d.color;
+    // Re-add Copy Link button
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-link-btn';
+    copyBtn.id = 'copy-class-link';
+    copyBtn.title = 'Copy link to this class';
+    copyBtn.innerHTML = '&#128203; Copy Link';
+    copyBtn.style.display = 'inline-block';
+    nameEl.appendChild(copyBtn);
+    document.getElementById('info-subtitle').textContent = d.subtitle;
+    document.getElementById('info-desc').innerHTML = d.description;
+
+    const formalEl = document.getElementById('info-formal');
+    formalEl.innerHTML = d.formal;
+    formalEl.style.display = 'block';
+    formalEl.style.borderLeftColor = d.rawColor;
+
+    const insightEl = document.getElementById('info-insight');
+    insightEl.style.display = 'block';
+    insightEl.innerHTML = `<div class="insight-label">Key Insight</div>${d.insight}`;
+
+    const tagsEl = document.getElementById('info-tags');
+    tagsEl.innerHTML = d.tags.map((t, i) =>
+      `<span class="tag" style="background:${d.tagColors[i]}22;color:${d.tagColors[i]}">${t}</span>`
+    ).join('');
+
+    const exEl = document.getElementById('info-examples');
+    exEl.innerHTML = `<div class="examples-heading">Key Examples</div><ul>${d.examples.map(e => `<li>${e}</li>`).join('')}</ul>`;
+
+    card.style.borderColor = d.rawColor;
+    card.classList.add('glow-border');
+    card.style.setProperty('--current-glow', d.rawColor + '30');
+
+    // Render KaTeX in the card
+    if (typeof renderMathInElement === 'function') {
+      renderMathInElement(card, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});
+    }
+
+    // Fade in
+    content.classList.remove('fading');
+    currentClass = cls;
+
+    // Smooth height transition
+    requestAnimationFrame(() => {
+      const endHeight = card.scrollHeight;
+      if (Math.abs(startHeight - endHeight) > 5) {
+        card.style.minHeight = startHeight + 'px';
+        requestAnimationFrame(() => {
+          card.style.minHeight = endHeight + 'px';
+          setTimeout(() => { card.style.minHeight = ''; }, 300);
+        });
+      } else {
+        card.style.minHeight = '';
+      }
+    });
+
+    // Update URL hash with class name
+    const activeTab = document.querySelector('.tab-btn.active');
+    if (activeTab) {
+      history.replaceState(null, '', `#${activeTab.dataset.tab}/${cls}`);
+    }
+
+    // Save studied class
+    const prog = loadProgress();
+    if (!prog.studiedClasses) prog.studiedClasses = [];
+    if (!prog.studiedClasses.includes(cls)) {
+      prog.studiedClasses.push(cls);
+    }
+    saveProgress(prog);
+    updateProgressDashboard();
+  }, 200);
+
+  // Highlight legend
+  document.querySelectorAll('.legend-item').forEach(l => l.classList.toggle('active', l.dataset.class === cls));
+}
+
+document.querySelectorAll('.class-region').forEach(r => {
+  r.addEventListener('click', (e) => { e.stopPropagation(); handleClassClick(r.dataset.class); });
+  r.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); handleClassClick(r.dataset.class); }
+  });
+});
+document.querySelectorAll('.legend-item').forEach(l => {
+  l.addEventListener('click', () => handleClassClick(l.dataset.class));
+});
+
+// ========================================
+// Venn Diagram Hover Tooltips
+// ========================================
+const vennTooltipData = {
+  P:      { full: 'Polynomial Time', fact: 'Problems solvable efficiently by a deterministic machine. The gold standard of tractability.' },
+  BPP:    { full: 'Bounded-Error Probabilistic Polynomial', fact: 'Efficient randomized algorithms. Conjectured equal to P (derandomization).' },
+  BQP:    { full: 'Bounded-Error Quantum Polynomial', fact: 'Problems solvable efficiently by a quantum computer. Contains factoring (Shor).' },
+  NP:     { full: 'Nondeterministic Polynomial Time', fact: 'Solutions can be verified efficiently. Home of SAT, graph coloring, TSP.' },
+  QMA:    { full: 'Quantum Merlin-Arthur', fact: 'Quantum analog of NP with quantum proofs. Local Hamiltonian is QMA-complete.' },
+  PSPACE: { full: 'Polynomial Space', fact: 'Solvable with polynomial memory. Contains all of BQP, NP, and QMA.' },
+  EXP:    { full: 'Exponential Time', fact: 'Brute-force solvable. Strictly larger than P (time hierarchy theorem).' }
+};
+const vennTooltip = document.getElementById('venn-tooltip');
+const diagramContainer = document.querySelector('.diagram-container');
+
+document.querySelectorAll('.class-region').forEach(r => {
+  r.addEventListener('mouseenter', (e) => {
+    const cls = r.dataset.class;
+    const d = vennTooltipData[cls];
+    if (!d || !vennTooltip) return;
+    const color = classData[cls]?.rawColor || '#6366f1';
+    vennTooltip.innerHTML = `<div class="vt-name" style="color:${color}">${cls}</div><div class="vt-full">${d.full}</div><div class="vt-fact">${d.fact}</div><div class="vt-hint">Click for full details</div>`;
+    vennTooltip.classList.add('visible');
+  });
+  r.addEventListener('mousemove', (e) => {
+    if (!vennTooltip || !diagramContainer) return;
+    const rect = diagramContainer.getBoundingClientRect();
+    const x = e.clientX - rect.left + 16;
+    const y = e.clientY - rect.top - 10;
+    vennTooltip.style.left = Math.min(x, rect.width - 270) + 'px';
+    vennTooltip.style.top = y + 'px';
+  });
+  r.addEventListener('mouseleave', () => {
+    if (vennTooltip) vennTooltip.classList.remove('visible');
+  });
+});
+
+// ========================================
+// Compare Mode
+// ========================================
+let compareMode = false;
+let compareSelections = [];
+
+document.getElementById('compare-mode-toggle').addEventListener('change', (e) => {
+  compareMode = e.target.checked;
+  compareSelections = [];
+  const infoCard = document.getElementById('class-info');
+  if (compareMode) {
+    infoCard.innerHTML = `<div class="compare-select-msg">Select two classes from the diagram to compare them side by side.</div>`;
+  } else {
+    infoCard.innerHTML = `<div class="info-card-content" id="info-content">
+      <h2 id="info-name" style="font-size:1.3rem">Select a Class<button class="copy-link-btn" id="copy-class-link" style="display:none" title="Copy link to this class">&#128203; Copy Link</button></h2>
+      <div class="subtitle" id="info-subtitle">Click on any region in the diagram or legend item above.</div>
+      <div class="description" id="info-desc">The Venn diagram shows the widely believed containment relationships. BPP and P are placed inside NP &cap; BQP, reflecting the conjecture P = BPP. Click any class to explore.</div>
+      <div id="info-formal" class="formal-def" style="display:none"></div>
+      <div id="info-insight" class="insight-box" style="display:none"></div>
+      <div id="info-tags" style="margin-bottom:0.5rem"></div>
+      <div id="info-examples"></div>
+    </div>`;
+  }
+});
+
+// Compare mode tooltip (one-time)
+(function() {
+  const prog = loadProgress();
+  if (prog.compareTooltipShown) return;
+  const tooltip = document.getElementById('compare-tooltip');
+  if (!tooltip) return;
+  setTimeout(() => {
+    tooltip.classList.add('visible');
+    const autoDismiss = setTimeout(() => {
+      tooltip.classList.remove('visible');
+      saveProgress({ compareTooltipShown: true });
+    }, 5000);
+    tooltip.addEventListener('click', () => {
+      clearTimeout(autoDismiss);
+      tooltip.classList.remove('visible');
+      saveProgress({ compareTooltipShown: true });
+    });
+  }, 1500);
+})();
+
+function handleClassClick(cls) {
+  if (!compareMode) {
+    showClassInfo(cls);
+    return;
+  }
+  if (compareSelections.includes(cls)) return;
+  compareSelections.push(cls);
+  if (compareSelections.length === 1) {
+    document.getElementById('class-info').innerHTML = `<div class="compare-select-msg">Selected <strong>${cls}</strong>. Now select a second class to compare.</div>`;
+  }
+  if (compareSelections.length >= 2) {
+    showCompareView(compareSelections[0], compareSelections[1]);
+    compareSelections = [];
+  }
+}
+
+function showCompareView(cls1, cls2) {
+  const d1 = classData[cls1], d2 = classData[cls2];
+  if (!d1 || !d2) return;
+  const card = document.getElementById('class-info');
+  card.innerHTML = `<div class="compare-card">
+    <div class="compare-side" style="border-color:${d1.rawColor}">
+      <h4 style="color:${d1.rawColor}">${d1.name}</h4>
+      <div class="subtitle">${d1.subtitle}</div>
+      <div class="formal-def" style="border-left-color:${d1.rawColor}">${d1.formal}</div>
+      <div class="description">${d1.insight}</div>
+    </div>
+    <div class="compare-side" style="border-color:${d2.rawColor}">
+      <h4 style="color:${d2.rawColor}">${d2.name}</h4>
+      <div class="subtitle">${d2.subtitle}</div>
+      <div class="formal-def" style="border-left-color:${d2.rawColor}">${d2.formal}</div>
+      <div class="description">${d2.insight}</div>
+    </div>
+  </div>
+  <div class="compare-select-msg" style="margin-top:0.75rem;font-size:0.82rem">Click two more classes to compare again.</div>`;
+  if (typeof renderMathInElement === 'function') {
+    renderMathInElement(card, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});
+  }
+}
+
+
+// ========================================
+// Relations Flow Diagram Interaction
+// ========================================
+const relGraph = {
+  P: { parents: [], children: ['BPP', 'NP'] },
+  BPP: { parents: ['P'], children: ['BQP', 'NP'] },
+  BQP: { parents: ['BPP'], children: ['QMA', 'PSPACE'] },
+  NP: { parents: ['P', 'BPP'], children: ['QMA'] },
+  QMA: { parents: ['BQP', 'NP'], children: ['PSPACE'] },
+  PSPACE: { parents: ['BQP', 'QMA'], children: ['EXP'] },
+  EXP: { parents: ['PSPACE'], children: [] }
+};
+
+function getReachable(cls, direction) {
+  const visited = new Set();
+  const queue = [cls];
+  while (queue.length > 0) {
+    const c = queue.shift();
+    if (visited.has(c)) continue;
+    visited.add(c);
+    const neighbors = direction === 'up' ? (relGraph[c]?.parents || []) : (relGraph[c]?.children || []);
+    neighbors.forEach(n => queue.push(n));
+  }
+  return visited;
+}
+
+function handleRelNodeClick(node) {
+  const cls = node.dataset.class;
+  const up = getReachable(cls, 'up');
+  const down = getReachable(cls, 'down');
+  const highlighted = new Set([...up, ...down]);
+
+  document.querySelectorAll('.rel-node').forEach(n => {
+    n.classList.toggle('dimmed', !highlighted.has(n.dataset.class));
+  });
+  document.querySelectorAll('.rel-edge').forEach(e => {
+    const from = e.dataset.from, to = e.dataset.to;
+    const isHighlighted = highlighted.has(from) && highlighted.has(to);
+    e.classList.toggle('dimmed', !isHighlighted);
+    e.classList.toggle('highlighted', isHighlighted);
+  });
+  animateEdges(cls);
+}
+document.querySelectorAll('.rel-node').forEach(node => {
+  node.addEventListener('click', () => handleRelNodeClick(node));
+  node.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRelNodeClick(node); }
+  });
+});
+
+// Click on SVG background to reset
+document.querySelector('.relations-flow-svg').addEventListener('click', (e) => {
+  if (e.target.classList.contains('relations-flow-svg')) {
+    document.querySelectorAll('.rel-node, .rel-edge').forEach(el => {
+      el.classList.remove('dimmed', 'highlighted');
+    });
+  }
+});
+
+// ========================================
+// Relations Collapsible Cards
+// ========================================
+document.querySelectorAll('.relation-card-header').forEach(header => {
+  header.addEventListener('click', () => {
+    header.closest('.relation-card').classList.toggle('open');
+  });
+});
+
+// What If toggle
+document.getElementById('what-if-toggle').addEventListener('click', () => {
+  document.getElementById('what-if-section').classList.toggle('open');
+});
+
+// Animate edges on node click (stroke-dashoffset)
+document.querySelectorAll('.rel-edge').forEach(edge => {
+  const len = 300; // approximate
+  edge.style.strokeDasharray = '0';
+  edge.style.strokeDashoffset = '0';
+});
+
+function animateEdges(cls) {
+  const up = getReachable(cls, 'up');
+  const down = getReachable(cls, 'down');
+  const highlighted = new Set([...up, ...down]);
+
+  document.querySelectorAll('.rel-edge').forEach(e => {
+    const from = e.dataset.from, to = e.dataset.to;
+    const isHl = highlighted.has(from) && highlighted.has(to);
+    if (isHl) {
+      const len = e.getTotalLength ? e.getTotalLength() : 200;
+      e.style.strokeDasharray = len;
+      e.style.strokeDashoffset = len;
+      e.style.transition = 'none';
+      requestAnimationFrame(() => {
+        e.style.transition = 'stroke-dashoffset 0.6s ease';
+        e.style.strokeDashoffset = '0';
+      });
+    } else {
+      e.style.strokeDasharray = '0';
+      e.style.strokeDashoffset = '0';
+    }
+  });
+}
+
+// ========================================
+// Quiz
+// ========================================
+const quizQuestions = [
+  {
+    q: 'Which complexity class is the quantum analog of BPP?',
+    options: ['QMA', 'BQP', 'PSPACE', 'EXP'],
+    correct: 1,
+    explanation: 'BQP (Bounded-Error Quantum Polynomial Time) is the quantum analog of BPP. Both involve bounded-error probabilistic computation in polynomial time, but BQP uses quantum circuits instead of classical randomness.',
+    hint: 'Think about which class replaces classical coin flips with quantum operations.',
+    difficulty: 'easy',
+    topic: 'BQP',
+    learnMore: 'diagram'
+  },
+  {
+    q: 'Which inclusion is known to be <strong>strict</strong> (unconditionally proven)?',
+    options: ['P &sub; BPP', 'BPP &sub; BQP', 'P &sub; EXP', 'BQP &sub; PSPACE'],
+    correct: 2,
+    explanation: 'P &ne; EXP follows from the time hierarchy theorem &mdash; there are problems solvable in exponential time that provably cannot be solved in polynomial time. All other listed separations remain open.',
+    hint: 'Only one of these separations has been proven using a hierarchy theorem.',
+    difficulty: 'medium',
+    topic: 'Relations',
+    learnMore: 'relations'
+  },
+  {
+    q: 'What does the "B" in BQP stand for, and what does it signify?',
+    options: [
+      '"Binary" &mdash; it uses binary qubits',
+      '"Bounded" &mdash; the error probability is bounded away from 1/2',
+      '"Boolean" &mdash; the output is boolean',
+      '"Bipartite" &mdash; it uses bipartite entanglement'
+    ],
+    correct: 1,
+    explanation: 'The "B" stands for "Bounded-error." It means the algorithm must give the correct answer with probability at least 2/3 (bounded away from 1/2). This error can be exponentially amplified by repetition.',
+    hint: 'The key property is about the success probability guarantee.',
+    difficulty: 'easy',
+    topic: 'BQP',
+    learnMore: 'simulation'
+  },
+  {
+    q: 'Which problem is QMA-complete?',
+    options: [
+      'Integer Factoring',
+      'Boolean Satisfiability (SAT)',
+      'Local Hamiltonian Problem',
+      'Shortest Path'
+    ],
+    correct: 2,
+    explanation: 'The Local Hamiltonian Problem &mdash; determining whether the ground-state energy of a local Hamiltonian is below a threshold &mdash; is QMA-complete. It is the quantum analog of the Cook-Levin theorem (SAT is NP-complete). This was proven by Kitaev.',
+    hint: 'The QMA-complete problem involves finding the lowest energy state of a quantum system.',
+    difficulty: 'medium',
+    topic: 'QMA',
+    learnMore: 'glossary'
+  },
+  {
+    q: 'Why is BQP &sube; PSPACE?',
+    options: [
+      'Quantum states can be stored in polynomial space',
+      'A PSPACE machine can simulate a quantum circuit by tracking amplitude paths sequentially',
+      'Quantum measurements collapse to classical bits fitting in polynomial space',
+      'PSPACE machines have access to quantum oracles'
+    ],
+    correct: 1,
+    explanation: 'A PSPACE machine can simulate a quantum circuit by summing over all computational paths one by one, computing each amplitude sequentially. While the number of paths is exponential, computing each one uses only polynomial space, and the space is reused between paths.',
+    hint: 'Think about Feynman path integrals &mdash; you can compute one path at a time.',
+    difficulty: 'hard',
+    topic: 'Relations',
+    learnMore: 'relations'
+  },
+  {
+    q: 'Which statement about BQP and NP is most widely believed?',
+    options: [
+      'BQP &sub; NP',
+      'NP &sub; BQP',
+      'BQP = NP',
+      'BQP and NP are incomparable (neither contains the other)'
+    ],
+    correct: 3,
+    explanation: 'Most researchers believe BQP and NP are incomparable. BQP contains problems likely outside NP (quantum simulation problems with no short classical proof), and NP contains NP-complete problems believed to be outside BQP.',
+    hint: 'Quantum computers likely can\'t solve NP-complete problems, and some BQP results have no short classical certificate.',
+    difficulty: 'hard',
+    topic: 'Relations',
+    learnMore: 'relations'
+  },
+  {
+    q: 'What is the significance of Shor\'s algorithm for complexity theory?',
+    options: [
+      'It proves P &ne; NP',
+      'It provides evidence that BQP &ne; BPP, since factoring is in BQP but not known to be in BPP',
+      'It proves BQP &nsub; NP',
+      'It proves quantum computers can solve NP-complete problems'
+    ],
+    correct: 1,
+    explanation: 'Shor\'s algorithm places Integer Factoring in BQP. Since no polynomial-time classical algorithm for factoring is known, this is strong evidence that BQP &ne; BPP &mdash; i.e., that quantum computers are genuinely more powerful than classical probabilistic computers.',
+    hint: 'Factoring is the key problem &mdash; it\'s in BQP but (probably) not in BPP.',
+    difficulty: 'medium',
+    topic: 'BQP',
+    learnMore: 'diagram'
+  },
+  {
+    q: 'In QMA, what kind of witness does the prover send?',
+    options: [
+      'A classical bit string of polynomial length',
+      'A quantum state of polynomial size (in qubits)',
+      'An exponentially long classical proof',
+      'A quantum circuit description'
+    ],
+    correct: 1,
+    explanation: 'In QMA, the prover (Merlin) sends a polynomial-size quantum state $|\\psi\\rangle$ as the witness. The verifier (Arthur) is a polynomial-time quantum computation that measures this state to decide acceptance. This quantum witness is what distinguishes QMA from MA.',
+    hint: 'The "Q" in QMA refers to the quantum nature of both the proof and the verifier.',
+    difficulty: 'easy',
+    topic: 'QMA',
+    learnMore: 'diagram'
+  },
+  {
+    q: 'In a quantum circuit, what does the Hadamard gate do to a basis state $|0\\rangle$?',
+    options: [
+      'Flips it to $|1\\rangle$',
+      'Creates an equal superposition $\\frac{1}{\\sqrt{2}}(|0\\rangle + |1\\rangle)$',
+      'Leaves it unchanged',
+      'Entangles it with another qubit'
+    ],
+    correct: 1,
+    explanation: 'The Hadamard gate maps $|0\\rangle \\to \\frac{1}{\\sqrt{2}}(|0\\rangle + |1\\rangle)$ and $|1\\rangle \\to \\frac{1}{\\sqrt{2}}(|0\\rangle - |1\\rangle)$. It creates superposition, the starting point of most quantum algorithms.',
+    hint: 'It creates an equal superposition of both computational basis states.',
+    difficulty: 'easy',
+    topic: 'General',
+    learnMore: 'glossary'
+  },
+  {
+    q: 'What does the Quantum PCP Conjecture propose?',
+    options: [
+      'That P = NP for quantum computers',
+      'That approximating Local Hamiltonian ground energy remains QMA-hard at constant precision',
+      'That quantum proofs can be verified classically',
+      'That BQP contains all of NP'
+    ],
+    correct: 1,
+    explanation: 'The Quantum PCP Conjecture proposes that the Local Hamiltonian problem remains QMA-hard even when the promise gap is a constant fraction of the total norm. This is the quantum analog of the classical PCP theorem and has deep implications for quantum error correction and entanglement theory.',
+    hint: 'It is about the hardness of approximation for a quantum problem.',
+    difficulty: 'hard',
+    topic: 'QMA',
+    learnMore: 'open'
+  },
+  {
+    q: 'Savitch\'s theorem establishes which relationship?',
+    options: [
+      'P = NP for space-bounded computation',
+      'NSPACE($s(n)$) &sube; DSPACE($s(n)^2$), so PSPACE = NPSPACE',
+      'BQP &sube; PSPACE via amplitude enumeration',
+      'EXP &ne; PSPACE via the time hierarchy theorem'
+    ],
+    correct: 1,
+    explanation: 'Savitch\'s theorem proves that $\\mathsf{NSPACE}(s(n)) \\subseteq \\mathsf{DSPACE}(s(n)^2)$. For polynomial space, this means PSPACE = NPSPACE: nondeterminism does not increase the power of polynomial-space computation. The key technique is recursively computing reachability in the configuration graph.',
+    hint: 'It relates nondeterministic and deterministic space, showing the gap is at most quadratic.',
+    difficulty: 'medium',
+    topic: 'PSPACE',
+    learnMore: 'glossary'
+  },
+  {
+    q: 'Why is BPP conjectured to be inside NP?',
+    options: [
+      'Because BPP &sube; PSPACE and PSPACE &sube; NP',
+      'Because P = BPP is widely conjectured, and P &sube; NP is proven',
+      'Because all randomized algorithms can be verified efficiently',
+      'Because NP contains all bounded-error classes'
+    ],
+    correct: 1,
+    explanation: 'P &sube; NP is trivially true (a deterministic algorithm serves as its own verifier). The Impagliazzo&ndash;Wigderson theorem and other evidence strongly suggest P = BPP (derandomization). Combining these: BPP = P &sube; NP. Note that BPP &sube; NP is <em>not</em> proven unconditionally.',
+    hint: 'Think about what happens if randomness can be removed from efficient algorithms.',
+    difficulty: 'medium',
+    topic: 'Relations',
+    learnMore: 'relations'
+  },
+  {
+    q: 'Which of the following containments is <strong>trivially</strong> true by definition?',
+    options: [
+      'BPP &sube; BQP only',
+      'P &sube; NP only',
+      'BQP &sube; QMA only',
+      'All of the above'
+    ],
+    correct: 3,
+    explanation: 'All three are trivially true. P &sube; NP because a deterministic poly-time algorithm serves as its own verifier (the witness is ignored). BPP &sube; BQP because classical randomized computation is a special case of quantum computation. BQP &sube; QMA because a BQP algorithm needs no witness at all.',
+    hint: 'Think about whether each smaller class is a special case of the larger one by definition.',
+    difficulty: 'easy',
+    topic: 'Relations',
+    learnMore: 'relations'
+  },
+  {
+    q: 'Why can a PSPACE machine simulate any quantum circuit?',
+    options: [
+      'Because quantum states can be stored using only polynomial bits',
+      'Because each amplitude path can be computed in polynomial space and space is reusable',
+      'Because PSPACE machines have access to exponential time',
+      'Because measurement collapses qubits to classical data'
+    ],
+    correct: 1,
+    explanation: 'A quantum circuit on $n$ qubits has $2^n$ amplitudes, but computing any single amplitude requires only polynomial space (tracking one path through the circuit at a time). Since space is reusable, a PSPACE machine can sum over all $2^n$ paths sequentially, reusing the same polynomial workspace for each. This is why BQP &sube; PSPACE.',
+    hint: 'The key insight is about computing amplitudes one path at a time and reusing workspace.',
+    difficulty: 'hard',
+    topic: 'PSPACE',
+    learnMore: 'relations'
+  },
+  {
+    q: 'What is the best known upper bound on the classical simulation of BQP?',
+    options: [
+      'BQP &sube; P (quantum gives no speedup)',
+      'BQP &sube; EXP (brute-force simulation)',
+      'BQP &sube; PSPACE (path-sum simulation)',
+      'BQP &sube; NP (short classical proofs exist)'
+    ],
+    correct: 2,
+    explanation: 'The tightest known containment is BQP &sube; PSPACE. While BQP &sube; EXP is also true, PSPACE is a strictly tighter bound (since PSPACE &sube; EXP). The simulation works by computing amplitude paths one at a time in polynomial space. BQP &sube; NP is not known to hold and is actually believed to be false.',
+    hint: 'Think about which class provides the tightest known ceiling on quantum power.',
+    difficulty: 'medium',
+    topic: 'BQP',
+    learnMore: 'relations'
+  }
+];
+
+let answered = 0, score = 0, hintsUsed = new Set(), shuffledIndices = [];
+let currentQuizTopic = 'all';
+let currentQuizDifficulty = 'all';
+let correctStreak = 0;
+let quizResults = {};
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getFilteredQuestions() {
+  return quizQuestions.map((q, i) => {
+    const topicMatch = currentQuizTopic === 'all' || q.topic === currentQuizTopic;
+    const diffMatch = currentQuizDifficulty === 'all' || q.difficulty === currentQuizDifficulty;
+    return (topicMatch && diffMatch) ? i : -1;
+  }).filter(i => i >= 0);
+}
+
+function renderQuiz() {
+  answered = 0;
+  score = 0;
+  hintsUsed = new Set();
+  correctStreak = 0;
+  quizResults = {};
+  const filtered = getFilteredQuestions();
+  shuffledIndices = shuffleArray(filtered);
+
+  const container = document.getElementById('quiz-container');
+  container.innerHTML = '';
+
+  if (shuffledIndices.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-muted)">No questions match this filter.</p>';
+    return;
+  }
+
+  shuffledIndices.forEach((qi, displayIdx) => {
+    const q = quizQuestions[qi];
+    const card = document.createElement('div');
+    card.className = 'quiz-card animate-in';
+    card.dataset.topic = q.topic;
+    const diffClass = q.difficulty;
+    const diffLabel = q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1);
+    const topicColor = getClassColor(q.topic);
+    card.innerHTML = `
+      <h4>
+        <span class="q-number">Q${displayIdx+1}</span>
+        <span>${q.q}</span>
+        <span class="difficulty-badge" style="background:${topicColor}18;color:${topicColor};font-size:0.65rem;margin-right:0.2rem">${q.topic}</span>
+        <span class="difficulty-badge ${diffClass}">${diffLabel}</span>
+      </h4>
+      <button class="quiz-hint-btn" data-qi="${qi}">Show Hint</button>
+      <div class="quiz-hint" id="hint-${qi}">${q.hint}</div>
+      <div class="quiz-options" data-qi="${qi}" role="radiogroup">
+        ${q.options.map((o, oi) => `
+          <div class="quiz-option" data-oi="${oi}" tabindex="0" role="radio" aria-checked="false">
+            <div class="radio"></div>
+            <span>${o}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="quiz-feedback" id="fb-${qi}"></div>
+    `;
+    container.appendChild(card);
+    observer.observe(card);
+  });
+
+  // Hint buttons
+  document.querySelectorAll('.quiz-hint-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.classList.contains('used')) return;
+      const qi = parseInt(btn.dataset.qi);
+      btn.classList.add('used');
+      btn.textContent = 'Hint revealed (-0.5 pts)';
+      document.getElementById('hint-' + qi).classList.add('show');
+      hintsUsed.add(qi);
+    });
+  });
+
+  // Option clicks + keyboard
+  document.querySelectorAll('.quiz-option').forEach(opt => {
+    opt.addEventListener('click', () => handleQuizClick(opt));
+    opt.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleQuizClick(opt);
+      }
+    });
+  });
+
+  document.getElementById('quiz-score').style.display = 'none';
+  updateQuizProgress();
+  updateStreakDisplay();
+}
+
+function updateQuizProgress() {
+  const total = shuffledIndices.length;
+  const pct = total > 0 ? (answered / total) * 100 : 0;
+  document.getElementById('quiz-progress-fill').style.width = pct + '%';
+  document.getElementById('quiz-progress-text').textContent = `${answered} / ${total} answered`;
+}
+
+function updateStreakDisplay() {
+  const streakEl = document.getElementById('quiz-streak');
+  const countEl = document.getElementById('streak-count');
+  const bestEl = document.getElementById('best-streak');
+  const bestCountEl = document.getElementById('best-streak-count');
+  const prog = loadProgress();
+  const best = prog.bestStreak || 0;
+
+  if (correctStreak > 0 || best > 0) {
+    streakEl.style.display = 'flex';
+    countEl.textContent = correctStreak;
+    if (best > 0) {
+      bestEl.style.display = 'inline';
+      bestCountEl.textContent = best;
+    }
+  } else {
+    streakEl.style.display = 'none';
+  }
+
+  // Persist best streak
+  if (correctStreak > best) {
+    saveProgress({ bestStreak: correctStreak });
+    bestEl.style.display = 'inline';
+    bestCountEl.textContent = correctStreak;
+    updateProgressDashboard();
+  }
+}
+
+function handleQuizClick(opt) {
+  const parent = opt.closest('.quiz-options');
+  if (parent.classList.contains('answered')) return;
+  parent.classList.add('answered');
+
+  const qi = parseInt(parent.dataset.qi);
+  const oi = parseInt(opt.dataset.oi);
+  const q = quizQuestions[qi];
+
+  parent.querySelectorAll('.quiz-option').forEach(o => {
+    o.classList.add('disabled');
+    o.setAttribute('aria-checked', o === opt ? 'true' : 'false');
+  });
+
+  const pointValue = hintsUsed.has(qi) ? 0.5 : 1;
+  const tabNames = { diagram: 'Class Diagram', relations: 'Containment Relations', simulation: 'BQP Simulator', quiz: 'Quiz', open: 'Open Problems', glossary: 'Glossary' };
+  const learnMoreHTML = q.learnMore ? ` <button class="quiz-hint-btn" style="margin-left:0.5rem;margin-top:0.25rem" onclick="switchToTab('${q.learnMore}')">Learn more in ${tabNames[q.learnMore] || q.learnMore} &rarr;</button>` : '';
+
+  if (oi === q.correct) {
+    opt.classList.add('correct');
+    score += pointValue;
+    correctStreak++;
+    quizResults[qi] = true;
+    const fb = document.getElementById('fb-' + qi);
+    fb.className = 'quiz-feedback correct-fb';
+    fb.innerHTML = (hintsUsed.has(qi) ? '&#10003; Correct (0.5 pts with hint)! ' : '&#10003; Correct! ') + q.explanation + learnMoreHTML;
+    requestAnimationFrame(() => fb.classList.add('show'));
+  } else {
+    opt.classList.add('incorrect');
+    parent.querySelectorAll('.quiz-option')[q.correct].classList.add('correct');
+    correctStreak = 0;
+    quizResults[qi] = false;
+    const fb = document.getElementById('fb-' + qi);
+    fb.className = 'quiz-feedback incorrect-fb';
+    fb.innerHTML = '&#10007; ' + q.explanation + learnMoreHTML;
+    requestAnimationFrame(() => fb.classList.add('show'));
+  }
+
+  answered++;
+  updateQuizProgress();
+  updateStreakDisplay();
+
+  if (answered === shuffledIndices.length) {
+    setTimeout(() => {
+      const scorePanel = document.getElementById('quiz-score');
+      scorePanel.style.display = 'block';
+      const maxScore = shuffledIndices.length;
+      document.getElementById('score-value').textContent = score + ' / ' + maxScore;
+      const pct = Math.round(100 * score / maxScore);
+      document.getElementById('score-text').textContent =
+        pct >= 80 ? 'Excellent! You have a strong grasp of quantum complexity.' :
+        pct >= 50 ? 'Good effort! Review the explanations above to strengthen your understanding.' :
+        'Keep studying! Re-read the class definitions and containment relations.';
+      // Save quiz score to localStorage
+      const prog = loadProgress();
+      if (!prog.quizScores) prog.quizScores = {};
+      const scoreKey = currentQuizTopic + '_' + currentQuizDifficulty;
+      const prevBest = prog.quizScores[scoreKey] || 0;
+      if (pct > prevBest) prog.quizScores[scoreKey] = pct;
+      prog.lastQuizScore = pct;
+      saveProgress(prog);
+      updateProgressDashboard();
+      // Per-topic breakdown
+      const topicStats = {};
+      shuffledIndices.forEach(qi => {
+        const q = quizQuestions[qi];
+        if (!topicStats[q.topic]) topicStats[q.topic] = { correct: 0, total: 0 };
+        topicStats[q.topic].total++;
+        if (quizResults[qi]) topicStats[q.topic].correct++;
+      });
+      let breakdownHTML = '<div class="quiz-score-breakdown">';
+      Object.entries(topicStats).forEach(([topic, stats]) => {
+        breakdownHTML += `<div class="topic-stat">${topic}: <span class="topic-correct">${stats.correct}</span>/${stats.total}</div>`;
+      });
+      breakdownHTML += '</div>';
+      scorePanel.insertAdjacentHTML('beforeend', breakdownHTML);
+      scorePanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (typeof renderMathInElement === 'function') {
+        renderMathInElement(document.getElementById('quiz-container'), {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});
+      }
+    }, 500);
+  }
+}
+
+// Topic filter buttons
+document.querySelectorAll('.quiz-filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.quiz-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentQuizTopic = btn.dataset.topic;
+    renderQuiz();
+  });
+});
+
+// Difficulty filter buttons
+document.querySelectorAll('.quiz-diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.quiz-diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentQuizDifficulty = btn.dataset.difficulty;
+    renderQuiz();
+  });
+});
+
+document.getElementById('quiz-reset').addEventListener('click', () => renderQuiz());
+renderQuiz();
+
+// ========================================
+// Simulation
+// ========================================
+const comparisonRuns = [];
+const comparisonColors = ['#6366f1','#ec4899','#22c55e','#f97316','#eab308','#ef4444'];
+
+document.getElementById('sim-run').addEventListener('click', () => runSimulation(false));
+document.getElementById('sim-compare').addEventListener('click', () => runSimulation(true));
+
+// Preset buttons
+document.querySelectorAll('.sim-preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const pSel = document.getElementById('sim-prob');
+    const kInp = document.getElementById('sim-reps');
+    // Find matching option or set closest
+    const targetP = btn.dataset.p;
+    for (let opt of pSel.options) {
+      if (opt.value === targetP) { pSel.value = targetP; break; }
+    }
+    kInp.value = btn.dataset.k;
+    runSimulation(false);
+  });
+});
+
+let lastSimData = null;
+
+function runSimulation(addToComparison) {
+  const p = parseFloat(document.getElementById('sim-prob').value);
+  const k = parseInt(document.getElementById('sim-reps').value);
+  const problem = document.getElementById('sim-problem').value;
+
+  const problemNames = { deutsch: 'Deutsch-Jozsa', grover: 'Grover Search (N=16)', simon: "Simon's Problem" };
+
+  if (k < 1 || k > 200) {
+    document.getElementById('sim-output').textContent = 'Please choose k between 1 and 200.';
+    return;
+  }
+
+  const runs = [];
+  let successes = 0;
+  for (let i = 0; i < k; i++) {
+    const success = Math.random() < p;
+    runs.push(success);
+    if (success) successes++;
+  }
+
+  const majorityCorrect = successes > k / 2;
+  const empiricalP = successes / k;
+
+  let theoP = 0;
+  for (let i = Math.floor(k / 2) + 1; i <= k; i++) {
+    theoP += binomCoeff(k, i) * Math.pow(p, i) * Math.pow(1 - p, k - i);
+  }
+  if (k % 2 === 0) {
+    theoP += 0.5 * binomCoeff(k, k / 2) * Math.pow(p, k / 2) * Math.pow(1 - p, k / 2);
+  }
+
+  lastSimData = { p, k, runs, successes, theoP, majorityCorrect, empiricalP, problem: problemNames[problem] };
+
+  // Output
+  const output = document.getElementById('sim-output');
+  output.innerHTML =
+    `<strong>Problem:</strong> ${problemNames[problem]}\n` +
+    `<strong>Single-run success probability:</strong> ${p}\n` +
+    `<strong>Repetitions (k):</strong> ${k}\n` +
+    `<strong>Successes in this trial:</strong> ${successes}/${k} (${(100*empiricalP).toFixed(1)}%)\n` +
+    `<strong>Majority vote result:</strong> ${majorityCorrect ? '&#10003; CORRECT' : '&#10007; INCORRECT'}\n` +
+    `<strong>Theoretical P(majority correct):</strong> ${theoP >= 0.9999 ? '&asymp; 1.0' : theoP.toFixed(6)}\n` +
+    `<strong>Error after amplification:</strong> ${(1-theoP) < 1e-6 ? '< 10&#8315;&#8310;' : (1-theoP).toFixed(6)}`;
+
+  // Bar chart with staggered animation
+  const chart = document.getElementById('sim-chart');
+  chart.innerHTML = '';
+  runs.forEach((success, idx) => {
+    const bar = document.createElement('div');
+    bar.className = 'sim-bar';
+    bar.style.height = '0%';
+    bar.style.background = success ? 'var(--accent)' : '#ef4444';
+    bar.dataset.label = `Run ${idx+1}: ${success ? 'Success' : 'Failure'}`;
+    chart.appendChild(bar);
+    setTimeout(() => {
+      bar.style.height = success ? '100%' : '25%';
+    }, 20 + idx * (1500 / k));
+  });
+
+  // Convergence chart
+  drawConvergenceChart(runs, p);
+
+  // Error decay chart
+  drawErrorDecayChart(p);
+
+  // Formula
+  const formulaEl = document.getElementById('sim-formula');
+  const errorStr = (1 - theoP) < 1e-6 ? '< 10^{-6}' : (1 - theoP).toFixed(6);
+  formulaEl.innerHTML = `Hoeffding bound: $\\Pr[\\text{majority wrong}] \\le e^{-2k(p - 1/2)^2} = e^{-2 \\cdot ${k} \\cdot (${p} - 0.5)^2} \\approx ${Math.exp(-2 * k * Math.pow(p - 0.5, 2)).toExponential(2)}$`;
+  if (typeof renderMathInElement === 'function') {
+    renderMathInElement(formulaEl, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});
+  }
+
+  // Comparison
+  if (addToComparison && comparisonRuns.length < 6) {
+    comparisonRuns.push({
+      label: `p=${p}, k=${k}`,
+      theoP: theoP,
+      error: 1 - theoP,
+      color: comparisonColors[comparisonRuns.length % comparisonColors.length]
+    });
+    renderComparisons();
+  }
+}
+
+function drawConvergenceChart(runs, trueP) {
+  const canvas = document.getElementById('convergence-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  canvas.width = W * 2; canvas.height = H * 2;
+  ctx.scale(2, 2);
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { top: 15, right: 15, bottom: 25, left: 40 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  // Grid
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 1;
+  for (let y = 0; y <= 1; y += 0.25) {
+    const py = pad.top + plotH * (1 - y);
+    ctx.beginPath(); ctx.moveTo(pad.left, py); ctx.lineTo(pad.left + plotW, py); ctx.stroke();
+    ctx.fillStyle = '#64748b';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(y.toFixed(2), pad.left - 4, py + 3);
+  }
+
+  // True probability line
+  ctx.strokeStyle = 'rgba(99,102,241,0.4)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 3]);
+  const truePY = pad.top + plotH * (1 - trueP);
+  ctx.beginPath(); ctx.moveTo(pad.left, truePY); ctx.lineTo(pad.left + plotW, truePY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#818cf8';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(`p=${trueP}`, pad.left + plotW + 2, truePY + 3);
+
+  // Cumulative success rate line
+  ctx.strokeStyle = '#6366f1';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  let cumSuccess = 0;
+  for (let i = 0; i < runs.length; i++) {
+    if (runs[i]) cumSuccess++;
+    const rate = cumSuccess / (i + 1);
+    const x = pad.left + (i / (runs.length - 1 || 1)) * plotW;
+    const y = pad.top + plotH * (1 - rate);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // X-axis label
+  ctx.fillStyle = '#64748b';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('Run number', pad.left + plotW / 2, H - 3);
+  ctx.textAlign = 'left';
+  ctx.fillText('1', pad.left, H - 10);
+  ctx.textAlign = 'right';
+  ctx.fillText(String(runs.length), pad.left + plotW, H - 10);
+}
+
+function drawErrorDecayChart(trueP) {
+  const canvas = document.getElementById('error-decay-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  if (W === 0 || H === 0) return;
+  canvas.width = W * 2; canvas.height = H * 2;
+  ctx.scale(2, 2);
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { top: 15, right: 15, bottom: 25, left: 50 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  const maxK = 200;
+  const delta = trueP - 0.5;
+  if (delta <= 0) return;
+
+  // Compute error probabilities
+  const errors = [];
+  for (let k = 1; k <= maxK; k++) {
+    const err = Math.exp(-2 * k * delta * delta);
+    errors.push(Math.max(err, 1e-15));
+  }
+
+  const minLog = -15, maxLog = 0;
+
+  // Grid lines
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#64748b';
+  ctx.font = '9px monospace';
+  for (let logV = 0; logV >= minLog; logV -= 3) {
+    const y = pad.top + plotH * (logV - maxLog) / (minLog - maxLog);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + plotW, y); ctx.stroke();
+    ctx.textAlign = 'right';
+    ctx.fillText(`10^${logV}`, pad.left - 4, y + 3);
+  }
+
+  // Error curve
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let k = 1; k <= maxK; k++) {
+    const logErr = Math.log10(errors[k - 1]);
+    const x = pad.left + ((k - 1) / (maxK - 1)) * plotW;
+    const y = pad.top + plotH * (logErr - maxLog) / (minLog - maxLog);
+    if (k === 1) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#64748b';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('Repetitions (k)', pad.left + plotW / 2, H - 3);
+  ctx.textAlign = 'left';
+  ctx.fillText('1', pad.left, H - 10);
+  ctx.textAlign = 'right';
+  ctx.fillText('200', pad.left + plotW, H - 10);
+}
+
+function renderComparisons() {
+  const el = document.getElementById('sim-comparisons');
+  if (comparisonRuns.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = '<h5 style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.35rem;font-weight:600">Comparison</h5>' +
+    comparisonRuns.map(r =>
+      `<div class="sim-comparison-item">
+        <span class="sim-comparison-dot" style="background:${r.color}"></span>
+        <span>${r.label}</span>
+        <span style="margin-left:auto">P(correct)=${r.theoP >= 0.9999 ? '&asymp;1' : r.theoP.toFixed(4)}</span>
+        <span>err=${r.error < 1e-6 ? '<10&#8315;&#8310;' : r.error.toFixed(4)}</span>
+      </div>`
+    ).join('') +
+    `<button class="sim-btn secondary" style="margin-top:0.5rem;font-size:0.78rem;padding:0.3rem 0.8rem" onclick="comparisonRuns.length=0;renderComparisons()">Clear</button>`;
+}
+
+function binomCoeff(n, k) {
+  if (k > n - k) k = n - k;
+  let result = 1;
+  for (let i = 0; i < k; i++) { result *= (n - i); result /= (i + 1); }
+  return result;
+}
+
+// Don't auto-run; wait until user clicks the tab or the button
+
+// ========================================
+// Open Problems
+// ========================================
+const openProblems = [
+  {
+    title: 'Does BQP = BPP?',
+    summary: 'If BQP equals BPP, then quantum computers offer no super-polynomial speedup over randomized classical computation. Most researchers believe the inclusion is strict, but no proof exists.',
+    deepDive: 'The strongest evidence for BQP &ne; BPP comes from Shor\'s algorithm. Factoring is not known to be in BPP, and the best classical algorithms run in sub-exponential time. Oracle separations (Simon\'s problem) also show exponential quantum speedups. However, translating oracle separations to the unrelativized world remains a major challenge.',
+    importance: 5,
+    year: '~1993',
+    tags: ['BQP', 'BPP'],
+    relatedClasses: ['BQP', 'BPP'],
+    milestones: ['1993: Bernstein-Vazirani', '1994: Shor\'s algorithm', '1997: Simon\'s problem oracle sep.', '2019: Raz-Tal BQP vs PH'],
+    papers: ['Shor, "Polynomial-Time Algorithms for Prime Factorization" (1994)', 'Raz & Tal, "Oracle Separation of BQP and PH" (2019)'],
+    consequences: {
+      yes: 'Quantum computers provide no super-polynomial speedup. Shor\'s algorithm implies classical poly-time factoring. Post-quantum cryptography becomes unnecessary for complexity-theoretic reasons.',
+      no: 'Confirmed quantum advantage. Some problems are provably easier on quantum computers. Justifies investment in quantum hardware.'
+    }
+  },
+  {
+    title: 'Is BQP contained in NP?',
+    summary: 'If BQP &sube; NP, every problem efficiently solvable by a quantum computer would have short classical proofs. Oracle evidence suggests BQP &nsub; NP.',
+    deepDive: 'Bernstein and Vazirani constructed an oracle relative to which BQP &nsub; NP. More recently, Raz and Tal (2019) gave an oracle separation between BQP and PH, which is even stronger. In the unrelativized world, this connects to whether quantum sampling advantages can be verified classically.',
+    importance: 4,
+    year: '~1993',
+    tags: ['BQP', 'NP'],
+    relatedClasses: ['BQP'],
+    milestones: ['1993: BV oracle separation', '2004: Aaronson BQP/qpoly', '2019: BQP vs PH oracle'],
+    papers: ['Bernstein & Vazirani, "Quantum Complexity Theory" (1993)', 'Raz & Tal, "Oracle Separation of BQP and PH" (2019)'],
+    consequences: {
+      yes: 'Every BQP computation has a short classical certificate. Quantum speedups are "verifiable."',
+      no: 'Quantum computers can produce outputs with no efficient classical proof of correctness. Quantum advantage extends beyond NP.'
+    }
+  },
+  {
+    title: 'Does QMA = PSPACE?',
+    summary: 'QMA sits between BQP and PSPACE. Whether either inclusion is strict remains unknown. Resolving this would illuminate the power of quantum proofs.',
+    deepDive: 'QMA is contained in PSPACE because a PSPACE machine can enumerate over all possible quantum witnesses and simulate the verifier. Most researchers believe QMA &ne; PSPACE, but even separating QMA from PP remains open.',
+    importance: 4,
+    year: '~1999',
+    tags: ['QMA', 'PSPACE'],
+    relatedClasses: ['QMA', 'PSPACE'],
+    milestones: ['1999: Kitaev defines QMA', '2000: Local Hamiltonian QMA-complete', '2006: QMA(2) studies'],
+    papers: ['Kitaev, "Quantum NP" (1999)', 'Kitaev, Shen & Vyalyi, "Classical and Quantum Computation" (2002)'],
+    consequences: {
+      yes: 'Polynomial-size quantum proofs are as powerful as polynomial space. Ground state problems are maximally hard.',
+      no: 'There exist problems solvable in PSPACE but not verifiable with quantum proofs. Limits the power of quantum witnesses.'
+    }
+  },
+  {
+    title: 'Is P = PSPACE?',
+    summary: 'One of the most fundamental open questions in all of complexity theory. No super-polynomial lower bound against polynomial-time algorithms is known for any PSPACE-complete problem.',
+    deepDive: 'PSPACE includes problems like TQBF and generalized games that seem to require exhaustive search. A proof that P &ne; PSPACE would immediately separate P from NP. This question is at least as hard as P vs NP.',
+    importance: 5,
+    year: '~1970s',
+    tags: ['P', 'PSPACE'],
+    relatedClasses: ['P', 'PSPACE'],
+    milestones: ['1972: Savitch\'s theorem', '1973: TQBF is PSPACE-complete', '1979: Polynomial hierarchy defined'],
+    papers: ['Savitch, "Relationships between nondeterministic and deterministic tape complexities" (1970)', 'Stockmeyer & Meyer, "Word problems requiring exponential time" (1973)'],
+    consequences: {
+      yes: 'Total collapse: P = NP = PSPACE. All games, planning problems, and QBF solvable efficiently. Considered extremely unlikely.',
+      no: 'Confirms that space reuse genuinely provides extra power. Implies P &ne; NP. Would be a breakthrough in circuit complexity.'
+    }
+  },
+  {
+    title: 'The Quantum PCP Conjecture',
+    summary: 'The classical PCP theorem is a cornerstone of hardness of approximation. Its quantum analog asks whether approximating the ground-state energy of a local Hamiltonian remains QMA-hard even at constant precision.',
+    deepDive: 'The classical PCP theorem states that $\\mathsf{NP} = \\mathsf{PCP}(\\log n, O(1))$. The Quantum PCP Conjecture proposes that the Local Hamiltonian problem remains QMA-hard even when the promise gap is constant. This has profound implications for quantum error correction and entanglement structure.',
+    importance: 5,
+    year: '~2003',
+    tags: ['QMA', 'PCP'],
+    relatedClasses: ['QMA'],
+    milestones: ['2003: Aharonov & Naveh pose conjecture', '2013: No-low-energy-trivial-states (NLTS)', '2023: NLTS theorem proven'],
+    papers: ['Aharonov & Naveh, "Quantum PCP Conjecture" (2003)', 'Anshu, Breuckmann & Nirkhe, "NLTS Hamiltonians from Good Quantum LDPC Codes" (2023)'],
+    consequences: {
+      yes: 'Ground state approximation is hard even at constant precision. Quantum error correction is fundamentally necessary. Topological order is robust.',
+      no: 'Ground states can be efficiently approximated. Limits on quantum hardness of approximation. Simplified quantum simulation.'
+    }
+  },
+  {
+    title: 'Does P = BPP?',
+    summary: 'Can every efficient randomized algorithm be derandomized? The widely believed conjecture P = BPP asserts that randomness provides no super-polynomial speedup for decision problems. If true, BPP collapses into P (and hence into NP).',
+    deepDive: 'The strongest evidence for P = BPP comes from the Impagliazzo&ndash;Wigderson theorem (1997): if any problem in E = DTIME(2^O(n)) requires exponential-size circuits, then P = BPP. Since most complexity theorists believe such hard problems exist, the conjecture is widely accepted. Additionally, the Sipser&ndash;Lautemann theorem places BPP &sube; &Sigma;&#8322; &cap; &Pi;&#8322;, already showing randomness adds limited power. Practical evidence also supports this: many problems first solved with randomized algorithms (e.g., primality via Miller-Rabin) were later solved deterministically (AKS primality test).',
+    importance: 4,
+    year: '~1980s',
+    tags: ['P', 'BPP'],
+    relatedClasses: ['P', 'BPP'],
+    milestones: ['1977: Sipser-Lautemann BPP &sube; PH', '1982: Yao XOR lemma', '1997: Impagliazzo-Wigderson derandomization', '2002: AKS deterministic primality test'],
+    papers: ['Impagliazzo & Wigderson, "P = BPP if E requires exponential circuits" (1997)', 'Agrawal, Kayal & Saxena, "PRIMES is in P" (2002)'],
+    consequences: {
+      yes: 'Randomness provides no extra computational power. BPP = P &sube; NP, simplifying the complexity landscape. All randomized algorithms have deterministic equivalents. The diagram in Tab 1 (BPP inside NP) is unconditionally correct.',
+      no: 'Randomness genuinely helps computation. There exist problems solvable efficiently with coin flips but not deterministically. Would imply no sufficiently hard problems exist in E, undermining circuit complexity lower bounds.'
+    }
+  },
+  {
+    title: 'Can quantum advantage be proven unconditionally?',
+    summary: 'While experiments like Google\'s Sycamore (2019) and IBM\'s work claim "quantum supremacy" for specific sampling tasks, no unconditional proof that quantum computers outperform classical ones exists. The closest theoretical result is the oracle separation BQP vs PH by Raz and Tal (2019).',
+    deepDive: 'Quantum computational advantage (sometimes called "quantum supremacy") has two aspects: experimental demonstrations and theoretical proofs. Experimentally, random circuit sampling and boson sampling have been used to claim quantum advantage, but classical simulation algorithms keep improving. Theoretically, we lack unconditional separations: BQP &ne; BPP remains unproven. The Raz&ndash;Tal result separates BQP from the entire polynomial hierarchy relative to an oracle, which is the strongest evidence so far that quantum advantage is real and goes beyond NP.',
+    importance: 4,
+    year: '~2012',
+    tags: ['BQP', 'BPP'],
+    relatedClasses: ['BQP', 'BPP'],
+    milestones: ['2012: Preskill coins "quantum supremacy"', '2019: Google Sycamore experiment', '2019: Raz-Tal BQP vs PH oracle separation', '2023: IBM 127-qubit experiments'],
+    papers: ['Arute et al., "Quantum supremacy using a programmable superconducting processor" (2019)', 'Raz & Tal, "Oracle Separation of BQP and PH" (2019)'],
+    consequences: {
+      yes: 'Unconditional proof that quantum computers are strictly more powerful. Would resolve BQP &ne; BPP. Revolutionary breakthrough in complexity theory.',
+      no: 'Quantum advantage remains empirical and oracle-relative only. Classical simulation may always close the gap. Fundamental limits of current proof techniques remain.'
+    }
+  },
+  {
+    title: 'Does P = NP?',
+    summary: 'The most important open question in computer science and mathematics. Can every problem whose solution can be quickly verified also be quickly solved? A Clay Millennium Prize Problem worth $1 million.',
+    deepDive: 'P vs NP asks whether efficient verification implies efficient computation. If P = NP, problems like SAT, graph coloring, and the traveling salesman problem would all be solvable in polynomial time, collapsing much of complexity theory and breaking modern cryptography. All known evidence suggests P &ne; NP, but proving it requires showing no polynomial-time algorithm exists for any NP-complete problem &mdash; a task that has resisted all known proof techniques, including relativization (Baker&ndash;Gill&ndash;Solovay, 1975) and natural proofs (Razborov&ndash;Rudich, 1993).',
+    importance: 5,
+    year: '1971',
+    tags: ['P', 'NP'],
+    relatedClasses: ['P', 'NP'],
+    milestones: ['1971: Cook & Levin prove SAT is NP-complete', '1972: Karp identifies 21 NP-complete problems', '1975: Baker-Gill-Solovay oracle barrier', '1993: Razborov-Rudich natural proofs barrier', '2000: Named Clay Millennium Prize Problem'],
+    papers: ['Cook, "The complexity of theorem-proving procedures" (1971)', 'Razborov & Rudich, "Natural proofs" (1997)'],
+    consequences: {
+      yes: 'Cryptography collapses (one-way functions cannot exist). Optimization, AI planning, and mathematical proof search become tractable. Considered extremely unlikely by virtually all experts.',
+      no: 'Confirms fundamental limits to efficient computation. Validates modern cryptography. Requires breakthrough techniques bypassing all known barriers (relativization, natural proofs, algebrization).'
+    }
+  }
+];
+
+function renderOpenProblems() {
+  const container = document.getElementById('open-questions-list');
+  container.innerHTML = '';
+
+  openProblems.forEach((prob, idx) => {
+    const card = document.createElement('div');
+    card.className = 'oq-card animate-in';
+
+    const milestonesHTML = prob.milestones ? `<div class="oq-timeline">${prob.milestones.map(m => `<span class="oq-milestone">${m}</span>`).join('')}</div>` : '';
+    const papersHTML = prob.papers ? `<div class="oq-papers">${prob.papers.join(' | ')}</div>` : '';
+    const consequencesHTML = prob.consequences ? `
+      <div class="oq-consequences">
+        <div class="oq-consequences-inner">
+          <div class="oq-consequence-tree">
+            <div class="oq-consequence-branch yes">
+              <h5>If YES (equality/containment holds)</h5>
+              <p>${prob.consequences.yes}</p>
+            </div>
+            <div class="oq-consequence-branch no">
+              <h5>If NO (separation holds)</h5>
+              <p>${prob.consequences.no}</p>
+            </div>
+          </div>
+        </div>
+      </div>` : '';
+
+    card.innerHTML = `
+      <div class="oq-card-header" data-idx="${idx}">
+        <h4>${prob.title}</h4>
+        <div class="oq-meta">
+          <div class="oq-stars">${renderStars(prob.importance)}</div>
+          <span class="oq-year">${prob.year}</span>
+        </div>
+        ${milestonesHTML}
+        <p>${prob.summary}</p>
+      </div>
+      <div class="oq-card-footer">
+        <div class="oq-tags">
+          ${prob.relatedClasses.map(c =>
+            `<span class="oq-tag" data-class="${c}">${c}</span>`
+          ).join('')}
+        </div>
+        <div style="display:flex;gap:0.5rem">
+          ${prob.consequences ? `<button class="oq-expand-btn" data-action="consequences" data-idx="${idx}">Consequences</button>` : ''}
+          <button class="oq-expand-btn" data-action="deep-dive" data-idx="${idx}">Deep Dive &#9660;</button>
+        </div>
+      </div>
+      ${consequencesHTML}
+      <div class="oq-deep-dive">
+        <div class="oq-deep-dive-inner">
+          ${prob.deepDive}
+          ${papersHTML}
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+    observer.observe(card);
+  });
+
+  // Expand/collapse
+  document.querySelectorAll('.oq-expand-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.oq-card');
+      const action = btn.dataset.action;
+      if (action === 'consequences') {
+        card.classList.toggle('show-consequences');
+      } else {
+        card.classList.toggle('expanded');
+        btn.innerHTML = card.classList.contains('expanded') ? 'Collapse &#9650;' : 'Deep Dive &#9660;';
+      }
+    });
+  });
+
+  // Cross-link tags to diagram
+  document.querySelectorAll('.oq-tag[data-class]').forEach(tag => {
+    tag.addEventListener('click', () => {
+      const cls = tag.dataset.class;
+      switchToTab('diagram');
+      showClassInfo(cls);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+}
+
+// Open problems class filter
+let currentOQFilter = 'all';
+document.querySelectorAll('[data-oq-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-oq-filter]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentOQFilter = btn.dataset.oqFilter;
+    document.querySelectorAll('.oq-card').forEach(card => {
+      if (currentOQFilter === 'all') {
+        card.style.display = '';
+      } else {
+        const tags = card.querySelectorAll('.oq-tag');
+        const hasTag = Array.from(tags).some(t => t.dataset.class === currentOQFilter);
+        card.style.display = hasTag ? '' : 'none';
+      }
+    });
+  });
+});
+
+function renderStars(count) {
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    html += `<span class="oq-star ${i <= count ? 'filled' : ''}">${i <= count ? '&#9733;' : '&#9734;'}</span>`;
+  }
+  return html;
+}
+
+renderOpenProblems();
+
+// ========================================
+// CIRCUITS REMOVED — covered in other modules
+// ========================================
+
+// ========================================
+// Glossary
+// ========================================
+const glossaryTerms = [
+  { term: 'Turing Machine', def: 'A mathematical model of computation that defines an abstract machine manipulating symbols on a tape. The foundation for defining complexity classes.', tags: ['General'] },
+  { term: 'Oracle', def: 'A black-box subroutine that solves a specific problem in a single step. Oracles are used to study relative complexity and prove separation results.', tags: ['General'] },
+  { term: 'Polynomial Time', def: 'An algorithm runs in polynomial time if its running time is $O(n^c)$ for some constant $c$. This defines the class P and is the standard notion of "efficient."', tags: ['P'] },
+  { term: 'Bounded Error', def: 'An algorithm has bounded error if it outputs the correct answer with probability $\\ge 2/3$. This error can be exponentially reduced via repetition and majority vote.', tags: ['BQP', 'BPP'] },
+  { term: 'Superposition', def: 'A quantum state that is a linear combination of basis states: $|\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle$. Allows quantum computers to process multiple inputs simultaneously. See also: <em>Interference</em>, <em>Measurement</em>.', tags: ['BQP'] },
+  { term: 'Entanglement', def: 'A quantum phenomenon where the state of multiple qubits cannot be described independently. Enables correlations with no classical analog, essential for quantum speedups.', tags: ['BQP', 'QMA'] },
+  { term: 'Interference', def: 'The quantum mechanical effect where probability amplitudes add constructively or destructively. This is the key mechanism behind quantum speedups &mdash; it amplifies correct answers.', tags: ['BQP'] },
+  { term: 'Quantum Witness', def: 'A polynomial-size quantum state $|\\psi\\rangle$ sent as a proof in QMA. Unlike classical witnesses, quantum witnesses can encode information in amplitudes and entanglement.', tags: ['QMA'] },
+  { term: 'Verifier', def: 'A polynomial-time (quantum) algorithm that checks a proof/witness. In NP the verifier is classical; in QMA it is quantum and can measure a quantum witness. See also: <em>Nondeterminism</em>, <em>Completeness</em>.', tags: ['QMA', 'General'] },
+  { term: 'Completeness', def: 'A problem $L$ is complete for a class $\\mathsf{C}$ if $L \\in \\mathsf{C}$ and every problem in $\\mathsf{C}$ reduces to $L$. Captures the "hardest" problems in a class.', tags: ['General'] },
+  { term: 'Reduction', def: 'A transformation from one problem to another preserving the answer. Polynomial-time reductions (Karp/Cook) are used to define completeness and compare problem difficulty.', tags: ['General'] },
+  { term: 'Amplification', def: 'The technique of boosting success probability by repetition and majority vote. Central to BQP: $k$ repetitions reduce error to $e^{-\\Omega(k)}$.', tags: ['BQP', 'BPP'] },
+  { term: 'Quantum Fourier Transform', def: 'The quantum analog of the discrete Fourier transform, implementable in $O(n^2)$ gates. Key subroutine in Shor\'s algorithm for period finding.', tags: ['BQP'] },
+  { term: 'Local Hamiltonian', def: 'A Hermitian operator $H = \\sum_i H_i$ where each $H_i$ acts on a constant number of qubits. The Local Hamiltonian Problem (deciding if ground energy is below a threshold) is QMA-complete.', tags: ['QMA'] },
+  { term: 'Savitch\'s Theorem', def: '$\\mathsf{NSPACE}(s(n)) \\subseteq \\mathsf{DSPACE}(s(n)^2)$. Implies PSPACE = NPSPACE: nondeterminism does not help in the space-bounded setting.', tags: ['PSPACE'] },
+  { term: 'Time Hierarchy Theorem', def: 'Proves that more time allows solving strictly more problems: $\\mathsf{DTIME}(o(f(n))) \\subsetneq \\mathsf{DTIME}(f(n)\\log f(n))$. Gives the unconditional separation P $\\neq$ EXP.', tags: ['P', 'EXP'] },
+  { term: 'Derandomization', def: 'Techniques to remove randomness from algorithms, often using pseudorandom generators. The conjecture P = BPP asserts that all of BPP can be derandomized.', tags: ['BPP'] },
+  { term: 'PCP Theorem', def: '$\\mathsf{NP} = \\mathsf{PCP}(\\log n, O(1))$: NP proofs can be verified by reading only $O(1)$ bits after $O(\\log n)$ random coin flips. Foundation of hardness of approximation.', tags: ['General'] },
+  { term: 'Oracle Separation', def: 'A proof that two classes differ relative to some oracle. Oracle separations (e.g., BQP vs PH by Raz-Tal) provide evidence but do not prove unrelativized separations.', tags: ['General'] },
+  { term: 'Quantum Circuit', def: 'A model of quantum computation consisting of qubit wires and quantum gates applied in sequence. Uniform families of polynomial-size quantum circuits define BQP.', tags: ['BQP'] },
+  { term: 'TQBF', def: 'True Quantified Boolean Formulas: given a formula $\\forall x_1 \\exists x_2 \\ldots \\phi$, decide if it is true. TQBF is PSPACE-complete.', tags: ['PSPACE'] },
+  { term: 'Majority Vote', def: 'Running an algorithm $k$ times and outputting the most common answer. By the Chernoff bound, this exponentially suppresses error probability in $k$.', tags: ['BQP', 'BPP'] },
+  { term: 'Nondeterminism', def: 'A model of computation where the machine can "guess" a correct computation path. Nondeterministic polynomial time defines NP: the machine guesses a certificate and a deterministic verifier checks it in polynomial time. See also: <em>Verifier</em>, <em>Reduction</em>.', tags: ['NP', 'General'] },
+  { term: 'Promise Problem', def: 'A decision problem where the input is guaranteed (promised) to come from a restricted set. Many quantum complexity classes (BQP, QMA) are naturally defined as promise problems, since the gap between acceptance and rejection probabilities is part of the definition. See also: <em>Bounded Error</em>.', tags: ['BQP', 'QMA'] },
+  { term: 'Polynomial Hierarchy', def: 'A hierarchy of complexity classes $\\Sigma_0^p = \\Pi_0^p = \\mathsf{P}$, $\\Sigma_{k+1}^p = \\mathsf{NP}^{\\Sigma_k^p}$, and $\\mathsf{PH} = \\bigcup_k \\Sigma_k^p$. It sits between NP and PSPACE: $\\mathsf{NP} \\subseteq \\mathsf{PH} \\subseteq \\mathsf{PSPACE}$. The Sipser&ndash;Lautemann theorem shows $\\mathsf{BPP} \\subseteq \\Sigma_2 \\cap \\Pi_2$. If PH collapses, it would have far-reaching consequences for complexity theory.', tags: ['NP', 'PSPACE'] },
+  { term: 'NP-completeness', def: 'A problem is NP-complete if it is in NP and every problem in NP reduces to it in polynomial time. By the Cook&ndash;Levin theorem, SAT (Boolean satisfiability) was the first problem proven NP-complete. If any NP-complete problem is in P, then P = NP. See also: <em>Completeness</em>, <em>Reduction</em>.', tags: ['NP', 'General'] },
+  { term: 'Measurement', def: 'The process of extracting classical information from a quantum state, collapsing the superposition. In the computational basis, measuring $\\alpha|0\\rangle + \\beta|1\\rangle$ yields outcome 0 with probability $|\\alpha|^2$ and outcome 1 with probability $|\\beta|^2$. See also: <em>Superposition</em>, <em>Quantum Witness</em>.', tags: ['BQP', 'QMA'] },
+  { term: 'MA (Merlin-Arthur)', def: 'The classical analog of QMA: a prover sends a classical polynomial-length witness, and a probabilistic polynomial-time verifier checks it. MA sits between NP and QMA in the containment hierarchy: $\\mathsf{NP} \\subseteq \\mathsf{MA} \\subseteq \\mathsf{QMA}$. See also: <em>Quantum Witness</em>, <em>Verifier</em>.', tags: ['QMA', 'General'] },
+  { term: 'PP (Probabilistic Polynomial Time)', def: 'The class of problems solvable by a probabilistic Turing machine with error probability strictly less than 1/2 (but not necessarily bounded away from 1/2). PP is more powerful than BPP and satisfies $\\mathsf{BQP} \\subseteq \\mathsf{PP} \\subseteq \\mathsf{PSPACE}$. Unlike BPP, PP error cannot be efficiently amplified.', tags: ['BQP', 'General'] },
+  { term: 'Quantum Computational Advantage', def: 'A demonstration that a quantum device can perform a specific computational task substantially faster than any known classical algorithm. Sometimes called "quantum supremacy." Theoretical evidence includes oracle separations; experimental evidence comes from random circuit sampling. See also: <em>Oracle Separation</em>.', tags: ['BQP', 'General'] },
+  { term: 'Chernoff Bound', def: 'A concentration inequality bounding the probability that the sum of independent random variables deviates from its expected value. Central to BQP amplification: $k$ independent runs with majority vote reduce error exponentially: $\\Pr[\\text{wrong}] \\le e^{-2k(p-1/2)^2}$. See also: <em>Amplification</em>, <em>Majority Vote</em>.', tags: ['BQP', 'BPP'] },
+  { term: 'Quantum Phase Estimation', def: 'An algorithm that estimates the eigenvalue $e^{2\\pi i\\theta}$ of a unitary $U$ given an eigenstate. Uses controlled powers of $U$ and the inverse QFT. Key subroutine in Shor\'s algorithm and in QMA verification (estimating Hamiltonian ground-state energies). See also: <em>Quantum Fourier Transform</em>.', tags: ['BQP', 'QMA'] }
+];
+
+function getClassColor(tag) {
+  const map = { P: '#22c55e', BPP: '#eab308', BQP: '#6366f1', NP: '#a78bfa', QMA: '#ec4899', PSPACE: '#f97316', EXP: '#ef4444', General: '#8892a8' };
+  return map[tag] || 'var(--border)';
+}
+
+function renderGlossary(filter) {
+  const list = document.getElementById('glossary-list');
+  const countEl = document.getElementById('glossary-count');
+  filter = (filter || '').toLowerCase();
+
+  const sorted = [...glossaryTerms].sort((a, b) => a.term.localeCompare(b.term));
+  let visible = 0;
+
+  list.innerHTML = sorted.map(t => {
+    const matches = !filter || t.term.toLowerCase().includes(filter) || t.def.toLowerCase().includes(filter) || t.tags.some(tag => tag.toLowerCase().includes(filter));
+    if (matches) visible++;
+    const borderColor = getClassColor(t.tags[0]);
+    return `<div class="glossary-item ${matches ? '' : 'hidden'}" style="border-left-color:${borderColor}">
+      <h4>${t.term}</h4>
+      <p>${t.def}</p>
+      <div class="glossary-tags">
+        ${t.tags.map(tag => { const c = getClassColor(tag); return `<span class="glossary-tag" data-class="${tag}" style="background:${c}22;color:${c};border:1px solid ${c}44">${tag}</span>`; }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  if (visible === 0 && filter) {
+    list.innerHTML += '<div class="glossary-empty">No terms match your search. Try a different keyword.</div>';
+  }
+
+  countEl.textContent = `Showing ${visible} of ${glossaryTerms.length} terms`;
+
+  // Tag clicks filter glossary by that class
+  list.querySelectorAll('.glossary-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      const cls = tag.dataset.class;
+      const searchInput = document.getElementById('glossary-search-input');
+      if (searchInput) {
+        searchInput.value = cls;
+        renderGlossary(cls);
+        searchInput.focus();
+      }
+    });
+  });
+
+  // Convert "See also" cross-references to clickable links
+  list.querySelectorAll('.glossary-item p').forEach(p => {
+    p.innerHTML = p.innerHTML.replace(/<em>([^<]+)<\/em>/g, (match, termName) => {
+      const isGlossaryTerm = glossaryTerms.some(t => t.term === termName);
+      const isClass = classData && classData[termName];
+      if (isGlossaryTerm || isClass) {
+        return `<span class="glossary-xref" data-ref="${termName}">${termName}</span>`;
+      }
+      return match;
+    });
+  });
+
+  // Cross-reference clicks
+  list.querySelectorAll('.glossary-xref').forEach(xref => {
+    xref.addEventListener('click', () => {
+      const refName = xref.dataset.ref;
+      if (classData && classData[refName]) {
+        switchToTab('diagram');
+        showClassInfo(refName);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      const items = list.querySelectorAll('.glossary-item');
+      items.forEach(item => {
+        const title = item.querySelector('h4');
+        if (title && title.textContent === refName) {
+          item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          item.style.borderColor = 'var(--accent)';
+          setTimeout(() => { item.style.borderColor = ''; }, 1500);
+        }
+      });
+    });
+  });
+
+  if (typeof renderMathInElement === 'function') {
+    renderMathInElement(list, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});
+  }
+}
+
+let glossaryDebounceTimer;
+document.getElementById('glossary-search-input').addEventListener('input', (e) => {
+  clearTimeout(glossaryDebounceTimer);
+  glossaryDebounceTimer = setTimeout(() => renderGlossary(e.target.value), 200);
+});
+renderGlossary('');
+
+// ========================================
+// Back to Top Button
+// ========================================
+const backToTopBtn = document.getElementById('back-to-top');
+window.addEventListener('scroll', () => {
+  backToTopBtn.classList.toggle('visible', window.scrollY > 400);
+});
+backToTopBtn.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// ========================================
+// Sliding Tab Indicator
+// ========================================
+function updateTabIndicator() {
+  const activeBtn = document.querySelector('.tab-btn.active');
+  let indicator = document.querySelector('.tab-indicator');
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.className = 'tab-indicator';
+    document.querySelector('.tabs').appendChild(indicator);
+  }
+  if (activeBtn) {
+    const tabsRect = document.querySelector('.tabs').getBoundingClientRect();
+    const btnRect = activeBtn.getBoundingClientRect();
+    indicator.style.left = (btnRect.left - tabsRect.left + document.querySelector('.tabs').scrollLeft) + 'px';
+    indicator.style.width = btnRect.width + 'px';
+  }
+}
+// Initialize indicator after a small delay for layout
+setTimeout(updateTabIndicator, 100);
+window.addEventListener('resize', updateTabIndicator);
+
+// ========================================
+// Keyboard Navigation
+// ========================================
+document.addEventListener('keydown', (e) => {
+  // Don't capture when typing in inputs
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+  // Shortcuts modal
+  if (e.key === '?') { toggleShortcutsModal(); return; }
+  if (e.key === 'Escape') { closeShortcutsModal(); return; }
+
+  const tabNames = ['diagram', 'relations', 'simulation', 'quiz', 'open', 'glossary'];
+  const currentIdx = tabNames.findIndex(t => {
+    const btn = document.querySelector(`.tab-btn[data-tab="${t}"]`);
+    return btn && btn.classList.contains('active');
+  });
+
+  if (e.key === 'ArrowRight' && currentIdx < tabNames.length - 1) {
+    e.preventDefault();
+    switchToTab(tabNames[currentIdx + 1]);
+  } else if (e.key === 'ArrowLeft' && currentIdx > 0) {
+    e.preventDefault();
+    switchToTab(tabNames[currentIdx - 1]);
+  }
+});
+
+// ========================================
+// URL Hash Routing
+// ========================================
+function parseAndApplyHash() {
+  const hash = location.hash.replace('#', '');
+  if (hash) {
+    const parts = hash.split('/');
+    const tabName = parts[0];
+    const className = parts[1];
+    const validTabs = ['diagram', 'relations', 'simulation', 'quiz', 'open', 'glossary'];
+    if (validTabs.includes(tabName)) {
+      switchToTab(tabName, true);
+      if (className && classData[className]) {
+        showClassInfo(className);
+      }
+    }
+  } else {
+    // Restore last tab from localStorage if no hash
+    const prog = loadProgress();
+    if (prog.lastTab && prog.lastTab !== 'diagram') {
+      switchToTab(prog.lastTab, true);
+    }
+  }
+}
+
+// Browser back/forward
+window.addEventListener('popstate', () => parseAndApplyHash());
+
+// Restore state on initial load
+parseAndApplyHash();
+
+// ========================================
+// Reset Progress Button
+// ========================================
+document.getElementById('reset-progress').addEventListener('click', () => {
+  if (confirm('Clear all saved progress (quiz scores, visited state)?')) {
+    clearProgress();
+    const btn = document.getElementById('reset-progress');
+    btn.textContent = 'Progress Cleared!';
+    setTimeout(() => { btn.textContent = 'Reset Progress'; }, 2000);
+    updateProgressDashboard();
+  }
+});
+
+// ========================================
+// Keyboard Shortcuts Modal
+// ========================================
+function toggleShortcutsModal() {
+  const overlay = document.getElementById('shortcuts-overlay');
+  overlay.classList.toggle('visible');
+}
+
+function closeShortcutsModal() {
+  const overlay = document.getElementById('shortcuts-overlay');
+  overlay.classList.remove('visible');
+}
+
+document.getElementById('shortcuts-fab').addEventListener('click', toggleShortcutsModal);
+document.getElementById('shortcuts-close').addEventListener('click', closeShortcutsModal);
+document.getElementById('shortcuts-overlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeShortcutsModal();
+});
+
+// ========================================
+// Copy Link Button
+// ========================================
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('#copy-class-link');
+  if (!btn) return;
+  const url = location.href;
+  navigator.clipboard.writeText(url).then(() => {
+    btn.innerHTML = '&#10003; Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '&#128203; Copy Link';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(() => {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.innerHTML = '&#10003; Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '&#128203; Copy Link';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+});
+</script>
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+
+<!-- Particle Background -->
+<script>
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 45;
+  const CONNECT_DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+</script>
+</body>
+</html>

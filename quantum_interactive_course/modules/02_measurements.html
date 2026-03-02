@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Single-Qubit Measurements | Interactive Quantum Computing</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+  <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    /* ===== Design System ===== */
+    :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --bg-primary: var(--bg);
+    --bg-secondary: var(--surface);
+    --bg-card: var(--surface);
+    --text-primary: var(--text);
+    --text-secondary: var(--text-dim);
+    --border-subtle: var(--border);
+    --bg-card-hover: #1f3055;
+    --text-muted: #64748b;
+    --accent-blue: #60a5fa;
+    --accent-cyan: #22d3ee;
+    --accent-orange: #fb923c;
+    --accent-green: #4ade80;
+    --accent-red: #f87171;
+    --accent-purple: #a78bfa;
+    --accent-yellow: #facc15;
+    --border-color: #2a3a5c;
+    --shadow: 0 4px 24px rgba(0,0,0,0.3);
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Fira Code', 'JetBrains Mono', monospace;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ===== Layout ===== */
+    .page-wrapper { display: flex; min-height: 100vh; }
+    .sidebar {
+      position: fixed; top: 0; left: 0;
+      width: 260px; height: 100vh;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      padding: 2rem 0;
+      overflow-y: auto;
+      z-index: 100;
+      transition: transform var(--transition);
+    }
+    .sidebar-title {
+      font-size: 0.75rem; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--text-muted);
+      padding: 0 1.5rem; margin-bottom: 1rem;
+    }
+    .sidebar a {
+      display: block; padding: 0.5rem 1.5rem;
+      color: var(--text-secondary); text-decoration: none;
+      font-size: 0.875rem; border-left: 3px solid transparent;
+      transition: all var(--transition);
+    }
+    .sidebar a:hover { color: var(--text-primary); background: var(--bg-card); }
+    .sidebar a.active {
+      color: var(--accent-blue); border-left-color: var(--accent-blue);
+      background: rgba(96,165,250,0.08);
+    }
+    .main-content {
+      margin-left: 260px; flex: 1;
+      max-width: 960px; padding: 2rem 3rem 4rem;
+    }
+
+    /* ===== Header ===== */
+    .page-header {
+      text-align: center; padding: 3rem 0 2rem;
+      border-bottom: 1px solid var(--border-color); margin-bottom: 3rem;
+    }
+    .page-header h1 {
+      font-size: 2.25rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 0.5rem;
+    }
+    .page-header p { color: var(--text-secondary); font-size: 1.1rem; }
+
+    /* ===== Sections ===== */
+    section { margin-bottom: 4rem; scroll-margin-top: 2rem; }
+    section h2 {
+      font-size: 1.6rem; font-weight: 700; margin-bottom: 1rem;
+      color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;
+    }
+    section h2 .sec-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      color: white; border-radius: 8px;
+      font-size: 0.875rem; font-weight: 700; flex-shrink: 0;
+    }
+    .prose { color: var(--text-secondary); margin-bottom: 1.5rem; }
+    .prose p { margin-bottom: 0.75rem; }
+
+    /* ===== Callout boxes ===== */
+    .callout {
+      padding: 1.25rem 1.5rem; border-radius: var(--radius-sm);
+      border-left: 4px solid; margin: 1.5rem 0; background: var(--bg-card);
+    }
+    .callout-idea { border-left-color: var(--accent-blue); }
+    .callout-math { border-left-color: var(--accent-purple); }
+    .callout-title {
+      font-weight: 600; font-size: 0.875rem;
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;
+    }
+    .callout-idea .callout-title { color: var(--accent-blue); }
+    .callout-math .callout-title { color: var(--accent-purple); }
+
+    /* ===== Interactive Panels ===== */
+    .interactive-panel {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0; overflow: hidden; margin: 1.5rem 0;
+    }
+    .bloch-container {
+      aspect-ratio: 1; max-height: 420px;
+      background: var(--bg-secondary); position: relative; cursor: grab;
+    }
+    .bloch-container:active { cursor: grabbing; }
+    .bloch-container canvas { display: block; width: 100% !important; height: 100% !important; }
+    .bloch-hint {
+      position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+      font-size: 0.7rem; color: var(--text-muted);
+      background: rgba(0,0,0,0.4); padding: 2px 10px;
+      border-radius: 20px; pointer-events: none;
+    }
+    .controls-panel { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; }
+
+    /* ===== Sliders ===== */
+    .slider-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .slider-group label {
+      font-size: 0.85rem; color: var(--text-secondary);
+      display: flex; justify-content: space-between;
+    }
+    .slider-group label span { color: var(--accent-cyan); font-family: var(--font-mono); font-size: 0.8rem; }
+    input[type="range"] {
+      -webkit-appearance: none; width: 100%; height: 6px;
+      background: var(--border-color); border-radius: 3px; outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px;
+      background: var(--accent-blue); border-radius: 50%;
+      cursor: pointer; border: 2px solid var(--bg-card); transition: transform 0.15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px; height: 18px; background: var(--accent-blue);
+      border-radius: 50%; cursor: pointer; border: 2px solid var(--bg-card);
+    }
+
+    /* ===== Probability Bars ===== */
+    .prob-bars { display: flex; flex-direction: column; gap: 0.5rem; }
+    .prob-row { display: grid; grid-template-columns: 50px 1fr 50px; align-items: center; gap: 0.5rem; }
+    .prob-label { font-size: 0.8rem; color: var(--text-secondary); text-align: right; }
+    .prob-track { height: 24px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; }
+    .prob-fill { height: 100%; border-radius: 4px; transition: width var(--transition); min-width: 2px; }
+    .prob-fill.blue { background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); }
+    .prob-fill.orange { background: linear-gradient(90deg, var(--accent-orange), var(--accent-yellow)); }
+    .prob-val { font-size: 0.8rem; font-family: var(--font-mono); color: var(--accent-cyan); }
+
+    /* ===== State display ===== */
+    .state-display {
+      background: var(--bg-secondary); padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm); text-align: center;
+      border: 1px solid var(--border-subtle); min-height: 3rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ===== Buttons ===== */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+      padding: 0.6rem 1.25rem; border-radius: var(--radius-sm);
+      font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none;
+      transition: all var(--transition); font-family: var(--font-body);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: white;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(96,165,250,0.3); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-secondary {
+      background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary);
+    }
+    .btn-secondary:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+    .btn-sm { padding: 0.4rem 0.9rem; font-size: 0.8rem; }
+    .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    /* ===== Basis selector ===== */
+    .basis-selector { display: flex; gap: 0.25rem; }
+    .basis-btn {
+      flex: 1; padding: 0.5rem; background: var(--bg-secondary);
+      border: 1px solid var(--border-color); color: var(--text-secondary);
+      border-radius: var(--radius-sm); cursor: pointer; font-weight: 600;
+      font-size: 0.85rem; font-family: var(--font-body); transition: all var(--transition);
+    }
+    .basis-btn:hover { border-color: var(--accent-blue); color: var(--text-primary); }
+    .basis-btn.active {
+      background: rgba(96,165,250,0.15); border-color: var(--accent-blue); color: var(--accent-blue);
+    }
+
+    /* ===== Measurement result ===== */
+    .result-display {
+      padding: 0.75rem 1rem; border-radius: var(--radius-sm);
+      text-align: center; font-weight: 600; font-size: 0.9rem; min-height: 2.5rem;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+      color: var(--text-muted); transition: all 0.3s;
+    }
+    .result-display.outcome-0 {
+      background: rgba(96,165,250,0.1); border-color: var(--accent-blue); color: var(--accent-blue);
+    }
+    .result-display.outcome-1 {
+      background: rgba(251,146,60,0.1); border-color: var(--accent-orange); color: var(--accent-orange);
+    }
+
+    /* ===== Born rule comparison ===== */
+    .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    .comparison-card {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm); padding: 1.25rem; text-align: center;
+    }
+    .comparison-card h4 {
+      font-size: 0.8rem; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.75rem;
+    }
+    .comparison-value { font-size: 2rem; font-weight: 700; font-family: var(--font-mono); }
+    .comparison-value.theory { color: var(--accent-purple); }
+    .comparison-value.experiment { color: var(--accent-green); }
+
+    /* ===== Narration ===== */
+    .narration { display: flex; flex-direction: column; gap: 0.5rem; }
+    .narration-step {
+      padding: 0.6rem 0.75rem; border-radius: var(--radius-sm);
+      background: var(--bg-secondary); border-left: 3px solid var(--border-color);
+      font-size: 0.85rem; color: var(--text-secondary);
+      opacity: 0; transform: translateX(-8px); transition: all 0.4s ease;
+    }
+    .narration-step.visible { opacity: 1; transform: translateX(0); }
+    .narration-step.highlight { border-left-color: var(--accent-green); }
+
+    /* ===== Histogram ===== */
+    .histogram-container canvas { width: 100%; border-radius: var(--radius-sm); }
+
+    /* ===== Stats table ===== */
+    .stats-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 1rem; }
+    .stats-table th, .stats-table td { padding: 0.5rem 0.75rem; text-align: center; border-bottom: 1px solid var(--border-subtle); }
+    .stats-table th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .stats-table td { font-family: var(--font-mono); font-size: 0.85rem; }
+
+    /* ===== Exercises ===== */
+    .exercise {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .exercise h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; }
+    .exercise-prompt { color: var(--text-secondary); margin-bottom: 1rem; }
+    .choices { display: flex; flex-direction: column; gap: 0.5rem; }
+    .choice-btn {
+      display: block; width: 100%; padding: 0.75rem 1rem;
+      background: var(--bg-secondary); border: 1px solid var(--border-color);
+      color: var(--text-primary); border-radius: var(--radius-sm);
+      cursor: pointer; text-align: left; font-size: 0.9rem;
+      font-family: var(--font-body); transition: all var(--transition);
+    }
+    .choice-btn:hover:not(:disabled) { border-color: var(--accent-blue); background: var(--bg-card-hover); }
+    .choice-btn:disabled { cursor: default; opacity: 0.7; }
+    .choice-btn.correct { border-color: var(--accent-green) !important; background: rgba(74,222,128,0.1) !important; opacity: 1 !important; }
+    .choice-btn.incorrect { border-color: var(--accent-red) !important; background: rgba(248,113,113,0.1) !important; opacity: 1 !important; }
+    .feedback {
+      margin-top: 0; padding: 0 1.25rem; border-radius: var(--radius-sm);
+      font-size: 0.9rem; max-height: 0; overflow: hidden;
+      transition: max-height 0.4s ease, padding 0.4s ease, margin-top 0.4s ease;
+    }
+    .feedback.show { max-height: 200px; padding: 1rem 1.25rem; margin-top: 1rem; }
+    .feedback.correct-fb { background: rgba(74,222,128,0.1); border: 1px solid var(--accent-green); color: var(--accent-green); }
+    .feedback.incorrect-fb { background: rgba(248,113,113,0.08); border: 1px solid var(--accent-red); color: var(--accent-red); }
+
+    /* ===== Special states table ===== */
+    .states-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 1rem 0; }
+    .states-table th, .states-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border-subtle); }
+    .states-table th { text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .states-table .clickable { cursor: pointer; color: var(--accent-blue); }
+    .states-table .clickable:hover { text-decoration: underline; }
+
+    /* ===== Custom axis controls ===== */
+    .custom-axis { display: none; flex-direction: column; gap: 0.75rem; }
+    .custom-axis.visible { display: flex; }
+
+    /* ===== Hamburger (mobile) ===== */
+    .hamburger {
+      display: none; position: fixed; top: 1.2rem; left: 9rem;
+      z-index: 200; background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); width: 38px; height: 38px;
+      border-radius: 8px; cursor: pointer; font-size: 1.1rem;
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(8px);
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 1100px) { .main-content { padding: 2rem 2rem 4rem; } }
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .hamburger { display: flex; }
+      .main-content { margin-left: 0; padding: 1.5rem 1rem 3rem; }
+      .interactive-panel { grid-template-columns: 1fr; }
+      .bloch-container { max-height: 350px; }
+      .comparison-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ===== KaTeX ===== */
+    .katex { font-size: 1.05em; }
+    .katex-display { margin: 0.75em 0; }
+    .state-display .katex { font-size: 1.1em; }
+  
+  /* ===== Section entrance animations ===== */
+  section, .interactive-panel, .callout, .exercise, .callout-challenge {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  section.visible, .interactive-panel.visible, .callout.visible, .exercise.visible, .callout-challenge.visible {
+    opacity: 1; transform: translateY(0);
+  }
+
+  /* ===== Challenge boxes ===== */
+  .callout-challenge {
+    padding: 1.25rem 1.5rem; border-radius: var(--radius-sm);
+    border-left: 4px solid var(--accent-orange); margin: 1.5rem 0;
+    background: rgba(251,146,60,0.06);
+  }
+  .callout-challenge .callout-title { color: var(--accent-orange); font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+
+  /* ===== Measurement log ===== */
+  .measure-log {
+    display: flex; flex-wrap: wrap; gap: 3px; padding: 0.5rem;
+    background: var(--bg-secondary); border-radius: var(--radius-sm);
+    min-height: 2rem; align-items: center; max-height: 6rem; overflow-y: auto;
+  }
+  .measure-dot {
+    width: 18px; height: 18px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem; font-weight: 700; font-family: var(--font-mono);
+    animation: dotPop 0.2s ease;
+  }
+  .measure-dot.z0 { background: rgba(96,165,250,0.25); color: var(--accent-blue); }
+  .measure-dot.z1 { background: rgba(251,146,60,0.25); color: var(--accent-orange); }
+  @keyframes dotPop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+  .log-summary { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); padding: 0.25rem 0; }
+
+  /* Particle background canvas */
+  #particleBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="particleBg"></canvas>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+  <button class="hamburger" id="hamburger" aria-label="Toggle navigation">&#9776;</button>
+
+  <div class="page-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-title">Contents</div>
+      <a href="#sec-intro">1. What is Measurement?</a>
+      <a href="#sec-bloch">2. The Bloch Sphere</a>
+      <a href="#sec-z-measure">3. Z-Basis Measurement</a>
+      <a href="#sec-other-bases">4. Other Bases</a>
+      <a href="#sec-born">5. The Born Rule</a>
+      <a href="#sec-collapse">6. State Collapse</a>
+      <a href="#sec-stats">7. Statistics</a>
+      <a href="#sec-exercises">8. Exercises</a>
+    </nav>
+
+    <main class="main-content">
+      <header class="page-header">
+        <h1>Single-Qubit Measurements</h1>
+        <p>An interactive exploration of quantum measurement</p>
+      </header>
+
+      <!-- ===== Section 1: Introduction ===== -->
+      <section id="sec-intro">
+        <h2><span class="sec-num">1</span> What is a Quantum Measurement?</h2>
+        <div class="prose">
+          <p>In classical computing, reading a bit is a passive operation&mdash;the bit is 0 or 1, and looking at it doesn't change it. Quantum mechanics is fundamentally different.</p>
+          <p>A qubit can exist in a <strong>superposition</strong> of the basis states $$|\psi\rangle = \alpha|0\rangle + \beta|1\rangle$$ where \(\alpha\) and \(\beta\) are complex amplitudes satisfying \(|\alpha|^2 + |\beta|^2 = 1\).</p>
+          <p>When we <strong>measure</strong> a qubit, the superposition is destroyed and we obtain a definite classical outcome. The probability of each outcome is given by the squared magnitude of the corresponding amplitude.</p>
+        </div>
+        <div class="callout callout-idea">
+          <div class="callout-title">Key Idea</div>
+          Measurement is <strong>irreversible</strong>. After measurement, the qubit collapses into the eigenstate corresponding to the observed outcome. The probability of outcome \(m\) is: $$P(m) = |\langle m|\psi\rangle|^2$$
+        </div>
+      </section>
+
+      <!-- ===== Section 2: Bloch Sphere ===== -->
+      <section id="sec-bloch">
+        <h2><span class="sec-num">2</span> The Bloch Sphere</h2>
+        <div class="prose">
+          <p>Any single-qubit pure state can be parameterized by two angles and visualized as a point on a unit sphere called the <strong>Bloch sphere</strong>:</p>
+          <p>$$|\psi\rangle = \cos\frac{\theta}{2}|0\rangle + e^{i\varphi}\sin\frac{\theta}{2}|1\rangle$$</p>
+          <p>Drag the sliders to explore. Click on the special states in the table, or rotate the sphere by dragging it.</p>
+        </div>
+        <div class="interactive-panel">
+          <div class="bloch-container" id="bloch1"><div class="bloch-hint">Drag to rotate</div></div>
+          <div class="controls-panel">
+            <div class="slider-group">
+              <label>Polar angle &theta; <span id="theta-val">0.79</span></label>
+              <input type="range" id="theta-slider" min="0" max="3.14159265" step="0.01" value="0.7854">
+            </div>
+            <div class="slider-group">
+              <label>Azimuthal angle &phi; <span id="phi-val">0.00</span></label>
+              <input type="range" id="phi-slider" min="0" max="6.28318530" step="0.01" value="0">
+            </div>
+            <div class="state-display" id="stateDisplay1"></div>
+            <div class="prob-bars">
+              <div class="prob-row">
+                <span class="prob-label">\(|0\rangle\)</span>
+                <div class="prob-track"><div class="prob-fill blue" id="prob0-fill"></div></div>
+                <span class="prob-val" id="prob0-val">85%</span>
+              </div>
+              <div class="prob-row">
+                <span class="prob-label">\(|1\rangle\)</span>
+                <div class="prob-track"><div class="prob-fill orange" id="prob1-fill"></div></div>
+                <span class="prob-val" id="prob1-val">15%</span>
+              </div>
+            </div>
+            <table class="states-table">
+              <thead><tr><th>State</th><th>&theta;</th><th>&phi;</th><th>Location</th></tr></thead>
+              <tbody>
+                <tr class="clickable" data-theta="0" data-phi="0"><td>\(|0\rangle\)</td><td>0</td><td>0</td><td>North pole</td></tr>
+                <tr class="clickable" data-theta="3.14159" data-phi="0"><td>\(|1\rangle\)</td><td>&pi;</td><td>0</td><td>South pole</td></tr>
+                <tr class="clickable" data-theta="1.5708" data-phi="0"><td>\(|+\rangle\)</td><td>&pi;/2</td><td>0</td><td>+X axis</td></tr>
+                <tr class="clickable" data-theta="1.5708" data-phi="3.14159"><td>\(|-\rangle\)</td><td>&pi;/2</td><td>&pi;</td><td>&minus;X axis</td></tr>
+                <tr class="clickable" data-theta="1.5708" data-phi="1.5708"><td>\(|{+i}\rangle\)</td><td>&pi;/2</td><td>&pi;/2</td><td>+Y axis</td></tr>
+                <tr class="clickable" data-theta="1.5708" data-phi="4.71239"><td>\(|{-i}\rangle\)</td><td>&pi;/2</td><td>3&pi;/2</td><td>&minus;Y axis</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="callout callout-math">
+          <div class="callout-title">Bloch vector</div>
+          The Bloch vector is the 3D point on the sphere: \(\vec{r} = (\sin\theta\cos\varphi,\;\sin\theta\sin\varphi,\;\cos\theta)\). The north pole (\(\theta=0\)) is \(|0\rangle\), the south pole (\(\theta=\pi\)) is \(|1\rangle\), and the equator contains equal-superposition states.
+        </div>
+        <div class="callout-challenge">
+          <div class="callout-title">Try This</div>
+          Click on \(|+\rangle\) in the table above and observe: it sits on the equator with equal 50/50 probabilities for \(|0\rangle\) and \(|1\rangle\). Now try \(|{+i}\rangle\)&mdash;it also has 50/50 Z-probabilities but a different \(\varphi\). The phase \(\varphi\) is invisible to Z-measurement but becomes visible when measuring in other bases.
+        </div>
+      </section>
+
+      <!-- ===== Section 3: Z-Basis Measurement ===== -->
+      <section id="sec-z-measure">
+        <h2><span class="sec-num">3</span> Computational Basis (Z) Measurement</h2>
+        <div class="prose">
+          <p>The most common measurement is in the <strong>computational basis</strong> (Z-basis). The measurement is described by the projection operators:</p>
+          <p>$$P_0 = |0\rangle\langle 0| = \begin{pmatrix} 1 & 0 \\ 0 & 0 \end{pmatrix}, \qquad P_1 = |1\rangle\langle 1| = \begin{pmatrix} 0 & 0 \\ 0 & 1 \end{pmatrix}$$</p>
+          <p>The probabilities are \(P(0) = \cos^2(\theta/2)\) and \(P(1) = \sin^2(\theta/2)\). Click <strong>Measure</strong> to see a probabilistic outcome and watch the state collapse.</p>
+        </div>
+        <div class="interactive-panel">
+          <div class="bloch-container" id="bloch2"><div class="bloch-hint">Drag to rotate</div></div>
+          <div class="controls-panel">
+            <div class="slider-group">
+              <label>&theta; <span id="theta-val-2">0.79</span></label>
+              <input type="range" id="theta-slider-2" min="0" max="3.14159265" step="0.01" value="0.7854">
+            </div>
+            <div class="slider-group">
+              <label>&phi; <span id="phi-val-2">0.00</span></label>
+              <input type="range" id="phi-slider-2" min="0" max="6.28318530" step="0.01" value="0">
+            </div>
+            <div class="prob-bars">
+              <div class="prob-row">
+                <span class="prob-label">\(|0\rangle\)</span>
+                <div class="prob-track"><div class="prob-fill blue" id="prob0-fill-2"></div></div>
+                <span class="prob-val" id="prob0-val-2">85%</span>
+              </div>
+              <div class="prob-row">
+                <span class="prob-label">\(|1\rangle\)</span>
+                <div class="prob-track"><div class="prob-fill orange" id="prob1-fill-2"></div></div>
+                <span class="prob-val" id="prob1-val-2">15%</span>
+              </div>
+            </div>
+            <div class="btn-group" style="width:100%">
+              <button class="btn btn-primary" id="btn-measure-z" style="flex:1">Measure in Z-basis</button>
+              <button class="btn btn-secondary" id="btn-reset-z" style="display:none">Reset</button>
+            </div>
+            <div class="result-display" id="result-z">Click to measure</div>
+            <div class="measure-log" id="z-log" style="display:none"></div>
+            <div class="log-summary" id="z-log-summary"></div>
+          </div>
+        </div>
+        <div class="callout callout-idea">
+          <div class="callout-title">Key Takeaway</div>
+          Z-basis measurement projects the qubit onto \(|0\rangle\) or \(|1\rangle\). The probabilities depend only on \(\theta\), not on \(\varphi\). Notice that moving the state closer to a pole increases the certainty of the outcome.
+        </div>
+      </section>
+
+      <!-- ===== Section 4: Other Bases ===== -->
+      <section id="sec-other-bases">
+        <h2><span class="sec-num">4</span> Measurement in Other Bases</h2>
+        <div class="prose">
+          <p>We can measure along <em>any</em> axis on the Bloch sphere. The X-basis eigenstates are:</p>
+          <p>$$|+\rangle = \tfrac{1}{\sqrt{2}}(|0\rangle + |1\rangle), \qquad |-\rangle = \tfrac{1}{\sqrt{2}}(|0\rangle - |1\rangle)$$</p>
+          <p>The Y-basis eigenstates are:</p>
+          <p>$$|{+i}\rangle = \tfrac{1}{\sqrt{2}}(|0\rangle + i|1\rangle), \qquad |{-i}\rangle = \tfrac{1}{\sqrt{2}}(|0\rangle - i|1\rangle)$$</p>
+          <p>For an arbitrary measurement axis \(\hat{n}\), the probability of the \(+\) outcome is: $$P(+) = \tfrac{1}{2}(1 + \hat{n}\cdot\vec{r})$$</p>
+          <p>The <span style="color:var(--accent-orange)">orange arrow</span> shows the measurement axis and the <span style="color:var(--accent-green)">green dots</span> mark the eigenstates.</p>
+        </div>
+        <div class="interactive-panel">
+          <div class="bloch-container" id="bloch3"><div class="bloch-hint">Drag to rotate</div></div>
+          <div class="controls-panel">
+            <div class="slider-group">
+              <label>&theta; <span id="theta-val-3">0.79</span></label>
+              <input type="range" id="theta-slider-3" min="0" max="3.14159265" step="0.01" value="0.7854">
+            </div>
+            <div class="slider-group">
+              <label>&phi; <span id="phi-val-3">0.00</span></label>
+              <input type="range" id="phi-slider-3" min="0" max="6.28318530" step="0.01" value="0">
+            </div>
+            <div class="slider-group">
+              <label>Measurement basis</label>
+              <div class="basis-selector">
+                <button class="basis-btn active" data-basis="Z">Z</button>
+                <button class="basis-btn" data-basis="X">X</button>
+                <button class="basis-btn" data-basis="Y">Y</button>
+                <button class="basis-btn" data-basis="custom">Custom</button>
+              </div>
+            </div>
+            <div class="custom-axis" id="customAxisControls">
+              <div class="slider-group">
+                <label>&theta;<sub>m</sub> <span id="thetam-val">1.57</span></label>
+                <input type="range" id="thetam-slider" min="0" max="3.14159265" step="0.01" value="1.5708">
+              </div>
+              <div class="slider-group">
+                <label>&phi;<sub>m</sub> <span id="phim-val">0.00</span></label>
+                <input type="range" id="phim-slider" min="0" max="6.28318530" step="0.01" value="0">
+              </div>
+            </div>
+            <div class="prob-bars">
+              <div class="prob-row">
+                <span class="prob-label" id="basis-label-plus">\(|0\rangle\)</span>
+                <div class="prob-track"><div class="prob-fill blue" id="prob-plus-fill"></div></div>
+                <span class="prob-val" id="prob-plus-val">85%</span>
+              </div>
+              <div class="prob-row">
+                <span class="prob-label" id="basis-label-minus">\(|1\rangle\)</span>
+                <div class="prob-track"><div class="prob-fill orange" id="prob-minus-fill"></div></div>
+                <span class="prob-val" id="prob-minus-val">15%</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="btn-measure-basis" style="width:100%">Measure</button>
+            <div class="result-display" id="result-basis">Click to measure</div>
+          </div>
+        </div>
+        <div class="callout-challenge">
+          <div class="callout-title">Try This</div>
+          Set the state to \(|+\rangle\) (\(\theta=\pi/2, \varphi=0\)) and measure in the X-basis. You will always get \(|+\rangle\) because it is an eigenstate of X. Now switch to Z-basis and measure&mdash;the outcome becomes random. This illustrates complementarity: certainty in one basis means randomness in another.
+        </div>
+        <div class="callout callout-idea">
+          <div class="callout-title">Key Takeaway</div>
+          Measurement is not limited to the Z-basis. Any axis \(\hat{n}\) on the Bloch sphere defines a valid measurement. The probability depends on the dot product \(\hat{n}\cdot\vec{r}\) between the measurement axis and the Bloch vector&mdash;geometrically, how aligned the state is with the measurement direction.
+        </div>
+      </section>
+
+      <!-- ===== Section 5: Born Rule ===== -->
+      <section id="sec-born">
+        <h2><span class="sec-num">5</span> The Born Rule</h2>
+        <div class="prose">
+          <p>The <strong>Born rule</strong> connects the quantum state to measurement probabilities:</p>
+          <p>$$P(m) = |\langle m|\psi\rangle|^2 = \langle\psi|P_m|\psi\rangle$$</p>
+          <p>where \(P_m = |m\rangle\langle m|\) is the projector onto eigenstate \(|m\rangle\). The projectors satisfy completeness: \(\sum_m P_m = I\).</p>
+          <p>Set a state below, choose a measurement basis, then run 1000 simulated measurements and compare the observed frequency against the Born rule prediction.</p>
+        </div>
+        <div class="interactive-panel" style="grid-template-columns: 1fr;">
+          <div class="controls-panel">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="slider-group">
+                <label>&theta; <span id="theta-val-born">0.79</span></label>
+                <input type="range" id="theta-slider-born" min="0" max="3.14159265" step="0.01" value="0.7854">
+              </div>
+              <div class="slider-group">
+                <label>&phi; <span id="phi-val-born">0.00</span></label>
+                <input type="range" id="phi-slider-born" min="0" max="6.28318530" step="0.01" value="0">
+              </div>
+            </div>
+            <div class="slider-group">
+              <label>Measurement basis</label>
+              <div class="basis-selector" id="born-basis-selector">
+                <button class="basis-btn active" data-born-basis="Z">Z</button>
+                <button class="basis-btn" data-born-basis="X">X</button>
+                <button class="basis-btn" data-born-basis="Y">Y</button>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="btn-born-verify" style="width:100%">Run 1000 Measurements</button>
+            <div class="comparison-grid">
+              <div class="comparison-card">
+                <h4>Born Rule Prediction</h4>
+                <div class="comparison-value theory" id="born-theory">--</div>
+                <div style="color:var(--text-muted);font-size:0.8rem;margin-top:0.5rem;" id="born-formula">P(|0&rang;) = cos&sup2;(&theta;/2)</div>
+              </div>
+              <div class="comparison-card">
+                <h4>Observed Frequency</h4>
+                <div class="comparison-value experiment" id="born-experiment">--</div>
+                <div style="color:var(--text-muted);font-size:0.8rem;margin-top:0.5rem;" id="born-counts">N / 1000</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Section 6: Collapse ===== -->
+      <section id="sec-collapse">
+        <h2><span class="sec-num">6</span> Post-Measurement State Collapse</h2>
+        <div class="prose">
+          <p>After obtaining outcome \(m\), the post-measurement state is:</p>
+          <p>$$|\psi\rangle \;\to\; |\psi'\rangle = \frac{P_m|\psi\rangle}{\sqrt{\langle\psi|P_m|\psi\rangle}}$$</p>
+          <p>Since \(P_m^2 = P_m\), measuring again immediately gives the same outcome with certainty. Watch the collapse in slow motion below.</p>
+        </div>
+        <div class="interactive-panel">
+          <div class="bloch-container" id="bloch4"><div class="bloch-hint">Drag to rotate</div></div>
+          <div class="controls-panel">
+            <div class="slider-group">
+              <label>&theta; <span id="theta-val-4">1.57</span></label>
+              <input type="range" id="theta-slider-4" min="0" max="3.14159265" step="0.01" value="1.5708">
+            </div>
+            <div class="slider-group">
+              <label>&phi; <span id="phi-val-4">0.00</span></label>
+              <input type="range" id="phi-slider-4" min="0" max="6.28318530" step="0.01" value="0">
+            </div>
+            <div class="prob-bars" id="collapse-probs">
+              <div class="prob-row">
+                <span class="prob-label">\(|0\rangle\)</span>
+                <div class="prob-track"><div class="prob-fill blue" id="prob0-fill-4"></div></div>
+                <span class="prob-val" id="prob0-val-4">50%</span>
+              </div>
+              <div class="prob-row">
+                <span class="prob-label">\(|1\rangle\)</span>
+                <div class="prob-track"><div class="prob-fill orange" id="prob1-fill-4"></div></div>
+                <span class="prob-val" id="prob1-val-4">50%</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="btn-collapse-demo" style="width:100%">Measure &amp; Watch Collapse</button>
+            <button class="btn btn-secondary" id="btn-measure-again" style="width:100%;display:none;">Measure Again</button>
+            <button class="btn btn-secondary" id="btn-reset-collapse" style="width:100%;display:none;">Reset State</button>
+            <div class="narration" id="collapse-narration"></div>
+          </div>
+        </div>
+        <div class="callout callout-idea">
+          <div class="callout-title">Key Takeaway</div>
+          Measurement is a one-way street. Once you observe an outcome, the qubit <em>is</em> in that eigenstate. Measuring again gives the same result with certainty. The original superposition is irretrievably lost&mdash;this is why quantum error correction is so challenging.
+        </div>
+      </section>
+
+      <!-- ===== Section 7: Statistics ===== -->
+      <section id="sec-stats">
+        <h2><span class="sec-num">7</span> Statistical Verification</h2>
+        <div class="prose">
+          <p>Quantum mechanics is inherently probabilistic, but the <strong>law of large numbers</strong> ensures convergence:</p>
+          <p>$$f_N(m) = \frac{N_m}{N} \;\xrightarrow{N\to\infty}\; P(m)$$</p>
+          <p>Run measurements below and watch the histogram converge to the Born rule prediction (dashed lines).</p>
+        </div>
+        <div class="interactive-panel" style="grid-template-columns: 1fr;">
+          <div class="controls-panel">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="slider-group">
+                <label>&theta; <span id="theta-val-stats">0.79</span></label>
+                <input type="range" id="theta-slider-stats" min="0" max="3.14159265" step="0.01" value="0.7854">
+              </div>
+              <div class="slider-group">
+                <label>&phi; <span id="phi-val-stats">0.00</span></label>
+                <input type="range" id="phi-slider-stats" min="0" max="6.28318530" step="0.01" value="0">
+              </div>
+            </div>
+            <div class="slider-group">
+              <label>Basis
+                <select id="stats-basis" style="background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border-color);border-radius:4px;padding:2px 6px;font-size:0.8rem;">
+                  <option value="Z">Z-basis</option>
+                  <option value="X">X-basis</option>
+                  <option value="Y">Y-basis</option>
+                </select>
+              </label>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-primary btn-sm" data-n="10">Run 10</button>
+              <button class="btn btn-primary btn-sm" data-n="100">Run 100</button>
+              <button class="btn btn-primary btn-sm" data-n="1000">Run 1000</button>
+              <button class="btn btn-secondary btn-sm" id="btn-reset-stats">Reset</button>
+            </div>
+            <div class="histogram-container">
+              <canvas id="histogramCanvas" width="600" height="260"></canvas>
+            </div>
+            <table class="stats-table">
+              <thead><tr><th>Outcome</th><th>Count</th><th>Frequency</th><th>Theory</th></tr></thead>
+              <tbody>
+                <tr><td id="stats-label-0">\(|0\rangle\)</td><td id="stats-count-0">0</td><td id="stats-freq-0">--</td><td id="stats-theory-0">--</td></tr>
+                <tr><td id="stats-label-1">\(|1\rangle\)</td><td id="stats-count-1">0</td><td id="stats-freq-1">--</td><td id="stats-theory-1">--</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Section 8: Exercises ===== -->
+      <section id="sec-exercises">
+        <h2><span class="sec-num">8</span> Test Your Understanding</h2>
+
+        <div class="exercise" id="ex1">
+          <h3>Exercise 1: Measurement Probability</h3>
+          <div class="exercise-prompt">A qubit is prepared in the state \(|\psi\rangle = \frac{\sqrt{3}}{2}|0\rangle + \frac{1}{2}|1\rangle\). What is the probability of measuring \(|1\rangle\) in the Z-basis?</div>
+          <div class="choices">
+            <button class="choice-btn" data-ex="1" data-choice="a">(a) &nbsp; \(1/4\)</button>
+            <button class="choice-btn" data-ex="1" data-choice="b">(b) &nbsp; \(1/2\)</button>
+            <button class="choice-btn" data-ex="1" data-choice="c">(c) &nbsp; \(3/4\)</button>
+            <button class="choice-btn" data-ex="1" data-choice="d">(d) &nbsp; \(1\)</button>
+          </div>
+          <div class="feedback" id="feedback1"></div>
+        </div>
+
+        <div class="exercise" id="ex2">
+          <h3>Exercise 2: Identifying State from Statistics</h3>
+          <div class="exercise-prompt">You measure a qubit 10,000 times in the Z-basis and observe \(|0\rangle\) approximately 50% of the time. Which state is most consistent with your data?</div>
+          <div class="choices">
+            <button class="choice-btn" data-ex="2" data-choice="a">(a) &nbsp; \(|0\rangle\)</button>
+            <button class="choice-btn" data-ex="2" data-choice="b">(b) &nbsp; \(|1\rangle\)</button>
+            <button class="choice-btn" data-ex="2" data-choice="c">(c) &nbsp; \(|+\rangle = \frac{1}{\sqrt{2}}(|0\rangle + |1\rangle)\)</button>
+            <button class="choice-btn" data-ex="2" data-choice="d">(d) &nbsp; \(\frac{\sqrt{3}}{2}|0\rangle + \frac{1}{2}|1\rangle\)</button>
+          </div>
+          <div class="feedback" id="feedback2"></div>
+        </div>
+
+        <div class="exercise" id="ex3">
+          <h3>Exercise 3: Measuring an Eigenstate</h3>
+          <div class="exercise-prompt">A qubit is in state \(|0\rangle\). You measure it in the Z-basis. What happens?</div>
+          <div class="choices">
+            <button class="choice-btn" data-ex="3" data-choice="a">(a) You get \(|0\rangle\) or \(|1\rangle\) each with probability \(1/2\)</button>
+            <button class="choice-btn" data-ex="3" data-choice="b">(b) You always get \(|0\rangle\) and the state is unchanged</button>
+            <button class="choice-btn" data-ex="3" data-choice="c">(c) The state randomly collapses to \(|+\rangle\) or \(|-\rangle\)</button>
+            <button class="choice-btn" data-ex="3" data-choice="d">(d) You get \(|0\rangle\) but the state changes to \(|1\rangle\)</button>
+          </div>
+          <div class="feedback" id="feedback3"></div>
+        </div>
+
+        <div class="exercise" id="ex4">
+          <h3>Exercise 4: Successive Measurements</h3>
+          <div class="exercise-prompt">A qubit is prepared in \(|+\rangle\). You first measure in the Z-basis and obtain \(|0\rangle\). You then immediately measure in the X-basis. What is the probability of obtaining \(|+\rangle\)?</div>
+          <div class="choices">
+            <button class="choice-btn" data-ex="4" data-choice="a">(a) &nbsp; \(0\)</button>
+            <button class="choice-btn" data-ex="4" data-choice="b">(b) &nbsp; \(1/4\)</button>
+            <button class="choice-btn" data-ex="4" data-choice="c">(c) &nbsp; \(1/2\)</button>
+            <button class="choice-btn" data-ex="4" data-choice="d">(d) &nbsp; \(1\)</button>
+          </div>
+          <div class="feedback" id="feedback4"></div>
+        </div>
+
+        <div class="exercise" id="ex5">
+          <h3>Exercise 5: Complementary Bases</h3>
+          <div class="exercise-prompt">A qubit is in state \(|0\rangle\). You measure it in the X-basis. What is the probability of obtaining \(|+\rangle\)?</div>
+          <div class="choices">
+            <button class="choice-btn" data-ex="5" data-choice="a">(a) &nbsp; \(0\)</button>
+            <button class="choice-btn" data-ex="5" data-choice="b">(b) &nbsp; \(1/4\)</button>
+            <button class="choice-btn" data-ex="5" data-choice="c">(c) &nbsp; \(1/2\)</button>
+            <button class="choice-btn" data-ex="5" data-choice="d">(d) &nbsp; \(1\)</button>
+          </div>
+          <div class="feedback" id="feedback5"></div>
+        </div>
+      </section>
+
+      <div style="margin-top:2rem;padding:1.5rem;background:linear-gradient(135deg,var(--surface2),var(--surface));border:1px solid var(--border);border-radius:var(--radius);text-align:center">
+        <p style="color:var(--text-dim);margin-bottom:1rem;font-size:.95rem">Continue your quantum journey</p>
+        <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+          <a href="01_qubits.html" style="padding:0.6rem 1.5rem;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);border-radius:var(--radius-sm);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:8px" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">&#8592; Previous: Qubits</a>
+          <a href="03_bomb_tester.html" style="padding:0.6rem 1.5rem;border:1px solid var(--accent);background:linear-gradient(135deg,var(--accent),#818cf8);color:#fff;border-radius:var(--radius-sm);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px var(--accent-glow)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Next: Bomb Tester &#8594;</a>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ===== Complex number utility =====
+const C = {
+  make: (re, im = 0) => ({ re, im }),
+  abs2: (a) => a.re * a.re + a.im * a.im,
+  abs: (a) => Math.sqrt(C.abs2(a)),
+  fromPolar: (r, t) => ({ re: r * Math.cos(t), im: r * Math.sin(t) }),
+};
+
+// ===== QubitState =====
+class QubitState {
+  constructor(theta = 0, phi = 0) { this.theta = theta; this.phi = phi; }
+  get alpha() { return C.make(Math.cos(this.theta / 2)); }
+  get beta() { return C.fromPolar(Math.sin(this.theta / 2), this.phi); }
+  get blochVector() {
+    const t = this.theta, p = this.phi;
+    return [Math.sin(t) * Math.cos(p), Math.sin(t) * Math.sin(p), Math.cos(t)];
+  }
+  probZ() {
+    const c = Math.cos(this.theta / 2), s = Math.sin(this.theta / 2);
+    return { p0: c * c, p1: s * s };
+  }
+  probAxis(thetaM, phiM) {
+    const [rx, ry, rz] = this.blochVector;
+    const nx = Math.sin(thetaM) * Math.cos(phiM);
+    const ny = Math.sin(thetaM) * Math.sin(phiM);
+    const nz = Math.cos(thetaM);
+    const dot = rx * nx + ry * ny + rz * nz;
+    return { pPlus: (1 + dot) / 2, pMinus: (1 - dot) / 2 };
+  }
+  measureAxis(thetaM, phiM) {
+    const { pPlus } = this.probAxis(thetaM, phiM);
+    if (Math.random() < pPlus) {
+      return { outcome: '+', prob: pPlus, newState: new QubitState(thetaM, phiM) };
+    } else {
+      // Antipodal eigenstate
+      let antiPhi = phiM + Math.PI;
+      if (antiPhi > 2 * Math.PI) antiPhi -= 2 * Math.PI;
+      return { outcome: '-', prob: 1 - pPlus, newState: new QubitState(Math.PI - thetaM, antiPhi) };
+    }
+  }
+  toKatex() {
+    const a = this.alpha, b = this.beta;
+    const fmtReal = (v) => {
+      if (Math.abs(v) < 0.001) return null;
+      if (Math.abs(Math.abs(v) - 1) < 0.005) return v < 0 ? '-' : '';
+      return v.toFixed(2);
+    };
+    let parts = [];
+    // alpha term
+    const aStr = fmtReal(a.re);
+    if (aStr !== null) parts.push(`${aStr}|0\\rangle`);
+    // beta term
+    const bMag = C.abs(b);
+    if (bMag > 0.001) {
+      const bPhase = Math.atan2(b.im, b.re);
+      if (Math.abs(b.im) < 0.001) {
+        // Pure real
+        const sign = b.re >= 0 ? '+' : '-';
+        const mag = Math.abs(b.re);
+        const magStr = Math.abs(mag - 1) < 0.005 ? '' : mag.toFixed(2);
+        if (parts.length) parts.push(` ${sign} ${magStr}|1\\rangle`);
+        else parts.push(`${b.re < 0 ? '-' : ''}${magStr}|1\\rangle`);
+      } else if (Math.abs(b.re) < 0.001) {
+        // Pure imaginary
+        const sign = b.im >= 0 ? '+' : '-';
+        const mag = Math.abs(b.im);
+        const magStr = Math.abs(mag - 1) < 0.005 ? '' : mag.toFixed(2);
+        if (parts.length) parts.push(` ${sign} ${magStr}i|1\\rangle`);
+        else parts.push(`${b.im < 0 ? '-' : ''}${magStr}i|1\\rangle`);
+      } else {
+        // Complex
+        const magStr = Math.abs(bMag - 1) < 0.005 ? '' : bMag.toFixed(2);
+        const phaseStr = (bPhase / Math.PI).toFixed(2);
+        if (parts.length) parts.push(` + ${magStr}e^{i${phaseStr}\\pi}|1\\rangle`);
+        else parts.push(`${magStr}e^{i${phaseStr}\\pi}|1\\rangle`);
+      }
+    }
+    return parts.join('') || '0';
+  }
+}
+
+// ===== Bloch Sphere Renderer =====
+class BlochSphere {
+  constructor(containerId, opts = {}) {
+    this.container = document.getElementById(containerId);
+    if (!this.container) return;
+    this._theta = opts.theta ?? 0.7854;
+    this._phi = opts.phi ?? 0;
+    this._visible = true;
+    this._init();
+    this._loop();
+  }
+
+  _init() {
+    const w = this.container.clientWidth || 400;
+    const h = this.container.clientHeight || 400;
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
+    this.camera.position.set(2.8, 2.0, 2.8);
+    this.camera.lookAt(0, 0, 0);
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    this.renderer.setSize(w, h);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.container.insertBefore(this.renderer.domElement, this.container.firstChild);
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.08;
+    this.controls.minDistance = 2.5;
+    this.controls.maxDistance = 6;
+    this.controls.enablePan = false;
+
+    // Wireframe sphere
+    const sphereGeo = new THREE.SphereGeometry(1, 32, 16);
+    this.scene.add(new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({
+      color: 0x60a5fa, wireframe: true, transparent: true, opacity: 0.08
+    })));
+
+    // Equator
+    const eqPts = [];
+    for (let i = 0; i <= 64; i++) { const a = (i / 64) * Math.PI * 2; eqPts.push(new THREE.Vector3(Math.cos(a), 0, Math.sin(a))); }
+    this.scene.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(eqPts),
+      new THREE.LineBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.25 })
+    ));
+
+    // Axes: Bloch X->Three X, Bloch Y->Three Z, Bloch Z->Three Y
+    const L = 1.35;
+    const mkAxis = (a, b, c) => {
+      const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a), new THREE.Vector3(...b)]);
+      this.scene.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: 0.4 })));
+    };
+    mkAxis([-L,0,0],[L,0,0], 0xff6b6b);
+    mkAxis([0,-L,0],[0,L,0], 0x94a3b8);
+    mkAxis([0,0,-L],[0,0,L], 0x51cf66);
+
+    // Labels
+    const mkLabel = (txt, pos, col) => {
+      const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
+      const cx = cv.getContext('2d'); cx.font = 'bold 40px sans-serif';
+      cx.fillStyle = col; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+      cx.fillText(txt, 32, 32);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true }));
+      sp.position.set(...pos); sp.scale.set(0.3,0.3,0.3);
+      this.scene.add(sp);
+    };
+    mkLabel('X', [1.55,0,0], '#ff6b6b');
+    mkLabel('Z', [0,1.55,0], '#94a3b8');
+    mkLabel('Y', [0,0,1.55], '#51cf66');
+
+    // State labels
+    const mkSmall = (txt, pos, col='#64748b') => {
+      const cv = document.createElement('canvas'); cv.width=128; cv.height=48;
+      const cx = cv.getContext('2d'); cx.font='24px sans-serif'; cx.fillStyle=col;
+      cx.textAlign='center'; cx.textBaseline='middle'; cx.fillText(txt,64,24);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true}));
+      sp.position.set(...pos); sp.scale.set(0.4,0.15,1); this.scene.add(sp);
+    };
+    mkSmall('|0\u27E9',[0,1.25,0],'#e2e8f0');
+    mkSmall('|1\u27E9',[0,-1.25,0],'#e2e8f0');
+    mkSmall('|+\u27E9',[1.2,0,0],'#94a3b8');
+    mkSmall('|-\u27E9',[-1.2,0,0],'#94a3b8');
+
+    // State vector arrow
+    this.stateArrow = new THREE.ArrowHelper(
+      new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1.0, 0x60a5fa, 0.12, 0.07
+    );
+    this.scene.add(this.stateArrow);
+
+    // Measurement axis arrows (hidden)
+    this.measArrow1 = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1.15, 0xfb923c, 0.1, 0.06);
+    this.measArrow2 = new THREE.ArrowHelper(new THREE.Vector3(0,-1,0), new THREE.Vector3(0,0,0), 1.15, 0xfb923c, 0.1, 0.06);
+    this.measArrow1.visible = false; this.measArrow2.visible = false;
+    this.scene.add(this.measArrow1); this.scene.add(this.measArrow2);
+
+    // Eigenstate dots
+    const dotGeo = new THREE.SphereGeometry(0.05,12,8);
+    this.eigDot1 = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({color:0x4ade80}));
+    this.eigDot2 = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({color:0x4ade80}));
+    this.eigDot1.visible = false; this.eigDot2.visible = false;
+    this.scene.add(this.eigDot1); this.scene.add(this.eigDot2);
+
+    // Origin dot
+    this.scene.add(new THREE.Mesh(new THREE.SphereGeometry(0.03,8,8), new THREE.MeshBasicMaterial({color:0x64748b})));
+
+    this._updateStateArrow();
+    this._ro = new ResizeObserver(() => this._resize());
+    this._ro.observe(this.container);
+  }
+
+  _b2t(theta, phi) {
+    return new THREE.Vector3(
+      Math.sin(theta)*Math.cos(phi),
+      Math.cos(theta),
+      Math.sin(theta)*Math.sin(phi)
+    );
+  }
+
+  _updateStateArrow() {
+    this.stateArrow.setDirection(this._b2t(this._theta, this._phi).normalize());
+  }
+
+  setStateVector(t, p) { this._theta = t; this._phi = p; this._updateStateArrow(); }
+
+  setMeasurementAxis(tM, pM) {
+    const d = this._b2t(tM, pM).normalize();
+    this.measArrow1.setDirection(d);
+    this.measArrow2.setDirection(d.clone().negate());
+    this.eigDot1.position.copy(d);
+    let antiPhi = pM + Math.PI; if (antiPhi > 2*Math.PI) antiPhi -= 2*Math.PI;
+    this.eigDot2.position.copy(this._b2t(Math.PI - tM, antiPhi).normalize());
+  }
+
+  showMeasurementAxis(v) {
+    this.measArrow1.visible = v; this.measArrow2.visible = v;
+    this.eigDot1.visible = v; this.eigDot2.visible = v;
+  }
+
+  animateCollapse(targetT, targetP, dur = 600) {
+    return new Promise((resolve) => {
+      const sd = this._b2t(this._theta, this._phi).normalize();
+      const ed = this._b2t(targetT, targetP).normalize();
+      const sq = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), sd);
+      const eq = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), ed);
+      const t0 = performance.now();
+      const step = (now) => {
+        let t = Math.min((now - t0) / dur, 1);
+        t = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2;
+        const q = new THREE.Quaternion(); q.slerpQuaternions(sq, eq, t);
+        this.stateArrow.setDirection(new THREE.Vector3(0,1,0).applyQuaternion(q).normalize());
+        if (t < 1) requestAnimationFrame(step);
+        else { this._theta = targetT; this._phi = targetP; resolve(); }
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
+  _resize() {
+    const w = this.container.clientWidth, h = this.container.clientHeight;
+    if (!w || !h) return;
+    this.camera.aspect = w/h; this.camera.updateProjectionMatrix();
+    this.renderer.setSize(w,h);
+  }
+
+  _loop() {
+    requestAnimationFrame(() => this._loop());
+    if (!this._visible) return;
+    this.controls.update();
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  setVisible(v) { this._visible = v; }
+}
+
+// ===== Histogram drawer =====
+function drawHistogram(canvas, counts, total, theory, labels) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.fillStyle = '#162037'; ctx.fillRect(0,0,W,H);
+  const textCol = '#94a3b8';
+  const colors = ['#60a5fa','#fb923c'];
+  const theoryCol = '#a78bfa';
+  const m = {top:30,right:30,bottom:50,left:30};
+  const pW = W-m.left-m.right, pH = H-m.top-m.bottom;
+  const bW = pW/4, gap = pW/6;
+  for (let i=0;i<2;i++){
+    const x = m.left+gap+i*(bW+gap);
+    const freq = total>0 ? counts[i]/total : 0;
+    const bH = freq*pH;
+    ctx.fillStyle = colors[i]; ctx.globalAlpha=0.85;
+    ctx.beginPath(); ctx.roundRect(x, m.top+pH-bH, bW, bH, [4,4,0,0]); ctx.fill();
+    ctx.globalAlpha = 1;
+    if (total>0){ ctx.fillStyle=textCol; ctx.font='13px system-ui'; ctx.textAlign='center';
+      ctx.fillText((freq*100).toFixed(1)+'%', x+bW/2, m.top+pH-bH-8); }
+    ctx.fillStyle=textCol; ctx.font='13px system-ui'; ctx.textAlign='center';
+    ctx.fillText(labels[i], x+bW/2, H-m.bottom+20);
+    if(theory){ const ty=m.top+pH-(theory[i])*pH;
+      ctx.strokeStyle=theoryCol; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(x-10,ty); ctx.lineTo(x+bW+10,ty); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle=theoryCol; ctx.font='11px system-ui'; ctx.textAlign='left';
+      ctx.fillText((theory[i]*100).toFixed(1)+'%', x+bW+14, ty+4);
+    }
+  }
+  ctx.font='11px system-ui'; ctx.fillStyle=theoryCol;
+  ctx.strokeStyle=theoryCol; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(W-140,16); ctx.lineTo(W-115,16); ctx.stroke(); ctx.setLineDash([]);
+  ctx.textAlign='left'; ctx.fillText('Born rule', W-110,20);
+  ctx.fillStyle=textCol; ctx.font='11px system-ui'; ctx.textAlign='left';
+  ctx.fillText('N = '+total, m.left,20);
+}
+
+// ===== KaTeX helper =====
+const KR = {
+  render(el, tex, display=false) {
+    if (typeof el === 'string') el = document.getElementById(el);
+    if (!el || !window.katex) return;
+    try { katex.render(tex, el, {displayMode:display, throwOnError:false}); } catch(e){ el.textContent=tex; }
+  },
+  renderAll() {
+    if (!window.renderMathInElement) return;
+    renderMathInElement(document.body, {
+      delimiters: [{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],
+      throwOnError: false
+    });
+  }
+};
+
+// ===== Exercise data =====
+const exercises = {
+  1: { correct:'a',
+    correctFb:'Correct! The amplitude of |1\u27E9 is 1/2, so P(1) = |1/2|&sup2; = 1/4.',
+    incorrectFb:'Not quite. P(1) = |&beta;|&sup2; where &beta; = 1/2, so P(1) = 1/4.' },
+  2: { correct:'c',
+    correctFb:'Correct! |+\u27E9 gives P(0) = |1/&radic;2|&sup2; = 1/2, matching the data.',
+    incorrectFb:'Which state has cos&sup2;(&theta;/2) = 1/2? That means &theta; = &pi;/2 &mdash; the |+\u27E9 state on the equator.' },
+  3: { correct:'b',
+    correctFb:'Correct! |0\u27E9 is an eigenstate of Z-measurement. It always yields the same outcome and the state is unchanged.',
+    incorrectFb:'|0\u27E9 is an eigenstate of Z-measurement &mdash; measuring it always gives |0\u27E9 with probability 1.' },
+  4: { correct:'c',
+    correctFb:'Correct! After collapse to |0\u27E9, P(+) = |&lang;+|0&rang;|&sup2; = 1/2. The initial |+\u27E9 is irrelevant after collapse.',
+    incorrectFb:'After the Z-measurement gives |0\u27E9, the state <em>is</em> |0\u27E9. Then P(+) = |&lang;+|0&rang;|&sup2; = 1/2.' },
+  5: { correct:'c',
+    correctFb:'Correct! |0\u27E9 = (|+\u27E9 + |&minus;\u27E9)/&radic;2, so P(+) = |&lang;+|0&rang;|&sup2; = 1/2. Z-eigenstates are maximally uncertain in the X-basis.',
+    incorrectFb:'Think about it: |0\u27E9 = (|+\u27E9 + |&minus;\u27E9)/&radic;2. So P(+) = |&lang;+|0&rang;|&sup2; = |1/&radic;2|&sup2; = 1/2.' }
+};
+
+// ===== MAIN =====
+async function main() {
+  // Wait for KaTeX
+  await new Promise(r => {
+    if (window.katex && window.renderMathInElement) return r();
+    const iv = setInterval(() => { if (window.katex && window.renderMathInElement) { clearInterval(iv); r(); } }, 50);
+  });
+  KR.renderAll();
+
+  const state = new QubitState(0.7854, 0);
+  let currentBasis = 'Z';
+  let measThetaM = Math.PI/2, measPhiM = 0;
+
+  function basisAngles(b) {
+    if (b==='Z') return {tM:0,pM:0};
+    if (b==='X') return {tM:Math.PI/2,pM:0};
+    if (b==='Y') return {tM:Math.PI/2,pM:Math.PI/2};
+    return {tM:measThetaM,pM:measPhiM};
+  }
+  function basisLabels(b) {
+    if (b==='Z') return ['|0\\rangle','|1\\rangle','|0\u27E9','|1\u27E9'];
+    if (b==='X') return ['|+\\rangle','|-\\rangle','|+\u27E9','|-\u27E9'];
+    if (b==='Y') return ['|{+i}\\rangle','|{-i}\\rangle','|+i\u27E9','|-i\u27E9'];
+    return ['|{+n}\\rangle','|{-n}\\rangle','|+n\u27E9','|-n\u27E9'];
+  }
+
+  // Bloch spheres
+  const bloch1 = new BlochSphere('bloch1');
+  const bloch2 = new BlochSphere('bloch2');
+  const bloch3 = new BlochSphere('bloch3');
+  const bloch4 = new BlochSphere('bloch4', {theta:Math.PI/2, phi:0});
+
+  // Visibility observer
+  const vObs = new IntersectionObserver(es => es.forEach(e => {
+    const m = {bloch1,bloch2,bloch3,bloch4};
+    if (m[e.target.id]) m[e.target.id].setVisible(e.isIntersecting);
+  }), {threshold:0.1});
+  document.querySelectorAll('.bloch-container').forEach(el => vObs.observe(el));
+
+  // Section entrance animations
+  const enterObs = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); enterObs.unobserve(e.target); }
+  }), {threshold:0.1, rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('section, .interactive-panel, .callout, .callout-challenge, .exercise').forEach(el => enterObs.observe(el));
+
+  // Nav highlighting
+  const navObs = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+    const link = document.querySelector(`.sidebar a[href="#${e.target.id}"]`);
+    if (link) link.classList.add('active');
+  }), {threshold:0.2, rootMargin:'-10% 0px -70% 0px'});
+  document.querySelectorAll('section[id]').forEach(s => navObs.observe(s));
+
+
+  // Hamburger
+  const sidebar = document.getElementById('sidebar');
+  document.getElementById('hamburger').addEventListener('click', () => sidebar.classList.toggle('open'));
+  sidebar.addEventListener('click', e => { if (e.target.tagName==='A' && window.innerWidth<=900) sidebar.classList.remove('open'); });
+
+  // ---- Section 2 ----
+  const $ = id => document.getElementById(id);
+  function updateSec2() {
+    const p = state.probZ();
+    $('prob0-fill').style.width = (p.p0*100)+'%';
+    $('prob1-fill').style.width = (p.p1*100)+'%';
+    $('prob0-val').textContent = (p.p0*100).toFixed(0)+'%';
+    $('prob1-val').textContent = (p.p1*100).toFixed(0)+'%';
+    $('theta-val').textContent = state.theta.toFixed(2);
+    $('phi-val').textContent = state.phi.toFixed(2);
+    bloch1.setStateVector(state.theta, state.phi);
+    KR.render('stateDisplay1', '|\\psi\\rangle = '+state.toKatex());
+  }
+  function updateSec3() {
+    const p = state.probZ();
+    $('prob0-fill-2').style.width = (p.p0*100)+'%';
+    $('prob1-fill-2').style.width = (p.p1*100)+'%';
+    $('prob0-val-2').textContent = (p.p0*100).toFixed(0)+'%';
+    $('prob1-val-2').textContent = (p.p1*100).toFixed(0)+'%';
+    $('theta-val-2').textContent = state.theta.toFixed(2);
+    $('phi-val-2').textContent = state.phi.toFixed(2);
+    bloch2.setStateVector(state.theta, state.phi);
+  }
+  function updateSec4() {
+    const {tM,pM} = basisAngles(currentBasis);
+    const pr = state.probAxis(tM, pM);
+    $('prob-plus-fill').style.width = (pr.pPlus*100)+'%';
+    $('prob-minus-fill').style.width = (pr.pMinus*100)+'%';
+    $('prob-plus-val').textContent = (pr.pPlus*100).toFixed(0)+'%';
+    $('prob-minus-val').textContent = (pr.pMinus*100).toFixed(0)+'%';
+    $('theta-val-3').textContent = state.theta.toFixed(2);
+    $('phi-val-3').textContent = state.phi.toFixed(2);
+    bloch3.setStateVector(state.theta, state.phi);
+    bloch3.setMeasurementAxis(tM, pM);
+    bloch3.showMeasurementAxis(true);
+    const lb = basisLabels(currentBasis);
+    KR.render('basis-label-plus', lb[0]);
+    KR.render('basis-label-minus', lb[1]);
+  }
+
+  // Sync all sliders
+  const allThetas = ['theta-slider','theta-slider-2','theta-slider-3'];
+  const allPhis = ['phi-slider','phi-slider-2','phi-slider-3'];
+  let updatePending = false;
+  function syncAll(srcTheta, srcPhi) {
+    state.theta = parseFloat($(srcTheta).value);
+    state.phi = parseFloat($(srcPhi).value);
+    allThetas.forEach(id => { if(id!==srcTheta) $(id).value=state.theta; });
+    allPhis.forEach(id => { if(id!==srcPhi) $(id).value=state.phi; });
+    if (!updatePending) { updatePending=true; requestAnimationFrame(()=>{ updateSec2(); updateSec3(); updateSec4(); updatePending=false; }); }
+  }
+  ['theta-slider','phi-slider'].forEach(id => $(id).addEventListener('input', ()=>syncAll('theta-slider','phi-slider')));
+  ['theta-slider-2','phi-slider-2'].forEach(id => $(id).addEventListener('input', ()=>syncAll('theta-slider-2','phi-slider-2')));
+  ['theta-slider-3','phi-slider-3'].forEach(id => $(id).addEventListener('input', ()=>syncAll('theta-slider-3','phi-slider-3')));
+
+  // Special states
+  document.querySelectorAll('.states-table .clickable').forEach(row => {
+    row.addEventListener('click', () => {
+      state.theta = parseFloat(row.dataset.theta);
+      state.phi = parseFloat(row.dataset.phi);
+      allThetas.forEach(id => $(id).value=state.theta);
+      allPhis.forEach(id => $(id).value=state.phi);
+      updateSec2(); updateSec3(); updateSec4();
+    });
+  });
+
+  // Z-measurement
+  let preZTheta = state.theta, preZPhi = state.phi;
+  let zLogCounts = [0, 0];
+  function updateZLog(outcome) {
+    const log = $('z-log'); log.style.display='';
+    const dot = document.createElement('span');
+    dot.className = 'measure-dot ' + (outcome==='+' ? 'z0' : 'z1');
+    dot.textContent = outcome==='+' ? '0' : '1';
+    log.appendChild(dot);
+    log.scrollTop = log.scrollHeight;
+    if (outcome==='+') zLogCounts[0]++; else zLogCounts[1]++;
+    const total = zLogCounts[0]+zLogCounts[1];
+    $('z-log-summary').textContent = `${total} measurements: ${zLogCounts[0]}x|0\u27E9 (${(zLogCounts[0]/total*100).toFixed(0)}%)  ${zLogCounts[1]}x|1\u27E9 (${(zLogCounts[1]/total*100).toFixed(0)}%)`;
+  }
+  $('btn-measure-z').addEventListener('click', async () => {
+    preZTheta = state.theta; preZPhi = state.phi;
+    const r = state.measureAxis(0,0);
+    const el = $('result-z'); el.className='result-display';
+    if (r.outcome==='+') { el.classList.add('outcome-0'); el.innerHTML=`Outcome: |0\u27E9 &nbsp;(prob ${(r.prob*100).toFixed(1)}%)`; }
+    else { el.classList.add('outcome-1'); el.innerHTML=`Outcome: |1\u27E9 &nbsp;(prob ${(r.prob*100).toFixed(1)}%)`; }
+    updateZLog(r.outcome);
+    await bloch2.animateCollapse(r.newState.theta, r.newState.phi);
+    state.theta=r.newState.theta; state.phi=r.newState.phi;
+    allThetas.forEach(id=>$(id).value=state.theta);
+    allPhis.forEach(id=>$(id).value=state.phi);
+    updateSec2(); updateSec3(); updateSec4();
+    $('btn-reset-z').style.display='';
+  });
+  $('btn-reset-z').addEventListener('click', () => {
+    state.theta=preZTheta; state.phi=preZPhi;
+    allThetas.forEach(id=>$(id).value=state.theta);
+    allPhis.forEach(id=>$(id).value=state.phi);
+    bloch2.setStateVector(state.theta, state.phi);
+    updateSec2(); updateSec3(); updateSec4();
+    $('result-z').className='result-display'; $('result-z').textContent='Click to measure';
+    $('btn-reset-z').style.display='none';
+    $('z-log').innerHTML=''; $('z-log').style.display='none'; $('z-log-summary').textContent=''; zLogCounts=[0,0];
+  });
+
+  // Basis buttons
+  document.querySelectorAll('.basis-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.basis-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentBasis = btn.dataset.basis;
+      $('customAxisControls').classList.toggle('visible', currentBasis==='custom');
+      updateSec4();
+    });
+  });
+  $('thetam-slider').addEventListener('input', e => { measThetaM=parseFloat(e.target.value); $('thetam-val').textContent=measThetaM.toFixed(2); updateSec4(); });
+  $('phim-slider').addEventListener('input', e => { measPhiM=parseFloat(e.target.value); $('phim-val').textContent=measPhiM.toFixed(2); updateSec4(); });
+
+  // Measure in basis
+  $('btn-measure-basis').addEventListener('click', async () => {
+    const {tM,pM} = basisAngles(currentBasis);
+    const r = state.measureAxis(tM,pM);
+    const lb = basisLabels(currentBasis);
+    const el=$('result-basis'); el.className='result-display';
+    if (r.outcome==='+') { el.classList.add('outcome-0'); el.innerHTML=`Outcome: ${lb[2]} &nbsp;(prob ${(r.prob*100).toFixed(1)}%)`; }
+    else { el.classList.add('outcome-1'); el.innerHTML=`Outcome: ${lb[3]} &nbsp;(prob ${(r.prob*100).toFixed(1)}%)`; }
+    await bloch3.animateCollapse(r.newState.theta, r.newState.phi);
+    state.theta=r.newState.theta; state.phi=r.newState.phi;
+    allThetas.forEach(id=>$(id).value=state.theta);
+    allPhis.forEach(id=>$(id).value=state.phi);
+    updateSec2(); updateSec3(); updateSec4();
+  });
+
+  // Born rule
+  let bornBasis = 'Z';
+  $('theta-slider-born').addEventListener('input', e => $('theta-val-born').textContent=parseFloat(e.target.value).toFixed(2));
+  $('phi-slider-born').addEventListener('input', e => $('phi-val-born').textContent=parseFloat(e.target.value).toFixed(2));
+  document.querySelectorAll('[data-born-basis]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-born-basis]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      bornBasis = btn.dataset.bornBasis;
+      const formulas = {Z:'P(|0&#x27E9;) = cos&sup2;(&theta;/2)', X:'P(|+&#x27E9;) = &frac12;(1 + sin&theta; cos&phi;)', Y:'P(|+i&#x27E9;) = &frac12;(1 + sin&theta; sin&phi;)'};
+      $('born-formula').innerHTML = formulas[bornBasis];
+    });
+  });
+  $('btn-born-verify').addEventListener('click', () => {
+    const q = new QubitState(parseFloat($('theta-slider-born').value), parseFloat($('phi-slider-born').value));
+    let theory, label;
+    if (bornBasis==='Z') { theory=q.probZ().p0; label='|0\u27E9'; }
+    else if (bornBasis==='X') { theory=q.probAxis(Math.PI/2,0).pPlus; label='|+\u27E9'; }
+    else { theory=q.probAxis(Math.PI/2,Math.PI/2).pPlus; label='|+i\u27E9'; }
+    let c0=0; for(let i=0;i<1000;i++) if(Math.random()<theory) c0++;
+    const freq=c0/1000;
+    $('born-theory').textContent=theory.toFixed(4);
+    $('born-experiment').textContent=freq.toFixed(4);
+    $('born-counts').innerHTML=`${c0} / 1000 = ${(freq*100).toFixed(1)}%`;
+  });
+
+  // Collapse demo
+  let collapseState = new QubitState(Math.PI/2,0);
+  let isCollapsed = false;
+  function updateCollapseProbs() {
+    const p = collapseState.probZ();
+    $('prob0-fill-4').style.width = (p.p0*100)+'%';
+    $('prob1-fill-4').style.width = (p.p1*100)+'%';
+    $('prob0-val-4').textContent = (p.p0*100).toFixed(0)+'%';
+    $('prob1-val-4').textContent = (p.p1*100).toFixed(0)+'%';
+  }
+  $('theta-slider-4').addEventListener('input', () => { if(isCollapsed)return; collapseState.theta=parseFloat($('theta-slider-4').value); $('theta-val-4').textContent=collapseState.theta.toFixed(2); bloch4.setStateVector(collapseState.theta,collapseState.phi); updateCollapseProbs(); });
+  $('phi-slider-4').addEventListener('input', () => { if(isCollapsed)return; collapseState.phi=parseFloat($('phi-slider-4').value); $('phi-val-4').textContent=collapseState.phi.toFixed(2); bloch4.setStateVector(collapseState.theta,collapseState.phi); updateCollapseProbs(); });
+
+  function addNar(text, hl=false) {
+    const d=document.createElement('div'); d.className='narration-step'+(hl?' highlight':'');
+    d.innerHTML=text; $('collapse-narration').appendChild(d);
+    requestAnimationFrame(()=>d.classList.add('visible'));
+  }
+
+  $('btn-collapse-demo').addEventListener('click', async () => {
+    isCollapsed=false; $('collapse-narration').innerHTML='';
+    $('btn-measure-again').style.display='none'; $('btn-reset-collapse').style.display='none';
+    $('theta-slider-4').disabled=true; $('phi-slider-4').disabled=true;
+    addNar(`<strong>Step 1:</strong> Initial state (&theta;=${collapseState.theta.toFixed(2)}, &phi;=${collapseState.phi.toFixed(2)})`);
+    await new Promise(r=>setTimeout(r,500));
+    addNar('<strong>Step 2:</strong> Measuring in Z-basis...');
+    await new Promise(r=>setTimeout(r,400));
+    const result = collapseState.measureAxis(0,0);
+    const lbl = result.outcome==='+' ? '|0\u27E9' : '|1\u27E9';
+    addNar(`<strong>Step 3:</strong> Outcome: <span style="color:var(--accent-cyan)">${lbl}</span> (prob ${(result.prob*100).toFixed(1)}%)`, true);
+    await bloch4.animateCollapse(result.newState.theta, result.newState.phi, 800);
+    collapseState = result.newState;
+    updateCollapseProbs();
+    addNar(`<strong>Step 4:</strong> State collapsed to ${lbl}. The original superposition is lost.`);
+    isCollapsed=true;
+    $('btn-measure-again').style.display=''; $('btn-reset-collapse').style.display='';
+  });
+  $('btn-measure-again').addEventListener('click', () => {
+    const r=collapseState.measureAxis(0,0);
+    addNar(`<strong>Re-measure:</strong> Outcome ${r.outcome==='+'?'|0\u27E9':'|1\u27E9'} (prob ${(r.prob*100).toFixed(1)}%). Eigenstate measurement is <em>deterministic</em>.`, true);
+  });
+  $('btn-reset-collapse').addEventListener('click', () => {
+    isCollapsed=false; collapseState=new QubitState(parseFloat($('theta-slider-4').value),parseFloat($('phi-slider-4').value));
+    bloch4.setStateVector(collapseState.theta,collapseState.phi);
+    updateCollapseProbs();
+    $('collapse-narration').innerHTML='';
+    $('btn-measure-again').style.display='none'; $('btn-reset-collapse').style.display='none';
+    $('theta-slider-4').disabled=false; $('phi-slider-4').disabled=false;
+  });
+
+  // Statistics
+  let sCounts=[0,0], sTotal=0;
+  function getStatsTheory() {
+    const t=parseFloat($('theta-slider-stats').value);
+    const p=parseFloat($('phi-slider-stats').value);
+    const basis=$('stats-basis').value;
+    const q=new QubitState(t,p);
+    if(basis==='Z'){ const pr=q.probZ(); return {theory:[pr.p0,pr.p1], labels:['|0\u27E9','|1\u27E9'], katex:['|0\\rangle','|1\\rangle'], pPlus:pr.p0}; }
+    if(basis==='X'){ const pr=q.probAxis(Math.PI/2,0); return {theory:[pr.pPlus,pr.pMinus], labels:['|+\u27E9','|-\u27E9'], katex:['|+\\rangle','|-\\rangle'], pPlus:pr.pPlus}; }
+    const pr=q.probAxis(Math.PI/2,Math.PI/2); return {theory:[pr.pPlus,pr.pMinus], labels:['|+i\u27E9','|-i\u27E9'], katex:['|{+i}\\rangle','|{-i}\\rangle'], pPlus:pr.pPlus};
+  }
+  function updateStatsDisplay() {
+    const {theory, labels, katex} = getStatsTheory();
+    $('stats-count-0').textContent=sCounts[0]; $('stats-count-1').textContent=sCounts[1];
+    $('stats-freq-0').textContent=sTotal>0?(sCounts[0]/sTotal).toFixed(4):'--';
+    $('stats-freq-1').textContent=sTotal>0?(sCounts[1]/sTotal).toFixed(4):'--';
+    $('stats-theory-0').textContent=theory[0].toFixed(4);
+    $('stats-theory-1').textContent=theory[1].toFixed(4);
+    KR.render('stats-label-0', katex[0]);
+    KR.render('stats-label-1', katex[1]);
+    drawHistogram($('histogramCanvas'), sCounts, sTotal, theory, labels);
+  }
+  $('theta-slider-stats').addEventListener('input', e => { $('theta-val-stats').textContent=parseFloat(e.target.value).toFixed(2); sCounts=[0,0]; sTotal=0; updateStatsDisplay(); });
+  $('phi-slider-stats').addEventListener('input', e => { $('phi-val-stats').textContent=parseFloat(e.target.value).toFixed(2); sCounts=[0,0]; sTotal=0; updateStatsDisplay(); });
+  $('stats-basis').addEventListener('change', () => { sCounts=[0,0]; sTotal=0; updateStatsDisplay(); });
+  document.querySelectorAll('[data-n]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const n=parseInt(btn.dataset.n);
+      const {pPlus} = getStatsTheory();
+      for(let i=0;i<n;i++){ if(Math.random()<pPlus) sCounts[0]++; else sCounts[1]++; sTotal++; }
+      updateStatsDisplay();
+    });
+  });
+  $('btn-reset-stats').addEventListener('click', () => { sCounts=[0,0]; sTotal=0; updateStatsDisplay(); });
+
+  // Exercises
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const exId=btn.dataset.ex;
+      const ex=exercises[exId]; const correct=btn.dataset.choice===ex.correct;
+      document.querySelectorAll(`.choice-btn[data-ex="${exId}"]`).forEach(b => {
+        b.disabled=true; if(b.dataset.choice===ex.correct) b.classList.add('correct');
+      });
+      if(!correct) btn.classList.add('incorrect');
+      const fb=$('feedback'+exId);
+      fb.innerHTML=(correct?ex.correctFb:ex.incorrectFb)+(!correct?'<br><button class="btn btn-secondary btn-sm" style="margin-top:0.5rem" data-retry="'+exId+'">Try Again</button>':'');
+      fb.className='feedback show '+(correct?'correct-fb':'incorrect-fb');
+    });
+  });
+  document.addEventListener('click', e => {
+    const retryBtn = e.target.closest('[data-retry]');
+    if (!retryBtn) return;
+    const exId = retryBtn.dataset.retry;
+    document.querySelectorAll(`.choice-btn[data-ex="${exId}"]`).forEach(b => {
+      b.disabled=false; b.classList.remove('correct','incorrect');
+    });
+    const fb=$('feedback'+exId);
+    fb.className='feedback'; fb.innerHTML='';
+  });
+
+  // Initial
+  updateSec2(); updateSec3(); updateSec4(); updateCollapseProbs(); updateStatsDisplay();
+}
+
+main();
+  </script>
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+
+<!-- Particle Background -->
+<script>
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 45;
+  const CONNECT_DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+</script>
+</body>
+</html>

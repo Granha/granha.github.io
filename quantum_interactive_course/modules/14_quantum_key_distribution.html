@@ -1,0 +1,3617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BB84 Quantum Key Distribution — Interactive Visualization</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --alice: #818cf8;
+    --bob: #22d3ee;
+    --eve: #f87171;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* Particle background */
+  #particleBg {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0; pointer-events: none;
+  }
+
+  /* ---- Top Nav Bar ---- */
+  .top-nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 48px; z-index: 999;
+    background: rgba(10, 14, 26, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(42, 53, 80, 0.4);
+    display: flex; align-items: center;
+    padding: 0 1.5rem;
+  }
+  .top-nav a {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    color: var(--text-dim); text-decoration: none;
+    font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500;
+    padding: 0.35rem 0.75rem; border-radius: 8px;
+    background: rgba(26, 34, 54, 0.6);
+    border: 1px solid rgba(42, 53, 80, 0.5);
+    transition: all 0.2s;
+  }
+  .top-nav a:hover { color: var(--text); border-color: var(--accent); }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 4rem 1.5rem 4rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ---- Header ---- */
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+  }
+  header::after {
+    content: '';
+    display: block;
+    width: 120px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), transparent);
+    margin: 1.5rem auto 0;
+  }
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--cyan), var(--pink));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+  }
+  .subtitle { color: var(--text-dim); font-size: 1.05rem; font-weight: 300; }
+
+  /* ---- Cards ---- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .card:hover { border-color: rgba(99, 102, 241, 0.4); }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+  .card-title {
+    font-size: 1.15rem; font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .card-title .icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; flex-shrink: 0;
+  }
+
+  .desc { color: var(--text-dim); font-size: 0.9rem; line-height: 1.65; margin-bottom: 1rem; }
+  .desc strong { color: var(--text); font-weight: 500; }
+
+  /* ---- Tag (inline code) ---- */
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(99,102,241,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(99,102,241,0.25);
+  }
+  .tag.cyan { background: rgba(34,211,238,0.1); color: var(--cyan); border-color: rgba(34,211,238,0.25); }
+  .tag.pink { background: rgba(244,114,182,0.1); color: var(--pink); border-color: rgba(244,114,182,0.25); }
+  .tag.green { background: rgba(52,211,153,0.1); color: var(--green); border-color: rgba(52,211,153,0.25); }
+  .tag.red { background: rgba(248,113,113,0.1); color: var(--red); border-color: rgba(248,113,113,0.25); }
+
+  /* ---- Concept Grid ---- */
+  .concept-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem; margin: 1.25rem 0;
+  }
+  .concept-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .concept-card:hover {
+    border-color: rgba(99,102,241,0.3);
+    box-shadow: 0 0 20px rgba(99,102,241,0.08);
+  }
+  .concept-card h3 {
+    font-size: 0.95rem; font-weight: 600;
+    margin-bottom: 0.4rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .concept-card p { font-size: 0.88rem; color: var(--text-dim); line-height: 1.55; }
+
+  /* ---- Basis Demo ---- */
+  .basis-demo {
+    display: flex; gap: 1.5rem; justify-content: center;
+    margin: 1.25rem 0 0.5rem; flex-wrap: wrap;
+  }
+  .basis-box {
+    text-align: center; padding: 1.25rem 1.75rem;
+    border-radius: 12px; border: 1px solid var(--border);
+    background: var(--surface2); min-width: 200px;
+    transition: border-color 0.3s;
+  }
+  .basis-box:hover { border-color: rgba(99,102,241,0.3); }
+  .basis-box h4 {
+    font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-dim); margin-bottom: 0.75rem; font-weight: 500;
+  }
+  .basis-symbols { display: flex; gap: 1rem; justify-content: center; }
+  .basis-symbols .sym {
+    width: 56px; height: 56px;
+    border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; font-weight: 700; flex-direction: column; gap: 1px;
+  }
+  .sym small { font-size: 0.7rem; font-weight: 500; opacity: 0.7; }
+  .rect-bg { background: rgba(99,102,241,0.15); color: var(--accent); border: 1px solid rgba(99,102,241,0.3); }
+  .diag-bg { background: rgba(251,146,60,0.15); color: var(--orange); border: 1px solid rgba(251,146,60,0.3); }
+
+  /* ---- Complexity Comparison ---- */
+  .complexity-bar {
+    margin-top: 0.5rem;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .complexity-track {
+    flex: 1; height: 8px;
+    background: var(--surface2); border-radius: 4px; overflow: hidden;
+  }
+  .complexity-fill {
+    height: 100%; border-radius: 4px;
+    transition: width 1s ease-out;
+  }
+  .complexity-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; min-width: 90px;
+  }
+
+  /* ---- Controls ---- */
+  .controls-row {
+    display: flex; flex-wrap: wrap; gap: 0.75rem;
+    align-items: end; margin-bottom: 1rem;
+  }
+  .control-group {
+    display: flex; flex-direction: column; gap: 0.35rem;
+  }
+  .control-group label {
+    font-size: 0.78rem; font-weight: 500; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  button {
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    border: none; border-radius: 8px;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem; font-weight: 600;
+    padding: 0.55rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+  }
+  button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+  button:active { transform: translateY(0); }
+  button.secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+  }
+  button.secondary:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 20px rgba(99,102,241,0.1);
+  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+  select {
+    background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  select:focus { border-color: var(--accent); }
+
+  /* ---- Speed Control ---- */
+  .speed-control {
+    display: inline-flex; border-radius: 6px;
+    overflow: hidden; border: 1px solid var(--border);
+  }
+  .speed-btn {
+    background: var(--surface2); border: none;
+    border-right: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; font-weight: 500;
+    padding: 0.45rem 0.65rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 0; letter-spacing: 0;
+  }
+  .speed-btn:last-child { border-right: none; }
+  .speed-btn:hover { background: rgba(99,102,241,0.1); color: var(--text); transform: none; box-shadow: none; }
+  .speed-btn.active {
+    background: rgba(99,102,241,0.2);
+    color: var(--accent);
+  }
+
+  /* ---- Eve Toggle Switch ---- */
+  .eve-toggle {
+    display: flex; align-items: center; gap: 0.6rem;
+    cursor: pointer; user-select: none;
+  }
+  .eve-toggle input { display: none; }
+  .eve-toggle .switch {
+    width: 44px; height: 24px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px;
+    position: relative; transition: all 0.25s;
+  }
+  .eve-toggle .switch::after {
+    content: '';
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--text-dim);
+    transition: all 0.25s;
+  }
+  .eve-toggle input:checked + .switch {
+    background: rgba(248,113,113,0.2);
+    border-color: rgba(248,113,113,0.5);
+  }
+  .eve-toggle input:checked + .switch::after {
+    transform: translateX(20px);
+    background: var(--red);
+    box-shadow: 0 0 8px rgba(248,113,113,0.4);
+  }
+  .eve-toggle .toggle-label {
+    font-size: 0.88rem; color: var(--text-dim);
+    transition: color 0.2s;
+  }
+  .eve-toggle input:checked ~ .toggle-label { color: var(--red); }
+
+  /* ---- Channel Animation ---- */
+  .channel-anim {
+    position: relative; height: 100px; margin: 1rem 0 1.25rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+  .channel-line {
+    position: absolute; top: 50%; left: 90px; right: 90px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--alice), var(--border) 40%, var(--border) 60%, var(--bob));
+    opacity: 0.4;
+  }
+  /* Dashed overlay to look like a fiber */
+  .channel-line::after {
+    content: '';
+    position: absolute; top: -1px; left: 0; right: 0; height: 4px;
+    background: repeating-linear-gradient(90deg, transparent, transparent 8px, var(--surface2) 8px, var(--surface2) 12px);
+  }
+  .channel-endpoint {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  }
+  .channel-endpoint.alice-ep { left: 16px; }
+  .channel-endpoint.bob-ep { right: 16px; }
+  .ep-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .alice-ep .ep-icon { background: rgba(129,140,248,0.15); color: var(--alice); border: 1px solid rgba(129,140,248,0.3); }
+  .bob-ep .ep-icon { background: rgba(34,211,238,0.15); color: var(--bob); border: 1px solid rgba(34,211,238,0.3); }
+  .ep-name { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .alice-ep .ep-name { color: var(--alice); }
+  .bob-ep .ep-name { color: var(--bob); }
+  .eve-marker {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    flex-direction: column; align-items: center; gap: 0.15rem;
+  }
+  .eve-marker.show { display: flex; }
+  .eve-marker .ep-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    font-size: 0.9rem;
+    background: rgba(248,113,113,0.15); color: var(--red);
+    border: 1px solid rgba(248,113,113,0.3);
+  }
+  .eve-marker .ep-name { color: var(--red); font-size: 0.65rem; }
+  .photon {
+    position: absolute; top: 50%; transform: translate(-50%, -50%);
+    width: 22px; height: 22px; border-radius: 50%;
+    opacity: 0; z-index: 2;
+  }
+  .photon.moving {
+    background: var(--alice);
+    box-shadow: 0 0 12px rgba(129,140,248,0.6);
+    animation: movephoton var(--anim-speed, 1s) ease-in-out forwards;
+  }
+  @keyframes movephoton {
+    0% { left: 90px; opacity: 1; }
+    100% { left: calc(100% - 90px); opacity: 1; }
+  }
+  .photon.intercepted {
+    animation: interceptphoton var(--anim-speed, 1.1s) ease-in-out forwards;
+  }
+  @keyframes interceptphoton {
+    0%   { left: 90px; opacity: 1; background: var(--alice); box-shadow: 0 0 12px rgba(129,140,248,0.6); }
+    40%  { left: 50%; opacity: 1; background: var(--red); box-shadow: 0 0 18px rgba(248,113,113,0.7); }
+    55%  { left: 50%; opacity: 1; background: var(--red); box-shadow: 0 0 18px rgba(248,113,113,0.7); }
+    100% { left: calc(100% - 90px); opacity: 1; background: var(--bob); box-shadow: 0 0 12px rgba(34,211,238,0.4); }
+  }
+  .photon-info {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem; font-weight: 600; color: var(--accent);
+    opacity: 0; transition: opacity 0.3s;
+    white-space: nowrap;
+    background: rgba(17,24,39,0.8);
+    padding: 0.15rem 0.5rem; border-radius: 4px;
+    border: 1px solid rgba(99,102,241,0.2);
+  }
+  .photon-info.show { opacity: 1; }
+
+  /* ---- Protocol Table ---- */
+  .table-wrap { overflow-x: auto; margin-bottom: 0.5rem; border-radius: 12px; }
+  table {
+    width: 100%; border-collapse: separate; border-spacing: 0;
+    background: var(--surface);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  th, td { padding: 0.55rem 0.5rem; text-align: center; white-space: nowrap; }
+  th {
+    background: rgba(99,102,241,0.08);
+    font-weight: 600; font-size: 0.72rem;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 1;
+  }
+  td { border-bottom: 1px solid rgba(42,53,80,0.5); }
+  tr:last-child td { border-bottom: none; }
+  tr.slide-in td { animation: slideIn 0.35s ease-out both; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .row-label {
+    text-align: left; font-weight: 600; min-width: 140px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem; color: var(--text-dim);
+  }
+  .row-alice .row-label { color: var(--alice); }
+  .row-bob .row-label { color: var(--bob); }
+  .row-eve .row-label { color: var(--red); }
+
+  .basis-rect { color: var(--accent); font-weight: 700; }
+  .basis-diag { color: var(--orange); font-weight: 700; }
+  .val-bit { font-weight: 600; color: var(--text); }
+  .match-yes { background: rgba(52,211,153,0.12); color: var(--green); font-weight: 700; }
+  .match-no { color: rgba(100,116,139,0.4); }
+  .eve-bit { color: var(--red); font-weight: 700; }
+  .error-cell { background: rgba(248,113,113,0.15); color: var(--red); font-weight: 700; }
+  .key-bit { background: rgba(99,102,241,0.12); font-weight: 700; color: var(--accent); }
+  .unrevealed { color: rgba(100,116,139,0.25); }
+  .col-highlight td { background: rgba(99,102,241,0.04); }
+
+  /* ---- Stats ---- */
+  .stats {
+    display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;
+  }
+  .stat-card {
+    flex: 1; min-width: 130px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 1rem; text-align: center;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .stat-card .label {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-dim); margin-bottom: 0.25rem; font-weight: 500;
+  }
+  .stat-card .value {
+    font-size: 1.6rem; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .stat-card .value.danger { color: var(--red); }
+  .stat-card .value.success { color: var(--green); }
+  .stat-card.glow-red { border-color: rgba(248,113,113,0.4); box-shadow: 0 0 15px rgba(248,113,113,0.08); }
+  .stat-card.glow-green { border-color: rgba(52,211,153,0.4); box-shadow: 0 0 15px rgba(52,211,153,0.08); }
+
+  /* ---- Solution Box (Key Reveal) ---- */
+  .solution-box {
+    margin-top: 1rem; padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(34,211,238,0.06));
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 12px;
+    text-align: center;
+    display: none;
+    animation: solutionReveal 0.6s ease-out;
+  }
+  .solution-box.show { display: block; }
+  @keyframes solutionReveal {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .solution-label {
+    font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--accent);
+    margin-bottom: 0.5rem; font-weight: 500;
+  }
+  .key-bits {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    justify-content: center;
+  }
+  .key-bit-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600; font-size: 0.9rem;
+    animation: slideIn 0.3s ease-out both;
+  }
+  .key-bit-chip.good {
+    background: rgba(99,102,241,0.2); color: var(--accent);
+    border: 1px solid rgba(99,102,241,0.4);
+  }
+  .key-bit-chip.err {
+    background: rgba(248,113,113,0.15); color: var(--red);
+    border: 1px solid rgba(248,113,113,0.3);
+    text-decoration: line-through;
+  }
+
+  /* ---- Alert Banners ---- */
+  .alert-banner {
+    border-radius: 12px; padding: 1.25rem;
+    margin-top: 1rem; display: none;
+  }
+  .alert-banner.show { display: block; animation: fadeIn 0.4s ease; }
+  .alert-banner h4 { margin-bottom: 0.4rem; font-size: 1rem; }
+  .alert-banner p { font-size: 0.9rem; line-height: 1.6; }
+  .alert-danger {
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.25);
+  }
+  .alert-danger h4 { color: var(--red); }
+  .alert-danger p { color: rgba(248,113,113,0.8); }
+  .alert-success {
+    background: rgba(52,211,153,0.08);
+    border: 1px solid rgba(52,211,153,0.25);
+  }
+  .alert-success h4 { color: var(--green); }
+  .alert-success p { color: rgba(52,211,153,0.8); }
+
+  /* ---- Steps Timeline ---- */
+  .steps-timeline {
+    display: flex; gap: 0; margin-bottom: 1rem;
+    overflow-x: auto; padding-bottom: 0.25rem;
+  }
+  .step-btn {
+    flex: 1; min-width: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem; font-weight: 500;
+    padding: 0.65rem 0.5rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative; text-align: center;
+  }
+  .step-btn:first-child { border-radius: 8px 0 0 8px; }
+  .step-btn:last-child { border-radius: 0 8px 8px 0; }
+  .step-btn .step-n {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem; margin-bottom: 2px; opacity: 0.6;
+  }
+  .step-btn.active {
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(34,211,238,0.1));
+    border-color: var(--accent); color: var(--text); z-index: 1;
+  }
+  .step-btn.active::after {
+    content: ''; position: absolute;
+    bottom: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
+  }
+  .step-btn.done {
+    background: rgba(52,211,153,0.06);
+    color: var(--green);
+    border-color: rgba(52,211,153,0.25);
+  }
+
+  .walk-content {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    min-height: 80px;
+    transition: opacity 0.25s ease;
+  }
+  .walk-content.fading { opacity: 0; }
+  .walk-content h4 { font-size: 1rem; margin-bottom: 0.3rem; }
+  .walk-content p { font-size: 0.9rem; color: var(--text-dim); line-height: 1.6; margin: 0; }
+
+  /* ---- Progress Dots ---- */
+  .progress-dots {
+    display: flex; gap: 6px; align-items: center;
+    justify-content: center; margin-top: 0.75rem;
+  }
+  .progress-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border); transition: all 0.3s;
+  }
+  .progress-dot.active {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+  .progress-dot.done { background: var(--green); }
+
+  /* ---- Derivation ---- */
+  .derivation {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem;
+  }
+  .derivation h4 { font-size: 1rem; margin-bottom: 0.75rem; }
+  .deriv-step {
+    display: flex; gap: 0.75rem; align-items: flex-start;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(42,53,80,0.4);
+  }
+  .deriv-step:last-child { border-bottom: none; }
+  .deriv-num {
+    width: 24px; height: 24px; border-radius: 6px;
+    background: rgba(99,102,241,0.12); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; font-weight: 600; flex-shrink: 0;
+  }
+  .deriv-text { font-size: 0.88rem; color: var(--text-dim); line-height: 1.55; }
+  .deriv-result {
+    margin-top: 0.75rem; padding: 0.75rem 1rem;
+    background: rgba(244,114,182,0.08);
+    border: 1px solid rgba(244,114,182,0.2);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem; color: var(--pink);
+    text-align: center; font-weight: 600;
+  }
+
+  /* ---- Probability Tree (Interactive) ---- */
+  .prob-tree {
+    margin-top: 1rem;
+  }
+  .prob-tree canvas {
+    display: block; margin: 0 auto;
+  }
+
+  /* ---- Quiz ---- */
+  .quiz-q { margin-bottom: 1.5rem; }
+  .quiz-q p { font-weight: 600; margin-bottom: 0.6rem; font-size: 0.95rem; }
+  .quiz-q label {
+    display: block; padding: 0.55rem 0.85rem; margin: 0.3rem 0;
+    border-radius: 8px; cursor: pointer; font-size: 0.88rem;
+    border: 1px solid transparent;
+    transition: all 0.2s; color: var(--text-dim);
+  }
+  .quiz-q label:hover { background: rgba(99,102,241,0.06); color: var(--text); }
+  .quiz-q label.correct {
+    background: rgba(52,211,153,0.12);
+    border-color: rgba(52,211,153,0.4);
+    color: var(--green);
+  }
+  .quiz-q label.wrong {
+    background: rgba(248,113,113,0.12);
+    border-color: rgba(248,113,113,0.4);
+    color: var(--red);
+  }
+  .quiz-q input[type="radio"] { margin-right: 0.5rem; accent-color: var(--accent); }
+  .quiz-feedback {
+    padding: 0.75rem 1rem; border-radius: 8px;
+    margin-top: 0.5rem; font-size: 0.88rem; display: none;
+  }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.correct-fb { background: rgba(52,211,153,0.1); color: var(--green); }
+  .quiz-feedback.wrong-fb { background: rgba(248,113,113,0.1); color: var(--red); }
+  .quiz-score {
+    margin-top: 1rem; padding: 1rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; text-align: center; display: none;
+    animation: solutionReveal 0.4s ease-out;
+  }
+  .quiz-score.show { display: block; }
+  .quiz-score .score-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.4rem; font-weight: 700;
+  }
+  .quiz-score .score-label {
+    font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-dim); margin-bottom: 0.25rem;
+  }
+
+  /* ---- Keyboard Hints ---- */
+  .kbd-hint {
+    text-align: center; margin-top: 0.5rem;
+    font-size: 0.72rem; color: var(--text-dim); opacity: 0.6;
+  }
+  .kbd-hint kbd {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.1rem 0.35rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem; margin: 0 0.1rem;
+  }
+
+  /* ---- Grid layout ---- */
+  .grid-2 {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+  }
+  @media (max-width: 768px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    h1 { font-size: 1.8rem; }
+    .container { padding: 3.5rem 1rem 2rem; }
+  }
+
+  /* ---- Footer ---- */
+  footer {
+    text-align: center; padding: 2rem 1rem; color: var(--text-dim);
+    font-size: 0.82rem;
+    border-top: 1px solid var(--border); margin-top: 2rem;
+    position: relative; z-index: 1;
+  }
+
+  /* ---- Phase Indicator ---- */
+  .phase-bar {
+    display: flex; gap: 2px; margin-bottom: 1rem;
+    background: var(--surface2); border-radius: 8px;
+    padding: 3px; border: 1px solid var(--border);
+  }
+  .phase-bar.hidden { display: none; }
+  .phase-item {
+    flex: 1; text-align: center;
+    padding: 0.4rem 0.5rem; border-radius: 6px;
+    font-size: 0.72rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-dim); transition: all 0.3s;
+  }
+  .phase-item.active {
+    background: rgba(99,102,241,0.2);
+    color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+  .phase-item.done { color: var(--green); }
+
+  /* ---- Animated Sifting ---- */
+  td.sifted-out {
+    opacity: 0.15 !important;
+    transition: opacity 0.6s ease;
+  }
+  td.sifted-in {
+    transition: opacity 0.6s ease;
+  }
+  tr.phase-hidden { display: none; }
+
+  /* ---- Be Bob Challenge ---- */
+  .bob-game-area {
+    display: flex; flex-direction: column; align-items: center; gap: 1.25rem;
+    padding: 1.5rem; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 12px;
+  }
+  .bob-photon-incoming {
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  }
+  .bob-photon-orb {
+    width: 80px; height: 80px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem; font-weight: 700;
+    background: rgba(129,140,248,0.12);
+    border: 2px solid rgba(129,140,248,0.35);
+    color: var(--alice);
+    animation: photonPulse 2s ease-in-out infinite;
+  }
+  @keyframes photonPulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(129,140,248,0.25); }
+    50% { box-shadow: 0 0 28px rgba(129,140,248,0.55); }
+  }
+  .bob-photon-label {
+    font-size: 0.78rem; color: var(--text-dim); font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .bob-basis-btns {
+    display: flex; gap: 1.25rem; justify-content: center;
+  }
+  .bob-basis-btn {
+    width: 90px; height: 90px; border-radius: 16px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.25rem; cursor: pointer; transition: all 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .bob-basis-btn .sym-big { font-size: 2rem; font-weight: 700; }
+  .bob-basis-btn .sym-label { font-size: 0.7rem; font-weight: 500; opacity: 0.7; }
+  .bob-basis-btn.rect {
+    background: rgba(99,102,241,0.12); border: 2px solid rgba(99,102,241,0.25);
+    color: var(--accent);
+  }
+  .bob-basis-btn.diag {
+    background: rgba(251,146,60,0.12); border: 2px solid rgba(251,146,60,0.25);
+    color: var(--orange);
+  }
+  .bob-basis-btn:hover { transform: scale(1.08); }
+  .bob-basis-btn.rect:hover {
+    box-shadow: 0 0 20px rgba(99,102,241,0.25); border-color: var(--accent);
+  }
+  .bob-basis-btn.diag:hover {
+    box-shadow: 0 0 20px rgba(251,146,60,0.25); border-color: var(--orange);
+  }
+  .bob-basis-btn:disabled {
+    opacity: 0.3; cursor: not-allowed; transform: none !important;
+    box-shadow: none !important;
+  }
+  .bob-result-flash {
+    padding: 0.5rem 1.2rem; border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem; font-weight: 600;
+    min-height: 38px; display: flex; align-items: center;
+    justify-content: center; transition: all 0.3s;
+  }
+  .bob-result-flash.match {
+    background: rgba(52,211,153,0.12); color: var(--green);
+    border: 1px solid rgba(52,211,153,0.3);
+  }
+  .bob-result-flash.miss {
+    background: rgba(100,116,139,0.1); color: var(--text-dim);
+    border: 1px solid rgba(100,116,139,0.2);
+  }
+  .bob-progress-bar {
+    display: flex; gap: 3px; flex-wrap: wrap; justify-content: center;
+  }
+  .bob-pip {
+    width: 22px; height: 22px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem; font-weight: 600;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-dim); transition: all 0.3s;
+  }
+  .bob-pip.current {
+    border-color: var(--accent); box-shadow: 0 0 6px var(--accent-glow);
+    color: var(--accent);
+  }
+  .bob-pip.match-pip {
+    background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.35);
+    color: var(--green);
+  }
+  .bob-pip.miss-pip {
+    background: rgba(100,116,139,0.08); border-color: rgba(100,116,139,0.15);
+    color: var(--text-dim); opacity: 0.5;
+  }
+  .bob-score-card {
+    text-align: center; padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(34,211,238,0.06), rgba(99,102,241,0.08));
+    border: 1px solid rgba(99,102,241,0.25); border-radius: 12px;
+    animation: solutionReveal 0.5s ease-out;
+  }
+  .bob-score-card h4 { margin-bottom: 0.5rem; font-size: 1.05rem; }
+  .bob-score-grid {
+    display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+  .bob-score-item {
+    min-width: 100px; padding: 0.6rem 0.8rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; text-align: center;
+  }
+  .bob-score-item .label {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-dim); margin-bottom: 0.15rem;
+  }
+  .bob-score-item .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.2rem; font-weight: 700;
+  }
+
+  /* ---- Monte Carlo Histogram ---- */
+  .mc-canvas-wrap {
+    position: relative; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 1rem;
+  }
+  .mc-canvas-wrap canvas { display: block; width: 100%; }
+  .mc-legend {
+    display: flex; gap: 1.5rem; justify-content: center;
+    margin-top: 0.75rem; font-size: 0.82rem;
+  }
+  .mc-legend-item { display: flex; align-items: center; gap: 0.4rem; }
+  .mc-legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+  .mc-stats-row {
+    display: flex; gap: 0.75rem; margin-top: 0.75rem; flex-wrap: wrap;
+  }
+  .mc-stat {
+    flex: 1; min-width: 120px; text-align: center;
+    padding: 0.6rem; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+  .mc-stat .label {
+    font-size: 0.7rem; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--text-dim);
+  }
+  .mc-stat .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem; font-weight: 700;
+  }
+
+  /* ---- One-Time Pad Demo ---- */
+  .otp-demo { display: flex; flex-direction: column; gap: 1rem; }
+  .otp-row {
+    display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+  }
+  .otp-label {
+    min-width: 90px; font-size: 0.78rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-dim); flex-shrink: 0;
+  }
+  .otp-input {
+    flex: 1; min-width: 200px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.6rem 0.85rem;
+    color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.9rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .otp-input:focus { border-color: var(--accent); }
+  .otp-input::placeholder { color: var(--text-dim); opacity: 0.5; }
+  .otp-bits {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
+    word-break: break-all; line-height: 1.7;
+    padding: 0.6rem 0.85rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; min-height: 38px;
+  }
+  .otp-bits .bit-0 { color: var(--accent); }
+  .otp-bits .bit-1 { color: var(--cyan); }
+  .otp-xor-symbol {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem; font-weight: 700; color: var(--pink);
+    text-align: center; width: 32px;
+  }
+  .otp-result-box {
+    background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(52,211,153,0.06));
+    border: 1px solid rgba(99,102,241,0.2); border-radius: 10px;
+    padding: 1rem; text-align: center;
+  }
+  .otp-result-box .otp-ciphertext {
+    font-family: 'JetBrains Mono', monospace; font-size: 1rem;
+    font-weight: 600; color: var(--pink); word-break: break-all;
+    letter-spacing: 0.05em;
+  }
+  .otp-decrypt-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .otp-decrypt-tag {
+    padding: 0.3rem 0.7rem; border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem; font-weight: 600;
+  }
+  .otp-arrow {
+    font-size: 1.2rem; color: var(--text-dim);
+  }
+
+  /* ---- Photon Polarization Indicator ---- */
+  .photon-polar-line {
+    position: absolute; top: 50%; left: 50%;
+    width: 2px; height: 16px;
+    background: rgba(255,255,255,0.9);
+    transform-origin: center center;
+    border-radius: 1px;
+    pointer-events: none;
+  }
+
+  /* ---- Real-World QKD ---- */
+  .qkd-timeline {
+    position: relative; padding-left: 2rem;
+    border-left: 2px solid var(--border);
+    margin: 1rem 0;
+  }
+  .qkd-milestone {
+    position: relative; margin-bottom: 1.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; transition: border-color 0.3s;
+  }
+  .qkd-milestone:hover { border-color: rgba(99,102,241,0.3); }
+  .qkd-milestone::before {
+    content: '';
+    position: absolute; left: -2.35rem; top: 1rem;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent); border: 2px solid var(--bg);
+  }
+  .qkd-milestone .year {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; font-weight: 600; color: var(--accent);
+    margin-bottom: 0.2rem;
+  }
+  .qkd-milestone .milestone-text {
+    font-size: 0.88rem; color: var(--text-dim); line-height: 1.5;
+  }
+  .qkd-milestone .milestone-text strong { color: var(--text); }
+
+  /* ---- Key Rate Formula ---- */
+  .formula-box {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.25rem 1.5rem;
+    text-align: center; margin: 1rem 0;
+  }
+  .formula-box .formula {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.05rem; color: var(--text); line-height: 2;
+  }
+  .formula-box .formula-note {
+    font-size: 0.82rem; color: var(--text-dim);
+    margin-top: 0.5rem; line-height: 1.5;
+  }
+  .rate-slider-row {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin-top: 0.75rem; flex-wrap: wrap;
+  }
+  .rate-slider-row label {
+    font-size: 0.8rem; font-weight: 500; color: var(--text-dim);
+    min-width: 120px;
+  }
+  .rate-slider-row input[type="range"] {
+    flex: 1; min-width: 120px;
+    -webkit-appearance: none; appearance: none;
+    height: 6px; background: var(--surface2); border-radius: 3px;
+    border: 1px solid var(--border); outline: none;
+  }
+  .rate-slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent); cursor: pointer;
+    box-shadow: 0 0 6px var(--accent-glow);
+  }
+  .rate-slider-row .rate-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem; font-weight: 600; min-width: 52px;
+    text-align: right;
+  }
+  .rate-bar-visual {
+    height: 28px; border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--border); margin-top: 0.5rem;
+    display: flex; position: relative;
+  }
+  .rate-bar-segment {
+    height: 100%; transition: width 0.4s ease;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.68rem; font-weight: 600; white-space: nowrap;
+    overflow: hidden;
+  }
+
+  /* ---- Detection Probability ---- */
+  .detect-viz {
+    display: flex; gap: 1.5rem; align-items: flex-start;
+    margin-top: 1rem; flex-wrap: wrap;
+  }
+  .detect-viz-left { flex: 1; min-width: 220px; }
+  .detect-viz-right { flex: 1.2; min-width: 260px; }
+  .detect-canvas-wrap {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0.75rem;
+  }
+  .detect-canvas-wrap canvas { display: block; width: 100%; }
+  .detect-big-number {
+    text-align: center; margin-top: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .detect-big-number .big { font-size: 2rem; font-weight: 700; }
+  .detect-big-number .sub { font-size: 0.78rem; color: var(--text-dim); margin-top: 0.15rem; }
+  .detect-bit-grid {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    justify-content: center; margin-top: 0.5rem;
+  }
+  .detect-bit {
+    width: 20px; height: 20px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem; font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.3s;
+  }
+  .detect-bit.safe {
+    background: rgba(52,211,153,0.15); color: var(--green);
+    border: 1px solid rgba(52,211,153,0.3);
+  }
+  .detect-bit.caught {
+    background: rgba(248,113,113,0.15); color: var(--red);
+    border: 1px solid rgba(248,113,113,0.3);
+  }
+
+  /* ---- Interactive Basis Measurement ---- */
+  .basis-measure-demo {
+    margin-top: 1rem; padding: 1.25rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .basis-measure-row {
+    display: flex; align-items: center; gap: 1rem;
+    justify-content: center; flex-wrap: wrap; margin-bottom: 0.75rem;
+  }
+  .basis-state-pill {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 1rem; border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace; font-weight: 600;
+    font-size: 1.1rem; min-width: 80px; justify-content: center;
+  }
+  .measure-btn-small {
+    padding: 0.4rem 0.8rem; border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; border: 2px solid;
+  }
+  .measure-btn-small.rect {
+    background: rgba(99,102,241,0.1); color: var(--accent);
+    border-color: rgba(99,102,241,0.3);
+  }
+  .measure-btn-small.diag {
+    background: rgba(251,146,60,0.1); color: var(--orange);
+    border-color: rgba(251,146,60,0.3);
+  }
+  .measure-btn-small:hover { transform: scale(1.05); }
+  .measure-btn-small.rect:hover { box-shadow: 0 0 12px rgba(99,102,241,0.2); border-color: var(--accent); }
+  .measure-btn-small.diag:hover { box-shadow: 0 0 12px rgba(251,146,60,0.2); border-color: var(--orange); }
+  .measure-result-box {
+    text-align: center; padding: 0.6rem 1rem;
+    border-radius: 8px; font-size: 0.88rem;
+    min-height: 42px; display: flex; align-items: center;
+    justify-content: center; transition: all 0.3s;
+  }
+  .measure-result-box.correct {
+    background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); color: var(--green);
+  }
+  .measure-result-box.random {
+    background: rgba(251,146,60,0.1); border: 1px solid rgba(251,146,60,0.3); color: var(--orange);
+  }
+  .measure-result-box.idle {
+    background: rgba(42,53,80,0.3); border: 1px solid var(--border); color: var(--text-dim);
+  }
+  .basis-new-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 0.35rem 0.75rem; border-radius: 6px;
+    color: var(--text-dim); font-size: 0.78rem; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .basis-new-btn:hover { border-color: var(--accent); color: var(--text); transform: none; box-shadow: none; }
+
+  /* ---- OTP Key-Reuse Warning ---- */
+  .otp-reuse-box {
+    margin-top: 1rem; padding: 1rem 1.25rem;
+    background: rgba(248,113,113,0.05);
+    border: 1px solid rgba(248,113,113,0.2);
+    border-radius: 10px; display: none;
+  }
+  .otp-reuse-box.show { display: block; animation: fadeIn 0.4s ease; }
+  .otp-reuse-box h4 { color: var(--red); font-size: 0.95rem; margin-bottom: 0.5rem; }
+  .otp-reuse-box p { color: rgba(248,113,113,0.8); font-size: 0.88rem; line-height: 1.6; }
+  .otp-reuse-bits {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+    padding: 0.5rem 0.75rem; margin: 0.5rem 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; word-break: break-all;
+  }
+
+  /* ---- Eve Intercept Step-Through ---- */
+  .eve-step-through {
+    margin-top: 1rem; position: relative;
+  }
+  .eve-scenario {
+    display: flex; align-items: center; gap: 0.5rem;
+    justify-content: center; flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+  .eve-actor {
+    display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+  }
+  .eve-actor-icon {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.95rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .eve-actor-icon.a { background: rgba(129,140,248,0.15); color: var(--alice); border: 1.5px solid rgba(129,140,248,0.3); }
+  .eve-actor-icon.e { background: rgba(248,113,113,0.15); color: var(--eve); border: 1.5px solid rgba(248,113,113,0.3); }
+  .eve-actor-icon.b { background: rgba(34,211,238,0.15); color: var(--bob); border: 1.5px solid rgba(34,211,238,0.3); }
+  .eve-actor-label { font-size: 0.68rem; color: var(--text-dim); }
+  .eve-arrow {
+    font-size: 1.1rem; color: var(--text-dim);
+    display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+  }
+  .eve-arrow-label {
+    font-size: 0.65rem; font-family: 'JetBrains Mono', monospace;
+    padding: 0.15rem 0.4rem; border-radius: 4px;
+    white-space: nowrap;
+  }
+  .eve-outcome-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.5rem; margin-top: 0.75rem;
+  }
+  .eve-outcome {
+    padding: 0.6rem 0.8rem; border-radius: 8px;
+    font-size: 0.82rem; line-height: 1.5;
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+  }
+  .eve-outcome.active { transform: scale(1.02); }
+  .eve-outcome .prob-tag {
+    display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 600;
+    margin-right: 0.3rem;
+  }
+  .eve-replay-btn {
+    display: block; margin: 0.75rem auto 0; padding: 0.4rem 1rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-dim); font-size: 0.82rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .eve-replay-btn:hover { border-color: var(--accent); color: var(--text); transform: none; box-shadow: none; }
+
+  /* ---- Polarization Visualizer ---- */
+  .polar-viz {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+    border: 1.5px solid rgba(99,102,241,0.25);
+    position: relative; transition: border-color 0.3s;
+  }
+  .polar-viz.diag-mode {
+    border-color: rgba(251,146,60,0.25);
+    background: radial-gradient(circle, rgba(251,146,60,0.08) 0%, transparent 70%);
+  }
+  .polar-arrow {
+    width: 2px; height: 36px;
+    background: var(--accent);
+    border-radius: 2px;
+    position: absolute; top: 50%; left: 50%;
+    transform-origin: center center;
+    transition: transform 0.4s ease, background 0.3s;
+  }
+  .polar-arrow::after {
+    content: ''; position: absolute; top: -3px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 4px solid transparent; border-right: 4px solid transparent;
+    border-bottom: 6px solid var(--accent);
+    transition: border-bottom-color 0.3s;
+  }
+  .polar-viz.diag-mode .polar-arrow { background: var(--orange); }
+  .polar-viz.diag-mode .polar-arrow::after { border-bottom-color: var(--orange); }
+
+  /* ---- Confidence Table ---- */
+  .confidence-table {
+    width: 100%; border-collapse: collapse; margin-top: 0.75rem;
+    font-size: 0.82rem;
+  }
+  .confidence-table th {
+    text-align: left; padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim); font-weight: 600;
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .confidence-table td {
+    padding: 0.45rem 0.75rem; border-bottom: 1px solid rgba(42,53,80,0.3);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .confidence-table tr:hover td { background: rgba(99,102,241,0.04); }
+  .confidence-table .highlight-row td {
+    background: rgba(52,211,153,0.06); color: var(--green); font-weight: 600;
+  }
+
+  /* ---- Protocol Summary Card ---- */
+  .protocol-summary {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.75rem;
+  }
+  .summary-step {
+    display: flex; gap: 0.75rem; padding: 0.75rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; transition: border-color 0.2s;
+  }
+  .summary-step:hover { border-color: rgba(99,102,241,0.3); }
+  .summary-step-num {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 700;
+    background: rgba(99,102,241,0.12); color: var(--accent);
+    border: 1px solid rgba(99,102,241,0.25);
+  }
+  .summary-step-content h4 {
+    font-size: 0.85rem; font-weight: 600; margin-bottom: 0.2rem;
+  }
+  .summary-step-content p {
+    font-size: 0.78rem; color: var(--text-dim); line-height: 1.5;
+  }
+  .summary-equation {
+    text-align: center; margin-top: 0.75rem; padding: 0.75rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.88rem;
+  }
+
+  /* ---- Utility ---- */
+  .hidden { display: none !important; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="particleBg"></canvas>
+<nav class="top-nav">
+  <a href="../index.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+</nav>
+
+<div class="container">
+
+  <header>
+    <h1>BB84 Quantum Key Distribution</h1>
+    <p class="subtitle">An interactive exploration of the first quantum cryptography protocol &mdash; provably secure key exchange</p>
+  </header>
+
+  <!-- ============ 1. OVERVIEW ============ -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(99,102,241,0.15); color: var(--accent);">?</span>
+      The Problem
+    </div>
+    <p class="desc">
+      Alice and Bob want to establish a <strong>shared secret key</strong> over a public channel, even if an eavesdropper (Eve) is listening.
+      Classical key exchange relies on computational assumptions. BB84 achieves
+      <strong>information-theoretic security</strong> using the laws of quantum mechanics:
+      the <span class="tag">no-cloning theorem</span> and <span class="tag cyan">measurement collapse</span> guarantee that any interception is detectable.
+    </p>
+    <div style="margin-top: 0.5rem;">
+      <div class="complexity-bar">
+        <span class="complexity-label" style="color: var(--red);">Classical</span>
+        <div class="complexity-track">
+          <div class="complexity-fill" style="width: 85%; background: linear-gradient(90deg, var(--red), var(--orange));"></div>
+        </div>
+        <span class="complexity-label" style="color: var(--red);">Computational</span>
+      </div>
+      <div class="complexity-bar">
+        <span class="complexity-label" style="color: var(--green);">BB84 / QKD</span>
+        <div class="complexity-track">
+          <div class="complexity-fill" style="width: 100%; background: linear-gradient(90deg, var(--green), var(--cyan));"></div>
+        </div>
+        <span class="complexity-label" style="color: var(--green);">Info-theoretic</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 2. KEY CONCEPTS ============ -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(34,211,238,0.15); color: var(--cyan);">&#x2261;</span>
+      Key Concepts
+    </div>
+
+    <div class="concept-grid">
+      <div class="concept-card">
+        <h3><span style="color:var(--accent)">&#9919;</span> Conjugate Bases</h3>
+        <p>Two measurement bases that are <strong>mutually unbiased</strong> &mdash; measuring in the wrong basis yields a uniformly random outcome.</p>
+      </div>
+      <div class="concept-card">
+        <h3><span style="color:var(--cyan)">&#9889;</span> Quantum Channel</h3>
+        <p>Photons are sent one at a time. Each is polarized in one of <span class="tag">4 states</span> across <span class="tag cyan">2 bases</span>.</p>
+      </div>
+      <div class="concept-card">
+        <h3><span style="color:var(--pink)">&#10006;</span> No-Cloning Theorem</h3>
+        <p>It is impossible to create a perfect copy of an arbitrary unknown quantum state. Eve <strong>cannot</strong> clone and forward.</p>
+      </div>
+      <div class="concept-card">
+        <h3><span style="color:var(--orange)">&#9883;</span> Measurement Collapse</h3>
+        <p>Measuring in the wrong basis <strong>irreversibly disturbs</strong> the state, introducing detectable errors.</p>
+      </div>
+    </div>
+
+    <p style="text-align:center; margin: 1rem 0 0.5rem; font-weight: 600;">The Two Bases</p>
+    <div class="basis-demo">
+      <div class="basis-box">
+        <h4>Rectilinear <span class="tag">+</span></h4>
+        <div class="basis-symbols">
+          <div class="sym rect-bg">&uarr;<small>0</small></div>
+          <div class="sym rect-bg">&rarr;<small>1</small></div>
+        </div>
+        <div style="margin-top:0.6rem; font-family:'JetBrains Mono',monospace; font-size:0.78rem; color:var(--text-dim);">
+          |0&rang; = |&uarr;&rang; &nbsp;&nbsp; |1&rang; = |&rarr;&rang;
+        </div>
+      </div>
+      <div class="basis-box">
+        <h4>Diagonal <span class="tag" style="background:rgba(251,146,60,0.12);color:var(--orange);border-color:rgba(251,146,60,0.25);">&times;</span></h4>
+        <div class="basis-symbols">
+          <div class="sym diag-bg">&#x2197;<small>0</small></div>
+          <div class="sym diag-bg">&#x2198;<small>1</small></div>
+        </div>
+        <div style="margin-top:0.6rem; font-family:'JetBrains Mono',monospace; font-size:0.78rem; color:var(--text-dim);">
+          |+&rang; = <span style="font-size:0.72rem">(|0&rang;+|1&rang;)/&radic;2</span><br>
+          |&minus;&rang; = <span style="font-size:0.72rem">(|0&rang;&minus;|1&rang;)/&radic;2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Basis Measurement -->
+    <div class="basis-measure-demo" id="basisMeasureDemo">
+      <p style="font-weight:600; font-size:0.92rem; margin-bottom:0.6rem; text-align:center;">Try It: Measure a Quantum State</p>
+      <p style="font-size:0.82rem; color:var(--text-dim); text-align:center; margin-bottom:0.75rem;">
+        A photon is prepared in one of the four states. Choose a measurement basis and see what happens.
+      </p>
+      <div class="basis-measure-row">
+        <span style="font-size:0.82rem; color:var(--text-dim);">Prepared state:</span>
+        <div class="polar-viz" id="bmPolarViz">
+          <div class="polar-arrow" id="bmPolarArrow" style="transform: translate(-50%, -50%) rotate(0deg);"></div>
+        </div>
+        <span class="basis-state-pill" id="bmStatePill" style="background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.3); color:var(--accent);">|&uarr;&rang;</span>
+        <span style="font-size:0.75rem; color:var(--text-dim);" id="bmBasisHint">(+ basis, bit 0)</span>
+      </div>
+      <div class="basis-measure-row">
+        <span style="font-size:0.82rem; color:var(--text-dim);">Measure with:</span>
+        <button class="measure-btn-small rect" id="bmBtnRect" onclick="measureBasis('+')">+ Rectilinear</button>
+        <button class="measure-btn-small diag" id="bmBtnDiag" onclick="measureBasis('x')">&times; Diagonal</button>
+      </div>
+      <div class="measure-result-box idle" id="bmResult">Click a basis button above to measure</div>
+      <div style="text-align:center; margin-top:0.5rem;">
+        <button class="basis-new-btn" onclick="newBasisState()">New Random State</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 3. PROTOCOL WALKTHROUGH ============ -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(244,114,182,0.15); color: var(--pink);">&#x25C8;</span>
+      Protocol Walkthrough
+    </div>
+
+    <div class="steps-timeline" id="walkTimeline">
+      <button class="step-btn active" data-step="0"><span class="step-n">01</span>Prepare</button>
+      <button class="step-btn" data-step="1"><span class="step-n">02</span>Transmit</button>
+      <button class="step-btn" data-step="2"><span class="step-n">03</span>Measure</button>
+      <button class="step-btn" data-step="3"><span class="step-n">04</span>Sift</button>
+      <button class="step-btn" data-step="4"><span class="step-n">05</span>Error Check</button>
+      <button class="step-btn" data-step="5"><span class="step-n">06</span>Key</button>
+    </div>
+    <div class="walk-content" id="walkContent">
+    </div>
+    <div class="progress-dots" id="walkDots"></div>
+    <div class="kbd-hint">
+      <kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate steps
+    </div>
+  </div>
+
+  <!-- ============ 4. INTERACTIVE SIMULATION ============ -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(52,211,153,0.15); color: var(--green);">&#x25B6;</span>
+      Interactive Simulation
+    </div>
+
+    <div class="controls-row">
+      <button id="btnRun">Run Protocol</button>
+      <button class="secondary" id="btnStep" title="Send one qubit at a time">Step-by-Step</button>
+      <button class="secondary" id="btnReset">Reset</button>
+      <div class="control-group">
+        <label>Qubits</label>
+        <select id="selBits">
+          <option value="8">8</option>
+          <option value="12" selected>12</option>
+          <option value="16">16</option>
+          <option value="24">24</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Speed</label>
+        <div class="speed-control">
+          <button class="speed-btn" data-speed="2000">0.5x</button>
+          <button class="speed-btn active" data-speed="1000">1x</button>
+          <button class="speed-btn" data-speed="500">2x</button>
+        </div>
+      </div>
+      <label class="eve-toggle">
+        <input type="checkbox" id="chkEve">
+        <span class="switch"></span>
+        <span class="toggle-label">Enable Eve</span>
+      </label>
+    </div>
+
+    <!-- Phase indicator -->
+    <div class="phase-bar hidden" id="phaseBar">
+      <div class="phase-item" data-phase="transmit">Transmitting</div>
+      <div class="phase-item" data-phase="sift">Sifting</div>
+      <div class="phase-item" data-phase="error">Error Check</div>
+      <div class="phase-item" data-phase="key">Key</div>
+    </div>
+
+    <!-- Channel animation -->
+    <div class="channel-anim" id="channelAnim">
+      <div class="channel-endpoint alice-ep">
+        <div class="ep-icon">A</div>
+        <span class="ep-name">Alice</span>
+      </div>
+      <div class="channel-line"></div>
+      <div class="channel-endpoint bob-ep">
+        <div class="ep-icon">B</div>
+        <span class="ep-name">Bob</span>
+      </div>
+      <div class="eve-marker" id="eveMarker">
+        <div class="ep-icon">E</div>
+        <span class="ep-name">Eve</span>
+      </div>
+      <div class="photon-info" id="photonInfo"></div>
+      <div class="photon" id="photon"><div class="photon-polar-line" id="photonPolar" style="display:none;"></div></div>
+    </div>
+
+    <!-- Protocol table -->
+    <div class="table-wrap">
+      <table id="protocolTable">
+        <thead><tr id="tableHead"></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats" id="statsBar" style="display:none;">
+      <div class="stat-card" id="statSentCard">
+        <div class="label">Qubits Sent</div>
+        <div class="value" id="statSent">0</div>
+      </div>
+      <div class="stat-card" id="statMatchCard">
+        <div class="label">Basis Match</div>
+        <div class="value success" id="statMatch">0</div>
+      </div>
+      <div class="stat-card" id="statKeyCard">
+        <div class="label">Key Length</div>
+        <div class="value" id="statKey">0</div>
+      </div>
+      <div class="stat-card" id="statErrorCard">
+        <div class="label">Error Rate</div>
+        <div class="value" id="statError">0%</div>
+      </div>
+    </div>
+
+    <!-- Key reveal -->
+    <div class="solution-box" id="keyDisplay">
+      <div class="solution-label">Extracted Sifted Key</div>
+      <div class="key-bits" id="keyBits"></div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="alert-banner alert-danger" id="eveExplain">
+      <h4>Eavesdropping Detected!</h4>
+      <p>Eve intercepted each photon, measured it in a random basis, and re-sent it to Bob. When Eve's basis didn't match Alice's, she irreversibly altered the qubit. This introduced <span class="tag red">~25% errors</span> among sifted bits &mdash; a clear signal. Alice and Bob would <strong>abort the protocol</strong>.</p>
+    </div>
+    <div class="alert-banner alert-success" id="safeExplain">
+      <h4>Channel is Secure</h4>
+      <p>No eavesdropper was present. All sifted bits are perfectly correlated, yielding <span class="tag green">0% error rate</span>. The key can be safely used for one-time pad encryption.</p>
+    </div>
+  </div>
+
+  <!-- ============ 4a. ONE-TIME PAD DEMO ============ -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(244,114,182,0.15); color: var(--pink);">&#x1F512;</span>
+      One-Time Pad &mdash; Use Your Key
+    </div>
+    <p class="desc">
+      The shared key from BB84 enables <strong>information-theoretically secure encryption</strong>.
+      The one-time pad XORs each message bit with a key bit &mdash; without the key, the ciphertext is
+      <strong>perfectly random</strong>, giving zero information about the plaintext.
+      Try it: type a message and encrypt it with the sifted key from the simulation above.
+    </p>
+
+    <div class="otp-demo" id="otpDemo">
+      <div class="otp-row">
+        <span class="otp-label">Plaintext</span>
+        <input class="otp-input" id="otpPlaintext" type="text" placeholder="Type a short message..." maxlength="32" autocomplete="off">
+      </div>
+      <div class="otp-row">
+        <span class="otp-label">ASCII bits</span>
+        <div class="otp-bits" id="otpPlainBits"><span style="color:var(--text-dim);font-size:0.82rem;">Type above to see binary&hellip;</span></div>
+      </div>
+      <div class="otp-row">
+        <span class="otp-label" style="color:var(--accent);">Key (BB84)</span>
+        <div class="otp-bits" id="otpKeyBits"><span style="color:var(--text-dim);font-size:0.82rem;">Run the simulation first to generate a key</span></div>
+      </div>
+      <div style="text-align:center;">
+        <button id="btnOtpEncrypt" disabled>Encrypt (XOR)</button>
+      </div>
+      <div class="otp-result-box" id="otpResultBox" style="display:none;">
+        <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-dim); margin-bottom:0.4rem;">Ciphertext</div>
+        <div class="otp-ciphertext" id="otpCiphertext"></div>
+        <div style="margin-top:0.75rem;">
+          <div class="otp-decrypt-row">
+            <span class="otp-decrypt-tag" style="background:rgba(244,114,182,0.12);color:var(--pink);border:1px solid rgba(244,114,182,0.3);" id="otpCipherTag">ciphertext</span>
+            <span class="otp-xor-symbol">&oplus;</span>
+            <span class="otp-decrypt-tag" style="background:rgba(99,102,241,0.12);color:var(--accent);border:1px solid rgba(99,102,241,0.3);">key</span>
+            <span class="otp-arrow">&rarr;</span>
+            <span class="otp-decrypt-tag" style="background:rgba(52,211,153,0.1);color:var(--green);border:1px solid rgba(52,211,153,0.3);" id="otpDecryptedTag">decrypted</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OTP Key-Reuse Warning -->
+    <div class="otp-reuse-box" id="otpReuseBox">
+      <h4>&#x26A0; Key Reuse Vulnerability</h4>
+      <p>You encrypted two different messages with the <strong>same key</strong>. This is catastrophically insecure! An attacker who XORs the two ciphertexts gets:</p>
+      <div class="otp-reuse-bits" id="otpReuseXor"></div>
+      <p>This equals <strong>plaintext<sub>1</sub> &oplus; plaintext<sub>2</sub></strong> &mdash; the key cancels out completely!
+        From this, an attacker can use frequency analysis to recover both messages.
+        <strong>A one-time pad key must never be reused.</strong></p>
+    </div>
+  </div>
+
+  <!-- ============ 4b. BE BOB CHALLENGE ============ -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(34,211,238,0.15); color: var(--cyan);">&#x1F3AE;</span>
+      Be Bob &mdash; Choose Your Bases
+    </div>
+    <p class="desc">
+      Experience the protocol first-hand! Alice is sending you polarized photons. For each one, <strong>choose a measurement basis</strong>
+      (<span class="tag">+</span> rectilinear or <span class="tag" style="background:rgba(251,146,60,0.12);color:var(--orange);border-color:rgba(251,146,60,0.25);">&times;</span> diagonal).
+      You won't know which basis Alice used until afterwards &mdash; can you extract a shared key?
+    </p>
+
+    <div class="controls-row">
+      <button id="btnBobStart">Start Game</button>
+      <button class="secondary" id="btnBobReset" disabled>Reset</button>
+      <div class="control-group">
+        <label>Photons</label>
+        <select id="selBobBits">
+          <option value="8" selected>8</option>
+          <option value="10">10</option>
+          <option value="12">12</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="bobGameArea" style="display:none;">
+      <div class="bob-game-area">
+        <div class="bob-progress-bar" id="bobProgress"></div>
+        <div class="bob-photon-incoming">
+          <div class="bob-photon-label" id="bobPhotonLabel">Photon 1 incoming&hellip;</div>
+          <div class="bob-photon-orb" id="bobPhotonOrb">?</div>
+        </div>
+        <p style="font-size:0.88rem; color: var(--text-dim); text-align:center;">Choose your measurement basis:</p>
+        <div class="bob-basis-btns">
+          <button class="bob-basis-btn rect" id="bobBtnRect" disabled>
+            <span class="sym-big">+</span>
+            <span class="sym-label">Rectilinear</span>
+          </button>
+          <button class="bob-basis-btn diag" id="bobBtnDiag" disabled>
+            <span class="sym-big">&times;</span>
+            <span class="sym-label">Diagonal</span>
+          </button>
+        </div>
+        <div class="bob-result-flash" id="bobResultFlash" style="visibility:hidden;">
+          &nbsp;
+        </div>
+      </div>
+    </div>
+
+    <div id="bobResults" style="display:none;"></div>
+  </div>
+
+  <!-- ============ 5. WHY 25% ============ -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">
+        <span class="icon" style="background: rgba(244,114,182,0.15); color: var(--pink);">&#x03C0;</span>
+        Why ~25% Error Rate?
+      </div>
+      <div class="derivation">
+        <div class="deriv-step">
+          <div class="deriv-num">1</div>
+          <div class="deriv-text">Eve picks a random basis. Probability it matches Alice's: <span class="tag">P = 1/2</span></div>
+        </div>
+        <div class="deriv-step">
+          <div class="deriv-num">2</div>
+          <div class="deriv-text">If bases match, Eve reads correctly and re-sends the right state. <strong>No error.</strong></div>
+        </div>
+        <div class="deriv-step">
+          <div class="deriv-num">3</div>
+          <div class="deriv-text">If bases differ <span class="tag red">P = 1/2</span>, Eve gets a random result and re-sends a disturbed qubit.</div>
+        </div>
+        <div class="deriv-step">
+          <div class="deriv-num">4</div>
+          <div class="deriv-text">Bob (matching Alice's basis) then measures the disturbed qubit &mdash; error probability: <span class="tag pink">1/2</span></div>
+        </div>
+        <div class="deriv-result">
+          P(error) = 1/2 &times; 1/2 = <strong>25%</strong>
+        </div>
+      </div>
+
+      <!-- Interactive Eve Step-Through -->
+      <div class="eve-step-through" id="eveStepThrough">
+        <p style="font-weight:600; font-size:0.88rem; text-align:center; margin-bottom:0.5rem;">Trace a Single Photon</p>
+        <div class="eve-scenario" id="eveScenario">
+          <div class="eve-actor">
+            <div class="eve-actor-icon a">A</div>
+            <span class="eve-actor-label">Alice</span>
+          </div>
+          <div class="eve-arrow" id="eveArrow1">
+            <span>&rarr;</span>
+            <span class="eve-arrow-label" id="eveArrow1Label" style="background:rgba(129,140,248,0.1);color:var(--alice);"></span>
+          </div>
+          <div class="eve-actor">
+            <div class="eve-actor-icon e">E</div>
+            <span class="eve-actor-label">Eve</span>
+          </div>
+          <div class="eve-arrow" id="eveArrow2">
+            <span>&rarr;</span>
+            <span class="eve-arrow-label" id="eveArrow2Label" style="background:rgba(248,113,113,0.1);color:var(--eve);"></span>
+          </div>
+          <div class="eve-actor">
+            <div class="eve-actor-icon b">B</div>
+            <span class="eve-actor-label">Bob</span>
+          </div>
+        </div>
+        <div class="eve-outcome-grid" id="eveOutcomes"></div>
+        <button class="eve-replay-btn" onclick="replayEveTrace()">&#x21BB; New Random Trace</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span class="icon" style="background: rgba(34,211,238,0.15); color: var(--cyan);">&#x25CA;</span>
+        Probability Tree
+      </div>
+      <div class="prob-tree">
+        <canvas id="probTreeCanvas" width="520" height="320"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 5b. MONTE CARLO ============ -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(251,146,60,0.15); color: var(--orange);">&#x1F4CA;</span>
+      Monte Carlo: Error Rate Distribution
+    </div>
+    <p class="desc">
+      Run the BB84 protocol <strong>hundreds of times</strong> to see how the error rate distributes with and without an eavesdropper.
+      This demonstrates why Alice and Bob can <strong>statistically detect</strong> Eve's presence with overwhelming confidence.
+    </p>
+
+    <div class="controls-row">
+      <button id="btnMC">Run 500 Simulations</button>
+      <div class="control-group">
+        <label>Qubits per run</label>
+        <select id="selMCBits">
+          <option value="16">16</option>
+          <option value="32" selected>32</option>
+          <option value="64">64</option>
+          <option value="128">128</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mc-canvas-wrap">
+      <canvas id="mcCanvas" width="700" height="280"></canvas>
+      <div class="mc-legend" id="mcLegend" style="display:none;">
+        <div class="mc-legend-item">
+          <div class="mc-legend-dot" style="background: var(--green);"></div>
+          <span>No Eavesdropper</span>
+        </div>
+        <div class="mc-legend-item">
+          <div class="mc-legend-dot" style="background: var(--red);"></div>
+          <span>Eve Present</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mc-stats-row" id="mcStats" style="display:none;">
+      <div class="mc-stat">
+        <div class="label">Clean Mean</div>
+        <div class="value success" id="mcCleanMean">—</div>
+      </div>
+      <div class="mc-stat">
+        <div class="label">Eve Mean</div>
+        <div class="value danger" id="mcEveMean">—</div>
+      </div>
+      <div class="mc-stat">
+        <div class="label">Separation</div>
+        <div class="value" id="mcSeparation" style="color:var(--cyan);">—</div>
+      </div>
+      <div class="mc-stat">
+        <div class="label">Detection @11% threshold</div>
+        <div class="value" id="mcDetection" style="color:var(--accent);">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 5b2. DETECTION PROBABILITY ============ -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(248,113,113,0.15); color: var(--red);">&#x1F50D;</span>
+      Eavesdropper Detection Probability
+    </div>
+    <p class="desc">
+      Each check bit has a <strong>3/4 chance of hiding Eve</strong> (she might have guessed the right basis).
+      But as we check more bits, the probability of <em>all</em> of them passing drops exponentially.
+      With <em>n</em> check bits, the probability that Eve goes <strong>undetected</strong> is (3/4)<sup>n</sup>.
+    </p>
+
+    <div class="detect-viz">
+      <div style="flex:1;">
+        <div class="rate-slider-row">
+          <label>Check bits (n)</label>
+          <input type="range" id="detectSlider" min="1" max="50" value="10" step="1">
+          <span class="rate-value" id="detectSliderVal" style="color:var(--accent);">10</span>
+        </div>
+        <div class="detect-big-number" style="text-align:center; margin:1rem 0;">
+          <div style="font-size:0.78rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em;">Detection Probability</div>
+          <div class="big" id="detectBigProb" style="color:var(--green);">94.37%</div>
+          <div style="font-size:0.82rem; color:var(--text-dim); margin-top:0.25rem;">
+            P<sub>detect</sub> = 1 &minus; (3/4)<sup><span id="detectExpN">10</span></sup>
+          </div>
+        </div>
+        <div id="detectBitGrid" style="display:flex; flex-wrap:wrap; gap:3px; justify-content:center; max-width:320px; margin:0 auto;"></div>
+        <div style="text-align:center; margin-top:0.5rem; font-size:0.75rem; color:var(--text-dim);">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.3);vertical-align:middle;margin-right:3px;"></span>Caught
+          <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);vertical-align:middle;margin-left:8px;margin-right:3px;"></span>No error detected
+        </div>
+      </div>
+      <div class="detect-canvas-wrap">
+        <canvas id="detectCanvas" width="360" height="220"></canvas>
+      </div>
+    </div>
+
+    <table class="confidence-table" id="confidenceTable">
+      <thead>
+        <tr>
+          <th>Confidence Level</th>
+          <th>Check Bits Needed</th>
+          <th>Eve's Escape Prob.</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>90%</td><td>8</td><td>~10%</td></tr>
+        <tr><td>95%</td><td>11</td><td>~4.2%</td></tr>
+        <tr><td>99%</td><td>16</td><td>~1.0%</td></tr>
+        <tr class="highlight-row"><td>99.9%</td><td>24</td><td>~0.1%</td></tr>
+        <tr><td>99.99%</td><td>32</td><td>~0.01%</td></tr>
+        <tr><td>99.9999%</td><td>48</td><td>&lt; 0.0001%</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:0.75rem; color:var(--text-dim); margin-top:0.4rem; text-align:center;">
+      n = &lceil;log(1&minus;p) / log(3/4)&rceil; &mdash; only logarithmic growth needed for exponential confidence
+    </p>
+  </div>
+
+  <!-- ============ 5c. KEY RATE & EFFICIENCY ============ -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(99,102,241,0.15); color: var(--accent);">&#x2211;</span>
+      Key Rate &amp; Efficiency
+    </div>
+    <p class="desc">
+      Not all transmitted qubits contribute to the final key. Between basis sifting, error checking sacrifices,
+      and privacy amplification, the <strong>usable key rate</strong> is a fraction of the raw transmission rate.
+      Adjust the parameters below to see how they affect the final key.
+    </p>
+
+    <div class="formula-box">
+      <div class="formula">
+        R<sub>key</sub> = R<sub>raw</sub> &times; <span style="color:var(--green);">p<sub>sift</sub></span>
+        &times; (1 &minus; <span style="color:var(--orange);">f<sub>check</sub></span>)
+        &times; (1 &minus; <span style="color:var(--pink);">H(e)</span>)
+      </div>
+      <div class="formula-note">
+        <span style="color:var(--green)">p<sub>sift</sub></span> = basis match probability (~50%)
+        &nbsp;&bull;&nbsp;
+        <span style="color:var(--orange)">f<sub>check</sub></span> = fraction sacrificed for error checking
+        &nbsp;&bull;&nbsp;
+        <span style="color:var(--pink)">H(e)</span> = binary entropy of error rate (privacy amplification cost)
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <div class="rate-slider-row">
+        <label>Raw qubits sent</label>
+        <input type="range" id="rateRaw" min="100" max="10000" value="1000" step="100">
+        <span class="rate-value" id="rateRawVal" style="color:var(--text);">1000</span>
+      </div>
+      <div class="rate-slider-row">
+        <label>Error check %</label>
+        <input type="range" id="rateCheck" min="5" max="50" value="15" step="1">
+        <span class="rate-value" id="rateCheckVal" style="color:var(--orange);">15%</span>
+      </div>
+      <div class="rate-slider-row">
+        <label>Error rate</label>
+        <input type="range" id="rateError" min="0" max="25" value="0" step="0.5">
+        <span class="rate-value" id="rateErrorVal" style="color:var(--pink);">0%</span>
+      </div>
+    </div>
+
+    <div class="rate-bar-visual" id="rateBarVisual">
+      <div class="rate-bar-segment" id="rateSegSifted" style="background:rgba(248,113,113,0.2);color:var(--red);">Sifted out</div>
+      <div class="rate-bar-segment" id="rateSegCheck" style="background:rgba(251,146,60,0.25);color:var(--orange);">Error check</div>
+      <div class="rate-bar-segment" id="rateSegPrivacy" style="background:rgba(244,114,182,0.2);color:var(--pink);">Privacy amp.</div>
+      <div class="rate-bar-segment" id="rateSegKey" style="background:rgba(52,211,153,0.3);color:var(--green);">Usable key</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:0.5rem;font-size:0.78rem;color:var(--text-dim);">
+      <span>0 bits</span>
+      <span id="rateTotal">1000 bits sent</span>
+    </div>
+    <div style="text-align:center;margin-top:0.75rem;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--green);" id="rateFinalKey">425 usable key bits</span>
+      <span style="font-size:0.82rem;color:var(--text-dim);margin-left:0.5rem;" id="rateFinalPct">(42.5% efficiency)</span>
+    </div>
+  </div>
+
+  <!-- ============ 5d. REAL-WORLD QKD ============ -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(34,211,238,0.15); color: var(--cyan);">&#x1F30D;</span>
+      Real-World QKD
+    </div>
+    <p class="desc">
+      BB84 is not just a theoretical curiosity &mdash; it has been <strong>implemented in real systems</strong>.
+      Quantum key distribution networks are operational today, with commercial products and
+      government-scale deployments pushing the boundaries of secure communication.
+    </p>
+
+    <div class="qkd-timeline">
+      <div class="qkd-milestone">
+        <div class="year">1984</div>
+        <div class="milestone-text"><strong>BB84 proposed</strong> by Charles Bennett and Gilles Brassard, laying the theoretical foundation for quantum cryptography.</div>
+      </div>
+      <div class="qkd-milestone">
+        <div class="year">1992</div>
+        <div class="milestone-text"><strong>First experimental demonstration</strong> over 32 cm of free-space optics at IBM Research, proving the concept works in practice.</div>
+      </div>
+      <div class="qkd-milestone">
+        <div class="year">2004</div>
+        <div class="milestone-text"><strong>First bank transfer secured by QKD</strong> in Vienna. Commercial QKD systems begin appearing from companies like ID Quantique.</div>
+      </div>
+      <div class="qkd-milestone">
+        <div class="year">2017</div>
+        <div class="milestone-text">China&rsquo;s <strong>Micius satellite</strong> demonstrates satellite-to-ground QKD over 1,200 km, enabling intercontinental quantum-secure communication.</div>
+      </div>
+      <div class="qkd-milestone">
+        <div class="year">2021</div>
+        <div class="milestone-text"><strong>Integrated QKD network spanning 4,600 km</strong> combining fiber and satellite links across China, with 700+ fiber nodes supporting real users.</div>
+      </div>
+    </div>
+
+    <div class="concept-grid" style="margin-top:1rem;">
+      <div class="concept-card">
+        <h3><span style="color:var(--accent)">&#x1F4E1;</span> Fiber Optic</h3>
+        <p>QKD over telecom fiber works up to ~100 km with direct detection. Beyond that, photon loss becomes prohibitive without quantum repeaters.</p>
+      </div>
+      <div class="concept-card">
+        <h3><span style="color:var(--cyan)">&#x1F6F0;</span> Satellite QKD</h3>
+        <p>Free-space channels via satellites avoid fiber loss. Enables QKD over thousands of kilometers, connecting distant ground stations.</p>
+      </div>
+      <div class="concept-card">
+        <h3><span style="color:var(--pink)">&#x1F500;</span> Quantum Repeaters</h3>
+        <p>Future networks will use entanglement-based repeaters to extend fiber QKD range without trusted relay nodes.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 5e. PROTOCOL SUMMARY ============ -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(250,204,21,0.15); color: var(--yellow);">&#x1F4CB;</span>
+      BB84 Protocol Summary
+    </div>
+    <p class="desc" style="margin-bottom:0.75rem;">
+      A compact reference for the complete BB84 quantum key distribution protocol.
+    </p>
+
+    <div class="protocol-summary">
+      <div class="summary-step">
+        <div class="summary-step-num">1</div>
+        <div class="summary-step-content">
+          <h4 style="color:var(--alice);">Alice Prepares</h4>
+          <p>For each bit, Alice randomly picks a <strong>basis</strong> (+ or &times;) and encodes the bit as a polarized photon.</p>
+        </div>
+      </div>
+      <div class="summary-step">
+        <div class="summary-step-num">2</div>
+        <div class="summary-step-content">
+          <h4 style="color:var(--alice);">Quantum Transmission</h4>
+          <p>Alice sends each photon over the <strong>quantum channel</strong>. Any interception disturbs the state.</p>
+        </div>
+      </div>
+      <div class="summary-step">
+        <div class="summary-step-num">3</div>
+        <div class="summary-step-content">
+          <h4 style="color:var(--bob);">Bob Measures</h4>
+          <p>Bob randomly picks a basis and measures each photon. If his basis matches Alice's, the bit is correct.</p>
+        </div>
+      </div>
+      <div class="summary-step">
+        <div class="summary-step-num">4</div>
+        <div class="summary-step-content">
+          <h4 style="color:var(--cyan);">Basis Reconciliation</h4>
+          <p>Over a <strong>public channel</strong>, they compare bases (not bits). Mismatched-basis bits are discarded (~50%).</p>
+        </div>
+      </div>
+      <div class="summary-step">
+        <div class="summary-step-num">5</div>
+        <div class="summary-step-content">
+          <h4 style="color:var(--pink);">Error Estimation</h4>
+          <p>They sacrifice a random subset of sifted bits to check for errors. Error rate &gt;11% &rArr; <strong>abort</strong> (Eve detected).</p>
+        </div>
+      </div>
+      <div class="summary-step">
+        <div class="summary-step-num">6</div>
+        <div class="summary-step-content">
+          <h4 style="color:var(--green);">Privacy Amplification</h4>
+          <p>Remaining bits are compressed via hashing to eliminate any partial information Eve may have. Result: <strong>secure key</strong>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-equation">
+      <span style="color:var(--text-dim);font-size:0.78rem;">Security guarantee: &nbsp;</span>
+      <span style="color:var(--green);">no cloning</span> +
+      <span style="color:var(--pink);">measurement collapse</span> &rArr;
+      <span style="color:var(--accent);">eavesdropping &equiv; detectable errors</span>
+    </div>
+  </div>
+
+  <!-- ============ 6. QUIZ ============ -->
+  <div class="card" id="quiz">
+    <div class="card-title">
+      <span class="icon" style="background: rgba(52,211,153,0.15); color: var(--green);">&#10004;</span>
+      Check Your Understanding
+    </div>
+
+    <div class="quiz-q" data-correct="b">
+      <p>1. What happens when Bob measures a photon using a different basis than Alice?</p>
+      <label><input type="radio" name="q1" value="a"> He always gets bit 0</label>
+      <label><input type="radio" name="q1" value="b"> He gets a random result (50/50)</label>
+      <label><input type="radio" name="q1" value="c"> He gets the correct bit value</label>
+      <label><input type="radio" name="q1" value="d"> The photon is destroyed</label>
+      <div class="quiz-feedback" data-q="q1"><span class="fb-text"></span></div>
+    </div>
+
+    <div class="quiz-q" data-correct="c">
+      <p>2. What error rate among sifted bits signals an intercept-resend eavesdropper?</p>
+      <label><input type="radio" name="q2" value="a"> ~5%</label>
+      <label><input type="radio" name="q2" value="b"> ~12.5%</label>
+      <label><input type="radio" name="q2" value="c"> ~25%</label>
+      <label><input type="radio" name="q2" value="d"> ~50%</label>
+      <div class="quiz-feedback" data-q="q2"><span class="fb-text"></span></div>
+    </div>
+
+    <div class="quiz-q" data-correct="a">
+      <p>3. Why can't Eve perfectly clone each photon she intercepts?</p>
+      <label><input type="radio" name="q3" value="a"> The no-cloning theorem forbids copying unknown quantum states</label>
+      <label><input type="radio" name="q3" value="b"> Photons move too fast to intercept</label>
+      <label><input type="radio" name="q3" value="c"> The public channel encrypts basis information</label>
+      <label><input type="radio" name="q3" value="d"> Alice uses quantum error correction</label>
+      <div class="quiz-feedback" data-q="q3"><span class="fb-text"></span></div>
+    </div>
+
+    <div class="quiz-q" data-correct="b">
+      <p>4. During basis reconciliation, what do Alice and Bob share publicly?</p>
+      <label><input type="radio" name="q4" value="a"> Their measured bit values</label>
+      <label><input type="radio" name="q4" value="b"> The bases they used (but not the bit values)</label>
+      <label><input type="radio" name="q4" value="c"> The final secret key</label>
+      <label><input type="radio" name="q4" value="d"> Nothing &mdash; they compare in secret</label>
+      <div class="quiz-feedback" data-q="q4"><span class="fb-text"></span></div>
+    </div>
+
+    <div class="quiz-q" data-correct="c">
+      <p>5. What fraction of qubits survive basis reconciliation on average?</p>
+      <label><input type="radio" name="q5" value="a"> ~25%</label>
+      <label><input type="radio" name="q5" value="b"> ~75%</label>
+      <label><input type="radio" name="q5" value="c"> ~50%</label>
+      <label><input type="radio" name="q5" value="d"> ~100%</label>
+      <div class="quiz-feedback" data-q="q5"><span class="fb-text"></span></div>
+    </div>
+
+    <div class="quiz-q" data-correct="d">
+      <p>6. Why must a one-time pad key never be reused?</p>
+      <label><input type="radio" name="q6" value="a"> The encryption becomes slower with repeated keys</label>
+      <label><input type="radio" name="q6" value="b"> The key gradually degrades with each use</label>
+      <label><input type="radio" name="q6" value="c"> It violates the no-cloning theorem</label>
+      <label><input type="radio" name="q6" value="d"> XORing two ciphertexts cancels the key, exposing plaintext&oplus;plaintext</label>
+      <div class="quiz-feedback" data-q="q6"><span class="fb-text"></span></div>
+    </div>
+
+    <div class="quiz-q" data-correct="b">
+      <p>7. With 20 check bits, what is approximately the probability of detecting an eavesdropper?</p>
+      <label><input type="radio" name="q7" value="a"> 75%</label>
+      <label><input type="radio" name="q7" value="b"> &gt; 99.7%</label>
+      <label><input type="radio" name="q7" value="c"> 95%</label>
+      <label><input type="radio" name="q7" value="d"> 50%</label>
+      <div class="quiz-feedback" data-q="q7"><span class="fb-text"></span></div>
+    </div>
+
+    <div class="quiz-q" data-correct="a">
+      <p>8. In the key rate formula, what does the binary entropy term H(e) represent?</p>
+      <label><input type="radio" name="q8" value="a"> The fraction of key bits lost to privacy amplification</label>
+      <label><input type="radio" name="q8" value="b"> The probability Eve is present</label>
+      <label><input type="radio" name="q8" value="c"> The number of photons lost in transmission</label>
+      <label><input type="radio" name="q8" value="d"> The classical channel bandwidth</label>
+      <div class="quiz-feedback" data-q="q8"><span class="fb-text"></span></div>
+    </div>
+
+    <button id="btnQuiz">Check Answers</button>
+
+    <div class="quiz-score" id="quizScore">
+      <div class="score-label">Your Score</div>
+      <div class="score-value" id="scoreValue"></div>
+    </div>
+  </div>
+
+</div>
+
+
+
+<script>
+// ========== PARTICLES (matching Simon's) ==========
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let paused = false;
+  const PARTICLE_COUNT = 50;
+  const CONNECT_DIST = 130;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+
+// ========== PROBABILITY TREE ==========
+(function drawProbTree() {
+  const c = document.getElementById('probTreeCanvas');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  const dpr = window.devicePixelRatio || 1;
+  c.width = W * dpr; c.height = H * dpr;
+  c.style.width = W + 'px'; c.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+
+  ctx.clearRect(0, 0, W, H);
+
+  const font = '12px Inter, sans-serif';
+  const monoFont = '11px JetBrains Mono, monospace';
+
+  function line(x1, y1, x2, y2, color) {
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+  function node(x, y, text, color, bgColor) {
+    ctx.font = monoFont;
+    const w = ctx.measureText(text).width + 20;
+    ctx.fillStyle = bgColor;
+    ctx.beginPath();
+    ctx.roundRect(x - w/2, y - 13, w, 26, 6);
+    ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(x - w/2, y - 13, w, 26, 6);
+    ctx.stroke();
+    ctx.fillStyle = color; ctx.font = monoFont;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y);
+  }
+  function label(x, y, text, color) {
+    // Draw label with a subtle background to avoid overlap with lines
+    ctx.font = font;
+    const tw = ctx.measureText(text).width + 8;
+    ctx.fillStyle = '#0a0e1a';
+    ctx.fillRect(x - tw/2, y - 8, tw, 16);
+    ctx.fillStyle = color || '#8892a8';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y);
+  }
+
+  // Layout: wider spacing with 520px canvas
+  const rootX = W/2, rootY = 32;
+  const l1Y = 105, l2Y = 195, l3Y = 280;
+  const spread1 = 140;  // horizontal spread for level 1
+  const spread2L = 80;  // spread for level 2 left sub-tree (none — straight down)
+  const spread2R = 85;  // spread for level 2 right sub-tree branches
+
+  // Root
+  node(rootX, rootY, 'Eve intercepts', 'rgba(248,113,113,0.9)', 'rgba(248,113,113,0.1)');
+
+  // Level 1 branches
+  line(rootX, rootY+13, rootX-spread1, l1Y-13, 'rgba(52,211,153,0.5)');
+  line(rootX, rootY+13, rootX+spread1, l1Y-13, 'rgba(248,113,113,0.5)');
+  label(rootX-spread1+25, (rootY+l1Y)/2 - 2, 'P=1/2', '#34d399');
+  label(rootX+spread1-25, (rootY+l1Y)/2 - 2, 'P=1/2', '#f87171');
+
+  node(rootX-spread1, l1Y, 'Basis match', 'rgba(52,211,153,0.9)', 'rgba(52,211,153,0.1)');
+  node(rootX+spread1, l1Y, 'Basis differ', 'rgba(248,113,113,0.9)', 'rgba(248,113,113,0.1)');
+
+  // Level 2 from "Basis match" — straight down
+  line(rootX-spread1, l1Y+13, rootX-spread1, l2Y-13, 'rgba(52,211,153,0.4)');
+  node(rootX-spread1, l2Y, 'No error', 'rgba(52,211,153,0.9)', 'rgba(52,211,153,0.08)');
+  label(rootX-spread1+40, (l1Y+l2Y)/2, 'correct', '#34d399');
+
+  // Level 2 from "Basis differ" — branches to Lucky and Error!
+  const luckyX = rootX + spread1 - spread2R;
+  const errorX = rootX + spread1 + spread2R;
+  line(rootX+spread1, l1Y+13, luckyX, l2Y-13, 'rgba(52,211,153,0.4)');
+  line(rootX+spread1, l1Y+13, errorX, l2Y-13, 'rgba(248,113,113,0.4)');
+  label(rootX+spread1-50, (l1Y+l2Y)/2, 'P=1/2', '#34d399');
+  label(rootX+spread1+50, (l1Y+l2Y)/2, 'P=1/2', '#f87171');
+
+  node(luckyX, l2Y, 'Lucky', 'rgba(52,211,153,0.9)', 'rgba(52,211,153,0.08)');
+  node(errorX, l2Y, 'Error!', 'rgba(248,113,113,0.9)', 'rgba(248,113,113,0.1)');
+
+  // Result line
+  ctx.font = '13px JetBrains Mono, monospace';
+  ctx.fillStyle = '#f472b6';
+  ctx.textAlign = 'center';
+  ctx.fillText('P(error) = 1/2 \u00d7 1/2 = 25%', W/2, l3Y);
+})();
+
+// ========== WALKTHROUGH ==========
+(function() {
+  const btns = document.querySelectorAll('#walkTimeline .step-btn');
+  const content = document.getElementById('walkContent');
+  const dotsContainer = document.getElementById('walkDots');
+  const data = [
+    { title: 'Alice Prepares Qubits', text: 'For each qubit, Alice randomly chooses a bit value (<span class="tag">0</span> or <span class="tag">1</span>) and a basis (<span class="tag">+</span> or <span class="tag" style="background:rgba(251,146,60,0.12);color:var(--orange);border-color:rgba(251,146,60,0.25);">\u00d7</span>). She encodes the bit into a photon\u2019s polarization and prepares it for transmission.' },
+    { title: 'Quantum Transmission', text: 'Alice sends each polarized photon to Bob through the <strong>quantum channel</strong>. This is a physical channel (e.g., fiber optic) where individual photons travel. If Eve is present, she must physically interact with the photons here.' },
+    { title: 'Bob Measures', text: 'Bob independently and randomly chooses a measurement basis (<span class="tag">+</span> or <span class="tag" style="background:rgba(251,146,60,0.12);color:var(--orange);border-color:rgba(251,146,60,0.25);">\u00d7</span>) for each photon. If his basis matches Alice\u2019s, he reads the correct bit. Otherwise, quantum mechanics gives a <strong>completely random</strong> result.' },
+    { title: 'Basis Reconciliation (Sifting)', text: 'Over a <strong>public classical channel</strong>, Alice and Bob announce which basis they used for each qubit \u2014 but <strong>NOT</strong> the bit values. They discard all bits where bases didn\u2019t match. On average, <span class="tag green">~50%</span> of bits survive this sifting.' },
+    { title: 'Error Checking', text: 'They sacrifice a random subset of sifted bits and compare values publicly. If no eavesdropper is present, these match perfectly. An error rate near <span class="tag red">~25%</span> signals an intercept-resend attack. If too high, they <strong>abort</strong>.' },
+    { title: 'Secret Key Extraction', text: 'If the error rate is acceptably low, the remaining sifted bits (not used for error checking) become the <strong>shared secret key</strong>. This key has <strong>information-theoretic security</strong> \u2014 it can be used for one-time pad encryption.' },
+  ];
+  let current = 0;
+
+  // Build dots
+  data.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot' + (i === 0 ? ' active' : '');
+    dotsContainer.appendChild(dot);
+  });
+  const dots = dotsContainer.querySelectorAll('.progress-dot');
+
+  function update(animate) {
+    btns.forEach((b, i) => {
+      b.classList.remove('active', 'done');
+      if (i < current) b.classList.add('done');
+      else if (i === current) b.classList.add('active');
+    });
+    dots.forEach((d, i) => {
+      d.classList.remove('active', 'done');
+      if (i < current) d.classList.add('done');
+      else if (i === current) d.classList.add('active');
+    });
+
+    if (animate) {
+      content.classList.add('fading');
+      setTimeout(() => {
+        content.innerHTML = `<h4>${data[current].title}</h4><p>${data[current].text}</p>`;
+        content.classList.remove('fading');
+      }, 200);
+    } else {
+      content.innerHTML = `<h4>${data[current].title}</h4><p>${data[current].text}</p>`;
+    }
+  }
+
+  btns.forEach((b, i) => {
+    b.addEventListener('click', () => { current = i; update(true); });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'ArrowRight' && current < data.length - 1) { current++; update(true); }
+    if (e.key === 'ArrowLeft' && current > 0) { current--; update(true); }
+  });
+
+  update(false);
+})();
+
+// ========== BB84 SIMULATION ==========
+const BASES = ['+', '\u00d7'];
+const SYMBOLS = {
+  '+':  { 0: '\u2191', 1: '\u2192' },
+  '\u00d7': { 0: '\u2197', 1: '\u2198' }
+};
+
+let simData = null, stepping = false, stepIndex = 0, animating = false;
+let animSpeed = 1000;
+
+// Speed control
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    animSpeed = parseInt(btn.dataset.speed);
+  });
+});
+
+function randBit() { return Math.random() < 0.5 ? 0 : 1; }
+function randBase() { return BASES[randBit()]; }
+
+function runBB84(n, withEve) {
+  const data = [];
+  for (let i = 0; i < n; i++) {
+    const aliceBit = randBit();
+    const aliceBase = randBase();
+    const bobBase = randBase();
+    let eveBit = null, eveBase = null;
+
+    if (withEve) {
+      eveBase = randBase();
+      eveBit = (eveBase === aliceBase) ? aliceBit : randBit();
+    }
+
+    let bobBit;
+    if (bobBase === aliceBase && !withEve) {
+      bobBit = aliceBit;
+    } else if (bobBase === aliceBase && withEve) {
+      bobBit = (eveBase === aliceBase) ? aliceBit : randBit();
+    } else {
+      bobBit = randBit();
+    }
+
+    const basisMatch = aliceBase === bobBase;
+    const error = basisMatch && (aliceBit !== bobBit);
+    data.push({ aliceBit, aliceBase, bobBase, bobBit, basisMatch, error, eveBit, eveBase });
+  }
+  return data;
+}
+
+function basisClass(b) { return b === '+' ? 'basis-rect' : 'basis-diag'; }
+function basisLabel(b) { return b === '+' ? '+' : '\u00d7'; }
+function polarLabel(base, bit) { return SYMBOLS[base][bit]; }
+
+function renderTable(data, upTo, animate) {
+  const withEve = document.getElementById('chkEve').checked;
+  const n = upTo != null ? upTo : data.length;
+  const thead = document.getElementById('tableHead');
+  const tbody = document.getElementById('tableBody');
+
+  let hHTML = '<th class="row-label"></th>';
+  for (let i = 0; i < data.length; i++) hHTML += `<th>${i + 1}</th>`;
+  thead.innerHTML = hHTML;
+
+  const rows = [
+    { label: "Alice\u2019s Bit", key: 'aliceBit', cls: 'row-alice' },
+    { label: "Alice\u2019s Basis", key: 'aliceBase', cls: 'row-alice' },
+    { label: 'Polarization', key: 'polar', cls: 'row-alice' },
+  ];
+  if (withEve) {
+    rows.push({ label: "Eve\u2019s Basis", key: 'eveBase', cls: 'row-eve' });
+    rows.push({ label: "Eve\u2019s Result", key: 'eveBit', cls: 'row-eve' });
+  }
+  rows.push({ label: "Bob\u2019s Basis", key: 'bobBase', cls: 'row-bob' });
+  rows.push({ label: "Bob\u2019s Result", key: 'bobBit', cls: 'row-bob' });
+  rows.push({ label: 'Match?', key: 'match', cls: '' });
+  rows.push({ label: 'Sifted Key', key: 'sifted', cls: '' });
+
+  let bHTML = '';
+  for (const row of rows) {
+    const slideClass = animate ? ' slide-in' : '';
+    bHTML += `<tr class="${row.cls}${slideClass}"><td class="row-label">${row.label}</td>`;
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i];
+      const visible = i < n;
+      let cell = '';
+      if (!visible) {
+        cell = '<td class="unrevealed">\u2022</td>';
+      } else if (row.key === 'aliceBit') {
+        cell = `<td class="val-bit">${d.aliceBit}</td>`;
+      } else if (row.key === 'aliceBase') {
+        cell = `<td class="${basisClass(d.aliceBase)}">${basisLabel(d.aliceBase)}</td>`;
+      } else if (row.key === 'polar') {
+        cell = `<td class="${basisClass(d.aliceBase)}">${polarLabel(d.aliceBase, d.aliceBit)}</td>`;
+      } else if (row.key === 'eveBase') {
+        cell = `<td class="${basisClass(d.eveBase)}">${basisLabel(d.eveBase)}</td>`;
+      } else if (row.key === 'eveBit') {
+        cell = `<td class="eve-bit">${d.eveBit}</td>`;
+      } else if (row.key === 'bobBase') {
+        cell = `<td class="${basisClass(d.bobBase)}">${basisLabel(d.bobBase)}</td>`;
+      } else if (row.key === 'bobBit') {
+        cell = `<td class="val-bit">${d.bobBit}</td>`;
+      } else if (row.key === 'match') {
+        cell = d.basisMatch ? '<td class="match-yes">\u2713</td>' : '<td class="match-no">\u2717</td>';
+      } else if (row.key === 'sifted') {
+        if (d.basisMatch) {
+          cell = d.error
+            ? `<td class="error-cell">${d.bobBit} \u26a0</td>`
+            : `<td class="key-bit">${d.bobBit}</td>`;
+        } else {
+          cell = '<td class="match-no">\u2014</td>';
+        }
+      }
+      bHTML += cell;
+    }
+    bHTML += '</tr>';
+  }
+  tbody.innerHTML = bHTML;
+}
+
+function showStats(data) {
+  const bar = document.getElementById('statsBar');
+  bar.style.display = 'flex';
+
+  const total = data.length;
+  const matched = data.filter(d => d.basisMatch).length;
+  const errors = data.filter(d => d.basisMatch && d.error).length;
+  const errRate = matched > 0 ? ((errors / matched) * 100).toFixed(1) : '0.0';
+
+  document.getElementById('statSent').textContent = total;
+  document.getElementById('statMatch').textContent = matched;
+  document.getElementById('statKey').textContent = matched;
+  document.getElementById('statError').textContent = errRate + '%';
+
+  const isErr = parseFloat(errRate) > 10;
+  document.getElementById('statError').className = 'value ' + (isErr ? 'danger' : 'success');
+  document.getElementById('statErrorCard').className = 'stat-card ' + (isErr ? 'glow-red' : 'glow-green');
+  document.getElementById('statMatchCard').className = 'stat-card glow-green';
+
+  // Key reveal
+  const keyDisplay = document.getElementById('keyDisplay');
+  const keyBitsEl = document.getElementById('keyBits');
+  const sifted = data.filter(d => d.basisMatch);
+  if (sifted.length > 0) {
+    keyDisplay.classList.add('show');
+    keyBitsEl.innerHTML = sifted.map((d, i) =>
+      `<span class="key-bit-chip ${d.error ? 'err' : 'good'}" style="animation-delay:${i * 40}ms">${d.bobBit}</span>`
+    ).join('');
+  }
+
+  const withEve = document.getElementById('chkEve').checked;
+  document.getElementById('eveExplain').classList.remove('show');
+  document.getElementById('safeExplain').classList.remove('show');
+  if (withEve && isErr) document.getElementById('eveExplain').classList.add('show');
+  else if (!withEve) document.getElementById('safeExplain').classList.add('show');
+}
+
+function hideResults() {
+  ['eveExplain','safeExplain'].forEach(id => document.getElementById(id).classList.remove('show'));
+  document.getElementById('keyDisplay').classList.remove('show');
+}
+
+function animatePhoton(withEve, qubitData) {
+  return new Promise(resolve => {
+    const photon = document.getElementById('photon');
+    const eveMarker = document.getElementById('eveMarker');
+    const info = document.getElementById('photonInfo');
+
+    eveMarker.classList.toggle('show', withEve);
+
+    if (qubitData) {
+      info.textContent = polarLabel(qubitData.aliceBase, qubitData.aliceBit) + ' ' + basisLabel(qubitData.aliceBase);
+      info.classList.add('show');
+      if (window.setPolarization) window.setPolarization(qubitData.aliceBase, qubitData.aliceBit);
+    }
+
+    // Set animation speed via CSS variable
+    const speedSec = (animSpeed / 1000);
+    photon.style.setProperty('--anim-speed', speedSec + 's');
+
+    photon.className = 'photon';
+    // Re-attach polar line since className reset removes children display
+    const polarLine = document.getElementById('photonPolar');
+    if (polarLine && qubitData) polarLine.style.display = 'block';
+
+    void photon.offsetWidth;
+    photon.classList.add(withEve ? 'intercepted' : 'moving');
+    setTimeout(() => {
+      info.classList.remove('show');
+      if (window.hidePolarization) window.hidePolarization();
+      resolve();
+    }, animSpeed + 50);
+  });
+}
+
+function setPhase(phase) {
+  const bar = document.getElementById('phaseBar');
+  bar.classList.remove('hidden');
+  bar.querySelectorAll('.phase-item').forEach(p => {
+    p.classList.remove('active', 'done');
+  });
+  const phases = ['transmit', 'sift', 'error', 'key'];
+  const idx = phases.indexOf(phase);
+  phases.forEach((p, i) => {
+    const el = bar.querySelector(`[data-phase="${p}"]`);
+    if (i < idx) el.classList.add('done');
+    else if (i === idx) el.classList.add('active');
+  });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+document.getElementById('btnRun').addEventListener('click', async function() {
+  if (animating) return;
+  animating = true;
+  stepping = false;
+  const n = parseInt(document.getElementById('selBits').value);
+  const withEve = document.getElementById('chkEve').checked;
+  simData = runBB84(n, withEve);
+  hideResults();
+  document.getElementById('statsBar').style.display = 'none';
+
+  // Phase 1: Transmit — rapid photon burst + progressive table reveal
+  setPhase('transmit');
+  renderTable(simData, 0, false);
+  // Hide match and sifted rows during transmission
+  document.querySelectorAll('#tableBody tr').forEach(tr => {
+    const label = tr.querySelector('.row-label');
+    if (label && (label.textContent === 'Match?' || label.textContent === 'Sifted Key')) {
+      tr.classList.add('phase-hidden');
+    }
+  });
+
+  const burstSpeed = Math.min(animSpeed, 400);
+  for (let i = 0; i < n; i++) {
+    if (!animating) break;
+    const speedSec = (burstSpeed / 1000);
+    const photon = document.getElementById('photon');
+    const info = document.getElementById('photonInfo');
+    const eveMarker = document.getElementById('eveMarker');
+    eveMarker.classList.toggle('show', withEve);
+    info.textContent = polarLabel(simData[i].aliceBase, simData[i].aliceBit) + ' ' + basisLabel(simData[i].aliceBase);
+    info.classList.add('show');
+    if (window.setPolarization) window.setPolarization(simData[i].aliceBase, simData[i].aliceBit);
+    photon.style.setProperty('--anim-speed', speedSec + 's');
+    photon.className = 'photon';
+    const polarLine = document.getElementById('photonPolar');
+    if (polarLine) polarLine.style.display = 'block';
+    void photon.offsetWidth;
+    photon.classList.add(withEve ? 'intercepted' : 'moving');
+    await sleep(burstSpeed * 0.5);
+    renderTable(simData, i + 1, false);
+    // Hide match/sifted rows during burst
+    document.querySelectorAll('#tableBody tr').forEach(tr => {
+      const label = tr.querySelector('.row-label');
+      if (label && (label.textContent === 'Match?' || label.textContent === 'Sifted Key')) {
+        tr.classList.add('phase-hidden');
+      }
+    });
+    await sleep(burstSpeed * 0.55);
+    info.classList.remove('show');
+    if (window.hidePolarization) window.hidePolarization();
+  }
+
+  // Phase 2: Sift — reveal match row, fade non-matching columns
+  setPhase('sift');
+  renderTable(simData, null, false);
+  // Initially hide sifted key row only
+  document.querySelectorAll('#tableBody tr').forEach(tr => {
+    const label = tr.querySelector('.row-label');
+    if (label && label.textContent === 'Sifted Key') {
+      tr.classList.add('phase-hidden');
+    }
+  });
+  await sleep(600);
+  // Animate non-matching columns fading out
+  const allRows = document.querySelectorAll('#tableBody tr');
+  for (let i = 0; i < simData.length; i++) {
+    if (!simData[i].basisMatch) {
+      allRows.forEach(tr => {
+        const cells = tr.querySelectorAll('td');
+        if (cells[i + 1]) cells[i + 1].classList.add('sifted-out');
+      });
+    } else {
+      allRows.forEach(tr => {
+        const cells = tr.querySelectorAll('td');
+        if (cells[i + 1]) cells[i + 1].classList.add('sifted-in');
+      });
+    }
+  }
+  await sleep(800);
+
+  // Phase 3: Error check — reveal sifted key row
+  setPhase('error');
+  document.querySelectorAll('#tableBody tr.phase-hidden').forEach(tr => {
+    tr.classList.remove('phase-hidden');
+  });
+  await sleep(600);
+
+  // Phase 4: Key
+  setPhase('key');
+  showStats(simData);
+  animating = false;
+});
+
+document.getElementById('btnStep').addEventListener('click', async function() {
+  if (animating) return;
+  if (!stepping) {
+    stepping = true; stepIndex = 0;
+    const n = parseInt(document.getElementById('selBits').value);
+    const withEve = document.getElementById('chkEve').checked;
+    simData = runBB84(n, withEve);
+    hideResults();
+    document.getElementById('statsBar').style.display = 'none';
+    renderTable(simData, 0, false);
+  }
+
+  if (stepIndex < simData.length) {
+    animating = true;
+    const withEve = document.getElementById('chkEve').checked;
+    await animatePhoton(withEve, simData[stepIndex]);
+    stepIndex++;
+    renderTable(simData, stepIndex, false);
+    if (stepIndex === simData.length) { showStats(simData); stepping = false; }
+    animating = false;
+  }
+});
+
+document.getElementById('btnReset').addEventListener('click', function() {
+  stepping = false; stepIndex = 0; simData = null; animating = false;
+  document.getElementById('tableHead').innerHTML = '';
+  document.getElementById('tableBody').innerHTML = '';
+  document.getElementById('statsBar').style.display = 'none';
+  document.getElementById('phaseBar').classList.add('hidden');
+  hideResults();
+  document.getElementById('photon').className = 'photon';
+  document.getElementById('eveMarker').classList.remove('show');
+  document.getElementById('photonInfo').classList.remove('show');
+});
+
+// ========== BE BOB CHALLENGE ==========
+(function() {
+  let bobData = [], bobIndex = 0, bobActive = false;
+
+  function bobGenerate(n) {
+    const data = [];
+    for (let i = 0; i < n; i++) {
+      data.push({
+        aliceBit: randBit(),
+        aliceBase: randBase(),
+        bobBase: null,
+        bobBit: null,
+        basisMatch: false
+      });
+    }
+    return data;
+  }
+
+  function bobRenderProgress() {
+    const el = document.getElementById('bobProgress');
+    el.innerHTML = bobData.map((d, i) => {
+      let cls = 'bob-pip';
+      if (i === bobIndex) cls += ' current';
+      else if (d.bobBase !== null) cls += d.basisMatch ? ' match-pip' : ' miss-pip';
+      const label = d.bobBase !== null ? (d.basisMatch ? '\u2713' : '\u2717') : (i + 1);
+      return `<div class="${cls}">${label}</div>`;
+    }).join('');
+  }
+
+  function bobShowPhoton() {
+    const orb = document.getElementById('bobPhotonOrb');
+    const label = document.getElementById('bobPhotonLabel');
+    if (bobIndex >= bobData.length) return;
+    orb.textContent = '?';
+    orb.style.borderColor = 'rgba(129,140,248,0.35)';
+    label.textContent = `Photon ${bobIndex + 1} of ${bobData.length} incoming\u2026`;
+    document.getElementById('bobResultFlash').style.visibility = 'hidden';
+    document.getElementById('bobBtnRect').disabled = false;
+    document.getElementById('bobBtnDiag').disabled = false;
+  }
+
+  function bobMeasure(chosenBase) {
+    if (!bobActive || bobIndex >= bobData.length) return;
+    const d = bobData[bobIndex];
+    d.bobBase = chosenBase;
+    d.basisMatch = (chosenBase === d.aliceBase);
+    d.bobBit = d.basisMatch ? d.aliceBit : randBit();
+
+    document.getElementById('bobBtnRect').disabled = true;
+    document.getElementById('bobBtnDiag').disabled = true;
+
+    // Show result
+    const orb = document.getElementById('bobPhotonOrb');
+    orb.textContent = d.bobBit;
+
+    const flash = document.getElementById('bobResultFlash');
+    flash.style.visibility = 'visible';
+    if (d.basisMatch) {
+      flash.className = 'bob-result-flash match';
+      flash.textContent = `\u2713 Bases match! You measured ${d.bobBit} correctly.`;
+      orb.style.borderColor = 'rgba(52,211,153,0.5)';
+    } else {
+      flash.className = 'bob-result-flash miss';
+      flash.textContent = `\u2717 Basis mismatch \u2014 got random result ${d.bobBit}. Will be discarded.`;
+      orb.style.borderColor = 'rgba(100,116,139,0.3)';
+    }
+
+    bobRenderProgress();
+    bobIndex++;
+
+    if (bobIndex >= bobData.length) {
+      setTimeout(bobShowResults, 800);
+    } else {
+      setTimeout(bobShowPhoton, 700);
+    }
+  }
+
+  function bobShowResults() {
+    bobActive = false;
+    document.getElementById('bobBtnRect').disabled = true;
+    document.getElementById('bobBtnDiag').disabled = true;
+    document.getElementById('bobPhotonLabel').textContent = 'All photons received!';
+    document.getElementById('bobPhotonOrb').textContent = '\u2713';
+    document.getElementById('bobPhotonOrb').style.borderColor = 'rgba(52,211,153,0.4)';
+    document.getElementById('bobResultFlash').style.visibility = 'hidden';
+
+    const matched = bobData.filter(d => d.basisMatch);
+    const keyBits = matched.map(d => d.bobBit);
+
+    let html = '<div class="bob-score-card">';
+    html += '<h4>Basis Reconciliation Complete</h4>';
+    html += '<p class="desc" style="margin-bottom:0.75rem;">Alice publicly revealed her bases. Here\u2019s the comparison:</p>';
+
+    // Mini table
+    html += '<div class="table-wrap"><table style="font-size:0.8rem;"><thead><tr><th class="row-label"></th>';
+    bobData.forEach((_, i) => html += `<th>${i + 1}</th>`);
+    html += '</tr></thead><tbody>';
+    // Alice's basis
+    html += '<tr class="row-alice"><td class="row-label">Alice\u2019s Basis</td>';
+    bobData.forEach(d => html += `<td class="${basisClass(d.aliceBase)}">${basisLabel(d.aliceBase)}</td>`);
+    html += '</tr>';
+    // Your basis
+    html += '<tr class="row-bob"><td class="row-label">Your Basis</td>';
+    bobData.forEach(d => html += `<td class="${basisClass(d.bobBase)}">${basisLabel(d.bobBase)}</td>`);
+    html += '</tr>';
+    // Match
+    html += '<tr><td class="row-label">Match?</td>';
+    bobData.forEach(d => html += d.basisMatch
+      ? '<td class="match-yes">\u2713</td>'
+      : '<td class="match-no">\u2717</td>');
+    html += '</tr>';
+    // Sifted key
+    html += '<tr><td class="row-label">Sifted Key</td>';
+    bobData.forEach(d => html += d.basisMatch
+      ? `<td class="key-bit">${d.bobBit}</td>`
+      : '<td class="match-no">\u2014</td>');
+    html += '</tr>';
+    html += '</tbody></table></div>';
+
+    html += '<div class="bob-score-grid">';
+    html += `<div class="bob-score-item"><div class="label">Sent</div><div class="value">${bobData.length}</div></div>`;
+    html += `<div class="bob-score-item"><div class="label">Matched</div><div class="value" style="color:var(--green)">${matched.length}</div></div>`;
+    html += `<div class="bob-score-item"><div class="label">Match Rate</div><div class="value" style="color:var(--cyan)">${((matched.length / bobData.length) * 100).toFixed(0)}%</div></div>`;
+    html += `<div class="bob-score-item"><div class="label">Key</div><div class="value" style="color:var(--accent)">${keyBits.join('')}</div></div>`;
+    html += '</div>';
+    html += '</div>';
+
+    document.getElementById('bobResults').innerHTML = html;
+    document.getElementById('bobResults').style.display = 'block';
+  }
+
+  document.getElementById('btnBobStart').addEventListener('click', function() {
+    const n = parseInt(document.getElementById('selBobBits').value);
+    bobData = bobGenerate(n);
+    bobIndex = 0;
+    bobActive = true;
+    document.getElementById('bobGameArea').style.display = 'block';
+    document.getElementById('bobResults').style.display = 'none';
+    document.getElementById('btnBobStart').disabled = true;
+    document.getElementById('btnBobReset').disabled = false;
+    bobRenderProgress();
+    bobShowPhoton();
+  });
+
+  document.getElementById('btnBobReset').addEventListener('click', function() {
+    bobActive = false;
+    bobData = [];
+    bobIndex = 0;
+    document.getElementById('bobGameArea').style.display = 'none';
+    document.getElementById('bobResults').style.display = 'none';
+    document.getElementById('btnBobStart').disabled = false;
+    document.getElementById('btnBobReset').disabled = true;
+  });
+
+  document.getElementById('bobBtnRect').addEventListener('click', () => bobMeasure('+'));
+  document.getElementById('bobBtnDiag').addEventListener('click', () => bobMeasure('\u00d7'));
+})();
+
+// ========== MONTE CARLO HISTOGRAM ==========
+(function() {
+  document.getElementById('btnMC').addEventListener('click', function() {
+    const nBits = parseInt(document.getElementById('selMCBits').value);
+    const nRuns = 500;
+    const cleanRates = [], eveRates = [];
+
+    for (let r = 0; r < nRuns; r++) {
+      const clean = runBB84(nBits, false);
+      const eve = runBB84(nBits, true);
+      const cleanMatched = clean.filter(d => d.basisMatch);
+      const eveMatched = eve.filter(d => d.basisMatch);
+      const cleanErr = cleanMatched.length > 0
+        ? cleanMatched.filter(d => d.error).length / cleanMatched.length
+        : 0;
+      const eveErr = eveMatched.length > 0
+        ? eveMatched.filter(d => d.error).length / eveMatched.length
+        : 0;
+      cleanRates.push(cleanErr * 100);
+      eveRates.push(eveErr * 100);
+    }
+
+    drawHistogram(cleanRates, eveRates);
+
+    // Stats
+    const cleanMean = cleanRates.reduce((a, b) => a + b, 0) / nRuns;
+    const eveMean = eveRates.reduce((a, b) => a + b, 0) / nRuns;
+    const threshold = 11;
+    const detected = eveRates.filter(r => r >= threshold).length;
+
+    document.getElementById('mcCleanMean').textContent = cleanMean.toFixed(1) + '%';
+    document.getElementById('mcEveMean').textContent = eveMean.toFixed(1) + '%';
+    document.getElementById('mcSeparation').textContent = (eveMean - cleanMean).toFixed(1) + ' pp';
+    document.getElementById('mcDetection').textContent = ((detected / nRuns) * 100).toFixed(1) + '%';
+    document.getElementById('mcStats').style.display = 'flex';
+    document.getElementById('mcLegend').style.display = 'flex';
+  });
+
+  function drawHistogram(cleanRates, eveRates) {
+    const c = document.getElementById('mcCanvas');
+    const ctx = c.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const W = 700, H = 280;
+    c.width = W * dpr; c.height = H * dpr;
+    c.style.width = W + 'px'; c.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+
+    const bins = 50;
+    const maxRate = 55;
+    const binWidth = maxRate / bins;
+
+    function toBins(rates) {
+      const b = new Array(bins).fill(0);
+      for (const r of rates) {
+        const idx = Math.min(Math.floor(r / binWidth), bins - 1);
+        b[idx]++;
+      }
+      return b;
+    }
+
+    const cleanBins = toBins(cleanRates);
+    const eveBins = toBins(eveRates);
+    const maxCount = Math.max(...cleanBins, ...eveBins);
+
+    const left = 50, right = 30, top = 20, bottom = 40;
+    const plotW = W - left - right;
+    const plotH = H - top - bottom;
+    const barW = plotW / bins;
+
+    // Axes
+    ctx.strokeStyle = 'rgba(42,53,80,0.6)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(left, top);
+    ctx.lineTo(left, top + plotH);
+    ctx.lineTo(left + plotW, top + plotH);
+    ctx.stroke();
+
+    // Y-axis labels
+    ctx.fillStyle = '#8892a8';
+    ctx.font = '11px JetBrains Mono, monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) {
+      const val = Math.round(maxCount * i / 4);
+      const y = top + plotH - (plotH * i / 4);
+      ctx.fillText(val.toString(), left - 8, y);
+      if (i > 0) {
+        ctx.strokeStyle = 'rgba(42,53,80,0.3)';
+        ctx.beginPath();
+        ctx.moveTo(left, y);
+        ctx.lineTo(left + plotW, y);
+        ctx.stroke();
+      }
+    }
+
+    // X-axis labels
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let pct = 0; pct <= maxRate; pct += 10) {
+      const x = left + (pct / maxRate) * plotW;
+      ctx.fillText(pct + '%', x, top + plotH + 8);
+    }
+    ctx.fillText('Error Rate', left + plotW / 2, top + plotH + 24);
+
+    // Draw clean bars
+    ctx.globalAlpha = 0.7;
+    for (let i = 0; i < bins; i++) {
+      if (cleanBins[i] === 0) continue;
+      const x = left + i * barW;
+      const h = (cleanBins[i] / maxCount) * plotH;
+      ctx.fillStyle = 'rgba(52,211,153,0.6)';
+      ctx.fillRect(x + 1, top + plotH - h, barW - 2, h);
+    }
+
+    // Draw eve bars
+    for (let i = 0; i < bins; i++) {
+      if (eveBins[i] === 0) continue;
+      const x = left + i * barW;
+      const h = (eveBins[i] / maxCount) * plotH;
+      ctx.fillStyle = 'rgba(248,113,113,0.55)';
+      ctx.fillRect(x + 1, top + plotH - h, barW - 2, h);
+    }
+    ctx.globalAlpha = 1.0;
+
+    // Threshold line at 11%
+    const threshX = left + (11 / maxRate) * plotW;
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = 'rgba(250,204,21,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(threshX, top);
+    ctx.lineTo(threshX, top + plotH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#facc15';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('11% threshold', threshX + 4, top + 4);
+  }
+})();
+
+// ========== ONE-TIME PAD DEMO ==========
+(function() {
+  const input = document.getElementById('otpPlaintext');
+  const plainBitsEl = document.getElementById('otpPlainBits');
+  const keyBitsEl = document.getElementById('otpKeyBits');
+  const btnEncrypt = document.getElementById('btnOtpEncrypt');
+  const resultBox = document.getElementById('otpResultBox');
+  const cipherEl = document.getElementById('otpCiphertext');
+  const cipherTag = document.getElementById('otpCipherTag');
+  const decryptTag = document.getElementById('otpDecryptedTag');
+
+  let currentKey = [];
+
+  function textToBits(text) {
+    const bits = [];
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i) & 0xFF;
+      for (let b = 7; b >= 0; b--) {
+        bits.push((code >> b) & 1);
+      }
+    }
+    return bits;
+  }
+
+  function bitsToText(bits) {
+    let text = '';
+    for (let i = 0; i + 7 < bits.length; i += 8) {
+      let code = 0;
+      for (let b = 0; b < 8; b++) code = (code << 1) | bits[i + b];
+      if (code > 0) text += String.fromCharCode(code);
+    }
+    return text;
+  }
+
+  function formatBits(bits) {
+    return bits.map(b => `<span class="bit-${b}">${b}</span>`).join('');
+  }
+
+  function updateKeyDisplay() {
+    if (!simData) {
+      keyBitsEl.innerHTML = '<span style="color:var(--text-dim);font-size:0.82rem;">Run the simulation first to generate a key</span>';
+      btnEncrypt.disabled = true;
+      return;
+    }
+    const sifted = simData.filter(d => d.basisMatch);
+    currentKey = sifted.map(d => d.bobBit);
+    if (currentKey.length === 0) {
+      keyBitsEl.innerHTML = '<span style="color:var(--text-dim);font-size:0.82rem;">No sifted key available</span>';
+      btnEncrypt.disabled = true;
+      return;
+    }
+    keyBitsEl.innerHTML = formatBits(currentKey);
+    btnEncrypt.disabled = input.value.length === 0;
+  }
+
+  input.addEventListener('input', function() {
+    const text = input.value;
+    if (text.length === 0) {
+      plainBitsEl.innerHTML = '<span style="color:var(--text-dim);font-size:0.82rem;">Type above to see binary&hellip;</span>';
+      btnEncrypt.disabled = true;
+      resultBox.style.display = 'none';
+      return;
+    }
+    const bits = textToBits(text);
+    plainBitsEl.innerHTML = formatBits(bits);
+    btnEncrypt.disabled = currentKey.length === 0;
+    resultBox.style.display = 'none';
+  });
+
+  btnEncrypt.addEventListener('click', function() {
+    const text = input.value;
+    if (!text || currentKey.length === 0) return;
+    const msgBits = textToBits(text);
+
+    // Extend key by repeating (for demo; real OTP would need key >= message)
+    const keyStream = [];
+    for (let i = 0; i < msgBits.length; i++) {
+      keyStream.push(currentKey[i % currentKey.length]);
+    }
+    keyBitsEl.innerHTML = formatBits(keyStream);
+
+    // XOR
+    const cipherBits = msgBits.map((b, i) => b ^ keyStream[i]);
+    const decryptedBits = cipherBits.map((b, i) => b ^ keyStream[i]);
+    const decryptedText = bitsToText(decryptedBits);
+
+    // Show hex ciphertext
+    let hex = '';
+    for (let i = 0; i < cipherBits.length; i += 4) {
+      let nibble = 0;
+      for (let b = 0; b < 4 && i + b < cipherBits.length; b++) {
+        nibble = (nibble << 1) | cipherBits[i + b];
+      }
+      hex += nibble.toString(16).toUpperCase();
+    }
+    cipherEl.textContent = hex;
+    cipherTag.textContent = hex.substring(0, 8) + (hex.length > 8 ? '...' : '');
+    decryptTag.textContent = '"' + decryptedText + '"';
+
+    resultBox.style.display = 'block';
+    resultBox.style.animation = 'none';
+    void resultBox.offsetWidth;
+    resultBox.style.animation = 'solutionReveal 0.5s ease-out';
+  });
+
+  // Poll for sim data changes to update key display
+  setInterval(updateKeyDisplay, 500);
+})();
+
+// ========== PHOTON POLARIZATION INDICATOR ==========
+(function() {
+  const polarLine = document.getElementById('photonPolar');
+
+  // Map basis+bit to rotation angle
+  function polarAngle(base, bit) {
+    if (base === '+') return bit === 0 ? 0 : 90;      // vertical / horizontal
+    return bit === 0 ? 45 : 135;                        // diagonal / anti-diagonal
+  }
+
+  // Expose globally so animatePhoton can use it
+  window.setPolarization = function(base, bit) {
+    if (!base) { polarLine.style.display = 'none'; return; }
+    const angle = polarAngle(base, bit);
+    polarLine.style.display = 'block';
+    polarLine.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+  };
+
+  window.hidePolarization = function() {
+    polarLine.style.display = 'none';
+  };
+})();
+
+// ========== KEY RATE & EFFICIENCY ==========
+(function() {
+  const rawSlider = document.getElementById('rateRaw');
+  const checkSlider = document.getElementById('rateCheck');
+  const errorSlider = document.getElementById('rateError');
+  const rawVal = document.getElementById('rateRawVal');
+  const checkVal = document.getElementById('rateCheckVal');
+  const errorVal = document.getElementById('rateErrorVal');
+  const totalLabel = document.getElementById('rateTotal');
+  const finalKey = document.getElementById('rateFinalKey');
+  const finalPct = document.getElementById('rateFinalPct');
+
+  const segSifted = document.getElementById('rateSegSifted');
+  const segCheck = document.getElementById('rateSegCheck');
+  const segPrivacy = document.getElementById('rateSegPrivacy');
+  const segKey = document.getElementById('rateSegKey');
+
+  function binaryEntropy(p) {
+    if (p <= 0 || p >= 1) return 0;
+    return -(p * Math.log2(p) + (1 - p) * Math.log2(1 - p));
+  }
+
+  function update() {
+    const raw = parseInt(rawSlider.value);
+    const checkFrac = parseInt(checkSlider.value) / 100;
+    const errRate = parseFloat(errorSlider.value) / 100;
+
+    rawVal.textContent = raw;
+    checkVal.textContent = checkSlider.value + '%';
+    errorVal.textContent = errorSlider.value + '%';
+    totalLabel.textContent = raw + ' bits sent';
+
+    const siftedOut = raw * 0.5;
+    const sifted = raw * 0.5;
+    const checked = sifted * checkFrac;
+    const afterCheck = sifted - checked;
+    const hE = binaryEntropy(errRate);
+    const privacyCost = afterCheck * hE;
+    const usable = Math.max(0, afterCheck - privacyCost);
+
+    // Bar percentages (relative to raw)
+    const pSifted = (siftedOut / raw) * 100;
+    const pCheck = (checked / raw) * 100;
+    const pPrivacy = (privacyCost / raw) * 100;
+    const pKey = (usable / raw) * 100;
+
+    segSifted.style.width = pSifted + '%';
+    segSifted.textContent = pSifted > 8 ? 'Sifted out' : '';
+    segCheck.style.width = pCheck + '%';
+    segCheck.textContent = pCheck > 6 ? 'Check' : '';
+    segPrivacy.style.width = pPrivacy + '%';
+    segPrivacy.textContent = pPrivacy > 8 ? 'Priv. amp.' : '';
+    segKey.style.width = pKey + '%';
+    segKey.textContent = pKey > 5 ? 'Key' : '';
+
+    finalKey.textContent = Math.round(usable) + ' usable key bits';
+    const eff = raw > 0 ? (usable / raw * 100).toFixed(1) : '0.0';
+    finalPct.textContent = `(${eff}% efficiency)`;
+
+    // Color the final key based on efficiency
+    if (usable <= 0) {
+      finalKey.style.color = 'var(--red)';
+      finalKey.textContent = '0 usable key bits — abort!';
+    } else {
+      finalKey.style.color = 'var(--green)';
+    }
+  }
+
+  rawSlider.addEventListener('input', update);
+  checkSlider.addEventListener('input', update);
+  errorSlider.addEventListener('input', update);
+  update();
+})();
+
+// ========== INTERACTIVE BASIS MEASUREMENT ==========
+(function() {
+  // State angles: basis+bit → CSS rotation (0° = up = |↑⟩)
+  const stateAngles = { '+_0': 0, '+_1': 90, 'x_0': 45, 'x_1': 135 };
+
+  const states = [
+    { basis: '+', bit: 0, label: '|↑⟩', hint: '(+ basis, bit 0)' },
+    { basis: '+', bit: 1, label: '|→⟩', hint: '(+ basis, bit 1)' },
+    { basis: 'x', bit: 0, label: '|↗⟩', hint: '(× basis, bit 0)' },
+    { basis: 'x', bit: 1, label: '|↘⟩', hint: '(× basis, bit 1)' },
+  ];
+  let current = states[0];
+
+  const polarViz = document.getElementById('bmPolarViz');
+  const polarArrow = document.getElementById('bmPolarArrow');
+
+  function updatePolarViz() {
+    const angle = stateAngles[current.basis + '_' + current.bit];
+    polarArrow.style.transform = 'translate(-50%, -50%) rotate(' + angle + 'deg)';
+    if (current.basis === 'x') {
+      polarViz.classList.add('diag-mode');
+    } else {
+      polarViz.classList.remove('diag-mode');
+    }
+  }
+
+  function pickRandom() {
+    current = states[Math.floor(Math.random() * states.length)];
+    document.getElementById('bmStatePill').innerHTML = current.label;
+    document.getElementById('bmBasisHint').textContent = current.hint;
+    const pill = document.getElementById('bmStatePill');
+    if (current.basis === '+') {
+      pill.style.background = 'rgba(99,102,241,0.1)';
+      pill.style.borderColor = 'rgba(99,102,241,0.3)';
+      pill.style.color = 'var(--accent)';
+    } else {
+      pill.style.background = 'rgba(251,146,60,0.1)';
+      pill.style.borderColor = 'rgba(251,146,60,0.3)';
+      pill.style.color = 'var(--orange)';
+    }
+    const resultBox = document.getElementById('bmResult');
+    resultBox.className = 'measure-result-box idle';
+    resultBox.textContent = 'Click a basis button above to measure';
+    updatePolarViz();
+  }
+
+  window.measureBasis = function(basis) {
+    const resultBox = document.getElementById('bmResult');
+    if (basis === current.basis) {
+      resultBox.className = 'measure-result-box correct';
+      resultBox.innerHTML = '<strong>Correct basis!</strong> You get bit <strong>' + current.bit +
+        '</strong> with certainty. The measurement perfectly reads the state.';
+    } else {
+      const randomBit = Math.random() < 0.5 ? 0 : 1;
+      resultBox.className = 'measure-result-box random';
+      resultBox.innerHTML = '<strong>Wrong basis!</strong> You get a random result: bit <strong>' +
+        randomBit + '</strong> (50/50 chance). The original state is now destroyed.';
+      // Animate the arrow to the new collapsed state
+      const newAngle = basis === '+' ? (randomBit * 90) : (45 + randomBit * 90);
+      polarArrow.style.transform = 'translate(-50%, -50%) rotate(' + newAngle + 'deg)';
+    }
+    resultBox.style.animation = 'none';
+    void resultBox.offsetWidth;
+    resultBox.style.animation = 'fadeIn 0.3s ease';
+  };
+
+  window.newBasisState = function() { pickRandom(); };
+  pickRandom();
+})();
+
+// ========== OTP KEY-REUSE WARNING ==========
+(function() {
+  let previousCipherBits = null;
+  let previousPlaintext = '';
+
+  // Hook into the OTP encrypt button to detect key reuse
+  const origEncrypt = document.getElementById('btnOtpEncrypt');
+  if (!origEncrypt) return;
+
+  const observer = new MutationObserver(function() {
+    const resultBox = document.getElementById('otpResultBox');
+    if (resultBox && resultBox.style.display === 'block') {
+      checkReuse();
+    }
+  });
+  observer.observe(document.getElementById('otpResultBox'), { attributes: true, attributeFilter: ['style'] });
+
+  function textToBits(text) {
+    const bits = [];
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i);
+      for (let b = 7; b >= 0; b--) bits.push((code >> b) & 1);
+    }
+    return bits;
+  }
+
+  function checkReuse() {
+    const input = document.getElementById('otpPlaintext');
+    const currentText = input.value;
+    if (!currentText) return;
+    const currentBits = textToBits(currentText);
+
+    // Get the ciphertext hex from display
+    const cipherHex = document.getElementById('otpCiphertext').textContent;
+    const currentCipherBits = [];
+    for (const ch of cipherHex) {
+      const nibble = parseInt(ch, 16);
+      for (let b = 3; b >= 0; b--) currentCipherBits.push((nibble >> b) & 1);
+    }
+
+    if (previousCipherBits && previousPlaintext !== currentText) {
+      // XOR the two ciphertexts
+      const minLen = Math.min(previousCipherBits.length, currentCipherBits.length);
+      const xorResult = [];
+      for (let i = 0; i < minLen; i++) {
+        xorResult.push(previousCipherBits[i] ^ currentCipherBits[i]);
+      }
+
+      // Show warning
+      const reuseBox = document.getElementById('otpReuseBox');
+      const xorEl = document.getElementById('otpReuseXor');
+      let hexStr = '';
+      for (let i = 0; i < xorResult.length; i += 4) {
+        let nibble = 0;
+        for (let b = 0; b < 4 && i + b < xorResult.length; b++) {
+          nibble = (nibble << 1) | xorResult[i + b];
+        }
+        hexStr += nibble.toString(16).toUpperCase();
+      }
+      xorEl.textContent = 'C₁ ⊕ C₂ = ' + hexStr + '  (= "' + previousPlaintext + '" ⊕ "' + currentText + '")';
+      reuseBox.classList.add('show');
+    } else {
+      document.getElementById('otpReuseBox').classList.remove('show');
+    }
+
+    previousCipherBits = currentCipherBits.slice();
+    previousPlaintext = currentText;
+  }
+})();
+
+// ========== EVE INTERCEPT STEP-THROUGH ==========
+(function() {
+  const bases = ['+', '×'];
+  const bitLabels = { '+_0': '|↑⟩', '+_1': '|→⟩', '×_0': '|↗⟩', '×_1': '|↘⟩' };
+  const outcomesEl = document.getElementById('eveOutcomes');
+  const arrow1Label = document.getElementById('eveArrow1Label');
+  const arrow2Label = document.getElementById('eveArrow2Label');
+  if (!outcomesEl) return;
+
+  function trace() {
+    const aliceBasis = bases[Math.floor(Math.random() * 2)];
+    const aliceBit = Math.random() < 0.5 ? 0 : 1;
+    const eveBasis = bases[Math.floor(Math.random() * 2)];
+    const bobBasis = aliceBasis; // Bob matches Alice for sifted bits
+
+    const stateLabel = bitLabels[aliceBasis + '_' + aliceBit];
+    arrow1Label.textContent = stateLabel;
+
+    let eveBit, eveState;
+    if (eveBasis === aliceBasis) {
+      // Eve's basis matches → she reads correctly
+      eveBit = aliceBit;
+      eveState = bitLabels[eveBasis + '_' + eveBit];
+    } else {
+      // Eve's basis wrong → random result
+      eveBit = Math.random() < 0.5 ? 0 : 1;
+      eveState = bitLabels[eveBasis + '_' + eveBit];
+    }
+    arrow2Label.textContent = eveState;
+
+    let bobBit;
+    if (eveBasis === aliceBasis) {
+      // Eve forwarded correct state → Bob reads correctly
+      bobBit = aliceBit;
+    } else {
+      // Eve forwarded wrong-basis state → Bob gets random
+      bobBit = Math.random() < 0.5 ? 0 : 1;
+    }
+
+    const basisMatch = eveBasis === aliceBasis;
+    const hasError = bobBit !== aliceBit;
+
+    // Build outcome display
+    outcomesEl.innerHTML = '';
+
+    const cards = [
+      {
+        title: 'Alice',
+        text: 'Sends <strong>' + stateLabel + '</strong> in basis <strong>' + aliceBasis + '</strong>, encoding bit <strong>' + aliceBit + '</strong>',
+        bg: 'rgba(129,140,248,0.06)', border: 'rgba(129,140,248,0.2)'
+      },
+      {
+        title: 'Eve intercepts',
+        text: 'Measures with basis <strong>' + eveBasis + '</strong> ' +
+          (basisMatch
+            ? '→ <span style="color:var(--green)">matches!</span> Gets bit <strong>' + eveBit + '</strong> correctly. Re-sends ' + eveState
+            : '→ <span style="color:var(--red)">wrong basis!</span> Gets random bit <strong>' + eveBit + '</strong>. Re-sends ' + eveState),
+        bg: basisMatch ? 'rgba(52,211,153,0.04)' : 'rgba(248,113,113,0.06)',
+        border: basisMatch ? 'rgba(52,211,153,0.2)' : 'rgba(248,113,113,0.2)'
+      },
+      {
+        title: 'Bob measures',
+        text: 'Uses basis <strong>' + bobBasis + '</strong> (matches Alice). Gets bit <strong>' + bobBit + '</strong>. ' +
+          (hasError
+            ? '<span style="color:var(--red)"><strong>ERROR!</strong> Bob got ' + bobBit + ' but Alice sent ' + aliceBit + '.</span>'
+            : '<span style="color:var(--green)"><strong>No error</strong> — matches Alice\'s bit.</span>'),
+        bg: hasError ? 'rgba(248,113,113,0.06)' : 'rgba(52,211,153,0.04)',
+        border: hasError ? 'rgba(248,113,113,0.2)' : 'rgba(52,211,153,0.2)'
+      }
+    ];
+
+    cards.forEach(function(c) {
+      const div = document.createElement('div');
+      div.className = 'eve-outcome';
+      div.style.background = c.bg;
+      div.style.borderColor = c.border;
+      div.innerHTML = '<strong style="font-size:0.78rem;color:var(--text-dim);">' + c.title + '</strong><br>' + c.text;
+      div.style.animation = 'fadeIn 0.4s ease';
+      outcomesEl.appendChild(div);
+    });
+  }
+
+  window.replayEveTrace = trace;
+  trace();
+})();
+
+// ========== EAVESDROPPER DETECTION PROBABILITY ==========
+(function() {
+  const slider = document.getElementById('detectSlider');
+  const sliderVal = document.getElementById('detectSliderVal');
+  const bigProb = document.getElementById('detectBigProb');
+  const expN = document.getElementById('detectExpN');
+  const bitGrid = document.getElementById('detectBitGrid');
+  const canvas = document.getElementById('detectCanvas');
+  if (!slider || !canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+
+  function drawGraph(n) {
+    ctx.clearRect(0, 0, W, H);
+    const pad = { top: 20, right: 20, bottom: 35, left: 50 };
+    const gW = W - pad.left - pad.right;
+    const gH = H - pad.top - pad.bottom;
+
+    // Grid
+    ctx.strokeStyle = 'rgba(42,53,80,0.5)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.top + (gH * i / 4);
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + gW, y); ctx.stroke();
+      ctx.fillStyle = '#8892a8'; ctx.font = '10px Inter, sans-serif';
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText((100 - i * 25) + '%', pad.left - 6, y);
+    }
+
+    // X-axis labels
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let x = 0; x <= 50; x += 10) {
+      const px = pad.left + (x / 50) * gW;
+      ctx.fillStyle = '#8892a8'; ctx.font = '10px Inter, sans-serif';
+      ctx.fillText(x, px, pad.top + gH + 6);
+      ctx.strokeStyle = 'rgba(42,53,80,0.3)';
+      ctx.beginPath(); ctx.moveTo(px, pad.top); ctx.lineTo(px, pad.top + gH); ctx.stroke();
+    }
+    ctx.fillText('check bits (n)', pad.left + gW / 2, pad.top + gH + 20);
+
+    // Curve: P(detect) = 1 - (3/4)^n
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(52,211,153,0.8)';
+    ctx.lineWidth = 2;
+    for (let x = 0; x <= 50; x += 0.5) {
+      const p = 1 - Math.pow(0.75, x);
+      const px = pad.left + (x / 50) * gW;
+      const py = pad.top + gH - (p * gH);
+      if (x === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    // Fill area under curve
+    const lastP = 1 - Math.pow(0.75, 50);
+    ctx.lineTo(pad.left + gW, pad.top + gH);
+    ctx.lineTo(pad.left, pad.top + gH);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(52,211,153,0.08)';
+    ctx.fill();
+
+    // Current point
+    const pN = 1 - Math.pow(0.75, n);
+    const dotX = pad.left + (n / 50) * gW;
+    const dotY = pad.top + gH - (pN * gH);
+
+    // Dashed lines to axes
+    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = 'rgba(99,102,241,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(dotX, dotY); ctx.lineTo(dotX, pad.top + gH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(dotX, dotY); ctx.lineTo(pad.left, dotY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Dot
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#6366f1';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(99,102,241,0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Glow
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 10, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(99,102,241,0.15)';
+    ctx.fill();
+  }
+
+  function updateBitGrid(n) {
+    bitGrid.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const div = document.createElement('div');
+      div.className = 'detect-bit';
+      const evadeThis = Math.random() < 0.75; // Eve evades single check with P=3/4
+      if (!evadeThis) {
+        div.classList.add('caught');
+        div.textContent = '!';
+        div.title = 'Bit ' + (i+1) + ': Mismatch detected!';
+      } else {
+        div.classList.add('safe');
+        div.textContent = '·';
+        div.title = 'Bit ' + (i+1) + ': No error detected';
+      }
+      bitGrid.appendChild(div);
+    }
+  }
+
+  function update() {
+    const n = parseInt(slider.value);
+    sliderVal.textContent = n;
+    expN.textContent = n;
+    const pDetect = 1 - Math.pow(0.75, n);
+    bigProb.textContent = (pDetect * 100).toFixed(2) + '%';
+
+    // Color based on strength
+    if (pDetect > 0.99) bigProb.style.color = 'var(--green)';
+    else if (pDetect > 0.9) bigProb.style.color = 'var(--cyan)';
+    else if (pDetect > 0.7) bigProb.style.color = 'var(--yellow)';
+    else bigProb.style.color = 'var(--orange)';
+
+    drawGraph(n);
+    updateBitGrid(n);
+  }
+
+  slider.addEventListener('input', update);
+  update();
+})();
+
+// ========== QUIZ ==========
+document.getElementById('btnQuiz').addEventListener('click', function() {
+  const questions = document.querySelectorAll('.quiz-q');
+  let correct = 0, total = questions.length;
+
+  questions.forEach(q => {
+    const ans = q.dataset.correct;
+    const name = q.querySelector('input[type="radio"]').name;
+    const selected = q.querySelector(`input[name="${name}"]:checked`);
+    const fb = q.querySelector('.quiz-feedback');
+    const fbText = fb.querySelector('.fb-text');
+
+    q.querySelectorAll('label').forEach(l => l.classList.remove('correct', 'wrong'));
+
+    if (!selected) {
+      fb.className = 'quiz-feedback show wrong-fb';
+      fbText.textContent = 'Please select an answer.';
+      return;
+    }
+
+    const val = selected.value;
+    if (val === ans) {
+      selected.parentElement.classList.add('correct');
+      fb.className = 'quiz-feedback show correct-fb';
+      fbText.textContent = 'Correct!';
+      correct++;
+    } else {
+      selected.parentElement.classList.add('wrong');
+      q.querySelector(`input[value="${ans}"]`).parentElement.classList.add('correct');
+      fb.className = 'quiz-feedback show wrong-fb';
+      const expl = {
+        q1: "When bases don't match, quantum mechanics gives a completely random result \u2014 50% chance of 0 or 1.",
+        q2: "Eve's random basis is wrong 50% of the time. When wrong, Bob gets it wrong 50% of those times \u2192 1/2 \u00d7 1/2 = 25%.",
+        q3: 'The no-cloning theorem prevents making perfect copies of unknown quantum states.',
+        q4: 'Only bases are shared publicly. Bit values remain secret \u2014 essential for security.',
+        q5: 'Both pick from 2 bases independently, so P(match) = 1/2, meaning ~50% survive.',
+        q6: 'With key reuse, C\u2081 \u2295 C\u2082 = (P\u2081\u2295K) \u2295 (P\u2082\u2295K) = P\u2081 \u2295 P\u2082. The key cancels, leaking plaintext information.',
+        q7: 'P(detect) = 1 \u2212 (3/4)\u00B2\u2070 = 1 \u2212 0.00317 \u2248 99.68%. Each additional check bit exponentially reduces Eve\'s chances.',
+        q8: 'H(e) quantifies the information Eve may have gained. Privacy amplification removes that many bits to guarantee Eve has negligible information about the final key.'
+      };
+      fbText.textContent = 'Not quite. ' + (expl[name] || '');
+    }
+  });
+
+  // Show score
+  const scoreEl = document.getElementById('quizScore');
+  const scoreVal = document.getElementById('scoreValue');
+  scoreEl.classList.add('show');
+  scoreVal.textContent = `${correct} / ${total}`;
+  scoreVal.style.color = correct === total ? 'var(--green)' : correct >= total/2 ? 'var(--yellow)' : 'var(--red)';
+});
+</script>
+
+<footer>
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+</body>
+</html>

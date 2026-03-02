@@ -1,0 +1,2218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Fourier Transform — Interactive Visualization</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --panel: #111827;
+    --panel2: #1a2236;
+    --accent2: #22d3ee;
+    --accent2-glow: rgba(34, 211, 238, 0.25);
+    --accent3: #f472b6;
+    --accent3-glow: rgba(244, 114, 182, 0.25);
+    --dim: #8892a8;
+    --highlight: #facc15;
+    --canvas-wire: #2a3550;
+    --canvas-grid: #161d2e;
+    --canvas-gate-inactive: rgba(26,34,54,0.92);
+    --canvas-text: #cbd5e1;
+    --canvas-dim: #4b5563;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+  h1, h2, h3 { font-weight: 600; }
+
+  /* Particle background */
+  #particleBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 24px 20px 16px;
+    position: relative;
+    z-index: 1;
+  }
+  .header::after {
+    content: '';
+    display: block;
+    width: 140px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+    margin: 14px auto 0;
+  }
+  .header h1 {
+    font-size: 2rem;
+    margin-bottom: 6px;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header p { color: var(--dim); font-size: 0.85rem; max-width: 720px; margin: 0 auto; line-height: 1.55; font-weight: 300; }
+
+  .toggle-btn {
+    background: var(--panel2);
+    color: var(--dim);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.1s, box-shadow 0.2s;
+  }
+  .toggle-btn:hover { border-color: var(--accent); box-shadow: 0 2px 10px var(--accent-glow); }
+  .toggle-btn:active { transform: scale(0.95); }
+  .toggle-btn.active { background: linear-gradient(135deg, var(--accent), #818cf8); color: #fff; border-color: transparent; box-shadow: 0 2px 12px var(--accent-glow); }
+  .toggle-btn.active::before { content: '\2713 '; font-size: 0.7rem; }
+
+  /* Controls bar */
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 12px 20px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    position: relative;
+    z-index: 1;
+  }
+  .controls label { color: var(--dim); font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+  .controls select, .controls button {
+    background: var(--panel2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.83rem;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.1s, box-shadow 0.2s;
+  }
+  .controls select { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+  .controls select:hover, .controls button:hover { border-color: var(--accent); box-shadow: 0 2px 10px var(--accent-glow); }
+  .controls select:focus, .controls button:focus { outline: none; border-color: var(--accent); }
+  .controls select:active, .controls button:active { transform: scale(0.97); }
+  .controls button.nav-disabled { opacity: 0.35; pointer-events: none; cursor: default; transform: none; box-shadow: none; }
+  .controls button.primary {
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    border-color: transparent;
+    color: #fff;
+    font-weight: 600;
+  }
+  .controls button.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
+  .controls button.primary:active { transform: translateY(0); }
+  .speed-group { display: flex; align-items: center; gap: 6px; padding-left: 12px; border-left: 1px solid var(--border); }
+  .speed-group input[type="range"] { width: 65px; accent-color: var(--accent); cursor: pointer; }
+  .speed-label { font-size: 0.73rem; color: var(--dim); min-width: 30px; font-family: 'JetBrains Mono', monospace; }
+
+  /* Step progress bar */
+  .progress-bar { display: flex; height: 6px; background: var(--bg); cursor: pointer; position: relative; z-index: 1; }
+  .progress-bar .seg { flex: 1; transition: background 0.3s; border-right: 1px solid var(--bg); position: relative; }
+  .progress-bar .seg:last-child { border-right: none; }
+  .progress-bar .seg.done { background: linear-gradient(135deg, var(--accent), #818cf8); }
+  .progress-bar .seg.current { background: linear-gradient(135deg, var(--accent2), var(--highlight)); }
+  .progress-bar .seg:hover { background: rgba(99,102,241,0.45); }
+  .progress-bar .seg .seg-tip { display: none; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: var(--panel2); color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border); white-space: nowrap; pointer-events: none; z-index: 10; }
+  .progress-bar .seg:hover .seg-tip { display: block; }
+
+  .step-indicator { font-size: 0.83rem; color: var(--accent2); min-width: 90px; text-align: center; font-weight: 600; display: inline-block; font-family: 'JetBrains Mono', monospace; }
+
+  /* Keyboard hint */
+  .kb-hint { font-size: 0.68rem; color: var(--dim); text-align: center; padding: 4px; background: var(--panel); opacity: 0.6; position: relative; z-index: 1; }
+  .kb-hint kbd { background: var(--panel2); border: 1px solid var(--border); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--dim); margin: 0 1px; }
+
+  /* Main grid */
+  .main { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 1400px; margin: 0 auto; padding: 12px; position: relative; z-index: 1; }
+
+  /* Panels — card style */
+  .panel {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.4;
+  }
+  .panel:hover { border-color: rgba(99, 102, 241, 0.4); }
+  .panel h2 { font-family: 'Inter', sans-serif; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 2px; color: var(--dim); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(99,102,241,0.12); cursor: pointer; user-select: none; transition: color 0.2s; font-weight: 600; }
+  .panel h2:hover { color: var(--text); }
+  .panel h2::after { content: '▾'; float: right; font-size: 1rem; color: var(--dim); transition: transform 0.3s ease; margin-right: 4px; }
+  .panel.collapsed h2::after { transform: rotate(-90deg); }
+  .panel-body { overflow: hidden; transition: max-height 0.35s ease, opacity 0.25s ease; opacity: 1; }
+  .panel.collapsed .panel-body { max-height: 0 !important; opacity: 0; overflow: hidden; }
+
+  .circuit-panel { grid-column: 1 / -1; position: relative; overflow: visible; }
+  #circuitCanvas { width: 100%; height: 220px; display: block; border-radius: 12px; }
+
+  /* Gate tooltip overlay */
+  .gate-tooltip {
+    display: none;
+    position: absolute;
+    background: rgba(17,24,39,0.96);
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 0.82rem;
+    color: var(--text);
+    z-index: 20;
+    max-width: 280px;
+    pointer-events: none;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(99,102,241,0.1);
+    line-height: 1.5;
+    backdrop-filter: blur(8px);
+  }
+  .gate-tooltip .gt-title { font-weight: 700; margin-bottom: 6px; color: var(--accent); font-family: 'Inter', sans-serif; }
+  .gate-tooltip .gt-matrix { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; margin: 6px 0; line-height: 1.6; white-space: pre; color: var(--accent2); }
+  .gate-tooltip .gt-info { color: var(--dim); font-size: 0.78rem; }
+
+  /* Bar tooltip overlay */
+  .bar-tooltip {
+    display: none;
+    position: absolute;
+    background: rgba(17,24,39,0.96);
+    border: 1px solid rgba(34,211,238,0.3);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text);
+    z-index: 20;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(34,211,238,0.1);
+    line-height: 1.5;
+    backdrop-filter: blur(8px);
+  }
+
+  .statevec-panel { min-height: 370px; }
+  #stateCanvas { width: 100%; height: 340px; display: block; border-radius: 12px; }
+
+  .phase-panel { min-height: 330px; }
+  #phaseCanvas { width: 100%; height: 290px; display: block; border-radius: 12px; }
+
+  /* Binary fraction panel */
+  .binfrac-panel { grid-column: 1 / -1; }
+  .binfrac-content { overflow-x: auto; }
+  .binfrac-table { border-collapse: separate; border-spacing: 0; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; width: 100%; }
+  .binfrac-table th { text-align: left; padding: 6px 12px; color: var(--accent); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); background: rgba(99,102,241,0.06); }
+  .binfrac-table td { padding: 7px 12px; border-bottom: 1px solid rgba(42,53,80,0.5); vertical-align: middle; transition: background 0.2s; }
+  .binfrac-table tr:hover td { background: rgba(99,102,241,0.05); }
+  .binfrac-table .bit-box { display: inline-block; width: 24px; height: 24px; text-align: center; line-height: 24px; border-radius: 6px; margin: 0 2px; font-weight: 700; font-size: 0.82rem; }
+  .binfrac-table .bit-encoded { background: rgba(99,102,241,0.2); color: var(--accent); border: 1px solid rgba(99,102,241,0.4); }
+  .binfrac-table .bit-pending { background: rgba(100,116,139,0.12); color: var(--dim); border: 1px solid rgba(100,116,139,0.25); }
+  .binfrac-table .bit-na { background: transparent; color: var(--canvas-dim); }
+  .binfrac-table .qubit-label { color: var(--accent2); font-weight: 700; }
+  .binfrac-table .phase-val { color: var(--highlight); font-family: 'Cambria Math', serif; }
+  .binfrac-table .status-complete { color: var(--green); font-size: 0.78rem; }
+  .binfrac-table .status-progress { color: var(--highlight); font-size: 0.78rem; }
+  .binfrac-table .status-waiting { color: var(--canvas-dim); font-size: 0.78rem; }
+
+  /* Tensor product panel */
+  .tensor-panel { grid-column: 1 / -1; }
+  .tensor-content { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 0; }
+  .tensor-factor {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    min-width: 120px;
+    transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+    background: var(--panel2);
+  }
+  .tensor-factor.complete { border-color: rgba(52,211,153,0.4); background: rgba(52,211,153,0.06); box-shadow: 0 0 12px var(--green-glow); }
+  .tensor-factor.in-progress { border-color: rgba(250,204,21,0.4); background: rgba(250,204,21,0.06); box-shadow: 0 0 12px rgba(250,204,21,0.15); }
+  .tensor-factor.waiting { border-color: var(--border); opacity: 0.5; }
+  .tensor-factor .tf-label { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--dim); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .tensor-factor .tf-expr { font-family: 'Cambria Math', serif; font-size: 0.92rem; text-align: center; line-height: 1.6; }
+  .tensor-factor .tf-expr .math { color: var(--highlight); }
+  .tensor-factor canvas { margin-top: 8px; }
+  .tensor-symbol { font-size: 1.3rem; color: var(--dim); font-weight: 300; padding: 0 2px; align-self: center; }
+
+  .notation-panel { min-height: 330px; }
+  .notation-content { font-family: 'Cambria Math', 'Latin Modern Math', 'Times New Roman', serif; font-size: 1.02rem; line-height: 2; padding: 8px 12px; overflow-x: auto; white-space: nowrap; background: var(--panel2); border-radius: 12px; border: 1px solid rgba(42,53,80,0.5); }
+  .notation-content .ket { font-weight: 600; margin: 0 1px; }
+  .notation-content .coeff { margin: 0 2px; }
+  .notation-content .plus { color: var(--dim); margin: 0 4px; }
+  .notation-content .prefactor { color: var(--dim); }
+
+  .phasor-panel { min-height: 330px; }
+  #phasorCanvas { width: 100%; height: 290px; display: block; border-radius: 12px; }
+
+  .explain-panel { grid-column: 1 / -1; min-height: 80px; }
+  .explain-panel .explain-text { font-size: 0.9rem; line-height: 1.7; color: var(--text); }
+  .explain-panel .explain-text .math { font-family: 'Cambria Math', serif; color: var(--highlight); font-style: italic; }
+  .explain-panel .explain-text .gate-label { display: inline-block; background: linear-gradient(135deg, var(--accent), #818cf8); color: #fff; padding: 2px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 600; vertical-align: middle; }
+  .explain-panel .explain-text .gate-label.cr { background: linear-gradient(135deg, #059669, var(--green)); }
+  .explain-panel .explain-text .gate-label.swap { background: linear-gradient(135deg, var(--accent3), #e879a8); }
+  .explain-panel .explain-text .applied { color: var(--green); font-weight: 600; }
+  .explain-panel .explain-text .not-applied { color: var(--canvas-dim); }
+  .explain-panel .explain-text .expanded { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--dim); font-size: 0.85rem; }
+
+  .matrix-panel { grid-column: 1 / -1; overflow-x: auto; }
+  .matrix-table { border-collapse: separate; border-spacing: 0; margin: 0 auto; font-size: 0.76rem; font-family: 'JetBrains Mono', monospace; }
+  .matrix-table td { padding: 5px 7px; text-align: center; border: 1px solid rgba(42,53,80,0.5); min-width: 46px; transition: background 0.3s; background: var(--panel2); }
+  .matrix-table td.col-highlight { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.4); }
+  .matrix-table td.col-header-highlight { background: rgba(99,102,241,0.25); color: #fff !important; font-weight: 700; }
+  .matrix-table .header-cell { color: var(--accent2); font-weight: 600; background: rgba(34,211,238,0.06); }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 0.73rem; color: var(--dim); font-family: 'Inter', sans-serif; }
+  .legend span::before { content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 4px; vertical-align: middle; }
+  .legend .leg-amp::before { background: var(--accent); }
+  .legend .leg-phase::before { background: var(--accent2); }
+  .legend .leg-changed::before { background: var(--highlight); }
+
+  /* Circuit annotation below canvas */
+  .circuit-annotation {
+    text-align: center;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    min-height: 24px;
+    line-height: 1.5;
+    color: var(--text);
+    border-top: 1px solid rgba(42,53,80,0.5);
+    margin-top: 6px;
+    font-family: 'Inter', sans-serif;
+  }
+  .circuit-annotation .ann-gate {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 0.78rem;
+    margin-right: 6px;
+  }
+  .circuit-annotation .ann-gate.h-gate { background: rgba(99,102,241,0.2); color: var(--accent); border: 1px solid rgba(99,102,241,0.3); }
+  .circuit-annotation .ann-gate.cr-gate { background: rgba(34,211,238,0.15); color: var(--accent2); border: 1px solid rgba(34,211,238,0.25); }
+  .circuit-annotation .ann-gate.swap-gate { background: rgba(244,114,182,0.15); color: var(--accent3); border: 1px solid rgba(244,114,182,0.25); }
+  .circuit-annotation .ann-detail { color: var(--dim); font-size: 0.78rem; }
+
+  /* Active qubit highlight on tensor factors */
+  .tensor-factor.active-qubit { border-color: var(--accent); box-shadow: 0 0 16px var(--accent-glow); }
+
+  /* Frequency spectrum panel */
+  .freq-panel { grid-column: 1 / -1; position: relative; }
+  #freqCanvas { width: 100%; height: 240px; display: block; border-radius: 12px; }
+  .freq-formula {
+    font-family: 'Cambria Math', serif;
+    font-size: 0.88rem;
+    color: var(--dim);
+    line-height: 1.7;
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: var(--panel2);
+    border-radius: 10px;
+    border: 1px solid rgba(42,53,80,0.5);
+  }
+  .freq-formula .math { color: var(--highlight); }
+  .freq-formula .muted { opacity: 0.5; font-style: italic; }
+
+  /* Symbolic matrix styles */
+  .matrix-table td.symbolic { font-family: 'Cambria Math', serif; font-size: 0.82rem; }
+
+  /* Panel header toggles and bar readout */
+  .panel h2 .toggle-btn { float: right; font-size: 0.7rem; padding: 2px 8px; margin-top: -2px; }
+  .bar-readout {
+    display: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    margin-top: 6px;
+    border-radius: 8px;
+    background: var(--panel2);
+    border: 1px solid rgba(42,53,80,0.5);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .bar-readout.visible { display: block; }
+
+  /* Touch/mobile specific */
+  .touch-device .kb-hint { display: none; }
+  .touch-device .progress-bar .seg { min-width: 20px; }
+
+  @media (max-width: 800px) {
+    .main { grid-template-columns: 1fr; gap: 8px; padding: 8px; }
+    .circuit-panel, .explain-panel, .matrix-panel, .notation-panel, .binfrac-panel, .tensor-panel, .freq-panel { grid-column: 1; }
+    .controls { gap: 8px; padding: 8px 12px; }
+    .speed-group { width: 100%; justify-content: center; padding-top: 4px; border-top: 1px solid var(--border); }
+    .header h1 { font-size: 1.5rem; }
+    .header p { font-size: 0.82rem; }
+    .panel { border-radius: 12px; padding: 14px; }
+  }
+  @media (max-width: 500px) {
+    .controls label { display: none; }
+    .controls select, .controls button { padding: 6px 8px; font-size: 0.78rem; }
+    .step-indicator { font-size: 0.75rem; min-width: 70px; }
+    .panel { border-radius: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="particleBg"></canvas>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+
+<div class="header">
+  <h1>Quantum Fourier Transform</h1>
+  <p>The quantum analogue of the Discrete Fourier Transform — central to Shor's algorithm and quantum phase estimation.
+     Step through the circuit and watch how Hadamard and controlled-rotation gates
+     transform computational basis states into superpositions with structured phase relationships.</p>
+</div>
+
+<div class="controls">
+  <label>Qubits:</label>
+  <select id="nQubits">
+    <option value="2">2 qubits ★</option>
+    <option value="3" selected>3 qubits</option>
+    <option value="4">4 qubits</option>
+  </select>
+  <label>Input |x&#10217;:</label>
+  <select id="inputState"></select>
+  <button id="btnPrev">&#9664; Prev</button>
+  <div class="step-indicator" id="stepIndicator">Step 0 / 0</div>
+  <button id="btnNext">Next &#9654;</button>
+  <button id="btnEnd">End &#9197;</button>
+  <button class="primary" id="btnAutoPlay">&#9654; Play</button>
+  <button id="btnReset">Reset</button>
+  <button class="toggle-btn" id="btnDetail" title="Toggle detailed explanations">Details</button>
+  <div class="speed-group">
+    <label>Speed:</label>
+    <input type="range" id="speedSlider" min="1" max="15" value="5">
+    <span class="speed-label" id="speedLabel">1.2s</span>
+  </div>
+</div>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="kb-hint">
+  <kbd>&#8592;</kbd> <kbd>&#8594;</kbd> step &nbsp;
+  <kbd>Space</kbd> play/pause &nbsp;
+  <kbd>R</kbd> reset &nbsp;
+  <kbd>E</kbd> end
+</div>
+
+<div class="main">
+  <!-- 1. Circuit diagram (full width) -->
+  <div class="panel circuit-panel">
+    <h2>Circuit Diagram</h2>
+    <div class="panel-body">
+      <canvas id="circuitCanvas"></canvas>
+      <div class="gate-tooltip" id="gateTooltip"></div>
+      <div class="circuit-annotation" id="circuitAnnotation"></div>
+    </div>
+  </div>
+
+  <!-- 2. Explanation (full width) — moved up for pedagogical flow -->
+  <div class="panel explain-panel">
+    <h2>What's Happening</h2>
+    <div class="panel-body">
+      <div class="explain-text" id="explainText"></div>
+    </div>
+  </div>
+
+  <!-- 3. State vector bar chart (left half) -->
+  <div class="panel statevec-panel">
+    <h2>State Vector &mdash; Amplitudes</h2>
+    <div class="panel-body">
+      <canvas id="stateCanvas"></canvas>
+      <div class="bar-tooltip" id="barTooltip"></div>
+      <div class="legend">
+        <span class="leg-amp">Magnitude</span>
+        <span class="leg-phase">Phase</span>
+        <span class="leg-changed">Changed</span>
+      </div>
+      <div class="bar-readout" id="barReadout"></div>
+    </div>
+  </div>
+
+  <!-- 4. Phase wheels (right half) -->
+  <div class="panel phase-panel">
+    <h2>Phase Wheels</h2>
+    <div class="panel-body">
+      <canvas id="phaseCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- 5. Composite phasor (left half) — paired with notation -->
+  <div class="panel phasor-panel">
+    <h2>Composite Phasor Diagram <button class="toggle-btn" id="btnTrails" title="Show phase evolution trails">&#9776; Trails</button></h2>
+    <div class="panel-body">
+      <canvas id="phasorCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- 6. Algebraic notation (right half) — side-by-side with phasor -->
+  <div class="panel notation-panel">
+    <h2>State in Dirac Notation</h2>
+    <div class="panel-body">
+      <div class="notation-content" id="notationContent"></div>
+    </div>
+  </div>
+
+  <!-- 7. Binary fraction decomposition (full width) -->
+  <div class="panel binfrac-panel">
+    <h2>Binary Fraction Decomposition &mdash; The Key Insight</h2>
+    <div class="panel-body">
+      <div class="binfrac-content" id="binfracContent"></div>
+    </div>
+  </div>
+
+  <!-- 8. Tensor product decomposition (full width) -->
+  <div class="panel tensor-panel">
+    <h2>Tensor Product Structure</h2>
+    <div class="panel-body">
+      <div class="tensor-content" id="tensorContent"></div>
+    </div>
+  </div>
+
+  <!-- 9. Matrix (full width) -->
+  <div class="panel matrix-panel">
+    <h2>QFT Unitary Matrix (F<sub>N</sub>) &mdash; highlighted column = input |x&#10217; <button class="toggle-btn" id="btnSymbolic" title="Toggle symbolic omega notation">&#969; Symbolic</button></h2>
+    <div class="panel-body">
+      <div id="matrixContainer"></div>
+    </div>
+  </div>
+
+  <!-- 10. Frequency spectrum (full width) -->
+  <div class="panel freq-panel">
+    <h2>Frequency Spectrum &mdash; DFT Interpretation</h2>
+    <div class="panel-body">
+      <canvas id="freqCanvas"></canvas>
+      <div class="freq-formula" id="freqFormula"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================================
+// Complex number helpers
+// =====================================================================
+const C = {
+  add: (a, b) => [a[0]+b[0], a[1]+b[1]],
+  mul: (a, b) => [a[0]*b[0]-a[1]*b[1], a[0]*b[1]+a[1]*b[0]],
+  scale: (s, a) => [s*a[0], s*a[1]],
+  mag: a => Math.sqrt(a[0]*a[0]+a[1]*a[1]),
+  phase: a => Math.atan2(a[1], a[0]),
+  fromPolar: (r, th) => [r*Math.cos(th), r*Math.sin(th)],
+  zero: () => [0, 0],
+  one: () => [1, 0],
+};
+
+// =====================================================================
+// QFT Simulation
+// =====================================================================
+class QFTSimulator {
+  constructor(n) {
+    this.n = n;
+    this.N = 1 << n;
+    this.steps = [];
+    this.buildSteps();
+  }
+
+  buildSteps() {
+    this.steps = [];
+    for (let q = 0; q < this.n; q++) {
+      this.steps.push({ type: 'H', target: q, label: `H on q${q}` });
+      for (let k = 1; k < this.n - q; k++) {
+        const control = q + k;
+        const m = k + 1;
+        this.steps.push({ type: 'CR', target: q, control, m, label: `CR${m}(q${control}→q${q})` });
+      }
+    }
+    for (let i = 0; i < Math.floor(this.n / 2); i++) {
+      this.steps.push({ type: 'SWAP', q1: i, q2: this.n - 1 - i, label: `SWAP q${i}↔q${this.n-1-i}` });
+    }
+  }
+
+  simulate(x, stepIdx) {
+    let state = new Array(this.N).fill(null).map(() => C.zero());
+    state[x] = C.one();
+    for (let s = 0; s < stepIdx && s < this.steps.length; s++) {
+      state = this.applyStep(state, this.steps[s]);
+    }
+    return state;
+  }
+
+  applyStep(state, step) {
+    const N = this.N;
+    if (step.type === 'H') {
+      const newState = new Array(N).fill(null).map(() => C.zero());
+      const bit = this.n - 1 - step.target;
+      const inv = 1 / Math.sqrt(2);
+      for (let i = 0; i < N; i++) {
+        const bval = (i >> bit) & 1;
+        const partner = i ^ (1 << bit);
+        if (bval === 0) {
+          newState[i] = C.add(newState[i], C.scale(inv, state[i]));
+          newState[partner] = C.add(newState[partner], C.scale(inv, state[i]));
+        } else {
+          newState[partner] = C.add(newState[partner], C.scale(inv, state[i]));
+          newState[i] = C.add(newState[i], C.scale(-inv, state[i]));
+        }
+      }
+      return newState;
+    }
+    if (step.type === 'CR') {
+      const newState = state.map(c => [...c]);
+      const bitT = this.n - 1 - step.target;
+      const bitC = this.n - 1 - step.control;
+      const angle = 2 * Math.PI / (1 << step.m);
+      for (let i = 0; i < N; i++) {
+        if (((i >> bitT) & 1) === 1 && ((i >> bitC) & 1) === 1)
+          newState[i] = C.mul(state[i], C.fromPolar(1, angle));
+      }
+      return newState;
+    }
+    if (step.type === 'SWAP') {
+      const bit1 = this.n - 1 - step.q1;
+      const bit2 = this.n - 1 - step.q2;
+      const result = new Array(N).fill(null).map(() => C.zero());
+      for (let i = 0; i < N; i++) {
+        const b1 = (i >> bit1) & 1, b2 = (i >> bit2) & 1;
+        let j = i;
+        if (b1 !== b2) j = i ^ (1 << bit1) ^ (1 << bit2);
+        result[j] = state[i];
+      }
+      return result;
+    }
+    return state.map(c => [...c]);
+  }
+
+  // Which qubit block step s belongs to (-1 for SWAP)
+  stepQubitBlock(s) {
+    let idx = 0;
+    for (let q = 0; q < this.n; q++) {
+      const blockSize = 1 + (this.n - q - 1);
+      if (s < idx + blockSize) return q;
+      idx += blockSize;
+    }
+    return -1; // SWAP
+  }
+
+  // Is qubit q's entire block (H + all CRs) done by step s?
+  qubitBlockComplete(q, stepIdx) {
+    let idx = 0;
+    for (let i = 0; i < q; i++) idx += 1 + (this.n - i - 1);
+    const blockEnd = idx + 1 + (this.n - q - 1);
+    return stepIdx >= blockEnd;
+  }
+
+  // How many gates into qubit q's block have been applied?
+  qubitBlockProgress(q, stepIdx) {
+    let idx = 0;
+    for (let i = 0; i < q; i++) idx += 1 + (this.n - i - 1);
+    const blockSize = 1 + (this.n - q - 1);
+    const done = Math.max(0, Math.min(stepIdx - idx, blockSize));
+    return { done, total: blockSize, started: stepIdx > idx };
+  }
+}
+
+// =====================================================================
+// Animation engine
+// =====================================================================
+const ANIM_DURATION = 400;
+let animState = null;
+let displayState = null;
+
+function lerpAngle(a, b, t) {
+  let diff = b - a;
+  while (diff > Math.PI) diff -= 2 * Math.PI;
+  while (diff < -Math.PI) diff += 2 * Math.PI;
+  return a + diff * t;
+}
+
+function lerpState(from, to, t) {
+  const result = [];
+  for (let i = 0; i < from.length; i++) {
+    const magA = C.mag(from[i]), magB = C.mag(to[i]);
+    const phA = C.phase(from[i]), phB = C.phase(to[i]);
+    result.push(C.fromPolar(magA + (magB - magA) * t, lerpAngle(phA, phB, t)));
+  }
+  return result;
+}
+
+function startAnimation(fromState, toState) {
+  animState = { from: fromState, to: toState, startTime: performance.now() };
+  prevStateForDelta = fromState;
+  requestAnimationFrame(animationLoop);
+}
+
+function animationLoop(now) {
+  if (!animState) return;
+  const t = Math.min((now - animState.startTime) / ANIM_DURATION, 1);
+  const eased = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+  displayState = lerpState(animState.from, animState.to, eased);
+  drawAllVisualizations();
+  if (t < 1) { requestAnimationFrame(animationLoop); }
+  else { displayState = animState.to; animState = null; drawAllVisualizations(); }
+}
+
+function drawAllVisualizations() {
+  if (!displayState) return;
+  drawCircuit(sim, currentStep);
+  drawStateVector(displayState, sim.n);
+  drawPhaseWheels(displayState, sim.n);
+  drawPhasorDiagram(displayState, sim.n);
+  drawNotation(displayState, sim.n);
+  drawBinaryFractions(sim, currentStep, inputX);
+  drawTensorProduct(sim, currentStep, inputX);
+  drawFrequencySpectrum(displayState, sim.n, currentStep);
+}
+
+// =====================================================================
+// Canvas setup
+// =====================================================================
+const dpr = window.devicePixelRatio || 1;
+function setupCanvas(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, w: rect.width, h: rect.height };
+}
+
+// Get current theme colors for canvas drawing
+function themeColors() {
+  return {
+    wire: '#2a3550', grid: '#161d2e',
+    gateInactive: 'rgba(26,34,54,0.92)', gateInactiveBorder: '#4b5563',
+    text: '#cbd5e1', dimText: '#4b5563', dimText2: '#374151', labelText: '#94a3b8',
+    bracketColor: '#2a3550', bracketText: '#4b5563', yAxisText: '#4b5563',
+    crosshair: '#1e293b', circleStroke: '#2a3550', phaseText: '#8892a8',
+    phasorBg: '#1e293b', phasorInner: '#0f172a',
+    barDeltaGlow: 'rgba(250,204,21,0.06)', barDeltaStroke: 'rgba(250,204,21,0.5)',
+  };
+}
+
+// =====================================================================
+// Circuit gate hit-testing data (for tooltips)
+// =====================================================================
+let gateHitAreas = []; // [{x, y, w, h, gateIdx}]
+
+function drawCircuit(sim, currentStep) {
+  const canvas = document.getElementById('circuitCanvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+  const tc = themeColors();
+  ctx.clearRect(0, 0, w, h);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  gateHitAreas = [];
+
+  const n = sim.n;
+  const padL = 60, padR = 30, padT = 25, padB = 15;
+  const wireSpacing = (h - padT - padB) / n;
+  const wireY = i => padT + wireSpacing * (i + 0.5);
+  const gates = sim.steps;
+  const totalGates = gates.length;
+  const colW = Math.min(75, (w - padL - padR) / (totalGates + 1));
+  const gateX = i => padL + colW * (i + 0.5);
+
+  // Group brackets
+  const groups = [];
+  let gIdx = 0;
+  for (let q = 0; q < n; q++) {
+    const start = gIdx;
+    gIdx += 1 + (n - q - 1);
+    groups.push({ q, start, end: gIdx - 1 });
+  }
+  ctx.strokeStyle = tc.bracketColor;
+  ctx.lineWidth = 1;
+  ctx.fillStyle = tc.bracketText;
+  ctx.font = '9px sans-serif';
+  ctx.textAlign = 'center';
+  groups.forEach(g => {
+    const x1 = gateX(g.start) - colW * 0.35, x2 = gateX(g.end) + colW * 0.35, y = padT - 14;
+    ctx.beginPath(); ctx.moveTo(x1, y+4); ctx.lineTo(x1, y); ctx.lineTo(x2, y); ctx.lineTo(x2, y+4); ctx.stroke();
+    ctx.fillText(`q${g.q} block`, (x1+x2)/2, y-2);
+  });
+  const swapStart = gates.findIndex(g => g.type === 'SWAP');
+  if (swapStart >= 0) {
+    const x1 = gateX(swapStart) - colW*0.35, x2 = gateX(totalGates-1) + colW*0.35, y = padT - 14;
+    ctx.beginPath(); ctx.moveTo(x1,y+4); ctx.lineTo(x1,y); ctx.lineTo(x2,y); ctx.lineTo(x2,y+4); ctx.stroke();
+    ctx.fillText('bit reversal', (x1+x2)/2, y-2);
+  }
+
+  // Wires
+  ctx.strokeStyle = tc.wire;
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < n; i++) {
+    const y = wireY(i);
+    ctx.beginPath(); ctx.moveTo(padL-10, y); ctx.lineTo(w-padR+10, y); ctx.stroke();
+  }
+
+  // Wire input labels
+  const inputBits = inputX.toString(2).padStart(n, '0');
+  ctx.font = '12px monospace'; ctx.textAlign = 'right';
+  for (let i = 0; i < n; i++) {
+    const y = wireY(i);
+    ctx.fillStyle = tc.labelText;
+    ctx.fillText(`q${i}`, padL-32, y+4);
+    ctx.fillStyle = inputBits[i]==='1' ? '#22d3ee' : tc.dimText;
+    ctx.font = 'bold 12px monospace'; ctx.textAlign = 'left';
+    ctx.fillText(`|${inputBits[i]}⟩`, padL-24, y+4);
+    ctx.font = '12px monospace'; ctx.textAlign = 'right';
+  }
+
+  // Active qubit wire highlighting
+  if (currentStep > 0 && currentStep <= totalGates) {
+    const activeGate = gates[currentStep - 1];
+    const hlWires = [];
+    if (activeGate.type === 'H') {
+      hlWires.push({ q: activeGate.target, color: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.25)' });
+    } else if (activeGate.type === 'CR') {
+      hlWires.push({ q: activeGate.target, color: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.2)' });
+      hlWires.push({ q: activeGate.control, color: 'rgba(34,211,238,0.12)', border: 'rgba(34,211,238,0.2)' });
+    } else if (activeGate.type === 'SWAP') {
+      hlWires.push({ q: activeGate.q1, color: 'rgba(244,114,182,0.12)', border: 'rgba(244,114,182,0.2)' });
+      hlWires.push({ q: activeGate.q2, color: 'rgba(244,114,182,0.12)', border: 'rgba(244,114,182,0.2)' });
+    }
+    hlWires.forEach(hw => {
+      const y = wireY(hw.q);
+      const bandH = Math.min(wireSpacing * 0.55, 40);
+      ctx.fillStyle = hw.color;
+      ctx.fillRect(padL - 10, y - bandH / 2, w - padL - padR + 20, bandH);
+      ctx.strokeStyle = hw.border; ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(padL - 10, y - bandH / 2); ctx.lineTo(w - padR + 10, y - bandH / 2);
+      ctx.moveTo(padL - 10, y + bandH / 2); ctx.lineTo(w - padR + 10, y + bandH / 2);
+      ctx.stroke();
+    });
+  }
+
+  // Gates
+  for (let g = 0; g < totalGates; g++) {
+    const gate = gates[g];
+    const x = gateX(g);
+    const isActive = g < currentStep;
+    const isCurrent = g === currentStep - 1;
+
+    if (gate.type === 'H') {
+      const y = wireY(gate.target); const sz = 28;
+      if (isCurrent) { ctx.shadowColor = '#6366f1'; ctx.shadowBlur = 12; }
+      ctx.fillStyle = isCurrent ? 'rgba(99,102,241,0.4)' : (isActive ? 'rgba(99,102,241,0.18)' : tc.gateInactive);
+      ctx.strokeStyle = isCurrent ? '#818cf8' : (isActive ? '#6366f1' : tc.gateInactiveBorder);
+      ctx.lineWidth = isCurrent ? 2.5 : 1.5;
+      ctx.beginPath(); ctx.roundRect(x-sz/2, y-sz/2, sz, sz, 6); ctx.fill(); ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = isCurrent ? '#fff' : (isActive ? tc.text : tc.dimText);
+      ctx.font = 'bold 15px monospace'; ctx.textAlign = 'center'; ctx.fillText('H', x, y+5);
+      gateHitAreas.push({x: x-sz/2, y: y-sz/2, w: sz, h: sz, gateIdx: g});
+    }
+
+    if (gate.type === 'CR') {
+      const yT = wireY(gate.target), yC = wireY(gate.control);
+      if (isCurrent) { ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 12; }
+      ctx.strokeStyle = isCurrent ? '#22d3ee' : (isActive ? '#22d3ee' : tc.dimText2);
+      ctx.lineWidth = isCurrent ? 2.5 : 1.5;
+      ctx.beginPath(); ctx.moveTo(x, yT); ctx.lineTo(x, yC); ctx.stroke();
+      ctx.fillStyle = isCurrent ? '#22d3ee' : (isActive ? '#22d3ee' : tc.dimText);
+      ctx.beginPath(); ctx.arc(x, yC, 5, 0, Math.PI*2); ctx.fill();
+      const sz = 28;
+      ctx.fillStyle = isCurrent ? 'rgba(34,211,238,0.35)' : (isActive ? 'rgba(34,211,238,0.12)' : tc.gateInactive);
+      ctx.strokeStyle = isCurrent ? '#22d3ee' : (isActive ? '#22d3ee' : tc.gateInactiveBorder);
+      ctx.lineWidth = isCurrent ? 2.5 : 1.5;
+      ctx.beginPath(); ctx.roundRect(x-sz/2, yT-sz/2, sz, sz, 6); ctx.fill(); ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = isCurrent ? '#fff' : (isActive ? tc.text : tc.dimText);
+      ctx.font = 'bold 11px monospace'; ctx.textAlign = 'center'; ctx.fillText(`R${gate.m}`, x, yT+4);
+      gateHitAreas.push({x: x-sz/2, y: yT-sz/2, w: sz, h: sz, gateIdx: g});
+    }
+
+    if (gate.type === 'SWAP') {
+      const y1 = wireY(gate.q1), y2 = wireY(gate.q2);
+      if (isCurrent) { ctx.shadowColor = '#f472b6'; ctx.shadowBlur = 12; }
+      ctx.strokeStyle = isCurrent ? '#f472b6' : (isActive ? '#f472b6' : tc.gateInactiveBorder);
+      ctx.lineWidth = isCurrent ? 2.5 : 1.5;
+      ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x, y2); ctx.stroke();
+      const sz = 8;
+      [y1, y2].forEach(y => {
+        ctx.beginPath(); ctx.moveTo(x-sz,y-sz); ctx.lineTo(x+sz,y+sz); ctx.moveTo(x+sz,y-sz); ctx.lineTo(x-sz,y+sz); ctx.stroke();
+      });
+      ctx.shadowBlur = 0;
+      gateHitAreas.push({x: x-12, y: Math.min(y1,y2)-12, w: 24, h: Math.abs(y2-y1)+24, gateIdx: g});
+    }
+  }
+
+  // Step marker line
+  if (currentStep > 0 && currentStep <= totalGates) {
+    const x = gateX(currentStep-1);
+    ctx.strokeStyle = 'rgba(250,204,21,0.35)'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(x, padT-5); ctx.lineTo(x, h-padB+5); ctx.stroke(); ctx.setLineDash([]);
+  }
+}
+
+// =====================================================================
+// Gate tooltip on circuit hover
+// =====================================================================
+(function() {
+  const canvas = document.getElementById('circuitCanvas');
+  const tooltip = document.getElementById('gateTooltip');
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    let hit = null;
+    for (const area of gateHitAreas) {
+      if (mx >= area.x && mx <= area.x+area.w && my >= area.y && my <= area.y+area.h) { hit = area; break; }
+    }
+    canvas.style.cursor = hit ? 'pointer' : 'default';
+    if (hit) {
+      const gate = sim.steps[hit.gateIdx];
+      let html = '';
+      if (gate.type === 'H') {
+        html = `<div class="gt-title">Hadamard Gate (H)</div>
+          <div class="gt-matrix">    1   [ 1   1 ]\n──── │         │\n√2   [ 1  -1 ]</div>
+          <div class="gt-info">Target: q${gate.target}<br>Creates equal superposition with ±1 phases</div>`;
+      } else if (gate.type === 'CR') {
+        const deg = (360 / (1 << gate.m)).toFixed(1);
+        html = `<div class="gt-title">Controlled-R<sub>${gate.m}</sub></div>
+          <div class="gt-matrix">[ 1  0          ]\n[ 0  e^(2πi/${1<<gate.m}) ]</div>
+          <div class="gt-info">Control: q${gate.control} → Target: q${gate.target}<br>Phase: 2π/${1<<gate.m} = ${deg}°<br>Applied when both qubits are |1⟩</div>`;
+      } else if (gate.type === 'SWAP') {
+        html = `<div class="gt-title">SWAP Gate</div>
+          <div class="gt-matrix">[ 1 0 0 0 ]\n[ 0 0 1 0 ]\n[ 0 1 0 0 ]\n[ 0 0 0 1 ]</div>
+          <div class="gt-info">Swaps q${gate.q1} ↔ q${gate.q2}<br>Corrects bit-reversal of QFT output</div>`;
+      }
+      tooltip.innerHTML = html;
+      tooltip.style.display = 'block';
+      tooltip.style.left = Math.min(hit.x + hit.w + 8, rect.width - 290) + 'px';
+      tooltip.style.top = (hit.y - 10) + 'px';
+    } else {
+      tooltip.style.display = 'none';
+    }
+  });
+  canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+})();
+
+// =====================================================================
+// State Vector Bar Chart with hover tooltips
+// =====================================================================
+let prevStateForDelta = null;
+let barHitAreas = []; // [{x, y, w, h, idx}]
+let showPhasorTrails = false;
+let symbolicMatrix = true;
+
+// Convert a phase to an omega power: ω^p where ω = e^{2πi/N}
+// Returns integer p if phase ≈ p·2π/N, or null if not a clean power
+function phaseToOmegaPower(phase, N) {
+  const step = 2 * Math.PI / N;
+  const normalized = ((phase % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+  const p = Math.round(normalized / step) % N;
+  const expected = p * step;
+  const diff = Math.min(Math.abs(normalized - expected), Math.abs(normalized - expected - 2*Math.PI), Math.abs(normalized - expected + 2*Math.PI));
+  return diff < 0.05 ? p : null;
+}
+
+// Format omega power as superscript string for canvas
+function omegaPowerLabel(p) {
+  if (p === 0) return 'ω⁰';
+  if (p === 1) return 'ω';
+  const supers = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+  return 'ω' + String(p).split('').map(d => supers[+d]).join('');
+}
+
+function drawStateVector(state, n) {
+  const canvas = document.getElementById('stateCanvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+  const tc = themeColors();
+  ctx.clearRect(0, 0, w, h);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  barHitAreas = [];
+
+  const N = state.length;
+  const padL = 40, padR = 80, padT = 50, padB = 42;
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+  const barW = Math.min(plotW / N - 2, 38);
+  const gap = (plotW - barW * N) / (N + 1);
+
+  let maxMag = 0;
+  state.forEach(c => { maxMag = Math.max(maxMag, C.mag(c)); });
+  if (maxMag < 0.001) maxMag = 1;
+
+  // Grid
+  ctx.strokeStyle = tc.grid; ctx.lineWidth = 0.5;
+  for (let i = 1; i <= 4; i++) {
+    const gy = padT + plotH - (i/4) * (plotH-10);
+    ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(w-padR, gy); ctx.stroke();
+  }
+  ctx.strokeStyle = tc.wire; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT+plotH); ctx.stroke();
+  ctx.fillStyle = tc.yAxisText; ctx.font = '9px monospace'; ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    ctx.fillText((maxMag*i/4).toFixed(2), padL-4, padT+plotH-(i/4)*(plotH-10)+3);
+  }
+
+  // Phase color wheel legend (bottom-right corner) — enhanced
+  const cwR = 26, cwX = w - 40, cwY = padT + 12 + cwR;
+  // Gradient ring
+  for (let a = 0; a < 360; a += 2) {
+    const rad = a * Math.PI / 180;
+    ctx.strokeStyle = `hsl(${a}, 70%, 60%)`;
+    ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(cwX, cwY, cwR, rad - 0.04, rad + 0.04); ctx.stroke();
+  }
+  // Tick marks at 0, 90, 180, 270
+  const tickAngles = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
+  const tickLabels = ['0', '\u03C0/2', '\u03C0', '3\u03C0/2'];
+  ctx.lineWidth = 1.5;
+  for (let t = 0; t < tickAngles.length; t++) {
+    const a = tickAngles[t];
+    const ix = cwX + (cwR - 4) * Math.cos(a), iy = cwY - (cwR - 4) * Math.sin(a);
+    const ox = cwX + (cwR + 4) * Math.cos(a), oy = cwY - (cwR + 4) * Math.sin(a);
+    ctx.strokeStyle = tc.text; ctx.beginPath(); ctx.moveTo(ix, iy); ctx.lineTo(ox, oy); ctx.stroke();
+  }
+  // Labels
+  ctx.fillStyle = tc.dimText; ctx.font = '8px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('0', cwX + cwR + 12, cwY);
+  ctx.fillText('\u03C0', cwX - cwR - 10, cwY);
+  ctx.fillText('\u03C0/2', cwX, cwY - cwR - 10);
+  ctx.fillText('3\u03C0/2', cwX, cwY + cwR + 10);
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = tc.dimText; ctx.font = '8px sans-serif';
+  ctx.fillText('Phase', cwX, cwY + cwR + 22);
+
+  // Check if all non-zero magnitudes are uniform (for omega-primary display)
+  let nonZeroMags = [];
+  state.forEach(c => { const m = C.mag(c); if (m > 0.01) nonZeroMags.push(m); });
+  const allUniform = nonZeroMags.length > 1 && nonZeroMags.every(m => Math.abs(m - nonZeroMags[0]) < 0.01);
+
+  // Bars
+  for (let i = 0; i < N; i++) {
+    const mag = C.mag(state[i]);
+    const phase = C.phase(state[i]);
+    const x = padL + gap + i * (barW + gap);
+    const barH = (mag / maxMag) * (plotH - 10);
+
+    let changed = false;
+    if (prevStateForDelta) {
+      const pm = C.mag(prevStateForDelta[i]), pp = C.phase(prevStateForDelta[i]);
+      if (Math.abs(mag - pm) > 0.005 || Math.abs(phase - pp) > 0.01) changed = true;
+    }
+
+    if (changed && !animState) {
+      ctx.fillStyle = tc.barDeltaGlow; ctx.fillRect(x-2, padT, barW+4, plotH);
+    }
+
+    const hue = ((phase / (2*Math.PI)) * 360 + 360) % 360;
+    if (barH > 0.5) {
+      ctx.fillStyle = `hsla(${hue}, 70%, 55%, 0.9)`;
+      ctx.beginPath(); ctx.roundRect(x, padT+plotH-barH, barW, barH, [3,3,0,0]); ctx.fill();
+    }
+
+    if (changed && !animState) {
+      ctx.strokeStyle = tc.barDeltaStroke; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.roundRect(x, padT+plotH-barH, barW, barH, [3,3,0,0]); ctx.stroke();
+    }
+
+    if (mag > 0.01) {
+      const cx = x+barW/2;
+      const omegaP = phaseToOmegaPower(phase, N);
+
+      if (allUniform && omegaP !== null) {
+        // Uniform amplitudes: omega label is primary (large, colored)
+        ctx.fillStyle = `hsl(${hue}, 70%, 65%)`; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
+        ctx.fillText(omegaPowerLabel(omegaP), cx, padT+plotH-barH-8);
+        // Small phase wheel above
+        const cyWheel = padT+plotH-barH-26, r = 7;
+        ctx.strokeStyle = `hsl(${hue}, 70%, 55%)`; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(cx, cyWheel, r, 0, Math.PI*2); ctx.stroke();
+        ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cyWheel);
+        ctx.lineTo(cx+r*Math.cos(phase), cyWheel-r*Math.sin(phase)); ctx.stroke();
+      } else {
+        // Non-uniform: magnitude is primary, omega secondary
+        // Phase wheel
+        const cyWheel = padT+plotH-barH-32, r = 8;
+        ctx.strokeStyle = `hsl(${hue}, 70%, 55%)`; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(cx, cyWheel, r, 0, Math.PI*2); ctx.stroke();
+        ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cyWheel);
+        ctx.lineTo(cx+r*Math.cos(phase), cyWheel-r*Math.sin(phase)); ctx.stroke();
+        // Omega power (if clean)
+        if (omegaP !== null) {
+          ctx.fillStyle = `hsl(${hue}, 70%, 65%)`; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+          ctx.fillText(omegaPowerLabel(omegaP), cx, padT+plotH-barH-18);
+        }
+        // Magnitude
+        ctx.fillStyle = tc.text; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+        ctx.fillText(mag.toFixed(2), cx, padT+plotH-barH-6);
+      }
+    }
+
+    if (changed && !animState && prevStateForDelta && mag > 0.005) {
+      const pm = C.mag(prevStateForDelta[i]), cx = x+barW/2;
+      if (mag > pm + 0.005) { ctx.fillStyle = '#34d399'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('▲', cx, padT+plotH-barH-38); }
+      else if (mag < pm - 0.005) { ctx.fillStyle = '#f472b6'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('▼', cx, padT+plotH-barH-38); }
+    }
+
+    ctx.fillStyle = tc.labelText; ctx.font = '11px monospace'; ctx.textAlign = 'center';
+    if (N > 8) {
+      ctx.fillText(`${i}`, x+barW/2, padT+plotH+16);
+    } else {
+      ctx.fillText(`|${i.toString(2).padStart(n,'0')}⟩`, x+barW/2, padT+plotH+16);
+      ctx.fillStyle = tc.dimText; ctx.font = '9px monospace';
+      ctx.fillText(`(${i})`, x+barW/2, padT+plotH+28);
+    }
+
+    barHitAreas.push({ x, y: padT, w: barW, h: plotH, idx: i });
+  }
+}
+
+// Bar tooltip
+(function() {
+  const canvas = document.getElementById('stateCanvas');
+  const tooltip = document.getElementById('barTooltip');
+  canvas.addEventListener('mousemove', (e) => {
+    if (!displayState) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    let hit = null;
+    for (const a of barHitAreas) {
+      if (mx >= a.x && mx <= a.x+a.w && my >= a.y && my <= a.y+a.h) { hit = a; break; }
+    }
+    canvas.style.cursor = hit ? 'pointer' : 'default';
+    if (hit) {
+      const c = displayState[hit.idx];
+      const mag = C.mag(c), phase = C.phase(c);
+      const N = displayState.length;
+      const deg = ((phase*180/Math.PI)+360)%360;
+      const piFrac = formatPhaseAsFraction(phase);
+      const omegaP = phaseToOmegaPower(phase, N);
+      // Express amplitude as (1/√N)·ω^p when possible
+      let ampExpr = `|amplitude| = ${mag.toFixed(4)}`;
+      if (omegaP !== null && mag > 0.01) {
+        const invSqrtN = 1/Math.sqrt(N);
+        if (Math.abs(mag - invSqrtN) < 0.005) {
+          const omLabel = omegaP === 0 ? '1' : omegaPowerLabel(omegaP);
+          ampExpr = `(1/√${N})·${omLabel} = ${mag.toFixed(4)}`;
+        } else if (Math.abs(mag - 1) < 0.005) {
+          ampExpr = `${omegaPowerLabel(omegaP)} (unit amplitude)`;
+        } else {
+          ampExpr = `${mag.toFixed(4)}·${omegaPowerLabel(omegaP)}`;
+        }
+      }
+      const phaseStr = omegaP !== null ? `${omegaPowerLabel(omegaP)} = ${deg.toFixed(1)}°${piFrac ? ' = '+piFrac : ''}` :
+        `${deg.toFixed(1)}°${piFrac ? ' = '+piFrac : ''}`;
+      tooltip.innerHTML = `<b>|${hit.idx.toString(2).padStart(sim.n,'0')}⟩</b> (k=${hit.idx})<br>` +
+        `Amplitude: ${ampExpr}<br>Phase: ${phaseStr}<br>` +
+        `Complex: ${c[0].toFixed(4)} ${c[1]>=0?'+':''}${c[1].toFixed(4)}i`;
+      tooltip.style.display = 'block';
+      const panel = canvas.closest('.panel');
+      tooltip.style.left = Math.min(e.clientX - panel.getBoundingClientRect().left + 12, panel.offsetWidth - 250) + 'px';
+      tooltip.style.top = (e.clientY - panel.getBoundingClientRect().top - 60) + 'px';
+    } else { tooltip.style.display = 'none'; }
+  });
+  canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+})();
+
+// =====================================================================
+// Phase Wheels
+// =====================================================================
+function drawPhaseWheels(state, n) {
+  const canvas = document.getElementById('phaseCanvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+  const tc = themeColors();
+  ctx.clearRect(0, 0, w, h);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  const N = state.length;
+  const cols = Math.min(N, 4);
+  const rows = Math.ceil(N / cols);
+  const cellW = w / cols, cellH = h / rows;
+  const radius = Math.min(cellW, cellH) * 0.28;
+
+  for (let i = 0; i < N; i++) {
+    const col = i%cols, row = Math.floor(i/cols);
+    const cx = cellW*(col+0.5), cy = cellH*(row+0.5);
+    const mag = C.mag(state[i]), phase = C.phase(state[i]);
+
+    ctx.strokeStyle = tc.circleStroke; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI*2); ctx.stroke();
+    ctx.strokeStyle = tc.crosshair; ctx.beginPath();
+    ctx.moveTo(cx-radius, cy); ctx.lineTo(cx+radius, cy);
+    ctx.moveTo(cx, cy-radius); ctx.lineTo(cx, cy+radius); ctx.stroke();
+
+    if (mag > 0.01) {
+      const ampR = Math.min(radius * mag * Math.sqrt(N), radius);
+      const hue = ((phase/(2*Math.PI))*360+360)%360;
+      ctx.fillStyle = `hsla(${hue},65%,50%,0.25)`;
+      ctx.beginPath(); ctx.arc(cx, cy, ampR, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = `hsl(${hue},80%,65%)`; ctx.lineWidth = 2.5;
+      const ax = cx+ampR*Math.cos(phase), ay = cy-ampR*Math.sin(phase);
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ax, ay); ctx.stroke();
+      const tipLen=6, tipA=0.4, ang=Math.atan2(ay-cy,ax-cx);
+      ctx.lineWidth=2; ctx.beginPath();
+      ctx.moveTo(ax,ay); ctx.lineTo(ax-tipLen*Math.cos(ang-tipA),ay-tipLen*Math.sin(ang-tipA));
+      ctx.moveTo(ax,ay); ctx.lineTo(ax-tipLen*Math.cos(ang+tipA),ay-tipLen*Math.sin(ang+tipA)); ctx.stroke();
+      const deg = ((phase*180/Math.PI)+360)%360;
+      ctx.fillStyle = tc.phaseText; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+      ctx.fillText(`${deg.toFixed(0)}°`, cx, cy+radius+12);
+    } else {
+      ctx.fillStyle = tc.dimText2; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+      ctx.fillText('0', cx, cy+radius+12);
+    }
+    ctx.fillStyle = tc.labelText; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(`|${i.toString(2).padStart(n,'0')}⟩`, cx, cy+radius+24);
+  }
+}
+
+// =====================================================================
+// Composite Phasor Diagram
+// =====================================================================
+function drawPhasorDiagram(state, n) {
+  const canvas = document.getElementById('phasorCanvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+  const tc = themeColors();
+  ctx.clearRect(0, 0, w, h);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  const N = state.length;
+  const cx = w/2, cy = h/2, radius = Math.min(w,h)*0.36;
+
+  ctx.strokeStyle = tc.phasorBg; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI*2); ctx.stroke();
+  ctx.strokeStyle = tc.phasorInner;
+  ctx.beginPath(); ctx.moveTo(cx-radius-10,cy); ctx.lineTo(cx+radius+10,cy);
+  ctx.moveTo(cx,cy-radius-10); ctx.lineTo(cx,cy+radius+10); ctx.stroke();
+  for (let r=0.25;r<1;r+=0.25) { ctx.beginPath(); ctx.arc(cx,cy,radius*r,0,Math.PI*2); ctx.stroke(); }
+
+  ctx.fillStyle = tc.dimText; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+  ctx.fillText('0', cx+radius+12, cy+3); ctx.fillText('π/2', cx, cy-radius-6);
+  ctx.fillText('π', cx-radius-12, cy+3); ctx.fillText('3π/2', cx, cy+radius+14);
+
+  let maxMag = 0;
+  state.forEach(c => { maxMag = Math.max(maxMag, C.mag(c)); });
+  if (maxMag < 0.001) maxMag = 1;
+
+  // Phase evolution trails
+  if (showPhasorTrails && currentStep > 0) {
+    // Build trail cache
+    if (!sim._trailCache || sim._trailCacheInput !== inputX) {
+      sim._trailCache = [];
+      sim._trailCacheInput = inputX;
+      for (let s = 0; s <= sim.steps.length; s++) sim._trailCache[s] = sim.simulate(inputX, s);
+    }
+    // Draw trails for each basis state
+    for (let i = 0; i < N; i++) {
+      const points = [];
+      for (let s = 0; s <= currentStep; s++) {
+        const hs = sim._trailCache[s];
+        const hMag = C.mag(hs[i]), hPhase = C.phase(hs[i]);
+        if (hMag < 0.01) continue;
+        const hr = (hMag / maxMag) * radius;
+        points.push({ x: cx+hr*Math.cos(hPhase), y: cy-hr*Math.sin(hPhase), phase: hPhase, step: s });
+      }
+      if (points.length > 1) {
+        const lastHue = ((points[points.length-1].phase/(2*Math.PI))*360+360)%360;
+        // Connect with thin line
+        ctx.strokeStyle = `hsla(${lastHue}, 50%, 55%, 0.35)`; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
+        for (let p = 1; p < points.length; p++) ctx.lineTo(points[p].x, points[p].y);
+        ctx.stroke();
+        // Draw dots at each historical position (except current, drawn by main loop)
+        for (let p = 0; p < points.length - 1; p++) {
+          const opacity = 0.2 + 0.6 * (points[p].step / currentStep);
+          const dotR = 2 + 2 * (points[p].step / currentStep);
+          ctx.fillStyle = `hsla(${lastHue}, 60%, 55%, ${opacity})`;
+          ctx.beginPath(); ctx.arc(points[p].x, points[p].y, dotR, 0, Math.PI*2); ctx.fill();
+        }
+      }
+    }
+  }
+
+  // Main phasor arrows
+  for (let i = 0; i < N; i++) {
+    const mag = C.mag(state[i]), phase = C.phase(state[i]);
+    if (mag < 0.005) continue;
+    const r = (mag/maxMag)*radius;
+    const hue = ((phase/(2*Math.PI))*360+360)%360;
+    const ax = cx+r*Math.cos(phase), ay = cy-r*Math.sin(phase);
+    ctx.strokeStyle = `hsla(${hue},75%,60%,0.85)`; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ax,ay); ctx.stroke();
+    ctx.fillStyle = `hsl(${hue},80%,65%)`;
+    ctx.beginPath(); ctx.arc(ax,ay,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = `hsl(${hue},70%,75%)`; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+    const lx = cx+(r+14)*Math.cos(phase), ly = cy-(r+14)*Math.sin(phase);
+    ctx.fillText(`|${i.toString(2).padStart(n,'0')}⟩`, lx, ly+3);
+  }
+}
+
+// =====================================================================
+// Algebraic Notation
+// =====================================================================
+function formatPhaseAsFraction(phase) {
+  if (Math.abs(phase) < 1e-10) return null;
+  const overPi = phase / Math.PI;
+  const fracs = [
+    [1,1,'π'],[-1,1,'-π'],[1,2,'π/2'],[-1,2,'-π/2'],
+    [1,4,'π/4'],[-1,4,'-π/4'],[3,4,'3π/4'],[-3,4,'-3π/4'],
+    [1,3,'π/3'],[-1,3,'-π/3'],[2,3,'2π/3'],[-2,3,'-2π/3'],
+    [1,8,'π/8'],[-1,8,'-π/8'],[3,8,'3π/8'],[-3,8,'-3π/8'],
+    [5,8,'5π/8'],[-5,8,'-5π/8'],[7,8,'7π/8'],[-7,8,'-7π/8'],
+    [1,16,'π/16'],[-1,16,'-π/16'],[3,16,'3π/16'],[-3,16,'-3π/16'],
+    [5,16,'5π/16'],[-5,16,'-5π/16'],[7,16,'7π/16'],[-7,16,'-7π/16'],
+  ];
+  for (const [num,den,label] of fracs) { if (Math.abs(overPi-num/den)<1e-6) return label; }
+  return `${phase.toFixed(3)}`;
+}
+
+function drawNotation(state, n) {
+  const container = document.getElementById('notationContent');
+  const N = state.length;
+  let terms = [];
+  for (let i = 0; i < N; i++) {
+    const mag = C.mag(state[i]);
+    if (mag < 0.005) continue;
+    const phase = C.phase(state[i]);
+    const hue = ((phase/(2*Math.PI))*360+360)%360;
+    const omegaP = phaseToOmegaPower(phase, N);
+    // Always prefer omega power notation; fall back to e^{i·phase} only if not a clean ω^p
+    let coeffStr = '';
+    if (omegaP !== null) {
+      if (omegaP === 0) coeffStr = ''; // ω⁰ = 1, no coefficient needed
+      else if (omegaP === 1) coeffStr = 'ω';
+      else coeffStr = `ω<sup>${omegaP}</sup>`;
+    } else {
+      const piFrac = formatPhaseAsFraction(phase);
+      if (piFrac) coeffStr = `e<sup>i${piFrac}</sup>`;
+      else if (Math.abs(phase) > 0.01) coeffStr = `e<sup>i·${((phase*180/Math.PI+360)%360).toFixed(0)}°</sup>`;
+    }
+    terms.push({ mag, phase, omegaP, ket: i.toString(2).padStart(n,'0'), color: `hsl(${hue},70%,65%)`, coeffStr });
+  }
+  if (!terms.length) { container.innerHTML = '<span style="color:var(--canvas-dim)">|vacuum⟩</span>'; return; }
+
+  const allEqual = terms.every(t => Math.abs(t.mag-terms[0].mag)<0.005);
+  const allOmega = terms.every(t => t.omegaP !== null);
+  let prefactor = '';
+  if (allEqual && terms.length > 1) {
+    for (let k=2;k<=16;k++) { if (Math.abs(terms[0].mag-1/Math.sqrt(k))<0.005) { prefactor = `<span class="prefactor">(1/√${k})</span> `; break; } }
+    if (!prefactor && Math.abs(terms[0].mag-1)>0.01) prefactor = `<span class="prefactor">${terms[0].mag.toFixed(3)}·</span> `;
+  }
+  let html = prefactor + '[ ';
+  terms.forEach((t, idx) => {
+    if (idx > 0) html += '<span class="plus">+</span>';
+    if (t.coeffStr) html += `<span class="coeff" style="color:${t.color}">${t.coeffStr}</span>`;
+    if (!allEqual) html += `<span class="coeff" style="color:${t.color}">${t.mag.toFixed(3)}·</span>`;
+    html += `<span class="ket" style="color:${t.color}">|${t.ket}⟩</span>`;
+  });
+  html += ' ]';
+  // When all terms use clean omega powers, add a summary showing the pattern
+  if (allOmega && allEqual && terms.length > 1 && terms.length === N) {
+    html += `<div style="font-size:0.82rem;color:var(--dim);margin-top:6px;font-family:'Inter',sans-serif">= (1/√${N}) Σ<sub>k</sub> <span style="color:var(--highlight)">ω<sup>${inputX}·k</sup></span> |k⟩ &nbsp; where ω = e<sup>2πi/${N}</sup></div>`;
+  }
+  container.innerHTML = html;
+}
+
+// =====================================================================
+// Frequency Spectrum — DFT Interpretation
+// =====================================================================
+function drawFrequencySpectrum(state, n, stepIdx) {
+  const canvas = document.getElementById('freqCanvas');
+  if (!canvas) return;
+  const { ctx, w, h } = setupCanvas(canvas);
+  const tc = themeColors();
+  ctx.clearRect(0, 0, w, h);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  const N = state.length;
+  const isFinal = stepIdx >= sim.steps.length;
+  const padL = 50, padR = 20, padT = 20, padB = 65;
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+  const barW = Math.min(plotW / N - 4, 40);
+  const gap = (plotW - barW * N) / (N + 1);
+
+  const probs = state.map(c => C.mag(c) ** 2);
+  const phases = state.map(c => C.phase(c));
+  const maxProb = Math.max(...probs, 0.001);
+
+  // Muted overlay if QFT incomplete
+  if (!isFinal) {
+    ctx.fillStyle = tc.dimText; ctx.font = 'italic 11px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText('partial spectrum — QFT incomplete', w - padR, padT - 4);
+    ctx.globalAlpha = 0.4;
+  }
+
+  // Y-axis
+  ctx.strokeStyle = tc.wire; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + plotH); ctx.stroke();
+  ctx.strokeStyle = tc.grid; ctx.lineWidth = 0.5;
+  for (let i = 1; i <= 4; i++) {
+    const gy = padT + plotH - (i/4) * plotH;
+    ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(w - padR, gy); ctx.stroke();
+  }
+  ctx.fillStyle = tc.yAxisText; ctx.font = '9px monospace'; ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    ctx.fillText((maxProb * i / 4).toFixed(3), padL - 4, padT + plotH - (i/4) * plotH + 3);
+  }
+
+  // Bars
+  for (let k = 0; k < N; k++) {
+    const x = padL + gap + k * (barW + gap);
+    const barH = (probs[k] / maxProb) * plotH;
+    const hue = ((phases[k] / (2 * Math.PI)) * 360 + 360) % 360;
+
+    if (barH > 0.5) {
+      ctx.fillStyle = `hsla(${hue}, 70%, 55%, 0.9)`;
+      ctx.beginPath(); ctx.roundRect(x, padT + plotH - barH, barW, barH, [3,3,0,0]); ctx.fill();
+    }
+
+    if (probs[k] > 0.001) {
+      ctx.fillStyle = tc.text; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+      ctx.fillText(probs[k].toFixed(3), x + barW / 2, padT + plotH - barH - 4);
+    }
+
+    ctx.fillStyle = tc.labelText; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+    if (N > 8) {
+      ctx.fillText(`${k}`, x + barW / 2, padT + plotH + 14);
+    } else {
+      ctx.fillText(`k=${k}`, x + barW / 2, padT + plotH + 14);
+      // Show the omega power for this bin's phase
+      const omP = phaseToOmegaPower(phases[k], N);
+      if (omP !== null && isFinal) {
+        ctx.fillStyle = `hsl(${hue}, 60%, 55%)`; ctx.font = '9px monospace';
+        ctx.fillText(omegaPowerLabel(omP), x + barW / 2, padT + plotH + 28);
+      } else {
+        ctx.fillStyle = tc.dimText; ctx.font = '9px serif';
+        ctx.fillText(`${k}ω`, x + barW / 2, padT + plotH + 28);
+      }
+    }
+
+    // Mini phase arrow
+    if (probs[k] > 0.001) {
+      const pcx = x + barW / 2, pcy = padT + plotH + 46, pr = 9;
+      ctx.strokeStyle = `hsl(${hue}, 70%, 55%)`; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(pcx, pcy, pr, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(pcx, pcy);
+      ctx.lineTo(pcx + pr * Math.cos(phases[k]), pcy - pr * Math.sin(phases[k])); ctx.stroke();
+    }
+  }
+
+  ctx.globalAlpha = 1.0;
+
+  // Formula text
+  const formulaEl = document.getElementById('freqFormula');
+  if (isFinal) {
+    const xVal = inputX;
+    const xBin = xVal.toString(2).padStart(n, '0');
+    // List the first few omega powers to show the pattern
+    const omegaList = [];
+    for (let k = 0; k < Math.min(4, N); k++) omegaList.push(`ω<sup>${(xVal*k)%N}</sup>`);
+    formulaEl.innerHTML = `<span class="math">QFT|${xBin}⟩ = (1/√${N}) ∑<sub>k=0</sub><sup>${N-1}</sup> ω<sup>${xVal}·k</sup> |k⟩</span>, &nbsp;` +
+      `where <span class="math">ω = e<sup>2πi/${N}</sup></span> (${(360/N).toFixed(0)}° counterclockwise).<br>` +
+      `Each amplitude is <span class="math">(1/√${N})·ω<sup>${xVal}k</sup></span> — same magnitude, but <b>distinct phase</b>. ` +
+      `The coefficients are ${omegaList.join(', ')}, … — ` +
+      `the input x=${xVal} determines how fast the phases wind around the circle.`;
+  } else {
+    formulaEl.innerHTML = `<span class="muted">The frequency spectrum shows |⟨k|state⟩|² for each frequency bin k. ` +
+      `At the final step, all bins will have equal probability 1/${N}, with phases encoding the input.</span>`;
+  }
+}
+
+// =====================================================================
+// Binary Fraction Decomposition
+// =====================================================================
+function drawBinaryFractions(sim, stepIdx, x) {
+  const container = document.getElementById('binfracContent');
+  const n = sim.n;
+  const xBin = x.toString(2).padStart(n, '0');
+
+  // For each qubit q (in QFT output order), its phase is 2π × 0.j_{q+1}j_{q+2}...j_n
+  // But the circuit processes q0 first. After qubit q's block is complete,
+  // qubit q has phase 2π × 0.j_{q+1}j_{q+2}...j_n
+  // The H encodes j_{q+1} (=x[q]), and CR_m encodes j_{q+m}
+
+  let html = '<table class="binfrac-table"><tr><th>Qubit</th><th>Binary Fraction</th><th>Bits Encoded</th><th>Phase</th><th>Status</th></tr>';
+
+  for (let q = 0; q < n; q++) {
+    const prog = sim.qubitBlockProgress(q, stepIdx);
+    const complete = sim.qubitBlockComplete(q, stepIdx);
+
+    // Which bits are encoded? The H encodes bit x[q], CR_m encodes bit x[q+m-1]
+    // In order: H -> bit at position q, then CR2 -> bit q+1, CR3 -> bit q+2, etc.
+    const bitsForQubit = [];
+    for (let k = 0; k < n - q; k++) {
+      bitsForQubit.push({ pos: q + k, val: xBin[q + k], encoded: prog.done > k });
+    }
+
+    // Build the binary fraction string: 0.j_{q+1}j_{q+2}...
+    // After bit-reversal, qubit q maps to qubit n-1-q in the output
+    // But we show the circuit-level view: qubit q accumulates these bits
+
+    let bitsHtml = '';
+    bitsForQubit.forEach(b => {
+      const cls = b.encoded ? 'bit-encoded' : (prog.started ? 'bit-pending' : 'bit-pending');
+      bitsHtml += `<span class="bit-box ${cls}">${b.val}</span>`;
+    });
+
+    // Compute accumulated phase so far
+    let accPhase = 0;
+    for (let k = 0; k < bitsForQubit.length && k < prog.done; k++) {
+      if (bitsForQubit[k].val === '1') {
+        accPhase += 1 / (1 << (k + 1));
+      }
+    }
+
+    const phaseStr = prog.done > 0 ? `2π × ${accPhase.toFixed(n+1)}` : '—';
+    const degStr = prog.done > 0 ? `${(accPhase * 360).toFixed(1)}°` : '';
+
+    let status;
+    if (complete) status = '<span class="status-complete">&#10003; Complete</span>';
+    else if (prog.started) status = `<span class="status-progress">&#9679; ${prog.done}/${prog.total} gates</span>`;
+    else status = '<span class="status-waiting">&#9675; Waiting</span>';
+
+    // Active qubit detection for row highlighting
+    let isActiveQ = false;
+    if (stepIdx > 0 && stepIdx <= sim.steps.length) {
+      const ag = sim.steps[stepIdx - 1];
+      if (ag.type === 'H' && ag.target === q) isActiveQ = true;
+      if (ag.type === 'CR' && (ag.target === q || ag.control === q)) isActiveQ = true;
+      if (ag.type === 'SWAP' && (ag.q1 === q || ag.q2 === q)) isActiveQ = true;
+    }
+    const rowBg = isActiveQ ? ' style="background:rgba(108,99,255,0.08)"' : '';
+
+    // Express the phase as omega power when possible
+    const totalPhaseAngle = 2 * Math.PI * accPhase;
+    const omP = prog.done > 0 ? phaseToOmegaPower(totalPhaseAngle, sim.N) : null;
+    let phaseExpr = '—';
+    if (prog.done > 0) {
+      if (omP !== null) {
+        const omLabel = omP === 0 ? '1' : (omP === 1 ? 'ω' : `ω<sup>${omP}</sup>`);
+        phaseExpr = `<span style="color:var(--highlight)">${omLabel}</span>`;
+      } else {
+        phaseExpr = `e<sup style="color:var(--highlight)">i·2π·${accPhase.toFixed(n+1)}</sup>`;
+      }
+    }
+
+    html += `<tr${rowBg}>
+      <td><span class="qubit-label">q${q}</span></td>
+      <td>0 . ${bitsHtml}</td>
+      <td><span class="phase-val">${phaseStr}</span> ${degStr ? `<span style="color:var(--dim);font-size:0.78rem">(${degStr})</span>` : ''}</td>
+      <td style="font-family:'Cambria Math',serif;font-size:0.9rem">
+        ${phaseExpr}
+      </td>
+      <td>${status}</td>
+    </tr>`;
+  }
+
+  html += '</table>';
+  if (stepIdx === 0) {
+    html += '<div style="color:var(--dim);font-size:0.82rem;margin-top:8px;line-height:1.5"><b>Key insight:</b> Each qubit accumulates a binary fraction of the input. The Hadamard encodes the first bit, and each subsequent controlled-R<sub>k</sub> adds one more bit of precision. The final phase of qubit q is 2π × 0.x<sub>q+1</sub>x<sub>q+2</sub>...x<sub>n</sub>.</div>';
+  }
+  container.innerHTML = html;
+}
+
+// =====================================================================
+// Tensor Product Decomposition
+// =====================================================================
+function drawTensorProduct(sim, stepIdx, x) {
+  const container = document.getElementById('tensorContent');
+  const n = sim.n;
+  const xBin = x.toString(2).padStart(n, '0');
+
+  // Check if we're past all SWAP gates
+  const allSwapsDone = stepIdx >= sim.steps.length;
+  const nonSwapSteps = sim.steps.filter(s => s.type !== 'SWAP').length;
+  const pastAllGates = stepIdx >= nonSwapSteps;
+
+  let html = '';
+
+  for (let q = 0; q < n; q++) {
+    if (q > 0) html += '<span class="tensor-symbol">&#8855;</span>';
+
+    const complete = sim.qubitBlockComplete(q, stepIdx);
+    const prog = sim.qubitBlockProgress(q, stepIdx);
+    let cls = complete ? 'complete' : (prog.started ? 'in-progress' : 'waiting');
+
+    // Active qubit highlighting
+    let isActiveQ = false;
+    if (stepIdx > 0 && stepIdx <= sim.steps.length) {
+      const ag = sim.steps[stepIdx - 1];
+      if (ag.type === 'H' && ag.target === q) isActiveQ = true;
+      if (ag.type === 'CR' && (ag.target === q || ag.control === q)) isActiveQ = true;
+      if (ag.type === 'SWAP' && (ag.q1 === q || ag.q2 === q)) isActiveQ = true;
+    }
+    if (isActiveQ) cls += ' active-qubit';
+
+    // Compute the phase this qubit has accumulated
+    let accPhase = 0;
+    for (let k = 0; k < n - q && k < prog.done; k++) {
+      if (xBin[q + k] === '1') accPhase += 1 / (1 << (k + 1));
+    }
+    const totalPhase = 2 * Math.PI * accPhase;
+
+    // Display qubit index (in output order if swaps done)
+    const displayQ = allSwapsDone ? (n - 1 - q) : q;
+
+    let expr = '';
+    if (!prog.started) {
+      expr = `|${xBin[q]}⟩`;
+    } else if (prog.done === 0) {
+      expr = `|${xBin[q]}⟩`;
+    } else {
+      // Prefer omega notation for the phase coefficient
+      const omegaP = phaseToOmegaPower(totalPhase, sim.N);
+      if (Math.abs(totalPhase) < 1e-10) {
+        expr = `(|0⟩ + |1⟩) / √2`;
+      } else if (omegaP !== null) {
+        // Express as omega power: e.g. (|0⟩ + ω²|1⟩) / √2
+        const omLabel = omegaP === 1 ? 'ω' : `ω<sup>${omegaP}</sup>`;
+        // Special case: ω^{N/2} = -1
+        if (omegaP === sim.N / 2) {
+          expr = `(|0⟩ − |1⟩) / √2`;
+        } else {
+          expr = `(|0⟩ + <span class="math">${omLabel}</span>|1⟩) / √2`;
+        }
+      } else {
+        const phFrac = formatPhaseAsFraction(totalPhase);
+        if (phFrac) {
+          expr = `(|0⟩ + <span class="math">e<sup>i${phFrac}</sup></span>|1⟩) / √2`;
+        } else {
+          const deg = ((totalPhase * 180 / Math.PI) + 360) % 360;
+          expr = `(|0⟩ + <span class="math">e<sup>i·${deg.toFixed(0)}°</sup></span>|1⟩) / √2`;
+        }
+      }
+    }
+
+    // Mini Bloch circle
+    const cSize = 40;
+    const canvasId = `bloch_q${q}`;
+
+    html += `<div class="tensor-factor ${cls}">
+      <div class="tf-label">q${q}</div>
+      <div class="tf-expr">${expr}</div>
+      <canvas id="${canvasId}" width="${cSize*2}" height="${cSize*2}" style="width:${cSize}px;height:${cSize}px"></canvas>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+
+  // Draw mini Bloch circles
+  for (let q = 0; q < n; q++) {
+    const cvs = document.getElementById(`bloch_q${q}`);
+    if (!cvs) continue;
+    const bctx = cvs.getContext('2d');
+    bctx.scale(2, 2);
+    const prog = sim.qubitBlockProgress(q, stepIdx);
+    const sz = 40, cr = sz/2, r = 14;
+
+    const tc = themeColors();
+    bctx.strokeStyle = tc.circleStroke; bctx.lineWidth = 0.8;
+    bctx.beginPath(); bctx.arc(cr, cr, r, 0, Math.PI*2); bctx.stroke();
+    bctx.strokeStyle = tc.crosshair;
+    bctx.beginPath(); bctx.moveTo(cr-r,cr); bctx.lineTo(cr+r,cr); bctx.moveTo(cr,cr-r); bctx.lineTo(cr,cr+r); bctx.stroke();
+
+    let accPhase = 0;
+    for (let k = 0; k < sim.n - q && k < prog.done; k++) {
+      if (xBin[q + k] === '1') accPhase += 1 / (1 << (k + 1));
+    }
+    const totalPhase = 2 * Math.PI * accPhase;
+
+    if (prog.done > 0) {
+      // Show phase arrow (on equator of Bloch sphere = XY plane)
+      const hue = ((totalPhase/(2*Math.PI))*360+360)%360;
+      bctx.strokeStyle = `hsl(${hue}, 80%, 60%)`; bctx.lineWidth = 2;
+      const ax = cr + r*Math.cos(totalPhase), ay = cr - r*Math.sin(totalPhase);
+      bctx.beginPath(); bctx.moveTo(cr, cr); bctx.lineTo(ax, ay); bctx.stroke();
+      bctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+      bctx.beginPath(); bctx.arc(ax, ay, 2.5, 0, Math.PI*2); bctx.fill();
+    } else {
+      // Show basis state as dot at top (|0>) or bottom (|1>)
+      const isOne = xBin[q] === '1';
+      bctx.fillStyle = isOne ? '#22d3ee' : tc.dimText;
+      bctx.beginPath(); bctx.arc(cr, isOne ? cr+r : cr-r, 3, 0, Math.PI*2); bctx.fill();
+    }
+  }
+}
+
+// =====================================================================
+// QFT Matrix
+// =====================================================================
+function drawMatrix(n, highlightCol) {
+  const N = 1 << n;
+  const omega = 2 * Math.PI / N;
+  const sym = symbolicMatrix;
+  const container = document.getElementById('matrixContainer');
+  let html = '<table class="matrix-table"><tr><td class="header-cell"></td>';
+  for (let j = 0; j < N; j++) {
+    const cls = j===highlightCol ? 'header-cell col-header-highlight' : 'header-cell';
+    html += `<td class="${cls}">|${j.toString(2).padStart(n,'0')}⟩</td>`;
+  }
+  html += '</tr>';
+
+  if (sym) {
+    html += `<tr><td colspan="${N+1}" style="text-align:center;color:var(--dim);font-size:0.73rem;font-family:'Cambria Math',serif;padding:4px">` +
+      `ω = e<sup>2πi/${N}</sup>, entries = ω<sup>jk</sup>/√${N}</td></tr>`;
+  }
+
+  for (let i = 0; i < N; i++) {
+    html += `<tr><td class="header-cell">⟨${i.toString(2).padStart(n,'0')}|</td>`;
+    for (let j = 0; j < N; j++) {
+      const exp = (i*j) % N;
+      const angle = (i*j*omega)%(2*Math.PI);
+      const hue = ((angle/(2*Math.PI))*360)%360;
+      const cls = j===highlightCol ? 'col-highlight' : '';
+      let text;
+      if (sym) {
+        if (exp === 0) text = '1';
+        else if (N > 2 && exp === N/2) text = '-1';
+        else if (exp === 1) text = 'ω';
+        else text = `ω<sup>${exp}</sup>`;
+        html += `<td class="${cls} symbolic" style="color:hsl(${hue},65%,65%)">${text}</td>`;
+      } else {
+        const re = Math.cos(angle)/Math.sqrt(N), im = Math.sin(angle)/Math.sqrt(N);
+        if (Math.abs(im)<1e-10) text = re.toFixed(3);
+        else if (Math.abs(re)<1e-10) text = `${im.toFixed(3)}i`;
+        else text = `${re.toFixed(2)}${im>=0?'+':''}${im.toFixed(2)}i`;
+        html += `<td class="${cls}" style="color:hsl(${hue},65%,65%)">${text}</td>`;
+      }
+    }
+    html += '</tr>';
+  }
+
+  if (sym) {
+    html += `<tr><td colspan="${N+1}" style="text-align:center;color:var(--dim);font-size:0.73rem;padding:4px">` +
+      `(all entries divided by √${N} = ${Math.sqrt(N).toFixed(3)})</td></tr>`;
+  }
+
+  container.innerHTML = html + '</table>';
+}
+
+// =====================================================================
+// Explanations (input-aware, with optional expanded mode)
+// =====================================================================
+let detailedMode = false;
+
+function ord(n) { const s = ['th','st','nd','rd']; const v = n % 100; return n + (s[(v-20)%10]||s[v]||s[0]); }
+function getExplanation(sim, stepIdx, x) {
+  const n = sim.n, N = sim.N, xBin = x.toString(2).padStart(n,'0');
+
+  if (stepIdx === 0) {
+    let text = `<b>Initial state:</b> <span class="math">|${xBin}⟩</span> (decimal ${x}).
+      The QFT will transform this into a uniform superposition of all ${N} basis states,
+      with each amplitude written as a power of <span class="math">ω</span>:<br>
+      <span class="math">QFT|x⟩ = (1/√${N}) Σ<sub>k</sub> ω<sup>xk</sup>|k⟩</span><br>
+      where <span class="math">ω = e<sup>2πi/${N}</sup></span> is the <b>primitive ${N}th root of unity</b> — a complex number that
+      rotates counterclockwise by ${(360/N).toFixed(0)}° on the unit circle. Since <span class="math">ω<sup>${N}</sup> = 1</span>,
+      the powers <span class="math">ω<sup>0</sup>, ω<sup>1</sup>, …, ω<sup>${N-1}</sup></span>
+      are ${N} evenly-spaced points around the circle.<br>
+      Every amplitude in the QFT output is <span class="math">(1/√${N})·ω<sup>xk</sup></span> — the same magnitude,
+      but the phase <span class="math">ω<sup>${x}·k</sup></span> encodes the input x=${x} into a frequency pattern.`;
+    if (detailedMode) {
+      text += `<div class="expanded"><b>Why ω?</b> Writing amplitudes as powers of ω instead of raw complex numbers reveals the
+      algebraic structure. Since <span class="math">ω = e<sup>2πi/${N}</sup></span>, each power <span class="math">ω<sup>p</sup></span> is a
+      rotation by <span class="math">p × ${(360/N).toFixed(0)}°</span>. Multiplying ω-powers just adds their exponents (mod ${N}):
+      <span class="math">ω<sup>a</sup> · ω<sup>b</sup> = ω<sup>a+b</sup></span>.
+      <br><br><b>Classical analogy:</b> The QFT is the quantum version of the Discrete Fourier Transform (DFT).
+      Classically the DFT requires O(N log N) operations for N values; the QFT does it in O(n²) gates on n qubits, an exponential speedup.</div>`;
+    }
+    return text;
+  }
+
+  if (stepIdx > sim.steps.length) return getExplanation(sim, sim.steps.length, x);
+  const step = sim.steps[stepIdx-1];
+
+  if (step.type === 'H') {
+    const targetBit = (x >> (n-1-step.target)) & 1;
+    const halfN = N / 2;
+    let text = `<span class="gate-label">H</span> <b>Hadamard on q${step.target}.</b><br>
+      Since q${step.target} = |${targetBit}⟩, this creates
+      ${targetBit===1
+        ? `(|0⟩ + <span class="math">ω<sup>${halfN}</sup></span>|1⟩)/√2 = (|0⟩ − |1⟩)/√2 &nbsp; (since <span class="math">ω<sup>${halfN}</sup> = −1</span>)`
+        : `(|0⟩ + <span class="math">ω<sup>0</sup></span>|1⟩)/√2 = (|0⟩ + |1⟩)/√2 &nbsp; (since <span class="math">ω<sup>0</sup> = 1</span>)`}.`;
+    if (detailedMode) {
+      text += `<div class="expanded">The Hadamard is the first gate in each qubit's block. It encodes the <b>most significant bit</b>
+      of the binary fraction for this qubit. In omega notation:
+      H|${targetBit}⟩ = (|0⟩ + <span class="math">ω<sup>${targetBit===1?halfN:0}</sup></span>|1⟩) / √2.
+      <br><br>The key insight: <span class="math">ω<sup>${N/2}</sup> = e<sup>iπ</sup> = −1</span>, so bit-value 1 gives
+      a phase flip — this is the coarsest phase encoding (half-turn around the circle).</div>`;
+    }
+    return text;
+  }
+
+  if (step.type === 'CR') {
+    const deg = (360/(1<<step.m)).toFixed(1);
+    const omegaPow = N / (1 << step.m);
+    const controlBit = (x >> (n-1-step.control)) & 1;
+    const applied = controlBit === 1;
+    let text = `<span class="gate-label cr">R${step.m}</span> <b>Controlled-R<sub>${step.m}</sub> (q${step.control} → q${step.target}).</b><br>
+      Multiplies the amplitude by <span class="math">ω<sup>${omegaPow}</sup></span> (= e<sup>i·2π/${1<<step.m}</sup> = ${deg}°).
+      Control q${step.control} = |${controlBit}⟩ →
+      <b class="${applied?'applied':'not-applied'}">${applied?'IS applied':'NO effect'}</b>${applied?' — watch the phases shift!':'.'}`;
+    if (detailedMode) {
+      text += `<div class="expanded">This gate multiplies by <span class="math">ω<sup>${omegaPow}</sup></span>, adding the
+      <b>${ord(step.m)} bit</b> of precision to q${step.target}'s binary fraction.
+      In terms of omega: <span class="math">ω<sup>${omegaPow}</sup> = ω<sup>${N}/${1<<step.m}</sup></span> — a
+      ${(1<<step.m)}-fold subdivision of the full circle.
+      <br><br>Each successive CR gate uses a <b>smaller</b> power of ω (finer rotation):
+      R<sub>2</sub> → ω<sup>${N/4}</sup>, R<sub>3</sub> → ω<sup>${N/8}</sup>, etc.
+      This is how the circuit encodes progressively finer bits of the input into the phase.</div>`;
+    }
+    return text;
+  }
+
+  if (step.type === 'SWAP') {
+    let text = `<span class="gate-label swap">SWAP</span> <b>Swap q${step.q1} ↔ q${step.q2}.</b><br>
+      Corrects the bit-reversal: the circuit produces output in reversed qubit order.`;
+    if (detailedMode) {
+      text += `<div class="expanded">The QFT circuit processes qubit 0 first (giving it the finest phase structure)
+      and qubit n-1 last (giving it the coarsest). But the standard DFT convention expects the opposite ordering.
+      The SWAP gates at the end reverse the qubit order to match the convention.
+      <br><br>Some textbooks omit the SWAPs and just note that the output is in bit-reversed order — this is a valid alternative.</div>`;
+    }
+    return text;
+  }
+  return '';
+}
+
+// =====================================================================
+// Progress Bar
+// =====================================================================
+function buildProgressBar() {
+  const bar = document.getElementById('progressBar');
+  bar.innerHTML = '';
+  if (!sim) return;
+  for (let i = 0; i < sim.steps.length; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'seg';
+    if (i < currentStep) seg.classList.add('done');
+    if (i === currentStep-1) seg.classList.add('current');
+    const tip = document.createElement('div');
+    tip.className = 'seg-tip';
+    tip.textContent = sim.steps[i].label;
+    seg.appendChild(tip);
+    seg.addEventListener('click', () => {
+      stopAutoPlay();
+      const prev = sim.simulate(inputX, currentStep);
+      currentStep = i+1;
+      startAnimation(prev, sim.simulate(inputX, currentStep));
+      updateUI();
+    });
+    bar.appendChild(seg);
+  }
+}
+
+function updateProgressBar() {
+  document.querySelectorAll('.progress-bar .seg').forEach((seg, i) => {
+    seg.classList.toggle('done', i < currentStep);
+    seg.classList.toggle('current', i === currentStep-1);
+  });
+}
+
+// =====================================================================
+// App State & Event Handlers
+// =====================================================================
+let sim, currentStep = 0, inputX = 0, autoTimer = null;
+
+function getAutoPlayInterval() {
+  return 3000 - (parseInt(document.getElementById('speedSlider').value) - 1) * 200;
+}
+function updateSpeedLabel() {
+  document.getElementById('speedLabel').textContent = (getAutoPlayInterval()/1000).toFixed(1)+'s';
+}
+
+function init() {
+  const n = parseInt(document.getElementById('nQubits').value);
+  sim = new QFTSimulator(n);
+  sim._trailCache = null;
+  currentStep = 0;
+  prevStateForDelta = null;
+  populateInputStates(n);
+  inputX = parseInt(document.getElementById('inputState').value);
+  displayState = sim.simulate(inputX, 0);
+  buildProgressBar();
+  drawMatrix(n, inputX);
+  updateUI();
+  drawAllVisualizations();
+}
+
+function populateInputStates(n) {
+  const sel = document.getElementById('inputState');
+  const N = 1 << n;
+  sel.innerHTML = '';
+  for (let i = 0; i < N; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `|${i.toString(2).padStart(n,'0')}⟩  (${i})`;
+    sel.appendChild(opt);
+  }
+  if (N > 1) sel.value = '1';
+}
+
+function updateCircuitAnnotation() {
+  const el = document.getElementById('circuitAnnotation');
+  if (!el) return;
+  if (currentStep === 0) {
+    el.innerHTML = '<span class="ann-detail">Initial state &mdash; no gates applied yet. Press Next or Play to begin.</span>';
+    return;
+  }
+  if (currentStep > sim.steps.length) { el.innerHTML = ''; return; }
+  const gate = sim.steps[currentStep - 1];
+  const n = sim.n;
+  if (gate.type === 'H') {
+    const targetBit = (inputX >> (n-1-gate.target)) & 1;
+    el.innerHTML = `<span class="ann-gate h-gate">H</span> Hadamard on <b>q${gate.target}</b> ` +
+      `<span class="ann-detail">&mdash; q${gate.target}=|${targetBit}⟩ → (|0⟩ ${targetBit===1?'−':'+'}|1⟩)/√2</span>`;
+  } else if (gate.type === 'CR') {
+    const deg = (360/(1<<gate.m)).toFixed(1);
+    const controlBit = (inputX >> (n-1-gate.control)) & 1;
+    const applied = controlBit === 1;
+    el.innerHTML = `<span class="ann-gate cr-gate">CR${gate.m}</span> ` +
+      `Control <b>q${gate.control}</b> → Target <b>q${gate.target}</b> (${deg}°) ` +
+      `<span class="ann-detail">&mdash; control=|${controlBit}⟩ → ${applied?'<b style="color:#00d4aa">applied</b>':'<b style="color:#666">no effect</b>'}</span>`;
+  } else if (gate.type === 'SWAP') {
+    el.innerHTML = `<span class="ann-gate swap-gate">SWAP</span> Swap <b>q${gate.q1}</b> ↔ <b>q${gate.q2}</b> ` +
+      `<span class="ann-detail">&mdash; bit-reversal correction</span>`;
+  }
+}
+
+function updateUI() {
+  document.getElementById('stepIndicator').textContent = `Step ${currentStep} / ${sim.steps.length}`;
+  document.getElementById('explainText').innerHTML = getExplanation(sim, currentStep, inputX);
+  updateProgressBar();
+  updateCircuitAnnotation();
+  // Prev/Next disabled states
+  document.getElementById('btnPrev').classList.toggle('nav-disabled', currentStep === 0);
+  document.getElementById('btnNext').classList.toggle('nav-disabled', currentStep >= sim.steps.length);
+  document.getElementById('btnEnd').classList.toggle('nav-disabled', currentStep >= sim.steps.length);
+}
+
+function stepTo(newStep) {
+  if (newStep < 0 || newStep > sim.steps.length || newStep === currentStep) return;
+  const from = sim.simulate(inputX, currentStep);
+  currentStep = newStep;
+  startAnimation(from, sim.simulate(inputX, currentStep));
+  updateUI();
+}
+
+document.getElementById('nQubits').addEventListener('change', () => { stopAutoPlay(); init(); });
+document.getElementById('inputState').addEventListener('change', () => {
+  stopAutoPlay();
+  inputX = parseInt(document.getElementById('inputState').value);
+  prevStateForDelta = null;
+  sim._trailCache = null;
+  displayState = sim.simulate(inputX, currentStep);
+  drawMatrix(sim.n, inputX);
+  drawAllVisualizations();
+  updateUI();
+});
+document.getElementById('btnNext').addEventListener('click', () => { stopAutoPlay(); stepTo(currentStep+1); });
+document.getElementById('btnPrev').addEventListener('click', () => { stopAutoPlay(); stepTo(currentStep-1); });
+document.getElementById('btnReset').addEventListener('click', () => { stopAutoPlay(); stepTo(0); });
+document.getElementById('btnEnd').addEventListener('click', () => { stopAutoPlay(); stepTo(sim.steps.length); });
+
+function stopAutoPlay() {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; document.getElementById('btnAutoPlay').innerHTML = '&#9654; Play'; }
+}
+
+function toggleAutoPlay() {
+  if (autoTimer) { stopAutoPlay(); return; }
+  if (currentStep >= sim.steps.length) stepTo(0);
+  document.getElementById('btnAutoPlay').innerHTML = '&#9632; Stop';
+  autoTimer = setInterval(() => {
+    if (currentStep >= sim.steps.length) { stopAutoPlay(); return; }
+    stepTo(currentStep+1);
+  }, getAutoPlayInterval());
+}
+
+document.getElementById('btnAutoPlay').addEventListener('click', toggleAutoPlay);
+document.getElementById('speedSlider').addEventListener('input', () => {
+  updateSpeedLabel();
+  if (autoTimer) { stopAutoPlay(); toggleAutoPlay(); }
+});
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); stopAutoPlay(); stepTo(currentStep+1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); stopAutoPlay(); stepTo(currentStep-1); }
+  if (e.key === ' ') { e.preventDefault(); toggleAutoPlay(); }
+  if (e.key === 'r' || e.key === 'R') { e.preventDefault(); stopAutoPlay(); stepTo(0); }
+  if (e.key === 'e' || e.key === 'E') { e.preventDefault(); stopAutoPlay(); stepTo(sim.steps.length); }
+});
+
+// Detailed explanation toggle
+document.getElementById('btnDetail').addEventListener('click', () => {
+  detailedMode = !detailedMode;
+  document.getElementById('btnDetail').classList.toggle('active', detailedMode);
+  localStorage.setItem('qft-detailedMode', detailedMode);
+  updateUI();
+});
+
+// Trails toggle
+document.getElementById('btnTrails').addEventListener('click', () => {
+  showPhasorTrails = !showPhasorTrails;
+  document.getElementById('btnTrails').classList.toggle('active', showPhasorTrails);
+  localStorage.setItem('qft-showPhasorTrails', showPhasorTrails);
+  drawAllVisualizations();
+});
+
+// Symbolic matrix toggle (default: on)
+document.getElementById('btnSymbolic').classList.add('active');
+document.getElementById('btnSymbolic').addEventListener('click', () => {
+  symbolicMatrix = !symbolicMatrix;
+  document.getElementById('btnSymbolic').classList.toggle('active', symbolicMatrix);
+  drawMatrix(sim.n, inputX);
+});
+
+// Tap-to-select on circuit canvas (for touch/mobile)
+document.getElementById('circuitCanvas').addEventListener('click', (e) => {
+  const canvas = document.getElementById('circuitCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  let hit = null;
+  for (const area of gateHitAreas) {
+    if (mx >= area.x && mx <= area.x+area.w && my >= area.y && my <= area.y+area.h) { hit = area; break; }
+  }
+  if (hit) {
+    const gate = sim.steps[hit.gateIdx];
+    const ann = document.getElementById('circuitAnnotation');
+    if (gate.type === 'H') {
+      ann.innerHTML = `<span class="ann-gate h-gate">H</span> Hadamard on <b>q${gate.target}</b> — creates equal superposition with ±1 phases`;
+    } else if (gate.type === 'CR') {
+      const deg = (360/(1<<gate.m)).toFixed(1);
+      ann.innerHTML = `<span class="ann-gate cr-gate">CR${gate.m}</span> Control q${gate.control} → Target q${gate.target} — phase: 2π/${1<<gate.m} = ${deg}°`;
+    } else if (gate.type === 'SWAP') {
+      ann.innerHTML = `<span class="ann-gate swap-gate">SWAP</span> Swap q${gate.q1} ↔ q${gate.q2} — bit reversal correction`;
+    }
+  }
+});
+
+// Tap-to-select on bar chart (for touch/mobile)
+document.getElementById('stateCanvas').addEventListener('click', (e) => {
+  if (!displayState) return;
+  const canvas = document.getElementById('stateCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  let hit = null;
+  for (const a of barHitAreas) {
+    if (mx >= a.x && mx <= a.x+a.w && my >= a.y && my <= a.y+a.h) { hit = a; break; }
+  }
+  const readout = document.getElementById('barReadout');
+  if (hit) {
+    const c = displayState[hit.idx];
+    const mag = C.mag(c), phase = C.phase(c);
+    const deg = ((phase*180/Math.PI)+360)%360;
+    const piFrac = formatPhaseAsFraction(phase);
+    readout.innerHTML = `<b>|${hit.idx.toString(2).padStart(sim.n,'0')}⟩</b> (${hit.idx}) &mdash; ` +
+      `Amplitude: ${mag.toFixed(4)}, Phase: ${deg.toFixed(1)}°${piFrac ? ' = '+piFrac : ''}, ` +
+      `Complex: ${c[0].toFixed(4)} ${c[1]>=0?'+':''}${c[1].toFixed(4)}i`;
+    readout.classList.add('visible');
+  } else {
+    readout.classList.remove('visible');
+  }
+});
+
+// Swipe gesture for step navigation
+(function() {
+  const canvas = document.getElementById('circuitCanvas');
+  let touchStartX = null, touchStartY = null;
+  canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }
+  }, { passive: true });
+  canvas.addEventListener('touchend', (e) => {
+    if (touchStartX === null) return;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartX, dy = touch.clientY - touchStartY;
+    touchStartX = null; touchStartY = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 2) {
+      e.preventDefault(); stopAutoPlay();
+      if (dx < 0) stepTo(currentStep + 1); else stepTo(currentStep - 1);
+    }
+  });
+})();
+
+// Touch device detection
+if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+  document.body.classList.add('touch-device');
+}
+
+// Resize
+let resizeTimeout;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => { if (displayState) drawAllVisualizations(); }, 100);
+});
+
+// Collapsible panels
+document.querySelectorAll('.panel h2').forEach(h2 => {
+  h2.addEventListener('click', (e) => {
+    // Don't collapse when clicking toggle buttons inside h2
+    if (e.target.closest('.toggle-btn')) return;
+    const panel = h2.closest('.panel');
+    const body = panel.querySelector('.panel-body');
+    if (!body) return;
+    if (panel.classList.contains('collapsed')) {
+      // Expand: set max-height to scrollHeight for smooth animation, then remove it
+      panel.classList.remove('collapsed');
+      body.style.maxHeight = body.scrollHeight + 'px';
+      setTimeout(() => { body.style.maxHeight = ''; }, 350);
+    } else {
+      // Collapse: set explicit max-height first, then collapse
+      body.style.maxHeight = body.scrollHeight + 'px';
+      void body.offsetWidth; // force reflow
+      panel.classList.add('collapsed');
+    }
+    // Persist collapsed panel states
+    const collapsed = Array.from(document.querySelectorAll('.panel.collapsed')).map(p => p.className.match(/(\w+-panel)/)?.[1]).filter(Boolean);
+    localStorage.setItem('qft-collapsedPanels', JSON.stringify(collapsed));
+  });
+});
+
+// Restore persisted settings
+(function restoreSettings() {
+  if (localStorage.getItem('qft-detailedMode') === 'true') {
+    detailedMode = true;
+    document.getElementById('btnDetail').classList.add('active');
+  }
+  if (localStorage.getItem('qft-showPhasorTrails') === 'true') {
+    showPhasorTrails = true;
+    document.getElementById('btnTrails').classList.add('active');
+  }
+  try {
+    const collapsed = JSON.parse(localStorage.getItem('qft-collapsedPanels') || '[]');
+    collapsed.forEach(cls => {
+      const panel = document.querySelector('.' + cls);
+      if (panel) panel.classList.add('collapsed');
+    });
+  } catch(e) {}
+})();
+
+// =====================================================================
+// Particle Background
+// =====================================================================
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 40;
+  const CONNECT_DIST = 130;
+  const colors = [
+    'rgba(99, 102, 241, 0.35)',
+    'rgba(34, 211, 238, 0.3)',
+    'rgba(244, 114, 182, 0.25)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        r: Math.random() * 2 + 0.8,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.12;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+
+// Boot
+updateSpeedLabel();
+init();
+</script>
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+</body>
+</html>

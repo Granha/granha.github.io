@@ -1,0 +1,2153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Quantum Collapse</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* ========== BASE ========== */
+*{margin:0;padding:0;box-sizing:border-box}
+:root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --panel: #151a3a;
+    --panel-light: #1e2550;
+    --magenta: #c850ff;
+    --gold: #ffd700;
+    --q0-color: #00b4ff;
+    --q1-color: #ff6b35;
+  }
+html,body{height:100%;overflow:hidden;font-family: 'Inter', sans-serif;background:var(--bg);color:var(--text)}
+#app{width:100%;height:100%;display:flex;flex-direction:column;max-width:520px;margin:0 auto;position:relative;overflow:hidden}
+.screen{display:none;flex-direction:column;width:100%;height:100%;position:absolute;top:0;left:0}
+.screen.active{display:flex}
+button{cursor:pointer;border:none;font-family:inherit;font-weight:600;outline:none;-webkit-tap-highlight-color:transparent}
+button:active{transform:scale(0.95)}
+
+/* ========== TITLE SCREEN ========== */
+#screen-title{align-items:center;justify-content:center;gap:16px;z-index:1}
+.title-bg{position:absolute;inset:0;overflow:hidden}
+.title-particle{position:absolute;width:6px;height:6px;border-radius:50%;opacity:0.5;animation:float linear infinite}
+@keyframes float{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:0.6}90%{opacity:0.6}100%{transform:translateY(-10vh) scale(1);opacity:0}}
+.title-h1{font-size:52px;font-weight:900;letter-spacing:4px;text-align:center;background:linear-gradient(135deg,var(--cyan),var(--magenta),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:2;line-height:1.1}
+.title-sub{font-size:16px;color:var(--text-dim);letter-spacing:6px;text-transform:uppercase;z-index:2}
+.btn-play{margin-top:32px;padding:16px 64px;font-size:20px;letter-spacing:4px;background:linear-gradient(135deg,var(--cyan),var(--magenta));color:white;border-radius:50px;z-index:2;box-shadow:0 0 30px rgba(0,212,255,0.3);transition:box-shadow 0.3s}
+.btn-play:hover{box-shadow:0 0 50px rgba(0,212,255,0.5)}
+.title-hint{font-size:11px;color:var(--text-dim);z-index:2;margin-top:8px;opacity:0.6}
+.title-progress{z-index:2;text-align:center;margin-top:4px}
+.title-progress-bar{width:160px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin:6px auto 4px;overflow:hidden}
+.title-progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--cyan),var(--magenta));transition:width 1s ease}
+.title-progress-text{font-size:10px;color:var(--text-dim);opacity:0.7;letter-spacing:1px}
+
+/* ========== LEVEL SELECT ========== */
+#screen-levels{padding:20px 16px;gap:12px;overflow-y:auto}
+.levels-header{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.levels-header h2{font-size:20px;flex:1}
+.btn-back{background:none;color:var(--cyan);font-size:24px;padding:8px 12px;border-radius:8px}
+.btn-back:hover{background:var(--panel)}
+.world-section{margin-bottom:16px}
+.world-title{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;padding-left:4px}
+.world-title .world-num{color:var(--cyan);font-weight:700}
+.level-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.level-btn{aspect-ratio:1;border-radius:12px;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--text);font-size:18px;font-weight:700;border:2px solid transparent;transition:all 0.2s}
+.level-btn .level-stars{font-size:10px;letter-spacing:1px;color:var(--gold);min-height:14px}
+.level-btn.locked{opacity:0.3;pointer-events:none}
+.level-btn.locked::after{content:"";display:block;width:16px;height:16px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%237a85b0' viewBox='0 0 24 24'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E") center/contain no-repeat;margin-top:2px}
+.level-btn.completed{border-color:var(--panel-light)}
+.level-btn.current{border-color:var(--cyan);box-shadow:0 0 12px rgba(0,212,255,0.3)}
+.level-btn:not(.locked):hover{background:var(--panel-light);border-color:var(--cyan)}
+
+/* ========== GAME SCREEN ========== */
+#screen-game{padding:8px 12px;gap:0;overflow:hidden}
+.game-middle{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:4px 0;overflow-y:auto}
+.game-header{display:flex;align-items:center;gap:8px;padding:4px 0;flex-wrap:wrap}
+.game-header .level-name{flex:1;font-size:15px;font-weight:700}
+.game-header .gate-count{font-size:12px;color:var(--text-dim)}
+.game-header .level-desc{width:100%;font-size:11px;color:var(--text-dim);line-height:1.3}
+
+/* Target display */
+.target-area{background:var(--panel);border-radius:12px;padding:10px 16px;display:flex;align-items:center;gap:12px}
+.target-area .label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);min-width:54px}
+.target-qubits{display:flex;gap:8px;flex:1;justify-content:center;flex-wrap:wrap}
+.target-qubit{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;border:2px solid rgba(255,255,255,0.1)}
+.target-or{font-size:11px;color:var(--text-dim);display:flex;align-items:center;padding:0 4px}
+
+/* Circuit diagram */
+.circuit-area{background:var(--panel);border-radius:12px;padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.circuit-wire{display:flex;align-items:center;gap:0;min-height:48px;position:relative}
+.wire-label{font-size:12px;font-weight:700;color:var(--cyan);min-width:28px;text-align:center;font-family:"Courier New",monospace}
+.wire-line{flex:1;height:2px;background:var(--panel-light);position:relative;margin:0 8px}
+.wire-gates{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;gap:4px;padding:0 4px}
+.wire-gate{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:white;flex-shrink:0;position:relative;transition:transform 0.2s,box-shadow 0.2s;animation:gateAppear 0.3s ease-out}
+.wire-gate.gate-X{background:linear-gradient(135deg,#ff4466,#ff6644)}
+.wire-gate.gate-H{background:linear-gradient(135deg,#6644ff,#aa44ff)}
+.wire-gate.gate-Z{background:linear-gradient(135deg,#00aa66,#00ddaa)}
+.wire-gate.gate-CNOT-ctrl{background:var(--magenta);border-radius:50%;width:20px;height:20px;font-size:10px}
+.wire-gate.gate-CNOT-tgt{background:transparent;border:3px solid var(--magenta);border-radius:50%;width:28px;height:28px;font-size:14px}
+@keyframes gateAppear{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.cnot-line{position:absolute;width:3px;background:var(--magenta);left:50%;transform:translateX(-50%);z-index:0;pointer-events:none}
+
+/* Current state qubits */
+.state-area{display:flex;flex-direction:column;gap:6px;align-items:center}
+.state-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim)}
+.state-qubits{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.qubit-container{display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
+.qubit{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:white;cursor:pointer;transition:all 0.3s;position:relative;user-select:none;border:3px solid transparent}
+.qubit:hover{transform:scale(1.08);border-color:rgba(255,255,255,0.3)}
+.qubit.selected-control{border-color:var(--magenta)!important;box-shadow:0 0 20px rgba(200,80,255,0.6)!important}
+.qubit.measuring{animation:measureFlicker 0.15s linear infinite}
+.qubit.collapsed{animation:collapseReveal 0.4s ease-out}
+@keyframes measureFlicker{
+  0%{background:var(--q0-color);box-shadow:0 0 20px rgba(0,180,255,0.6)}
+  50%{background:var(--q1-color);box-shadow:0 0 20px rgba(255,107,53,0.6)}
+  100%{background:var(--q0-color);box-shadow:0 0 20px rgba(0,180,255,0.6)}
+}
+@keyframes collapseReveal{0%{transform:scale(1.3);filter:brightness(2)}100%{transform:scale(1);filter:brightness(1)}}
+@keyframes superpositionGlow{0%,100%{filter:hue-rotate(0deg) brightness(1);transform:scale(1)}50%{filter:hue-rotate(30deg) brightness(1.2);transform:scale(1.04)}}
+.qubit-prob{display:flex;gap:2px;height:6px;width:56px;border-radius:3px;overflow:hidden;background:rgba(0,0,0,0.3)}
+.qubit-prob .prob-0{background:var(--q0-color);transition:flex 0.3s}
+.qubit-prob .prob-1{background:var(--q1-color);transition:flex 0.3s}
+.qubit-index{font-size:10px;color:var(--text-dim)}
+.qubit-tooltip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--surface2);color:var(--text);font-size:10px;font-family:'JetBrains Mono',monospace;padding:4px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.2s;z-index:10;border:1px solid var(--border)}
+.qubit-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--surface2)}
+.qubit-container:hover .qubit-tooltip{opacity:1}
+.qubit.entangled{border-color:rgba(200,80,255,0.5)!important;box-shadow:0 0 20px rgba(200,80,255,0.4),0 0 40px rgba(200,80,255,0.2)!important}
+.qubit.has-phase{border-color:rgba(0,221,170,0.6)!important}
+.qubit.has-phase::after{content:'\u03C6';position:absolute;bottom:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:var(--green);color:var(--bg);font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;animation:phaseBadgePulse 2s ease-in-out infinite}
+@keyframes phaseBadgePulse{0%,100%{opacity:0.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+.cnot-spacer{width:36px;height:36px;flex-shrink:0}
+.state-vector{font-family:"Courier New",monospace;font-size:13px;text-align:center;color:var(--text);padding:2px 8px;min-height:20px;letter-spacing:0.5px;line-height:1.4}
+.sv-ket{color:var(--cyan);font-weight:700}
+.sv-coeff{color:var(--magenta)}
+.sv-eq{color:var(--text-dim)}
+.total-stars{font-size:13px;color:var(--gold);font-weight:700;white-space:nowrap}
+.insight-msg{text-align:center;font-size:12px;color:var(--magenta);min-height:0;padding:0 8px;opacity:0;transition:opacity 0.3s;line-height:1.3}
+.insight-msg.visible{opacity:1;min-height:18px}
+.screen.active{animation:screenIn 0.25s ease-out}
+@keyframes screenIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.btn-sound{position:fixed;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:var(--panel);color:var(--cyan);font-size:18px;display:flex;align-items:center;justify-content:center;z-index:200;border:1px solid var(--panel-light);transition:all 0.2s}
+.btn-sound:hover{background:var(--panel-light)}
+.btn-sound.muted{color:var(--text-dim);opacity:0.5}
+.result-ket{font-family:"Courier New",monospace;color:var(--cyan);font-weight:700;font-size:15px}
+.gate-count.under-par{color:var(--green)}.gate-count.at-par{color:var(--cyan)}.gate-count.over-par{color:var(--orange)}.gate-count.way-over{color:var(--red)}
+.gate-count.near-limit{color:var(--orange);animation:gateLimitWarn 1s ease-in-out infinite}
+.gate-count.at-limit{color:var(--red);font-weight:800;animation:gateLimitWarn 0.5s ease-in-out infinite}
+@keyframes gateLimitWarn{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes shakeIt{0%,100%{transform:translateX(0)}15%{transform:translateX(-6px)}30%{transform:translateX(6px)}45%{transform:translateX(-4px)}60%{transform:translateX(4px)}75%{transform:translateX(-2px)}90%{transform:translateX(2px)}}
+.shake{animation:shakeIt 0.4s ease-out}
+@keyframes heavyShake{0%,100%{transform:translateX(0)}15%{transform:translateX(-10px)}30%{transform:translateX(10px)}45%{transform:translateX(-7px)}60%{transform:translateX(7px)}75%{transform:translateX(-3px)}90%{transform:translateX(3px)}}
+.heavy-shake{animation:heavyShake 0.5s ease-out}
+.world-progress{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:6px;overflow:hidden}
+.world-progress-fill{height:100%;border-radius:2px;transition:width 0.5s ease}
+.gate-key{position:absolute;top:2px;right:4px;font-size:8px;color:var(--text-dim);font-weight:400;opacity:0.6}
+.streak-badge{display:inline-flex;align-items:center;gap:3px;background:var(--panel);border:1px solid var(--orange);border-radius:12px;padding:1px 7px;font-size:10px;color:var(--orange);font-weight:700;margin-left:4px}
+.streak-badge.hidden{display:none}
+.result-tip{font-size:11px;color:var(--cyan);margin-top:8px;font-style:italic}
+.new-best{display:inline-block;background:linear-gradient(135deg,var(--gold),var(--orange));color:var(--bg);font-size:11px;font-weight:800;padding:2px 10px;border-radius:10px;letter-spacing:1px;animation:newBestPop 0.5s ease-out}
+@keyframes newBestPop{0%{transform:scale(0) rotate(-10deg);opacity:0}60%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+
+/* Success probability bar */
+.prob-bar{background:var(--panel);border-radius:10px;padding:8px 16px;display:flex;align-items:center;gap:12px}
+.prob-bar .prob-label{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);min-width:64px}
+.prob-track{flex:1;height:10px;background:rgba(0,0,0,0.3);border-radius:5px;overflow:hidden;position:relative}
+.prob-fill{height:100%;border-radius:5px;transition:width 0.4s ease,background 0.4s;background:var(--red);min-width:0}
+.prob-fill.good{background:var(--orange)}
+.prob-fill.great{background:var(--green)}
+.prob-text{font-size:14px;font-weight:800;min-width:48px;text-align:right}
+.prob-text.perfect{color:var(--green)}
+
+/* Toolbox */
+.toolbox{background:var(--panel);border-radius:12px;padding:10px 12px}
+.tool-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;text-align:center}
+.gate-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.gate-btn{padding:10px 16px;border-radius:8px;font-size:14px;font-weight:800;color:white;letter-spacing:1px;transition:all 0.2s;background:var(--panel-light);min-width:52px;position:relative}
+.gate-btn.sel{box-shadow:0 0 0 2px var(--cyan),0 0 16px rgba(0,212,255,0.3);transform:scale(1.05)}
+.gate-btn .gate-name{display:block}.gate-btn .gate-hint{display:block;font-size:9px;font-weight:400;color:var(--text-dim);margin-top:2px}
+.gate-btn[data-gate="X"]{border-left:3px solid #ff4466}
+.gate-btn[data-gate="H"]{border-left:3px solid #8844ff}
+.gate-btn[data-gate="Z"]{border-left:3px solid #00ddaa}
+.gate-btn[data-gate="CNOT"]{border-left:3px solid var(--magenta)}
+.status-msg{text-align:center;font-size:12px;color:var(--cyan);min-height:18px;margin-top:4px}
+
+/* Actions */
+.actions{display:flex;gap:8px;padding-bottom:env(safe-area-inset-bottom,8px)}
+.btn-action{flex:1;padding:12px;border-radius:10px;font-size:13px;letter-spacing:1px;background:var(--panel);color:var(--text-dim);transition:all 0.2s}
+.btn-action:hover{background:var(--panel-light);color:var(--text)}
+.btn-measure{flex:2;padding:14px;border-radius:10px;font-size:16px;letter-spacing:3px;background:linear-gradient(135deg,var(--cyan),var(--magenta));color:white;box-shadow:0 0 20px rgba(0,212,255,0.3);transition:all 0.2s;animation:measurePulse 2s ease-in-out infinite}
+.btn-measure:hover{box-shadow:0 0 40px rgba(0,212,255,0.5)}
+.btn-measure:disabled{opacity:0.4;animation:none;cursor:default}
+@keyframes measurePulse{0%,100%{box-shadow:0 0 20px rgba(0,212,255,0.3)}50%{box-shadow:0 0 35px rgba(0,212,255,0.5)}}
+
+/* ========== MODALS ========== */
+.modal{display:none;position:absolute;inset:0;background:rgba(5,5,20,0.85);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal.active{display:flex}
+.modal-box{background:var(--panel);border-radius:20px;padding:28px 24px;max-width:380px;width:90%;text-align:center;animation:modalIn 0.3s ease-out;position:relative;overflow:hidden}
+@keyframes modalIn{from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* Result modal */
+.result-title{font-size:28px;font-weight:900;margin-bottom:8px}
+.result-title.win{color:var(--green)}
+.result-title.lose{color:var(--red)}
+.result-stars{font-size:36px;margin:12px 0;display:flex;justify-content:center;gap:8px}
+.result-star{transition:all 0.3s;opacity:0.2;filter:grayscale(1);color:var(--gold)}
+.result-star.earned{opacity:1;filter:none;animation:starPop 0.4s ease-out both}
+@keyframes starPop{0%{transform:scale(0) rotate(-30deg)}60%{transform:scale(1.3) rotate(10deg)}100%{transform:scale(1) rotate(0)}}
+.result-msg{font-size:13px;color:var(--text-dim);margin-bottom:20px;line-height:1.5}
+.result-prob{font-size:12px;color:var(--text-dim);margin-bottom:16px}
+.modal-btns{display:flex;gap:8px;justify-content:center}
+.btn-modal{padding:12px 28px;border-radius:10px;font-size:14px;letter-spacing:1px;transition:all 0.2s}
+.btn-retry{background:var(--panel-light);color:var(--text)}
+.btn-retry:hover{background:rgba(255,255,255,0.1)}
+.btn-next{background:linear-gradient(135deg,var(--cyan),var(--magenta));color:white}
+.btn-levels{background:var(--panel-light);color:var(--text)}
+
+/* Tutorial modal */
+.tutorial-box{text-align:left}
+.tutorial-title{font-size:22px;font-weight:800;margin-bottom:16px;background:linear-gradient(135deg,var(--cyan),var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tutorial-body{font-size:14px;line-height:1.7;color:var(--text);margin-bottom:20px}
+.tutorial-body b{color:var(--cyan)}
+.tutorial-body .t-gate{display:inline-block;padding:2px 8px;border-radius:4px;font-weight:800;font-size:12px;color:white;vertical-align:middle;margin:0 2px}
+.tutorial-body .t-gate.t-X{background:linear-gradient(135deg,#ff4466,#ff6644)}
+.tutorial-body .t-gate.t-H{background:linear-gradient(135deg,#6644ff,#aa44ff)}
+.tutorial-body .t-gate.t-Z{background:linear-gradient(135deg,#00aa66,#00ddaa)}
+.tutorial-body .t-gate.t-CNOT{background:linear-gradient(135deg,#a040dd,#c850ff)}
+.tutorial-body .t-qubit{display:inline-block;width:24px;height:24px;border-radius:50%;vertical-align:middle;margin:0 2px;font-size:11px;font-weight:800;line-height:24px;text-align:center;color:white}
+.tutorial-body .t-q0{background:var(--q0-color)}
+.tutorial-body .t-q1{background:var(--q1-color)}
+.btn-got-it{display:block;width:100%;padding:14px;border-radius:10px;font-size:15px;letter-spacing:2px;background:linear-gradient(135deg,var(--cyan),var(--magenta));color:white;margin-top:8px}
+
+/* ========== PARTICLES ========== */
+.particle-container{position:absolute;inset:0;pointer-events:none;z-index:50;overflow:hidden}
+.particle{position:absolute;border-radius:50%;animation:particleFly 0.8s ease-out forwards}
+@keyframes particleFly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0)}}
+
+/* ========== CONFETTI ========== */
+.confetti{position:absolute;width:8px;height:12px;border-radius:1px;animation:confettiFall linear forwards;pointer-events:none;z-index:60}
+@keyframes confettiFall{
+  0%{opacity:1;transform:translateY(0) rotate(0deg) scale(1)}
+  25%{transform:translateY(25vh) rotate(180deg) translateX(var(--drift)) scale(0.95)}
+  50%{transform:translateY(50vh) rotate(360deg) translateX(calc(var(--drift) * -0.5)) scale(0.9)}
+  75%{transform:translateY(75vh) rotate(540deg) translateX(var(--drift)) scale(0.85)}
+  100%{opacity:0;transform:translateY(105vh) rotate(720deg) translateX(calc(var(--drift) * -1)) scale(0.7)}
+}
+
+/* ========== HINT SYSTEM ========== */
+.btn-hint{background:none;color:var(--gold);font-size:12px;padding:2px 8px;border-radius:10px;border:1px solid var(--gold);opacity:0.8;transition:all 0.2s;white-space:nowrap}
+.btn-hint:hover{opacity:1;background:rgba(255,215,0,0.1)}
+.btn-hint:disabled{opacity:0.3;cursor:not-allowed;border-color:var(--text-dim);color:var(--text-dim)}
+.hint-toast{position:absolute;left:50%;transform:translateX(-50%);top:50%;background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:10px 16px;font-size:12px;color:var(--gold);z-index:55;max-width:280px;text-align:center;opacity:0;transition:opacity 0.3s;pointer-events:none;line-height:1.4}
+.hint-toast.visible{opacity:1}
+
+/* ========== ENTANGLEMENT LINES ========== */
+.entangle-svg{position:absolute;inset:0;pointer-events:none;z-index:1}
+.entangle-line{fill:none;stroke:var(--magenta);stroke-width:2;stroke-dasharray:6 4;animation:entanglePulse 1.5s ease-in-out infinite}
+@keyframes entanglePulse{0%,100%{opacity:0.3;stroke-width:2}50%{opacity:0.8;stroke-width:3}}
+
+/* ========== WORLD UNLOCK ========== */
+.world-unlock-title{font-size:24px;font-weight:900;letter-spacing:3px;margin-bottom:4px}
+.world-unlock-name{font-size:16px;font-weight:700;margin-bottom:12px}
+.world-unlock-desc{font-size:13px;color:var(--text-dim);line-height:1.5;margin-bottom:16px}
+
+/* ========== GATE ORDER NUMBERS ========== */
+.gate-order{position:absolute;top:-4px;left:-4px;width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,0.7);color:var(--text-dim);font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;z-index:2;line-height:1}
+
+/* ========== GATE REFERENCE ========== */
+.btn-gate-ref{background:none;color:var(--text-dim);font-size:11px;padding:2px 8px;border-radius:8px;border:1px solid var(--text-dim);opacity:0.5;transition:all 0.2s;margin-top:4px}
+.btn-gate-ref:hover{opacity:0.8;color:var(--cyan);border-color:var(--cyan)}
+.gate-ref-panel{display:none;background:var(--panel);border:1px solid var(--panel-light);border-radius:10px;padding:10px 12px;margin-top:6px;font-size:11px;line-height:1.8;color:var(--text-dim)}
+.gate-ref-panel.open{display:block}
+.gate-ref-panel .ref-gate{color:var(--cyan);font-weight:700}
+.gate-ref-panel .ref-eq{color:var(--text);font-family:'Courier New',monospace;font-size:10px}
+
+/* ========== UNDO FLASH ========== */
+.circuit-area.undo-flash{border:2px solid var(--red);box-shadow:0 0 12px rgba(255,68,68,0.3)}
+.game-middle.reset-flash{box-shadow:inset 0 0 30px rgba(255,68,68,0.15)}
+
+/* ========== FAILURE FLASH ========== */
+.failure-flash{position:absolute;inset:0;background:var(--red);opacity:0;z-index:90;pointer-events:none;animation:failFlash 0.4s ease-out forwards}
+@keyframes failFlash{0%{opacity:0}20%{opacity:0.15}100%{opacity:0}}
+
+/* ========== PROB GLOW ========== */
+.prob-track.perfect-glow{box-shadow:0 0 12px rgba(0,255,136,0.5);transition:box-shadow 0.4s}
+
+/* ========== GATE PRESS EFFECTS ========== */
+.gate-btn:active{transform:scale(0.88)!important}
+@keyframes gateFlash{0%{background:rgba(255,255,255,0.3)}100%{background:transparent}}
+.gate-btn.just-selected{animation:gateFlash 0.2s ease-out}
+.gate-btn .gate-ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,0.3);animation:rippleExpand 0.4s ease-out forwards;pointer-events:none}
+@keyframes rippleExpand{0%{width:0;height:0;opacity:0.6}100%{width:80px;height:80px;opacity:0;margin-left:-40px;margin-top:-40px}}
+
+/* ========== MEASURE BUILD-UP ========== */
+.btn-measure.measure-charging{animation:measureCharge 0.4s ease-in;box-shadow:0 0 40px rgba(0,212,255,0.6),0 0 80px rgba(200,80,255,0.3)}
+@keyframes measureCharge{0%{box-shadow:0 0 20px rgba(0,212,255,0.3)}50%{box-shadow:0 0 50px rgba(0,212,255,0.7),0 0 80px rgba(200,80,255,0.4)}100%{box-shadow:0 0 60px rgba(0,212,255,0.8),0 0 100px rgba(200,80,255,0.5)}}
+.qubit.pre-measure{transform:scale(0.92);transition:transform 0.2s ease-in}
+
+/* ========== LEVEL SELECT MOVES ========== */
+.level-moves{font-size:9px;color:var(--text-dim);min-height:12px}
+.levels-stats{font-size:12px;color:var(--text-dim);text-align:center;margin-bottom:8px}
+
+/* ========== RESPONSIVE ========== */
+@media(max-height:700px){
+  .qubit{width:52px;height:52px;font-size:18px}
+  .target-qubit{width:36px;height:36px;font-size:14px}
+  .circuit-area{padding:8px}
+  .wire-gate{width:30px;height:30px;font-size:11px}
+  .prob-bar{padding:6px 12px}
+}
+@media(max-height:600px){
+  .qubit{width:44px;height:44px;font-size:16px}
+  .state-qubits{gap:10px}
+}
+@media(max-width:400px){
+  .streak-badge{display:none!important}
+}
+
+  /* Particle background canvas */
+  #particleBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="particleBg"></canvas>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+<div id="app">
+
+<!-- ===== TITLE SCREEN ===== -->
+<div id="screen-title" class="screen active">
+  <div class="title-bg" id="title-bg"></div>
+  <div class="title-h1">QUANTUM<br>COLLAPSE</div>
+  <div class="title-sub">Master the Quantum Realm</div>
+  <button class="btn-play" id="btn-play">PLAY</button>
+  <div class="title-hint">A quantum computing puzzle game</div>
+  <div class="title-progress" id="title-progress" style="display:none">
+    <div class="title-progress-bar"><div class="title-progress-fill" id="title-progress-fill"></div></div>
+    <div class="title-progress-text" id="title-progress-text"></div>
+  </div>
+</div>
+
+<!-- ===== LEVEL SELECT ===== -->
+<div id="screen-levels" class="screen">
+  <div class="levels-header">
+    <button class="btn-back" id="btn-back-title">&larr;</button>
+    <h2>Select Level</h2>
+  </div>
+  <div id="worlds-container"></div>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div id="screen-game" class="screen">
+  <div class="game-header">
+    <button class="btn-back" id="btn-back-levels">&larr;</button>
+    <div class="level-name" id="level-name">Level 1</div>
+    <div class="gate-count" id="gate-count">Gates: 0</div>
+    <button class="btn-hint" id="btn-hint" disabled>&#128161; 0/3</button>
+    <span class="streak-badge hidden" id="streak-badge"></span>
+    <div class="level-desc" id="level-desc"></div>
+  </div>
+
+  <div class="game-middle">
+    <div class="target-area">
+      <div class="label">Target</div>
+      <div class="target-qubits" id="target-qubits"></div>
+    </div>
+
+    <div class="circuit-area" id="circuit-area"></div>
+
+    <div class="state-area" style="position:relative">
+      <div class="state-label">Your Qubits</div>
+      <div class="state-qubits" id="state-qubits"></div>
+      <svg class="entangle-svg" id="entangle-svg"></svg>
+    </div>
+
+    <div class="state-vector" id="state-vector"></div>
+    <div class="insight-msg" id="insight-msg"></div>
+
+    <div class="prob-bar">
+      <div class="prob-label">Success</div>
+      <div class="prob-track" id="prob-track"><div class="prob-fill" id="prob-fill"></div></div>
+      <div class="prob-text" id="prob-text">0%</div>
+    </div>
+
+    <div class="hint-toast" id="hint-toast"></div>
+
+    <div class="toolbox">
+      <div class="tool-label">Quantum Gates</div>
+      <div class="gate-row" id="gate-row"></div>
+      <div class="status-msg" id="status-msg"></div>
+      <button class="btn-gate-ref" id="btn-gate-ref">? Gate Reference</button>
+      <div class="gate-ref-panel" id="gate-ref-panel"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-action" id="btn-undo">UNDO</button>
+      <button class="btn-measure" id="btn-measure">MEASURE</button>
+      <button class="btn-action" id="btn-reset">RESET</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RESULT MODAL ===== -->
+<div class="modal" id="modal-result">
+  <div class="modal-box">
+    <div class="result-title" id="result-title"></div>
+    <div class="result-stars" id="result-stars"></div>
+    <div class="result-msg" id="result-msg"></div>
+    <div class="result-prob" id="result-prob"></div>
+    <div class="modal-btns" id="result-btns"></div>
+  </div>
+</div>
+
+<!-- ===== TUTORIAL MODAL ===== -->
+<div class="modal" id="modal-tutorial">
+  <div class="modal-box tutorial-box">
+    <div class="tutorial-title" id="tutorial-title"></div>
+    <div class="tutorial-body" id="tutorial-body"></div>
+    <button class="btn-got-it" id="btn-got-it">GOT IT!</button>
+  </div>
+</div>
+
+<!-- ===== WORLD UNLOCK MODAL ===== -->
+<div class="modal" id="modal-world-unlock">
+  <div class="modal-box">
+    <div class="world-unlock-title" id="world-unlock-title"></div>
+    <div class="world-unlock-name" id="world-unlock-name"></div>
+    <div class="world-unlock-desc" id="world-unlock-desc"></div>
+    <button class="btn-got-it" id="btn-world-ok">LET'S GO!</button>
+  </div>
+</div>
+
+<button class="btn-sound" id="btn-sound">&#9834;</button>
+
+<!-- ===== PARTICLE CONTAINER ===== -->
+<div class="particle-container" id="particles"></div>
+
+<!-- ===== FAILURE FLASH OVERLAY ===== -->
+<div id="failure-flash"></div>
+
+</div>
+
+<script>
+// ============================================================
+// SECTION 1: QUANTUM ENGINE
+// ============================================================
+
+class Complex {
+  constructor(re = 0, im = 0) { this.re = re; this.im = im; }
+  add(c) { return new Complex(this.re + c.re, this.im + c.im); }
+  sub(c) { return new Complex(this.re - c.re, this.im - c.im); }
+  mul(c) { return new Complex(this.re*c.re - this.im*c.im, this.re*c.im + this.im*c.re); }
+  scale(s) { return new Complex(this.re * s, this.im * s); }
+  abs2() { return this.re * this.re + this.im * this.im; }
+  clone() { return new Complex(this.re, this.im); }
+}
+
+const SQRT2_INV = 1 / Math.sqrt(2);
+
+// Gate matrices (2x2 for single-qubit, special handling for CNOT)
+const GATE_MATRICES = {
+  X: [[new Complex(0), new Complex(1)], [new Complex(1), new Complex(0)]],
+  H: [[new Complex(SQRT2_INV), new Complex(SQRT2_INV)], [new Complex(SQRT2_INV), new Complex(-SQRT2_INV)]],
+  Z: [[new Complex(1), new Complex(0)], [new Complex(0), new Complex(-1)]],
+};
+
+class QuantumState {
+  constructor(n) {
+    this.n = n;
+    this.dim = 1 << n;
+    this.amps = new Array(this.dim);
+    for (let i = 0; i < this.dim; i++) this.amps[i] = new Complex(0, 0);
+    this.amps[0] = new Complex(1, 0); // |00...0>
+  }
+
+  clone() {
+    const s = new QuantumState(this.n);
+    for (let i = 0; i < this.dim; i++) s.amps[i] = this.amps[i].clone();
+    return s;
+  }
+
+  applySingleGate(gate, qubit) {
+    const U = GATE_MATRICES[gate];
+    if (!U) return;
+    for (let i = 0; i < this.dim; i++) {
+      if ((i >> qubit) & 1) continue; // only process pairs where target bit = 0
+      const j = i | (1 << qubit);
+      const a = this.amps[i].clone();
+      const b = this.amps[j].clone();
+      this.amps[i] = U[0][0].mul(a).add(U[0][1].mul(b));
+      this.amps[j] = U[1][0].mul(a).add(U[1][1].mul(b));
+    }
+  }
+
+  applyCNOT(control, target) {
+    for (let i = 0; i < this.dim; i++) {
+      if (!((i >> target) & 1) && ((i >> control) & 1)) {
+        const j = i | (1 << target);
+        const tmp = this.amps[i];
+        this.amps[i] = this.amps[j];
+        this.amps[j] = tmp;
+      }
+    }
+  }
+
+  // Probability of measuring qubit q as outcome v
+  qubitProb(q, v) {
+    let p = 0;
+    for (let i = 0; i < this.dim; i++) {
+      if (((i >> q) & 1) === v) p += this.amps[i].abs2();
+    }
+    return p;
+  }
+
+  // Probability of a specific basis state
+  basisProb(index) { return this.amps[index].abs2(); }
+
+  // Probability of any of the target states
+  targetProb(targets) {
+    let p = 0;
+    for (const t of targets) p += this.amps[t].abs2();
+    return p;
+  }
+
+  // Measure all qubits, returns the basis state index
+  measureAll() {
+    const probs = this.amps.map(a => a.abs2());
+    let r = Math.random();
+    let outcome = 0;
+    for (let i = 0; i < this.dim; i++) {
+      r -= probs[i];
+      if (r <= 0) { outcome = i; break; }
+    }
+    // Collapse
+    for (let i = 0; i < this.dim; i++) {
+      this.amps[i] = i === outcome ? new Complex(1, 0) : new Complex(0, 0);
+    }
+    return outcome;
+  }
+}
+
+
+// ============================================================
+// SECTION 2: SOUND ENGINE
+// ============================================================
+
+class SoundEngine {
+  constructor() {
+    this.ctx = null;
+    this.enabled = true;
+  }
+
+  init() {
+    if (this.ctx) return;
+    try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) { this.enabled = false; }
+  }
+
+  play(freq, dur, type = 'sine', vol = 0.15) {
+    if (!this.enabled || !this.ctx) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + dur);
+  }
+
+  gateApply()  { this.play(520, 0.12, 'sine', 0.12); }
+  gateX()      { this.play(440, 0.1, 'square', 0.08); }
+  gateH()      { this.play(660, 0.15, 'sine', 0.1); }
+  gateZ()      { this.play(550, 0.12, 'triangle', 0.1); }
+  gateCNOT()   { this.play(440, 0.08); setTimeout(() => this.play(660, 0.08), 80); }
+  undo()       { this.play(330, 0.1, 'sine', 0.08); }
+  click()      { this.play(800, 0.06, 'sine', 0.06); }
+
+  measureTick(i) {
+    this.play(300 + i * 80, 0.08, 'sine', 0.1);
+  }
+  measureReveal(is1) {
+    this.play(is1 ? 880 : 440, 0.25, 'sine', 0.15);
+  }
+  success() {
+    [0, 100, 200, 350].forEach((d, i) =>
+      setTimeout(() => this.play([523, 659, 784, 1047][i], 0.3, 'sine', 0.12), d)
+    );
+  }
+  failure() {
+    this.play(330, 0.3, 'sawtooth', 0.08);
+    setTimeout(() => this.play(220, 0.4, 'sawtooth', 0.06), 200);
+  }
+  star() { this.play(1100, 0.15, 'sine', 0.1); }
+  measureCharge() {
+    if (!this.enabled || !this.ctx) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.35);
+    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.4);
+  }
+}
+
+const sound = new SoundEngine();
+
+
+// ============================================================
+// SECTION 3: LEVEL DEFINITIONS
+// ============================================================
+
+const TUTORIALS = {
+  qubits: {
+    title: 'Welcome to Quantum Computing!',
+    body: `In quantum computing, information is stored in <b>qubits</b>.<br><br>
+      A qubit can be in state <span class="t-qubit t-q0">0</span> or state <span class="t-qubit t-q1">1</span>, just like a classical bit.<br><br>
+      The <span class="t-gate t-X">X</span> gate <b>flips</b> a qubit: it turns 0 into 1, and 1 into 0. It's like a NOT gate.<br><br>
+      <b>Click a qubit</b> to apply the selected gate. Match the <b>target</b>, then hit <b>MEASURE</b>!`
+  },
+  superposition: {
+    title: 'Superposition',
+    body: `Here's where quantum gets weird!<br><br>
+      The <span class="t-gate t-H">H</span> <b>Hadamard</b> gate puts a qubit into <b>superposition</b> &mdash; it's both 0 AND 1 at the same time!<br><br>
+      When you <b>measure</b> a superposition qubit, it randomly collapses to either <span class="t-qubit t-q0">0</span> or <span class="t-qubit t-q1">1</span> with <b>50% probability</b> each.<br><br>
+      Watch the <b>probability bar</b> &mdash; it shows your chance of success. In the quantum world, some outcomes are truly <b>random</b>!`
+  },
+  interference: {
+    title: 'Phase & Interference',
+    body: `Qubits have a hidden property called <b>phase</b>.<br><br>
+      The <span class="t-gate t-Z">Z</span> gate flips the phase of the <span class="t-qubit t-q1">1</span> component. You can't see the phase directly, but it affects what happens next!<br><br>
+      Here's the magic: <span class="t-gate t-H">H</span> then <span class="t-gate t-Z">Z</span> then <span class="t-gate t-H">H</span> causes <b>interference</b> &mdash; the 0 and 1 components can cancel out or reinforce, just like waves!<br><br>
+      Use interference to turn uncertainty into <b>certainty</b>.`
+  },
+  entanglement: {
+    title: 'Entanglement',
+    body: `The <span class="t-gate t-CNOT">CNOT</span> gate operates on <b>two qubits</b>.<br><br>
+      First, click the <b>control</b> qubit (it gets a dot). Then click the <b>target</b> qubit.<br><br>
+      If the control is <span class="t-qubit t-q1">1</span>, it flips the target. If the control is <span class="t-qubit t-q0">0</span>, nothing happens.<br><br>
+      When you CNOT a superposition qubit, something amazing occurs: the qubits become <b>entangled</b>! Measuring one instantly determines the other &mdash; they're correlated across any distance!`
+  }
+};
+
+const LEVELS = [
+  // ===== WORLD 1: CLASSICAL =====
+  { id:1, world:1, name:'The Flip', numQubits:1, targets:[0b1], gates:['X'], par:1,
+    desc:'Flip the qubit from 0 to 1', tutorial:'qubits',
+    hints:['X flips a qubit from |0\u27E9 to |1\u27E9','Apply X to the qubit','Click the qubit!'] },
+  { id:2, world:1, name:'Double Trouble', numQubits:2, targets:[0b11], gates:['X'], par:2,
+    desc:'Flip both qubits to 1',
+    hints:['Each qubit needs to become |1\u27E9','Apply X to both qubits','Click q0 and q1'] },
+  { id:3, world:1, name:'Pick & Choose', numQubits:3, targets:[0b101], gates:['X'], par:2,
+    desc:'Only flip the qubits you need',
+    hints:['Read the target: which qubits are 1?','q0 and q2 need flipping, q1 stays','Click q0 and q2'] },
+  { id:4, world:1, name:'One Is Enough', numQubits:3, targets:[0b010], gates:['X'], par:1,
+    desc:'Flip only the middle qubit',
+    hints:['Only one qubit needs to change','The middle qubit is q1','Click only q1'] },
+  { id:5, world:1, name:'Precision', numQubits:4, targets:[0b1001], gates:['X'], par:2,
+    desc:'Flip the first and last qubits',
+    hints:['Which two qubits are 1 in the target?','q0 and q3 need to be flipped','Click q0 and q3'] },
+
+  // ===== WORLD 2: SUPERPOSITION =====
+  { id:6, world:2, name:'Coin Flip', numQubits:1, targets:[0b1], gates:['H'], par:1,
+    desc:'Only the H gate is available. Can you guarantee success?', tutorial:'superposition',
+    hints:['H creates a 50/50 superposition','With only H, success is never guaranteed','Apply H and hope \u2014 it\u2019s a coin flip!'] },
+  { id:7, world:2, name:'Undo Yourself', numQubits:1, targets:[0b0], gates:['H'], par:0,
+    desc:'The target is |0> and you start in |0>. H undoes itself!',
+    hints:['You already start in the target state!','Don\u2019t apply any gates','Just press MEASURE immediately'] },
+  { id:8, world:2, name:'Half & Half', numQubits:2, targets:[0b11], gates:['X','H'], par:2,
+    desc:'Use the right gate for each qubit',
+    hints:['X gives certainty, H gives 50/50','Use X for guaranteed flips','Apply X to both qubits'] },
+  { id:9, world:2, name:'Lucky Shot', numQubits:2, targets:[0b11], gates:['H'], par:2,
+    desc:'With only H gates, you need quantum luck!',
+    hints:['H gives each qubit a 50% chance','Apply H to both qubits','Success is 25% \u2014 you need luck!'] },
+  { id:10, world:2, name:'Choose Wisely', numQubits:3, targets:[0b111], gates:['X','H'], par:3,
+    desc:'X gives certainty. H gives chance. Choose wisely!',
+    hints:['X guarantees a flip; H is random','Use X on all three for 100% success','Apply X to q0, q1, and q2'] },
+
+  // ===== WORLD 3: INTERFERENCE =====
+  { id:11, world:3, name:'Phase Flip', numQubits:1, targets:[0b1], gates:['Z','X'], par:1,
+    desc:'Z flips the phase but doesn\'t change measurement probabilities on |0>', tutorial:'interference',
+    hints:['Z on |0\u27E9 does nothing visible','You need a gate that actually flips the bit','Use X \u2014 it directly flips |0\u27E9 to |1\u27E9'] },
+  { id:12, world:3, name:'Interference!', numQubits:1, targets:[0b1], gates:['H','Z'], par:3,
+    desc:'No X gate! Use H and Z together to flip with certainty.',
+    hints:['H\u2192Z\u2192H is equivalent to X','Sandwich Z between two H gates','Apply H, then Z, then H'] },
+  { id:13, world:3, name:'Selective Flip', numQubits:2, targets:[0b10], gates:['H','Z'], par:3,
+    desc:'Flip only one qubit using interference \u2014 leave the other alone!',
+    hints:['Only q1 needs to flip to |1\u27E9','Use H\u2192Z\u2192H on a single qubit','Apply H, Z, H only to q1'] },
+  { id:14, world:3, name:'Reverse', numQubits:2, targets:[0b00], gates:['H','Z'], par:6,
+    initState:0b11,
+    desc:'Both qubits start as |1\u27E9. Use interference to flip them back to |0\u27E9!',
+    hints:['H\u2192Z\u2192H works as X in reverse too','Apply the interference trick to each qubit','H\u2192Z\u2192H on q0, then H\u2192Z\u2192H on q1'] },
+  { id:15, world:3, name:'Phase Maze', numQubits:3, targets:[0b101], gates:['H','Z'], par:6,
+    maxGates:8,
+    desc:'Flip q0 and q2 but leave q1 alone. Only 8 gates allowed!',
+    hints:['Use H\u2192Z\u2192H on each qubit that needs flipping','q0 and q2 need interference; skip q1','H\u2192Z\u2192H on q0, then H\u2192Z\u2192H on q2'] },
+
+  // ===== WORLD 4: ENTANGLEMENT =====
+  { id:16, world:4, name:'Controlled', numQubits:2, targets:[0b11], gates:['X','CNOT'], par:2,
+    desc:'The CNOT flips the target only when the control is 1', tutorial:'entanglement',
+    hints:['CNOT needs the control to be |1\u27E9 first','Flip q1 with X, then use CNOT','X on q1, then CNOT with q1 as control'] },
+  { id:17, world:4, name:'Bell State', numQubits:2, targets:[0b00, 0b11], gates:['H','CNOT'], par:2,
+    desc:'Create an entangled pair: both qubits always agree!', minGates:2,
+    hints:['Put one qubit in superposition first','H creates superposition, CNOT spreads it','H on q1, then CNOT q1\u2192q0'] },
+  { id:18, world:4, name:'GHZ State', numQubits:3, targets:[0b000, 0b111], gates:['H','CNOT'], par:3,
+    desc:'Entangle three qubits: all or nothing!', minGates:3,
+    hints:['Start like a Bell state, then extend','H on one qubit, CNOT to spread to others','H on q2, CNOT q2\u2192q1, CNOT q2\u2192q0'] },
+  { id:19, world:4, name:'Anti-Bell', numQubits:2, targets:[0b01, 0b10], gates:['H','X','CNOT'], par:3,
+    minGates:3,
+    desc:'Create anti-correlated entanglement: qubits always DISAGREE!',
+    hints:['Bell state gives |00\u27E9+|11\u27E9 (agreement). How do you flip that?','Make a Bell state first, then break the agreement','H on q1, CNOT q1\u2192q0, then X on q0'] },
+  { id:20, world:4, name:'Grand Finale', numQubits:4, targets:[0b0101, 0b1010], gates:['H','X','CNOT'], par:5,
+    minGates:4,
+    desc:'Create the N\u00E9el state: alternating anti-correlation across 4 qubits!',
+    hints:['Build anti-correlation between pairs of qubits','Start with H+CNOT on upper qubits, then use X+CNOT to create alternation','H q3, CNOT q3\u2192q2, X q2, CNOT q3\u2192q1, CNOT q2\u2192q0'] },
+];
+
+const WORLD_NAMES = ['Classical', 'Superposition', 'Interference', 'Entanglement'];
+const WORLD_COLORS = ['var(--cyan)', 'var(--magenta)', 'var(--green)', 'var(--orange)'];
+
+
+// ============================================================
+// SECTION 4: GAME STATE
+// ============================================================
+
+const state = {
+  screen: 'title',
+  levelStars: new Array(LEVELS.length).fill(-1), // -1=locked, 0=unlocked, 1-3=stars
+  bestMoves: new Array(LEVELS.length).fill(0),   // best gate count per level (0=not completed)
+  currentLevel: 0,
+  qstate: null,
+  moves: [],     // [{gate, qubit, control?}]
+  selectedGate: null,
+  cnotControl: null,
+  measuring: false,
+  tutorialSeen: {},
+  insightTimeout: null,
+  streak: 0,
+  hintsUsed: 0,
+  hintTimer: null,
+  hintReady: false,
+  pendingWorldUnlock: null,
+  lastProb: 0,
+  probAnimFrame: null,
+};
+
+// Load saved progress
+function loadProgress() {
+  try {
+    const d = JSON.parse(localStorage.getItem('quantumCollapse'));
+    if (d && d.levelStars) {
+      d.levelStars.forEach((s, i) => { if (i < state.levelStars.length) state.levelStars[i] = s; });
+    }
+    if (d && d.bestMoves) {
+      d.bestMoves.forEach((m, i) => { if (i < state.bestMoves.length) state.bestMoves[i] = m; });
+    }
+    if (d && d.tutorialSeen) state.tutorialSeen = d.tutorialSeen;
+  } catch(e) {}
+  // Ensure level 0 is at least unlocked
+  if (state.levelStars[0] < 0) state.levelStars[0] = 0;
+}
+
+function saveProgress() {
+  try {
+    localStorage.setItem('quantumCollapse', JSON.stringify({
+      levelStars: state.levelStars,
+      bestMoves: state.bestMoves,
+      tutorialSeen: state.tutorialSeen
+    }));
+  } catch(e) {}
+}
+
+
+// ============================================================
+// SECTION 5: UI RENDERING
+// ============================================================
+
+const $ = id => document.getElementById(id);
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(name === 'title' ? 'screen-title' : name === 'levels' ? 'screen-levels' : 'screen-game').classList.add('active');
+  state.screen = name;
+  // Reduce particles during gameplay for better performance
+  if (window.setParticleIntensity) {
+    window.setParticleIntensity(name === 'game' ? 'low' : 'high');
+  }
+}
+
+// Title screen particles
+function initTitleParticles() {
+  const bg = $('title-bg');
+  const colors = ['var(--cyan)', 'var(--magenta)', 'var(--orange)', 'var(--green)'];
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'title-particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.background = colors[i % colors.length];
+    p.style.animationDuration = (4 + Math.random() * 6) + 's';
+    p.style.animationDelay = (Math.random() * 8) + 's';
+    p.style.width = p.style.height = (3 + Math.random() * 5) + 'px';
+    bg.appendChild(p);
+  }
+}
+
+// Level select
+function renderLevelSelect() {
+  const container = $('worlds-container');
+  container.innerHTML = '';
+
+  // Total star counter + completion count
+  const totalStars = state.levelStars.reduce((sum, s) => sum + (s > 0 ? s : 0), 0);
+  const maxStars = LEVELS.length * 3;
+  const completedCount = state.levelStars.filter(s => s > 0).length;
+  document.querySelector('.levels-header h2').innerHTML = 'Select Level <span class="total-stars">\u2605 ' + totalStars + '/' + maxStars + '</span>';
+
+  // Completion stats line
+  const existingStats = container.parentElement.querySelector('.levels-stats');
+  if (existingStats) existingStats.remove();
+  if (completedCount > 0) {
+    const stats = document.createElement('div');
+    stats.className = 'levels-stats';
+    stats.textContent = `${completedCount}/${LEVELS.length} levels complete`;
+    container.parentElement.insertBefore(stats, container);
+  }
+
+  for (let w = 1; w <= 4; w++) {
+    const section = document.createElement('div');
+    section.className = 'world-section';
+    const wLevels = LEVELS.filter(l => l.world === w);
+    const worldUnlocked = wLevels.some(l => state.levelStars[l.id - 1] >= 0);
+
+    section.innerHTML = `<div class="world-title"><span class="world-num" style="color:${WORLD_COLORS[w-1]}">World ${w}:</span> ${WORLD_NAMES[w-1]}</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'level-grid';
+
+    for (const level of wLevels) {
+      const idx = level.id - 1;
+      const stars = state.levelStars[idx];
+      const locked = stars < 0;
+      const completed = stars > 0;
+      const current = stars === 0;
+
+      const btn = document.createElement('button');
+      btn.className = 'level-btn' + (locked ? ' locked' : '') + (completed ? ' completed' : '') + (current ? ' current' : '');
+      const movesText = completed && state.bestMoves[idx] > 0 ? `<div class="level-moves">\u26A1${state.bestMoves[idx]}</div>` : '<div class="level-moves"></div>';
+      btn.innerHTML = `${level.id}<div class="level-stars">${locked ? '' : (stars > 0 ? starString(stars) : '')}</div>${movesText}`;
+      if (!locked) {
+        btn.addEventListener('click', () => startLevel(idx));
+      }
+      grid.appendChild(btn);
+    }
+    section.appendChild(grid);
+
+    // World progress bar
+    const worldStars = wLevels.reduce((sum, l) => sum + (state.levelStars[l.id - 1] > 0 ? state.levelStars[l.id - 1] : 0), 0);
+    const worldMax = wLevels.length * 3;
+    const pct = Math.round(worldStars / worldMax * 100);
+    const progressBar = document.createElement('div');
+    progressBar.className = 'world-progress';
+    progressBar.innerHTML = `<div class="world-progress-fill" style="width:${pct}%;background:${WORLD_COLORS[w-1]}"></div>`;
+    section.appendChild(progressBar);
+
+    container.appendChild(section);
+  }
+}
+
+function starString(n) {
+  return '<span style="color:var(--gold)">' + '\u2605'.repeat(n) + '</span>' +
+         '<span style="opacity:0.2">' + '\u2605'.repeat(3 - n) + '</span>';
+}
+
+// Game screen rendering
+function renderGame() {
+  const level = LEVELS[state.currentLevel];
+
+  // Header
+  $('level-name').textContent = `${level.id}. ${level.name}`;
+  const gc = $('gate-count');
+  const parLabel = level.maxGates ? `${state.moves.length}/${level.maxGates}` : `${state.moves.length}/${level.par}`;
+  gc.textContent = `Gates: ${parLabel}`;
+  let gcClass = 'gate-count';
+  if (state.moves.length > 0) {
+    if (state.moves.length < level.par) gcClass += ' under-par';
+    else if (state.moves.length === level.par) gcClass += ' at-par';
+    else if (level.maxGates && state.moves.length >= level.maxGates) gcClass += ' at-limit';
+    else if (level.maxGates && state.moves.length >= level.maxGates - 2) gcClass += ' near-limit';
+    else if (state.moves.length <= level.par + 2) gcClass += ' over-par';
+    else gcClass += ' way-over';
+  }
+  gc.className = gcClass;
+  const sb = $('streak-badge');
+  if (state.streak >= 2) { sb.textContent = '\uD83D\uDD25 ' + state.streak; sb.classList.remove('hidden'); }
+  else { sb.classList.add('hidden'); }
+  $('level-desc').textContent = level.desc;
+
+  // Target
+  renderTargetQubits(level);
+
+  // Circuit
+  renderCircuit(level);
+
+  // Current state qubits
+  renderStateQubits(level);
+
+  // State vector display
+  $('state-vector').innerHTML = formatStateVector(state.qstate, level.numQubits);
+
+  // Mark entangled qubits (cache for reuse by entanglement lines)
+  state._cachedEntPairs = detectEntanglement(state.qstate, level.numQubits);
+  if (state._cachedEntPairs.length > 0) {
+    const entSet = new Set();
+    state._cachedEntPairs.forEach(([i, j]) => { entSet.add(i); entSet.add(j); });
+    document.querySelectorAll('#state-qubits .qubit').forEach(el => {
+      const q = parseInt(el.dataset.qubit);
+      if (entSet.has(q)) el.classList.add('entangled');
+    });
+  }
+
+  // Entanglement lines
+  requestAnimationFrame(() => renderEntanglementLines(level));
+
+  // Probability
+  renderProbability(level);
+
+  // Toolbox
+  renderToolbox(level);
+
+  // Gate reference
+  renderGateReference(level);
+
+  // Hint button
+  renderHintButton();
+
+  // Status message
+  updateStatusMsg();
+}
+
+function qubitHue(p1) {
+  return (210 + 170 * p1) % 360;
+}
+
+function formatStateVector(qs, nq) {
+  const terms = [];
+  for (let i = 0; i < qs.dim; i++) {
+    const a = qs.amps[i];
+    if (a.abs2() < 0.001) continue;
+    let bits = '';
+    for (let q = nq - 1; q >= 0; q--) bits += (i >> q) & 1;
+    terms.push({ re: a.re, im: a.im, bits });
+  }
+  if (terms.length === 0) return '';
+  let html = '<span class="sv-eq">|&#936;&#10217; =</span> ';
+  terms.forEach((t, i) => {
+    const isReal = Math.abs(t.im) < 0.001;
+    let sign, coeffStr;
+    if (isReal) {
+      sign = t.re >= 0;
+      const abs = Math.abs(t.re);
+      if (Math.abs(abs - 1) < 0.01) coeffStr = '';
+      else if (Math.abs(abs - SQRT2_INV) < 0.01) coeffStr = '<sup>1</sup>&frasl;<sub>&radic;2</sub>';
+      else if (Math.abs(abs - 0.5) < 0.01) coeffStr = '&frac12;';
+      else coeffStr = abs.toFixed(2);
+    } else {
+      sign = true;
+      const mag = Math.sqrt(t.re * t.re + t.im * t.im);
+      if (Math.abs(mag - SQRT2_INV) < 0.01) coeffStr = '<sup>1</sup>&frasl;<sub>&radic;2</sub>';
+      else if (Math.abs(mag - 1) < 0.01) coeffStr = '';
+      else coeffStr = mag.toFixed(2);
+    }
+    if (i === 0) { if (!sign) html += '&minus;'; }
+    else { html += sign ? ' + ' : ' &minus; '; }
+    if (coeffStr) html += '<span class="sv-coeff">' + coeffStr + '</span>';
+    html += '<span class="sv-ket">|' + t.bits + '&#10217;</span>';
+  });
+  return html;
+}
+
+// Detect if a qubit has a non-trivial phase (negative amplitude component)
+function detectPhase(qs, nq, qubit) {
+  for (let i = 0; i < qs.dim; i++) {
+    if ((i >> qubit) & 1) {
+      const a = qs.amps[i];
+      if (a.abs2() > 0.01 && (a.re < -0.01 || Math.abs(a.im) > 0.01)) return true;
+    }
+  }
+  return false;
+}
+
+function detectEntanglement(qs, nq) {
+  const pairs = [];
+  for (let i = 0; i < nq; i++) {
+    for (let j = i + 1; j < nq; j++) {
+      let p00 = 0, p01 = 0, p10 = 0, p11 = 0;
+      for (let k = 0; k < qs.dim; k++) {
+        const bi = (k >> i) & 1, bj = (k >> j) & 1;
+        const p = qs.amps[k].abs2();
+        if (!bi && !bj) p00 += p; else if (!bi && bj) p01 += p;
+        else if (bi && !bj) p10 += p; else p11 += p;
+      }
+      const pi0 = p00 + p01, pi1 = p10 + p11, pj0 = p00 + p10, pj1 = p01 + p11;
+      const corr = Math.abs(p00 - pi0*pj0) + Math.abs(p01 - pi0*pj1) +
+                   Math.abs(p10 - pi1*pj0) + Math.abs(p11 - pi1*pj1);
+      if (corr > 0.05) pairs.push([i, j]);
+    }
+  }
+  return pairs;
+}
+
+function spawnGateParticles(qubitEl) {
+  const rect = qubitEl.getBoundingClientRect();
+  const appRect = $('app').getBoundingClientRect();
+  const cx = ((rect.left + rect.width / 2 - appRect.left) / appRect.width * 100);
+  const cy = ((rect.top + rect.height / 2 - appRect.top) / appRect.height * 100);
+  const container = $('particles');
+  const colors = ['var(--cyan)', 'var(--magenta)', 'var(--gold)'];
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 3 + Math.random() * 5;
+    const dx = (Math.random() - 0.5) * 80;
+    const dy = (Math.random() - 0.5) * 80;
+    p.style.cssText = `width:${size}px;height:${size}px;left:${cx}%;top:${cy}%;background:${colors[i % 3]};--dx:${dx}px;--dy:${dy}px`;
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
+}
+
+function getQuantumInsight(gate, qubit, before, after, level) {
+  const nq = level.numQubits;
+  const p1Before = before.qubitProb(qubit, 1);
+  const p1After = after.qubitProb(qubit, 1);
+  const wasPure0 = p1Before < 0.01;
+  const wasPure1 = p1Before > 0.99;
+  const isSup = p1After > 0.01 && p1After < 0.99;
+  const isPure0 = p1After < 0.01;
+  const isPure1 = p1After > 0.99;
+
+  if (gate === 'X') {
+    if (wasPure0 && isPure1) return 'Bit flip! |0\u27E9 \u2192 |1\u27E9';
+    if (wasPure1 && isPure0) return 'Bit flip! |1\u27E9 \u2192 |0\u27E9';
+    return 'X gate: quantum NOT operation';
+  }
+  if (gate === 'H') {
+    if (wasPure0 && isSup) return 'Superposition! Both 0 and 1 at once';
+    if (wasPure1 && isSup) return 'Superposition with a phase flip!';
+    if (isSup === false && (isPure0 || isPure1)) return 'Interference! Superposition collapsed to certainty';
+    return 'Hadamard: mixing quantum amplitudes';
+  }
+  if (gate === 'Z') {
+    if (wasPure0) return 'Z on |0\u27E9: no visible change (phase is hidden!)';
+    if (wasPure1) return 'Phase flipped! Watch what H does next...';
+    if (isSup) return 'Phase rotated in superposition \u2014 invisible but powerful';
+    return 'Z gate: phase flip operation';
+  }
+  if (gate === 'CNOT') {
+    const entPairs = detectEntanglement(after, nq);
+    if (entPairs.length > 0) return 'Entangled! These qubits are now correlated';
+    return 'CNOT: controlled NOT \u2014 quantum logic';
+  }
+  return '';
+}
+
+function showInsight(text) {
+  const el = $('insight-msg');
+  if (state.insightTimeout) clearTimeout(state.insightTimeout);
+  el.textContent = text;
+  el.classList.add('visible');
+  state.insightTimeout = setTimeout(() => {
+    el.classList.remove('visible');
+  }, 3000);
+}
+
+function getFailureTip(level, prob) {
+  const world = level.world;
+  if (prob < 0.01) {
+    if (level.initState) return 'Starting from |1\u27E9 instead of |0\u27E9! H\u2192Z\u2192H on |1\u27E9 gives |0\u27E9.';
+    return 'Your qubits are in the opposite state. Try a different gate sequence!';
+  }
+  if (prob > 0.4 && prob < 1) {
+    if (level.targets.length > 1) return 'You need entanglement! Create correlations between qubits first.';
+    if (world >= 3) return 'Close! Use interference (H\u2192Z\u2192H) to convert probability into certainty.';
+    return 'Almost! Superposition means randomness. Can you find a deterministic solution?';
+  }
+  if (world === 1) return 'Remember: X flips a qubit. Apply it only to the qubits that need flipping.';
+  if (world === 2) return 'H creates superposition. Two H gates cancel out \u2014 H(H|0\u27E9) = |0\u27E9.';
+  if (world === 3) {
+    if (level.initState) return 'You start in |1\u27E9. The trick: H\u2192Z\u2192H reverses a |1\u27E9 back to |0\u27E9!';
+    if (level.maxGates) return 'Gate limit! Be selective \u2014 only flip the qubits that need it.';
+    return 'The Z gate hides its effect in the phase. Sandwich it between H gates!';
+  }
+  if (world === 4) {
+    if (level.targets.length > 1 && level.targets.some(t => t > 0)) {
+      const hasAntiCorr = level.targets.includes(0b01) || level.targets.includes(0b0101);
+      if (hasAntiCorr) return 'Anti-correlation: after Bell state, use X to flip one qubit!';
+    }
+    return 'CNOT links qubits. Put the control in superposition first with H!';
+  }
+  return 'Experiment with different gate combinations!';
+}
+
+function renderTargetQubits(level) {
+  const container = $('target-qubits');
+  container.innerHTML = '';
+
+  // Update label with Dirac ket notation
+  const label = container.parentElement.querySelector('.label');
+  const targetKets = level.targets.map(t => {
+    let b = '';
+    for (let q = level.numQubits - 1; q >= 0; q--) b += (t >> q) & 1;
+    return '|' + b + '\u27E9';
+  });
+  label.innerHTML = 'Target<br><span style="font-family:\'Courier New\',monospace;color:var(--cyan);font-size:11px;font-weight:700">' + targetKets.join(' or ') + '</span>';
+
+  if (level.targets.length === 1) {
+    // Single target - show each qubit
+    const t = level.targets[0];
+    for (let q = level.numQubits - 1; q >= 0; q--) {
+      const bit = (t >> q) & 1;
+      const hue = qubitHue(bit);
+      const el = document.createElement('div');
+      el.className = 'target-qubit';
+      el.style.background = `radial-gradient(circle, hsl(${hue},100%,65%), hsl(${hue},80%,25%))`;
+      el.style.boxShadow = `0 0 12px hsla(${hue},100%,50%,0.4)`;
+      el.textContent = bit;
+      container.appendChild(el);
+    }
+  } else {
+    // Multiple targets - show alternatives
+    level.targets.forEach((t, ti) => {
+      if (ti > 0) {
+        const orEl = document.createElement('div');
+        orEl.className = 'target-or';
+        orEl.textContent = 'or';
+        container.appendChild(orEl);
+      }
+      const group = document.createElement('div');
+      group.style.display = 'flex';
+      group.style.gap = '4px';
+      for (let q = level.numQubits - 1; q >= 0; q--) {
+        const bit = (t >> q) & 1;
+        const hue = qubitHue(bit);
+        const el = document.createElement('div');
+        el.className = 'target-qubit';
+        el.style.background = `radial-gradient(circle, hsl(${hue},100%,65%), hsl(${hue},80%,25%))`;
+        el.style.boxShadow = `0 0 12px hsla(${hue},100%,50%,0.4)`;
+        el.textContent = bit;
+        el.style.width = '36px';
+        el.style.height = '36px';
+        el.style.fontSize = '13px';
+        group.appendChild(el);
+      }
+      container.appendChild(group);
+    });
+  }
+}
+
+function renderCircuit(level) {
+  const area = $('circuit-area');
+  area.innerHTML = '';
+
+  // Create wire for each qubit
+  for (let q = level.numQubits - 1; q >= 0; q--) {
+    const wire = document.createElement('div');
+    wire.className = 'circuit-wire';
+
+    const label = document.createElement('div');
+    label.className = 'wire-label';
+    label.textContent = `q${q}`;
+
+    const lineWrap = document.createElement('div');
+    lineWrap.style.cssText = 'flex:1;position:relative;display:flex;align-items:center;margin:0 8px';
+
+    // Background wire line
+    const line = document.createElement('div');
+    line.style.cssText = 'position:absolute;left:0;right:0;height:2px;background:var(--panel-light)';
+    lineWrap.appendChild(line);
+
+    // Gate container
+    const gatesContainer = document.createElement('div');
+    gatesContainer.className = 'wire-gates';
+    gatesContainer.style.cssText = 'position:relative;display:flex;gap:4px;padding:0 4px;z-index:1';
+
+    // Add gates for this wire (with order numbers)
+    state.moves.forEach((move, mi) => {
+      const orderBadge = `<span class="gate-order">${mi + 1}</span>`;
+      if (move.gate === 'CNOT') {
+        if (move.control === q) {
+          const g = document.createElement('div');
+          g.className = 'wire-gate gate-CNOT-ctrl';
+          g.innerHTML = '&#9679;' + orderBadge;
+          gatesContainer.appendChild(g);
+        } else if (move.qubit === q) {
+          const g = document.createElement('div');
+          g.className = 'wire-gate gate-CNOT-tgt';
+          g.innerHTML = '&#8853;';
+          gatesContainer.appendChild(g);
+        } else {
+          const spacer = document.createElement('div');
+          spacer.className = 'cnot-spacer';
+          gatesContainer.appendChild(spacer);
+        }
+      } else if (move.qubit === q) {
+        const g = document.createElement('div');
+        g.className = `wire-gate gate-${move.gate}`;
+        g.innerHTML = move.gate + orderBadge;
+        gatesContainer.appendChild(g);
+      } else {
+        const spacer = document.createElement('div');
+        spacer.className = 'cnot-spacer';
+        gatesContainer.appendChild(spacer);
+      }
+    });
+
+    lineWrap.appendChild(gatesContainer);
+    wire.appendChild(label);
+    wire.appendChild(lineWrap);
+    area.appendChild(wire);
+  }
+
+  // Draw CNOT vertical lines (using overlay)
+  requestAnimationFrame(() => drawCNOTLines(level));
+}
+
+function drawCNOTLines(level) {
+  // Remove old CNOT lines
+  document.querySelectorAll('.cnot-line-overlay').forEach(e => e.remove());
+
+  const area = $('circuit-area');
+  const wires = area.querySelectorAll('.circuit-wire');
+  if (wires.length < 2) return;
+
+  state.moves.forEach((move, mi) => {
+    if (move.gate !== 'CNOT') return;
+
+    // Find the gate elements at index mi for control and target wires
+    const ctrlWireIdx = level.numQubits - 1 - move.control;
+    const tgtWireIdx = level.numQubits - 1 - move.qubit;
+
+    const ctrlWire = wires[ctrlWireIdx];
+    const tgtWire = wires[tgtWireIdx];
+    if (!ctrlWire || !tgtWire) return;
+
+    const ctrlGates = ctrlWire.querySelectorAll('.wire-gate, .cnot-spacer');
+    const tgtGates = tgtWire.querySelectorAll('.wire-gate, .cnot-spacer');
+
+    const ctrlEl = ctrlGates[mi];
+    const tgtEl = tgtGates[mi];
+    if (!ctrlEl || !tgtEl) return;
+
+    const areaRect = area.getBoundingClientRect();
+    const ctrlRect = ctrlEl.getBoundingClientRect();
+    const tgtRect = tgtEl.getBoundingClientRect();
+
+    const line = document.createElement('div');
+    line.className = 'cnot-line-overlay';
+    const top = Math.min(ctrlRect.top, tgtRect.top) - areaRect.top + area.scrollTop;
+    const bottom = Math.max(ctrlRect.bottom, tgtRect.bottom) - areaRect.top + area.scrollTop;
+    const left = (ctrlRect.left + ctrlRect.right) / 2 - areaRect.left;
+
+    line.style.cssText = `position:absolute;width:3px;background:var(--magenta);left:${left}px;top:${top}px;height:${bottom-top}px;z-index:0;pointer-events:none;border-radius:2px;opacity:0.6`;
+    area.appendChild(line);
+  });
+}
+
+function renderStateQubits(level) {
+  const container = $('state-qubits');
+  container.innerHTML = '';
+
+  for (let q = level.numQubits - 1; q >= 0; q--) {
+    const p1 = state.qstate.qubitProb(q, 1);
+    const p0 = 1 - p1;
+    const hue = qubitHue(p1);
+    const isSuperposition = p1 > 0.01 && p1 < 0.99;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'qubit-container';
+
+    const qubit = document.createElement('div');
+    const hasPhase = detectPhase(state.qstate, level.numQubits, q);
+    qubit.className = 'qubit' + (state.cnotControl === q ? ' selected-control' : '') + (hasPhase ? ' has-phase' : '');
+    qubit.dataset.qubit = q;
+    qubit.style.background = `radial-gradient(circle, hsl(${hue},100%,65%), hsl(${hue},80%,25%))`;
+    qubit.style.boxShadow = `0 0 20px hsla(${hue},100%,50%,0.5)`;
+
+    if (isSuperposition) {
+      qubit.style.animation = 'superpositionGlow 1.5s ease-in-out infinite';
+      qubit.textContent = '\u00B1'; // plus-minus symbol
+    } else {
+      qubit.textContent = p1 > 0.5 ? '1' : '0';
+    }
+
+    // Probability tooltip
+    const tooltip = document.createElement('div');
+    tooltip.className = 'qubit-tooltip';
+    tooltip.textContent = `P(0)=${Math.round(p0*100)}%  P(1)=${Math.round(p1*100)}%`;
+
+    const probBar = document.createElement('div');
+    probBar.className = 'qubit-prob';
+    probBar.innerHTML = `<div class="prob-0" style="flex:${p0}"></div><div class="prob-1" style="flex:${p1}"></div>`;
+
+    const idx = document.createElement('div');
+    idx.className = 'qubit-index';
+    idx.textContent = `q${q}`;
+
+    wrap.appendChild(tooltip);
+    wrap.appendChild(qubit);
+    wrap.appendChild(probBar);
+    wrap.appendChild(idx);
+    container.appendChild(wrap);
+  }
+}
+
+function renderProbability(level) {
+  const needsMore = level.minGates && state.moves.length < level.minGates;
+  const prob = needsMore ? 0 : state.qstate.targetProb(level.targets);
+  const pct = Math.round(prob * 100);
+  const fill = $('prob-fill');
+  const text = $('prob-text');
+  const track = $('prob-track');
+
+  fill.style.width = pct + '%';
+  fill.className = 'prob-fill' + (pct >= 99 ? ' great' : pct >= 50 ? ' good' : '');
+
+  if (needsMore) {
+    text.textContent = `min ${level.minGates} gates`;
+    state.lastProb = 0;
+  } else {
+    animateProbText(state.lastProb, pct);
+    state.lastProb = pct;
+  }
+  text.className = 'prob-text' + (pct >= 99 ? ' perfect' : '');
+
+  // Glow on perfect probability
+  if (pct >= 99) track.classList.add('perfect-glow');
+  else track.classList.remove('perfect-glow');
+}
+
+function animateProbText(from, to) {
+  if (state.probAnimFrame) cancelAnimationFrame(state.probAnimFrame);
+  if (from === to) { $('prob-text').textContent = to + '%'; return; }
+  const text = $('prob-text');
+  const startTime = performance.now();
+  const duration = 250;
+  const step = (now) => {
+    const elapsed = now - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    const eased = t * (2 - t); // ease-out quad
+    const current = Math.round(from + (to - from) * eased);
+    text.textContent = current + '%';
+    if (t < 1) state.probAnimFrame = requestAnimationFrame(step);
+    else state.probAnimFrame = null;
+  };
+  state.probAnimFrame = requestAnimationFrame(step);
+}
+
+function renderToolbox(level) {
+  const row = $('gate-row');
+  row.innerHTML = '';
+
+  const gateDescs = {
+    X: '|0\u27E9\u2194|1\u27E9',
+    H: '|0\u27E9 \u2192 \u00B1',
+    Z: '\u00B1 \u2192 phase',
+    CNOT: 'ctrl \u2192 flip'
+  };
+
+  level.gates.forEach((gate, gi) => {
+    const btn = document.createElement('button');
+    btn.className = 'gate-btn' + (state.selectedGate === gate ? ' sel' : '');
+    btn.dataset.gate = gate;
+    btn.innerHTML = `<span class="gate-key">${gi + 1}</span><span class="gate-name">${gate}</span><span class="gate-hint">${gateDescs[gate]}</span>`;
+    btn.addEventListener('click', () => selectGate(gate));
+    row.appendChild(btn);
+  });
+}
+
+function updateStatusMsg() {
+  const msg = $('status-msg');
+  if (state.selectedGate === 'CNOT' && state.cnotControl === null) {
+    msg.textContent = 'Click the CONTROL qubit';
+  } else if (state.selectedGate === 'CNOT' && state.cnotControl !== null) {
+    msg.textContent = 'Now click the TARGET qubit';
+  } else if (state.selectedGate) {
+    msg.innerHTML = `Click a qubit to apply ${state.selectedGate} <span style="opacity:0.4;font-size:10px">\u00B7 Z=undo R=reset M=measure</span>`;
+  } else {
+    msg.textContent = 'Select a gate, then click a qubit';
+  }
+}
+
+
+// ============================================================
+// SECTION 6: GAME LOGIC
+// ============================================================
+
+function startLevel(idx) {
+  sound.init();
+  sound.click();
+  state.currentLevel = idx;
+  const level = LEVELS[idx];
+
+  // Reset quantum state
+  state.qstate = new QuantumState(level.numQubits);
+  if (level.initState) {
+    // Set initial state to a specific basis state (e.g. 0b11 for |11⟩)
+    for (let i = 0; i < state.qstate.dim; i++) state.qstate.amps[i] = new Complex(0, 0);
+    state.qstate.amps[level.initState] = new Complex(1, 0);
+  }
+  state.moves = [];
+  state.selectedGate = level.gates[0];
+  state.cnotControl = null;
+  state.measuring = false;
+  state.hintsUsed = 0;
+  state.hintReady = false;
+  state.lastProb = 0;
+  if (state.probAnimFrame) { cancelAnimationFrame(state.probAnimFrame); state.probAnimFrame = null; }
+  if (state.hintTimer) clearTimeout(state.hintTimer);
+  state.hintTimer = setTimeout(() => { state.hintReady = true; renderHintButton(); }, 5000);
+
+  showScreen('game');
+  $('gate-ref-panel').classList.remove('open');
+  $('hint-toast').classList.remove('visible');
+  renderGame();
+  $('btn-measure').disabled = false;
+
+  // Show tutorial if needed
+  if (level.tutorial && !state.tutorialSeen[level.tutorial]) {
+    state.tutorialSeen[level.tutorial] = true;
+    saveProgress();
+    showTutorial(level.tutorial);
+  }
+}
+
+function selectGate(gate) {
+  sound.click();
+  state.selectedGate = gate;
+  state.cnotControl = null;
+  renderToolbox(LEVELS[state.currentLevel]);
+  renderStateQubits(LEVELS[state.currentLevel]);
+  updateStatusMsg();
+
+  // Gate press flash effect
+  const btn = document.querySelector(`.gate-btn[data-gate="${gate}"]`);
+  if (btn) {
+    btn.classList.add('just-selected');
+    // Ripple
+    const ripple = document.createElement('span');
+    ripple.className = 'gate-ripple';
+    ripple.style.left = '50%';
+    ripple.style.top = '50%';
+    btn.appendChild(ripple);
+    setTimeout(() => { btn.classList.remove('just-selected'); ripple.remove(); }, 400);
+  }
+}
+
+function handleQubitClick(q) {
+  if (state.measuring) return;
+  const level = LEVELS[state.currentLevel];
+
+  if (!state.selectedGate) return;
+
+  // Hard gate limit
+  if (level.maxGates && state.moves.length >= level.maxGates) {
+    const msg = $('status-msg');
+    msg.textContent = `Gate limit reached! Max ${level.maxGates} gates.`;
+    msg.style.color = 'var(--red)';
+    setTimeout(() => { msg.style.color = ''; updateStatusMsg(); }, 1500);
+    return;
+  }
+
+  if (state.selectedGate === 'CNOT') {
+    if (state.cnotControl === null) {
+      // Select control
+      state.cnotControl = q;
+      sound.click();
+      renderStateQubits(level);
+      updateStatusMsg();
+      return;
+    } else {
+      // Select target
+      if (q === state.cnotControl) {
+        // Same qubit - cancel
+        state.cnotControl = null;
+        renderStateQubits(level);
+        updateStatusMsg();
+        return;
+      }
+      // Apply CNOT
+      const before = state.qstate.clone();
+      state.qstate.applyCNOT(state.cnotControl, q);
+      state.moves.push({ gate: 'CNOT', qubit: q, control: state.cnotControl });
+      sound.gateCNOT();
+      const insight = getQuantumInsight('CNOT', q, before, state.qstate, level);
+      state.cnotControl = null;
+      renderGame();
+      if (insight) showInsight(insight);
+    }
+  } else {
+    // Single qubit gate
+    const before = state.qstate.clone();
+    state.qstate.applySingleGate(state.selectedGate, q);
+    state.moves.push({ gate: state.selectedGate, qubit: q });
+    if (state.selectedGate === 'X') sound.gateX();
+    else if (state.selectedGate === 'H') sound.gateH();
+    else if (state.selectedGate === 'Z') sound.gateZ();
+    else sound.gateApply();
+    renderGame();
+    const insight = getQuantumInsight(state.selectedGate, q, before, state.qstate, level);
+    if (insight) showInsight(insight);
+  }
+
+  // Gate application particle effect (after renderGame so DOM is fresh)
+  const clickedEl = document.querySelector(`#state-qubits .qubit[data-qubit="${q}"]`);
+  if (clickedEl) spawnGateParticles(clickedEl);
+}
+
+function undoMove() {
+  if (state.moves.length === 0 || state.measuring) return;
+  sound.undo();
+  $('insight-msg').classList.remove('visible');
+
+  // Replay all moves except the last
+  const level = LEVELS[state.currentLevel];
+  state.moves.pop();
+  state.qstate = new QuantumState(level.numQubits);
+  if (level.initState) { for (let i = 0; i < state.qstate.dim; i++) state.qstate.amps[i] = new Complex(0, 0); state.qstate.amps[level.initState] = new Complex(1, 0); }
+  state.cnotControl = null;
+  for (const move of state.moves) {
+    if (move.gate === 'CNOT') {
+      state.qstate.applyCNOT(move.control, move.qubit);
+    } else {
+      state.qstate.applySingleGate(move.gate, move.qubit);
+    }
+  }
+  renderGame();
+
+  // Undo flash on circuit
+  const ca = $('circuit-area');
+  ca.classList.add('undo-flash');
+  setTimeout(() => ca.classList.remove('undo-flash'), 300);
+}
+
+function resetLevel() {
+  if (state.measuring) return;
+  const hadMoves = state.moves.length > 0;
+  sound.undo();
+  $('insight-msg').classList.remove('visible');
+  const level = LEVELS[state.currentLevel];
+  state.qstate = new QuantumState(level.numQubits);
+  if (level.initState) { for (let i = 0; i < state.qstate.dim; i++) state.qstate.amps[i] = new Complex(0, 0); state.qstate.amps[level.initState] = new Complex(1, 0); }
+  state.moves = [];
+  state.cnotControl = null;
+  state.lastProb = 0;
+  renderGame();
+
+  // Reset flash
+  if (hadMoves) {
+    const gm = document.querySelector('.game-middle');
+    gm.classList.add('reset-flash');
+    setTimeout(() => gm.classList.remove('reset-flash'), 300);
+  }
+}
+
+function performMeasurement() {
+  if (state.measuring) return;
+  const level = LEVELS[state.currentLevel];
+
+  // Check minimum gates requirement
+  if (level.minGates && state.moves.length < level.minGates) {
+    $('status-msg').textContent = `Apply at least ${level.minGates} gates first!`;
+    $('status-msg').style.color = 'var(--red)';
+    setTimeout(() => { $('status-msg').style.color = ''; updateStatusMsg(); }, 1500);
+    return;
+  }
+
+  state.measuring = true;
+  $('btn-measure').disabled = true;
+  sound.init();
+
+  const prob = state.qstate.targetProb(level.targets);
+
+  // Perform the quantum measurement
+  const outcome = state.qstate.measureAll();
+
+  // === MEASUREMENT BUILD-UP PHASE ===
+  const measureBtn = $('btn-measure');
+  measureBtn.classList.add('measure-charging');
+  sound.measureCharge();
+
+  // Pre-measure: qubits contract slightly
+  const qubits = document.querySelectorAll('#state-qubits .qubit');
+  qubits.forEach(q => q.classList.add('pre-measure'));
+
+  // After build-up, start the actual measurement animation
+  setTimeout(() => {
+    measureBtn.classList.remove('measure-charging');
+    qubits.forEach(q => { q.classList.remove('pre-measure'); q.classList.add('measuring'); });
+
+  // Measurement ticking sounds
+  let tickCount = 0;
+  const tickInterval = setInterval(() => {
+    sound.measureTick(tickCount % 5);
+    tickCount++;
+  }, 120);
+
+  // Reveal qubits one by one
+  const revealDelay = 800;
+  const perQubit = 300;
+
+  setTimeout(() => {
+    clearInterval(tickInterval);
+    let i = 0;
+    const revealNext = () => {
+      if (i >= level.numQubits) {
+        // All revealed - check result
+        setTimeout(() => showResult(outcome, level, prob), 400);
+        return;
+      }
+      const q = level.numQubits - 1 - i; // visual order (left to right = high to low)
+      const bit = (outcome >> q) & 1;
+      const qubitEl = qubits[i];
+      qubitEl.classList.remove('measuring');
+      qubitEl.classList.add('collapsed');
+
+      const hue = qubitHue(bit);
+      qubitEl.style.background = `radial-gradient(circle, hsl(${hue},100%,65%), hsl(${hue},80%,25%))`;
+      qubitEl.style.boxShadow = `0 0 25px hsla(${hue},100%,50%,0.7)`;
+      qubitEl.textContent = bit;
+      qubitEl.style.animation = '';
+
+      sound.measureReveal(bit === 1);
+      i++;
+      setTimeout(revealNext, perQubit);
+    };
+    revealNext();
+  }, revealDelay);
+
+  }, 400); // end measurement build-up delay
+}
+
+function showResult(outcome, level, prob) {
+  state.measuring = false;
+  const success = level.targets.includes(outcome);
+
+  if (success) {
+    state.streak++;
+    // Calculate stars (hint penalty: cap at 2 stars if hints used)
+    const gates = state.moves.length;
+    let stars;
+    if (gates <= level.par) stars = 3;
+    else if (gates <= level.par + 2) stars = 2;
+    else stars = 1;
+    if (state.hintsUsed > 0 && stars > 2) stars = 2;
+
+    // Update progress
+    const idx = state.currentLevel;
+    const prevBest = state.bestMoves[idx];
+    if (state.levelStars[idx] < stars) state.levelStars[idx] = stars;
+    // Track best moves
+    if (state.bestMoves[idx] === 0 || gates < state.bestMoves[idx]) state.bestMoves[idx] = gates;
+    // Unlock next level & detect world transition
+    const isWorldComplete = idx + 1 < LEVELS.length && LEVELS[idx].world !== LEVELS[idx + 1].world;
+    if (idx + 1 < LEVELS.length && state.levelStars[idx + 1] < 0) {
+      state.levelStars[idx + 1] = 0;
+    }
+    if (isWorldComplete) {
+      state.pendingWorldUnlock = LEVELS[idx + 1].world;
+    }
+    saveProgress();
+
+    sound.success();
+    spawnParticles(30, 'var(--green)', 'var(--cyan)', 'var(--gold)');
+    if (stars === 3) setTimeout(spawnConfetti, 300);
+
+    // Show result modal
+    $('result-title').textContent = 'COLLAPSED!';
+    $('result-title').className = 'result-title win';
+
+    const starsEl = $('result-stars');
+    starsEl.innerHTML = '';
+    for (let s = 0; s < 3; s++) {
+      const star = document.createElement('span');
+      star.className = 'result-star' + (s < stars ? ' earned' : '');
+      star.textContent = '\u2605';
+      star.style.animationDelay = (s * 0.15) + 's';
+      if (s < stars) setTimeout(() => sound.star(), s * 150 + 200);
+      starsEl.appendChild(star);
+    }
+
+    const winBits = [];
+    for (let q = level.numQubits - 1; q >= 0; q--) winBits.push((outcome >> q) & 1);
+    $('result-msg').innerHTML = `<span class="result-ket">|${winBits.join('')}\u27E9</span> measured!<br><span style="color:var(--text-dim);font-size:12px">${level.desc}</span>`;
+    const isNewBest = state.bestMoves[idx] === gates && (gates < prevBest || prevBest === 0);
+    $('result-prob').innerHTML = `Success probability: ${Math.round(prob * 100)}% | Gates used: ${state.moves.length} (par: ${level.par})${isNewBest ? ' <span class="new-best">NEW BEST!</span>' : ''}`;
+
+    const btns = $('result-btns');
+    btns.innerHTML = '';
+
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'btn-modal btn-retry';
+    retryBtn.textContent = 'RETRY';
+    retryBtn.addEventListener('click', () => { hideModal('modal-result'); startLevel(state.currentLevel); });
+    btns.appendChild(retryBtn);
+
+    if (state.currentLevel + 1 < LEVELS.length) {
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'btn-modal btn-next';
+      nextBtn.textContent = 'NEXT';
+      nextBtn.addEventListener('click', () => {
+        hideModal('modal-result');
+        if (state.pendingWorldUnlock) {
+          const wn = state.pendingWorldUnlock;
+          state.pendingWorldUnlock = null;
+          showWorldUnlock(wn);
+        } else {
+          startLevel(state.currentLevel + 1);
+        }
+      });
+      btns.appendChild(nextBtn);
+    } else {
+      const levelsBtn = document.createElement('button');
+      levelsBtn.className = 'btn-modal btn-next';
+      levelsBtn.textContent = 'LEVELS';
+      levelsBtn.addEventListener('click', () => { hideModal('modal-result'); showScreen('levels'); renderLevelSelect(); });
+      btns.appendChild(levelsBtn);
+    }
+
+  } else {
+    state.streak = 0;
+    sound.failure();
+
+    // Enhanced failure effects: red flash, heavy shake, red particles
+    const flashEl = $('failure-flash');
+    flashEl.className = 'failure-flash';
+    flashEl.style.animation = 'none';
+    flashEl.offsetHeight; // force reflow
+    flashEl.style.animation = '';
+    flashEl.className = 'failure-flash';
+    setTimeout(() => flashEl.className = '', 500);
+
+    // App-wide heavy shake
+    $('app').classList.add('heavy-shake');
+    setTimeout(() => $('app').classList.remove('heavy-shake'), 500);
+
+    // Red failure particles
+    spawnParticles(15, 'var(--red)', '#ff6666', '#aa0000');
+
+    $('result-title').textContent = 'DECOHERED!';
+    $('result-title').className = 'result-title lose';
+    $('result-stars').innerHTML = '';
+
+    // Show what happened with Dirac notation
+    const bits = [];
+    for (let q = level.numQubits - 1; q >= 0; q--) bits.push((outcome >> q) & 1);
+    const targetKets = level.targets.map(t => {
+      const b = [];
+      for (let q = level.numQubits - 1; q >= 0; q--) b.push((t >> q) & 1);
+      return '|' + b.join('') + '\u27E9';
+    });
+
+    $('result-msg').innerHTML = `Measured: <span class="result-ket">|${bits.join('')}\u27E9</span><br>Needed: <span class="result-ket">${targetKets.join(' or ')}</span><br><span class="result-tip">${getFailureTip(level, prob)}</span>`;
+    $('result-prob').textContent = `Success probability was ${Math.round(prob * 100)}%`;
+
+    // Shake the modal
+    const box = document.querySelector('#modal-result .modal-box');
+    box.classList.add('shake');
+    setTimeout(() => box.classList.remove('shake'), 500);
+
+    const btns = $('result-btns');
+    btns.innerHTML = '';
+
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'btn-modal btn-next';
+    retryBtn.textContent = 'TRY AGAIN';
+    retryBtn.addEventListener('click', () => { hideModal('modal-result'); startLevel(state.currentLevel); });
+    btns.appendChild(retryBtn);
+
+    const levelsBtn = document.createElement('button');
+    levelsBtn.className = 'btn-modal btn-levels';
+    levelsBtn.textContent = 'LEVELS';
+    levelsBtn.addEventListener('click', () => { hideModal('modal-result'); showScreen('levels'); renderLevelSelect(); });
+    btns.appendChild(levelsBtn);
+  }
+
+  showModal('modal-result');
+}
+
+function showTutorial(key) {
+  const t = TUTORIALS[key];
+  if (!t) return;
+  $('tutorial-title').textContent = t.title;
+  $('tutorial-body').innerHTML = t.body;
+  showModal('modal-tutorial');
+}
+
+function showModal(id) { $(id).classList.add('active'); }
+function hideModal(id) { $(id).classList.remove('active'); }
+
+function spawnParticles(count, ...colors) {
+  const container = $('particles');
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 4 + Math.random() * 8;
+    const x = 30 + Math.random() * 60;
+    const y = 30 + Math.random() * 40;
+    const dx = (Math.random() - 0.5) * 200;
+    const dy = (Math.random() - 0.5) * 200;
+    p.style.cssText = `
+      width:${size}px;height:${size}px;
+      left:${x}%;top:${y}%;
+      background:${colors[i % colors.length]};
+      --dx:${dx}px;--dy:${dy}px;
+      animation-delay:${Math.random() * 0.3}s;
+    `;
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 1200);
+  }
+}
+
+
+// ========== CONFETTI ==========
+function spawnConfetti() {
+  const container = $('particles');
+  const colors = ['var(--gold)', 'var(--cyan)', 'var(--magenta)', 'var(--green)', 'var(--orange)', '#ff69b4', '#7b68ee'];
+  for (let i = 0; i < 60; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    const w = 6 + Math.random() * 6;
+    const h = 4 + Math.random() * 10;
+    const x = 10 + Math.random() * 80;
+    const drift = (Math.random() - 0.5) * 60;
+    const dur = 2 + Math.random() * 1.5;
+    c.style.cssText = `width:${w}px;height:${h}px;left:${x}%;top:-10px;background:${colors[i % colors.length]};--drift:${drift}px;animation-duration:${dur}s;animation-delay:${Math.random() * 0.5}s;border-radius:${Math.random()>0.5?'1px':'50%'}`;
+    container.appendChild(c);
+    setTimeout(() => c.remove(), (dur + 0.5) * 1000);
+  }
+}
+
+// ========== HINT SYSTEM ==========
+function renderHintButton() {
+  const level = LEVELS[state.currentLevel];
+  const hints = level.hints || [];
+  const btn = $('btn-hint');
+  const total = hints.length;
+  const used = state.hintsUsed;
+  btn.textContent = `\uD83D\uDCA1 ${used}/${total}`;
+  btn.disabled = !state.hintReady || used >= total || state.measuring;
+}
+
+function useHint() {
+  const level = LEVELS[state.currentLevel];
+  const hints = level.hints || [];
+  if (state.hintsUsed >= hints.length || !state.hintReady) return;
+  const hint = hints[state.hintsUsed];
+  state.hintsUsed++;
+  sound.click();
+  renderHintButton();
+  // Show hint as toast
+  const toast = $('hint-toast');
+  toast.textContent = hint;
+  toast.classList.add('visible');
+  setTimeout(() => toast.classList.remove('visible'), 4000);
+}
+
+// ========== ENTANGLEMENT LINES ==========
+function renderEntanglementLines(level) {
+  const svg = $('entangle-svg');
+  svg.innerHTML = '';
+  const entPairs = state._cachedEntPairs || [];
+  if (entPairs.length === 0) return;
+
+  const qubitsContainer = $('state-qubits');
+  const containerRect = qubitsContainer.getBoundingClientRect();
+  const svgParent = svg.parentElement;
+  const parentRect = svgParent.getBoundingClientRect();
+
+  for (const [qi, qj] of entPairs) {
+    const elI = qubitsContainer.querySelector(`.qubit[data-qubit="${qi}"]`);
+    const elJ = qubitsContainer.querySelector(`.qubit[data-qubit="${qj}"]`);
+    if (!elI || !elJ) continue;
+
+    const rI = elI.getBoundingClientRect();
+    const rJ = elJ.getBoundingClientRect();
+    const x1 = rI.left + rI.width / 2 - parentRect.left;
+    const y1 = rI.top + rI.height / 2 - parentRect.top;
+    const x2 = rJ.left + rJ.width / 2 - parentRect.left;
+    const y2 = rJ.top + rJ.height / 2 - parentRect.top;
+    const midX = (x1 + x2) / 2;
+    const midY = Math.min(y1, y2) - 30;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M${x1},${y1} Q${midX},${midY} ${x2},${y2}`);
+    path.setAttribute('class', 'entangle-line');
+    svg.appendChild(path);
+  }
+}
+
+// ========== WORLD UNLOCK ==========
+const WORLD_DESCS = [
+  'Master the X gate \u2014 the quantum NOT!',
+  'Discover superposition \u2014 both 0 and 1 at once!',
+  'Learn interference \u2014 turn uncertainty into certainty!',
+  'Explore entanglement \u2014 spooky action at a distance!'
+];
+
+function showWorldUnlock(worldNum) {
+  const color = WORLD_COLORS[worldNum - 1];
+  $('world-unlock-title').textContent = `WORLD ${worldNum} UNLOCKED!`;
+  $('world-unlock-title').style.color = color;
+  $('world-unlock-name').textContent = WORLD_NAMES[worldNum - 1];
+  $('world-unlock-name').style.color = color;
+  $('world-unlock-desc').textContent = WORLD_DESCS[worldNum - 1];
+  spawnParticles(25, color, 'var(--gold)', 'white');
+  showModal('modal-world-unlock');
+}
+
+// ========== GATE REFERENCE ==========
+const GATE_REFERENCE = {
+  X: { name: 'X \u2014 Bit Flip', desc: 'Swaps |0\u27E9 and |1\u27E9. The quantum NOT gate.' },
+  H: { name: 'H \u2014 Hadamard', desc: 'Creates superposition. H\u00B7H = I (undoes itself).' },
+  Z: { name: 'Z \u2014 Phase', desc: 'Invisible on |0\u27E9, flips phase of |1\u27E9. H\u2192Z\u2192H = X.' },
+  CNOT: { name: 'CNOT \u2014 Controlled NOT', desc: 'Flips target qubit when control is |1\u27E9. Creates entanglement!' },
+};
+
+function renderGateReference(level) {
+  const panel = $('gate-ref-panel');
+  panel.innerHTML = level.gates.map(g => {
+    const ref = GATE_REFERENCE[g];
+    return `<div><span class="ref-gate">${ref.name}</span><br><span class="ref-eq">${ref.desc}</span></div>`;
+  }).join('');
+}
+
+// ============================================================
+// SECTION 7: EVENT HANDLERS
+// ============================================================
+
+$('btn-play').addEventListener('click', () => {
+  sound.init();
+  sound.click();
+  loadProgress();
+  renderLevelSelect();
+  showScreen('levels');
+});
+
+$('btn-back-title').addEventListener('click', () => {
+  sound.click();
+  updateTitleProgress();
+  showScreen('title');
+});
+
+$('btn-back-levels').addEventListener('click', () => {
+  sound.click();
+  renderLevelSelect();
+  showScreen('levels');
+});
+
+$('btn-undo').addEventListener('click', undoMove);
+$('btn-reset').addEventListener('click', resetLevel);
+$('btn-measure').addEventListener('click', performMeasurement);
+
+$('btn-got-it').addEventListener('click', () => {
+  sound.click();
+  hideModal('modal-tutorial');
+});
+
+$('btn-hint').addEventListener('click', useHint);
+
+$('btn-gate-ref').addEventListener('click', () => {
+  $('gate-ref-panel').classList.toggle('open');
+});
+
+$('btn-world-ok').addEventListener('click', () => {
+  sound.click();
+  hideModal('modal-world-unlock');
+  startLevel(state.currentLevel + 1);
+});
+
+// Delegated click handler for qubits (avoids listener accumulation on re-render)
+$('state-qubits').addEventListener('click', e => {
+  const qubit = e.target.closest('.qubit');
+  if (qubit && qubit.dataset.qubit !== undefined) {
+    handleQubitClick(parseInt(qubit.dataset.qubit));
+  }
+});
+
+// Sound toggle
+$('btn-sound').addEventListener('click', () => {
+  sound.enabled = !sound.enabled;
+  $('btn-sound').classList.toggle('muted', !sound.enabled);
+  $('btn-sound').innerHTML = sound.enabled ? '&#9834;' : '&#9838;';
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  // Escape to go back / close modals
+  if (e.key === 'Escape') {
+    if (document.querySelector('#modal-result.active')) { hideModal('modal-result'); return; }
+    if (document.querySelector('#modal-tutorial.active')) { hideModal('modal-tutorial'); return; }
+    if (document.querySelector('#modal-world-unlock.active')) { hideModal('modal-world-unlock'); return; }
+    if (state.screen === 'game') { sound.click(); renderLevelSelect(); showScreen('levels'); return; }
+    if (state.screen === 'levels') { sound.click(); updateTitleProgress(); showScreen('title'); return; }
+    return;
+  }
+  if (state.screen !== 'game' || state.measuring) return;
+  const level = LEVELS[state.currentLevel];
+  if (e.key === 'z' || e.key === 'Z') undoMove();
+  if (e.key === 'r' || e.key === 'R') resetLevel();
+  if (e.key === 'm' || e.key === 'M' || e.key === 'Enter') performMeasurement();
+  if (e.key === 'h' || e.key === 'H') useHint();
+  if (e.key === '1' && level.gates[0]) selectGate(level.gates[0]);
+  if (e.key === '2' && level.gates[1]) selectGate(level.gates[1]);
+  if (e.key === '3' && level.gates[2]) selectGate(level.gates[2]);
+  if (e.key === '4' && level.gates[3]) selectGate(level.gates[3]);
+});
+
+
+
+// ============================================================
+// SECTION 8: INITIALIZATION
+// ============================================================
+
+loadProgress();
+initTitleParticles();
+updateTitleProgress();
+
+function updateTitleProgress() {
+  const completed = state.levelStars.filter(s => s > 0).length;
+  const total = LEVELS.length;
+  const stars = state.levelStars.reduce((sum, s) => sum + (s > 0 ? s : 0), 0);
+  if (completed > 0) {
+    $('title-progress').style.display = '';
+    $('title-progress-fill').style.width = Math.round(completed / total * 100) + '%';
+    $('title-progress-text').textContent = `${completed}/${total} levels \u00B7 ${stars} \u2605`;
+  }
+}
+</script>
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+
+<!-- Particle Background -->
+<script>
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  let PARTICLE_COUNT = 45;
+  const CONNECT_DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+
+  // Expose function to reduce particles during gameplay
+  window.setParticleIntensity = function(level) {
+    PARTICLE_COUNT = level === 'low' ? 15 : 45;
+    createParticles();
+  };
+})();
+</script>
+</body>
+</html>

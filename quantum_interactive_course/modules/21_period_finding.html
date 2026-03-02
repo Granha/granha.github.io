@@ -1,0 +1,2785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Period Finding Algorithm</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+  }
+
+/* === SCROLL PROGRESS BAR === */
+#scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+  z-index: 200;
+  transition: width 0.1s linear;
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* === PARTICLE BACKGROUND === */
+#particleBg {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* === RESET & BASE === */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--text);
+  background: var(--bg);
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+}
+
+/* === NAVIGATION === */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 14, 26, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  margin: 0 -1.5rem;
+  padding: 0 1.5rem;
+}
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0.5rem 0;
+}
+nav ul::-webkit-scrollbar { display: none; }
+nav a {
+  text-decoration: none;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+nav a { position: relative; }
+nav a:hover { color: var(--accent); background: rgba(99, 102, 241, 0.06); }
+nav a.active { color: var(--text); background: none; font-weight: 600; }
+nav a.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 15%;
+  right: 15%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+  border-radius: 1px;
+}
+
+/* === TYPOGRAPHY === */
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--accent), var(--cyan), var(--pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.02em;
+}
+h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 3rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--text), var(--cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+h2[data-section]::before {
+  content: attr(data-section);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--cyan));
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-right: 0.6rem;
+  vertical-align: middle;
+  -webkit-text-fill-color: #fff;
+  flex-shrink: 0;
+}
+h3 { font-size: 1.25rem; font-weight: 600; color: var(--text); margin: 1.5rem 0 0.75rem; }
+p { margin-bottom: 1rem; }
+a { color: var(--accent); }
+strong { color: var(--text); }
+
+/* === SECTIONS === */
+section { margin: 3rem 0; }
+.hero { text-align: center; padding: 3rem 0 2rem; position: relative; overflow: hidden; }
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: -1;
+  animation: heroGlow 4s ease-in-out infinite alternate;
+}
+@keyframes heroGlow {
+  0% { opacity: 0.3; transform: translate(-50%, -50%) scale(0.9); }
+  100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); }
+}
+.hero::after {
+  content: '';
+  display: block;
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), transparent);
+  margin: 1.5rem auto 0;
+}
+.hero .subtitle { color: var(--text-dim); font-size: 1.15rem; margin-top: 0.5rem; font-weight: 300; }
+.hero .tag {
+  display: inline-block;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+/* === CARDS & PANELS === */
+.interactive-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.interactive-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.5;
+}
+.interactive-panel:hover { border-color: rgba(99, 102, 241, 0.4); }
+.math-callout {
+  background: rgba(99, 102, 241, 0.08);
+  border-left: 4px solid var(--accent);
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+  border-radius: 0 8px 8px 0;
+  overflow-x: auto;
+}
+.definition-box {
+  background: rgba(52, 211, 153, 0.08);
+  border-left: 4px solid var(--green);
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+  border-radius: 0 8px 8px 0;
+}
+.warning-box {
+  background: rgba(251, 146, 60, 0.08);
+  border-left: 4px solid var(--orange);
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+  border-radius: 0 8px 8px 0;
+}
+
+/* === TABLES === */
+table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 1rem 0; font-size: 0.95rem; }
+th, td { padding: 0.5rem 0.75rem; text-align: center; border: 1px solid var(--border); }
+th {
+  background: rgba(99, 102, 241, 0.1);
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+}
+td { background: var(--surface2); transition: background 0.3s; }
+tr:hover td { background: rgba(99, 102, 241, 0.05); }
+.highlight-row td, .highlight-row { background: rgba(99, 102, 241, 0.15) !important; }
+
+/* === BUTTONS === */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.01em;
+}
+.btn:active { transform: scale(0.97); transition-duration: 0.05s; }
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #818cf8);
+  color: #FFF;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { border-color: var(--accent); color: var(--text); }
+.btn-accent {
+  background: linear-gradient(135deg, var(--orange), #f59e0b);
+  color: #FFF;
+}
+.btn-accent:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(251, 146, 60, 0.3);
+}
+.btn-success {
+  background: linear-gradient(135deg, var(--green), #10b981);
+  color: #FFF;
+}
+.btn-success:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--green-glow);
+}
+
+/* === STEP CONTROLS === */
+.step-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+.step-label {
+  font-weight: 600;
+  color: var(--cyan);
+  min-width: 220px;
+  text-align: center;
+}
+/* === STEP TIMELINE === */
+.steps-timeline {
+  display: flex;
+  gap: 0;
+  margin: 0.75rem 0 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.steps-timeline::-webkit-scrollbar { display: none; }
+.step-btn {
+  flex: 1;
+  min-width: 85px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  color: var(--text-dim);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.55rem 0.35rem;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+  text-align: center;
+}
+.step-btn:first-child { border-radius: 8px 0 0 8px; }
+.step-btn:last-child { border-radius: 0 8px 8px 0; }
+.step-btn.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(34, 211, 238, 0.1));
+  border-color: var(--accent);
+  color: var(--text);
+  z-index: 1;
+}
+.step-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+}
+.step-btn.completed {
+  background: rgba(52, 211, 153, 0.08);
+  color: var(--green);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+.step-num {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  margin-bottom: 1px;
+  opacity: 0.5;
+}
+
+/* === PLAY CONTROLS === */
+.play-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.speed-control {
+  display: inline-flex;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.speed-btn {
+  background: var(--surface2);
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.4rem 0.55rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 0;
+}
+.speed-btn:last-child { border-right: none; }
+.speed-btn:hover { background: rgba(99, 102, 241, 0.1); color: var(--text); }
+.speed-btn.active {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--accent);
+}
+
+/* === FADE TRANSITIONS === */
+.fade-content {
+  transition: opacity 0.25s ease;
+}
+.fade-content.fading {
+  opacity: 0;
+}
+
+/* === CIRCUIT SVG === */
+.circuit-container {
+  overflow-x: auto;
+  margin: 1rem 0;
+  background: var(--surface2);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid rgba(42, 53, 80, 0.5);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.circuit-container svg { display: block; margin: 0 auto; }
+.gate-rect {
+  fill: var(--surface);
+  stroke: var(--orange);
+  stroke-width: 2;
+  rx: 6;
+  transition: all 0.3s;
+}
+.gate-rect.active {
+  fill: rgba(251, 146, 60, 0.15);
+  stroke: var(--orange);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 8px rgba(251, 146, 60, 0.4));
+}
+.gate-rect.completed { fill: var(--surface2); stroke: rgba(99, 102, 241, 0.4); stroke-width: 1.5; }
+.gate-rect.pending { fill: var(--surface2); stroke: var(--border); stroke-width: 1; opacity: 0.4; }
+.gate-text { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; fill: var(--text); pointer-events: none; }
+.gate-text.pending { fill: var(--text-dim); opacity: 0.4; }
+.wire-line { stroke: var(--border); stroke-width: 1.5; }
+.wire-label { font-family: 'JetBrains Mono', monospace; font-size: 13px; fill: var(--cyan); }
+.control-dot { fill: var(--accent); }
+.control-line { stroke: var(--accent); stroke-width: 2; }
+.meter-path { fill: none; stroke: var(--red); stroke-width: 2; }
+
+/* === AMPLITUDE CHART === */
+.chart-container { margin: 1rem 0; }
+.chart-container canvas { width: 100%; height: 280px; display: block; border-radius: 8px; }
+.chart-legend {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.chart-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.legend-swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+
+/* === STATE DISPLAY === */
+.state-display {
+  background: var(--surface2);
+  border: 1px solid rgba(42, 53, 80, 0.5);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  font-size: 0.95rem;
+  min-height: 3rem;
+  line-height: 1.8;
+}
+
+/* === FORM CONTROLS === */
+.control-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin: 1rem 0;
+}
+.control-item { display: flex; flex-direction: column; gap: 0.3rem; }
+.control-item label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.control-item select, .control-item input[type="number"] {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--surface2);
+  color: var(--text);
+  min-width: 80px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+.control-item select:focus, .control-item input[type="number"]:focus {
+  border-color: var(--accent);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15), 0 0 0 3px var(--accent-glow);
+}
+.control-item input[type="range"] {
+  min-width: 120px;
+  accent-color: var(--accent);
+}
+
+/* === QFT MATRIX === */
+.qft-matrix-grid {
+  display: inline-grid;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0.5rem auto;
+}
+.qft-cell {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  cursor: default;
+  position: relative;
+  transition: transform 0.15s;
+}
+.qft-cell:hover { transform: scale(1.15); z-index: 2; outline: 2px solid var(--cyan); }
+.qft-cell-tooltip {
+  display: none;
+  position: absolute;
+  bottom: 105%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  color: var(--text);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+  z-index: 10;
+  border: 1px solid var(--border);
+}
+.qft-cell:hover .qft-cell-tooltip { display: block; }
+
+/* === PRESET BUTTONS === */
+.preset-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.75rem 0;
+}
+.preset-btn {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface2);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+.preset-btn.active {
+  border-color: var(--accent);
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent);
+}
+
+/* === CF STEPS === */
+.cf-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  margin: 0.3rem 0;
+  background: var(--surface2);
+  border-radius: 8px;
+  border-left: 3px solid var(--border);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.4s;
+}
+.cf-step.visible { opacity: 1; transform: translateY(0); }
+.cf-step.success { border-left-color: var(--green); background: rgba(52, 211, 153, 0.08); }
+.cf-step-num {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 0.85rem;
+  min-width: 28px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* === PHASOR DIAGRAM === */
+.phasor-container { display: flex; justify-content: center; margin: 1rem 0; }
+.phasor-container svg { max-width: 300px; }
+
+/* === ALERT BANNER === */
+.alert-banner {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+.alert-success {
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--green);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+.alert-info {
+  background: rgba(99, 102, 241, 0.1);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+.alert-warning {
+  background: rgba(251, 146, 60, 0.1);
+  color: var(--orange);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+}
+
+/* === COMPARISON TABLE === */
+.comparison-table th:first-child { text-align: left; }
+.comparison-table td:first-child { text-align: left; font-weight: 500; }
+
+/* === LISTS === */
+ol, ul { color: var(--text); }
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  body { font-size: 1rem; padding: 0 1rem 3rem; }
+  h1 { font-size: 1.8rem; }
+  h2 { font-size: 1.4rem; }
+  .interactive-panel { padding: 1rem; }
+  .step-controls { gap: 0.5rem; }
+  .control-group { gap: 0.75rem; }
+  .qft-cell { width: 28px; height: 28px; font-size: 0.6rem; }
+  .kbd-hint { display: none; }
+  .play-controls { flex-wrap: wrap; justify-content: center; }
+}
+
+/* === COLOR-CODED MATH === */
+.ket { color: var(--cyan); }
+.amplitude { color: var(--pink); }
+.operator { color: var(--orange); }
+
+/* === PANEL TITLE ICONS === */
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+.panel-title .icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* === COMPLEXITY BARS === */
+.complexity-bars { margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.complexity-bar { display: flex; align-items: center; gap: 0.75rem; }
+.complexity-bar .label { font-size: 0.82rem; font-weight: 600; min-width: 72px; text-align: right; }
+.complexity-track { flex: 1; height: 22px; background: var(--surface2); border-radius: 6px; border: 1px solid var(--border); overflow: hidden; }
+.complexity-fill { height: 100%; border-radius: 5px; transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1); }
+.complexity-bar .value { font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; min-width: 80px; }
+
+/* === SLIDE-IN ANIMATION === */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* === SOLUTION REVEAL === */
+.solution-box {
+  text-align: center;
+  padding: 1.25rem 1.5rem;
+  margin: 1rem 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.15), rgba(99, 102, 241, 0.1));
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  animation: solutionReveal 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes solutionReveal {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.solution-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--green);
+  margin-bottom: 0.3rem;
+}
+.solution-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.solution-details {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  margin-top: 0.5rem;
+}
+
+/* === QUBIT ORB VISUALIZATION === */
+.qubit-viz {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+  margin: 1rem 0 0.5rem;
+  padding: 0.75rem 0;
+}
+.qubit-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+.qubit-orb {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.qubit-orb.state-zero {
+  background: radial-gradient(circle at 35% 35%, #4a5568, #1a2236);
+  box-shadow: 0 0 6px rgba(74, 85, 104, 0.3);
+}
+.qubit-orb.state-super {
+  background: radial-gradient(circle at 35% 35%, #818cf8, var(--accent));
+  box-shadow: 0 0 12px var(--accent-glow);
+  animation: orbPulse 2s ease-in-out infinite alternate;
+}
+.qubit-orb.state-entangled {
+  background: radial-gradient(circle at 35% 35%, #67e8f9, #0891b2);
+  box-shadow: 0 0 14px var(--cyan-glow);
+  animation: orbPulse 1.5s ease-in-out infinite alternate;
+}
+.qubit-orb.state-measured {
+  background: radial-gradient(circle at 35% 35%, #6ee7b7, #059669);
+  box-shadow: 0 0 10px var(--green-glow);
+}
+@keyframes orbPulse {
+  0% { box-shadow: 0 0 8px rgba(99, 102, 241, 0.3); transform: scale(1); }
+  100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.5); transform: scale(1.06); }
+}
+.qubit-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+}
+.qubit-state-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  opacity: 0.8;
+  font-weight: 500;
+  height: 1.2em;
+  transition: opacity 0.3s;
+}
+
+/* === STAGE BADGE === */
+.stage-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--stage-color, var(--accent));
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--stage-color, var(--accent)) 40%, transparent);
+}
+
+/* === FURTHER READING === */
+.further-reading {
+  background: rgba(99, 102, 241, 0.05);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 1rem 1.25rem;
+  margin-top: 1.5rem;
+}
+.further-reading h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+.further-reading ul {
+  margin-left: 1.25rem;
+  font-size: 0.92rem;
+  line-height: 1.9;
+}
+.further-reading li { color: var(--text-dim); }
+.further-reading em { color: var(--text); }
+
+/* === FOOTER === */
+footer {
+  margin-top: 4rem;
+  padding: 2rem 0 3rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  line-height: 1.8;
+}
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+footer .footer-line { opacity: 0.6; }
+
+/* === KATEX OVERRIDES === */
+.katex-display { margin: 0.75rem 0; overflow-x: auto; overflow-y: hidden; }
+.katex { font-size: 1.05em; color: var(--text); }
+
+/* === PHASE LEGEND === */
+.phase-bar {
+  height: 16px;
+  border-radius: 4px;
+  width: 200px;
+  margin: 0 0.5rem;
+}
+
+/* === KEYBOARD HINT === */
+.kbd-hint {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  opacity: 0.5;
+  z-index: 50;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.kbd-hint kbd {
+  display: inline-block;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  margin: 0 0.1rem;
+}
+</style>
+</head>
+<body>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+<div id="scroll-progress"></div>
+<canvas id="particleBg"></canvas>
+
+<!-- === NAVIGATION === -->
+<nav>
+  <ul>
+    <li><a href="#hero" class="active">Home</a></li>
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#motivation">Why Quantum?</a></li>
+    <li><a href="#circuit">Circuit</a></li>
+    <li><a href="#qft">QFT</a></li>
+    <li><a href="#explorer">Explorer</a></li>
+    <li><a href="#postprocessing">Post-Processing</a></li>
+    <li><a href="#summary">Summary</a></li>
+  </ul>
+</nav>
+
+<!-- === HERO === -->
+<section id="hero" class="hero">
+  <div class="tag">Shor's Algorithm Core</div>
+  <h1>Quantum Period Finding</h1>
+  <p class="subtitle">An interactive exploration of the quantum algorithm that breaks RSA encryption</p>
+</section>
+
+<!-- === SECTION 1: PROBLEM === -->
+<section id="problem">
+  <h2 data-section="1">1. The Problem: Finding Periodicity</h2>
+
+  <p>Given integers $a$ and $N$ with $\gcd(a, N) = 1$, consider the function:</p>
+
+  <div class="math-callout">
+    $$f(x) = a^x \bmod N$$
+  </div>
+
+  <p>This function is <strong>periodic</strong>. The <strong>order</strong> (or period) $r$ is the smallest positive integer such that:</p>
+
+  <div class="math-callout">
+    $$a^r \equiv 1 \pmod{N}$$
+  </div>
+
+  <p>Equivalently, $f(x+r) = f(x)$ for all $x \geq 0$. Finding $r$ efficiently is the key to factoring $N$.</p>
+
+  <div class="definition-box">
+    <h3>Connection to Factoring</h3>
+    <p>If $r$ is even and $a^{r/2} \not\equiv -1 \pmod{N}$, then at least one of $\gcd(a^{r/2} - 1,\; N)$ or $\gcd(a^{r/2} + 1,\; N)$ is a non-trivial factor of $N$.</p>
+  </div>
+
+  <div class="interactive-panel">
+    <div class="panel-title">
+      <span class="icon" style="background: rgba(244,114,182,0.15); color: var(--pink);">ƒ</span>
+      Explore the Periodicity
+    </div>
+    <div class="control-group">
+      <div class="control-item">
+        <label>N</label>
+        <input type="number" id="prob-N" value="15" min="4" max="99" style="width:70px">
+      </div>
+      <div class="control-item">
+        <label>a</label>
+        <input type="number" id="prob-a" value="7" min="2" max="98" style="width:70px">
+      </div>
+      <div class="control-item">
+        <button class="btn btn-primary" id="prob-compute">Compute f(x)</button>
+      </div>
+    </div>
+    <div id="prob-info" class="alert-banner alert-info" style="display:none"></div>
+    <div id="prob-table-wrap" style="overflow-x:auto; margin-top:1rem;"></div>
+  </div>
+</section>
+
+<!-- === SECTION 2: MOTIVATION === -->
+<section id="motivation">
+  <h2 data-section="2">2. Why Quantum?</h2>
+
+  <p>Classically, finding the period $r$ of $a^x \bmod N$ requires evaluating the function until the pattern repeats. The best classical algorithms for the underlying factoring problem are sub-exponential but super-polynomial:</p>
+
+  <table class="comparison-table">
+    <thead>
+      <tr><th>Algorithm</th><th>Complexity</th><th>Type</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Trial division</td><td>$O(\sqrt{N})$</td><td>Exponential in bit-length</td></tr>
+      <tr><td>Pollard's rho</td><td>$O(N^{1/4})$</td><td>Exponential in bit-length</td></tr>
+      <tr><td>General Number Field Sieve</td><td>$O\!\left(e^{c(\ln N)^{1/3}(\ln\ln N)^{2/3}}\right)$</td><td>Sub-exponential</td></tr>
+      <tr class="highlight-row"><td><strong>Shor's algorithm (quantum)</strong></td><td>$O\!\left((\log N)^3\right)$</td><td><strong>Polynomial</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div class="complexity-bars">
+    <div class="complexity-bar">
+      <span class="label" style="color: var(--red);">Classical</span>
+      <div class="complexity-track">
+        <div class="complexity-fill" data-width="95" style="width: 0; background: linear-gradient(90deg, var(--red), var(--orange));"></div>
+      </div>
+      <span class="value" style="color: var(--red);">~10<sup>30</sup> ops</span>
+    </div>
+    <div class="complexity-bar">
+      <span class="label" style="color: var(--green);">Quantum</span>
+      <div class="complexity-track">
+        <div class="complexity-fill" data-width="12" style="width: 0; background: linear-gradient(90deg, var(--green), var(--cyan));"></div>
+      </div>
+      <span class="value" style="color: var(--green);">~10<sup>10</sup> ops</span>
+    </div>
+  </div>
+
+  <p>The quantum speedup comes from two ingredients:</p>
+  <ol style="margin-left:1.5rem; margin-bottom:1rem;">
+    <li><strong>Quantum parallelism:</strong> A superposition lets us evaluate $f(x)$ for all $x$ simultaneously.</li>
+    <li><strong>Quantum Fourier Transform:</strong> The QFT extracts the hidden period from the entangled state via constructive interference at the right frequencies.</li>
+  </ol>
+
+  <div class="warning-box">
+    <strong>Scale matters.</strong> For a 2048-bit RSA modulus, the classical GNFS would need roughly $\sim 10^{30}$ operations. Shor's algorithm needs only $\sim (2048)^3 \approx 10^{10}$ quantum gate operations &mdash; a difference of $10^{20}$.
+  </div>
+</section>
+
+<!-- === SECTION 3: CIRCUIT WALKTHROUGH === -->
+<section id="circuit">
+  <h2 data-section="3">3. The Quantum Circuit</h2>
+
+  <p>The period-finding algorithm uses two quantum registers and four stages:</p>
+  <ol style="margin-left:1.5rem; margin-bottom:1rem;">
+    <li><strong>Initialize</strong> both registers to $|0\rangle$</li>
+    <li><strong>Hadamard gates</strong> create a uniform superposition in the counting register</li>
+    <li><strong>Controlled modular exponentiation</strong> entangles the two registers</li>
+    <li><strong>Inverse QFT</strong> on the counting register reveals the period</li>
+  </ol>
+
+  <p>Walk through the circuit step-by-step for the example $N = 15$, $a = 7$ (period $r = 4$) with 4 counting qubits:</p>
+
+  <div class="interactive-panel">
+    <div class="panel-title">
+      <span class="icon" style="background: rgba(99,102,241,0.15); color: var(--accent);">&#9670;</span>
+      Circuit Walkthrough
+    </div>
+    <div class="circuit-container">
+      <svg id="circuit-svg" width="780" height="200"></svg>
+    </div>
+
+    <div class="qubit-viz" id="qubit-viz"></div>
+
+    <div class="steps-timeline" id="steps-timeline"></div>
+
+    <div class="step-controls">
+      <button class="btn btn-secondary" id="step-prev">&larr; Prev</button>
+      <div class="step-label fade-content" id="step-label">Step 0: Initialization</div>
+      <button class="btn btn-secondary" id="step-next">Next &rarr;</button>
+      <div class="play-controls">
+        <button class="btn btn-primary" id="step-play">&#9654; Play</button>
+        <div class="speed-control">
+          <button class="speed-btn" data-speed="3000">0.5x</button>
+          <button class="speed-btn active" data-speed="1500">1x</button>
+          <button class="speed-btn" data-speed="750">2x</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="state-display fade-content" id="step-description"></div>
+
+    <h3 style="margin-top:1.5rem;">Measurement Probabilities</h3>
+    <div class="chart-container">
+      <canvas id="amplitude-canvas"></canvas>
+    </div>
+    <div class="chart-legend" id="phase-legend">
+      <span>Bar height = probability $|\alpha|^2$</span>
+      <span>&nbsp;|&nbsp;</span>
+      <span>Color = complex phase:
+        <canvas id="phase-legend-canvas" width="120" height="14" style="vertical-align:middle; border-radius:3px;"></canvas>
+        &nbsp;$0$ to $2\pi$
+      </span>
+    </div>
+    <div class="chart-legend" id="interference-legend" style="display:none;">
+      <span><span class="legend-swatch" style="background: linear-gradient(135deg, #22d3ee, #6366f1);"></span> Constructive (peak at $Q/r$)</span>
+      <span><span class="legend-swatch" style="background: rgba(248, 113, 113, 0.4);"></span> Destructive (&asymp; 0)</span>
+      <span><span class="legend-swatch" style="background: hsla(200, 80%, 60%, 0.6);"></span> Other</span>
+    </div>
+  </div>
+</section>
+
+<!-- === SECTION 4: QFT === -->
+<section id="qft">
+  <h2 data-section="4">4. How the QFT Reveals Periodicity</h2>
+
+  <p>The Quantum Fourier Transform maps a computational basis state $|j\rangle$ to:</p>
+
+  <div class="math-callout">
+    $$\text{QFT}|j\rangle = \frac{1}{\sqrt{Q}} \sum_{k=0}^{Q-1} \omega^{jk} |k\rangle, \qquad \omega = e^{2\pi i / Q}$$
+  </div>
+
+  <p>The key insight: if the input state is periodic with period $r$ (nonzero amplitudes at $x_0, x_0+r, x_0+2r, \ldots$), then the QFT output has amplitudes concentrated at multiples of $Q/r$. This is quantum interference &mdash; the phase contributions add constructively only at these special frequencies.</p>
+
+  <h3>QFT Matrix Visualization</h3>
+  <p>Each entry $(\text{QFT})_{jk} = \frac{1}{\sqrt{Q}}\,\omega^{jk}$. The color encodes the phase of $\omega^{jk}$:</p>
+
+  <div class="interactive-panel">
+    <div class="panel-title">
+      <span class="icon" style="background: rgba(34,211,238,0.15); color: var(--cyan);">&#9638;</span>
+      QFT Matrix
+    </div>
+    <div class="control-group">
+      <div class="control-item">
+        <label>Matrix Size Q</label>
+        <select id="qft-size-select">
+          <option value="4">4 &times; 4</option>
+          <option value="8" selected>8 &times; 8</option>
+          <option value="16">16 &times; 16</option>
+        </select>
+      </div>
+    </div>
+    <div style="text-align:center; overflow-x:auto;">
+      <div id="qft-matrix-container"></div>
+    </div>
+    <div class="chart-legend" style="margin-top:0.75rem;">
+      <span>Hover a cell to see its value. Color = phase of $\omega^{jk}$.</span>
+    </div>
+  </div>
+
+  <h3>See QFT in Action</h3>
+  <p>Choose an input state and observe how the QFT transforms it. Periodic inputs produce sharp peaks in the output:</p>
+
+  <div class="interactive-panel">
+    <div class="panel-title">
+      <span class="icon" style="background: rgba(244,114,182,0.15); color: var(--pink);">&#8767;</span>
+      QFT Demo
+    </div>
+    <div class="preset-group">
+      <button class="preset-btn active" data-preset="uniform">Uniform</button>
+      <button class="preset-btn" data-preset="period2">Period r=2</button>
+      <button class="preset-btn" data-preset="period4">Period r=4</button>
+      <button class="preset-btn" data-preset="delta">Single state |3&rang;</button>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; gap:1.5rem; margin-top:1rem;">
+      <div style="flex:1; min-width:280px;">
+        <h3 style="margin-top:0;">Input State</h3>
+        <div class="chart-container"><canvas id="qft-input-canvas"></canvas></div>
+      </div>
+      <div style="flex:1; min-width:280px;">
+        <h3 style="margin-top:0;">After QFT</h3>
+        <div class="chart-container"><canvas id="qft-output-canvas"></canvas></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- === SECTION 5: EXPLORER === -->
+<section id="explorer">
+  <h2 data-section="5">5. Parameter Explorer</h2>
+
+  <p>Choose $N$ and $a$ to run the full quantum period-finding algorithm. Observe how the measurement probabilities cluster around multiples of $Q/r$, allowing us to extract $r$.</p>
+
+  <div class="interactive-panel">
+    <div class="panel-title">
+      <span class="icon" style="background: rgba(52,211,153,0.15); color: var(--green);">&#9883;</span>
+      Parameter Explorer
+    </div>
+    <div class="control-group">
+      <div class="control-item">
+        <label>N (number to factor)</label>
+        <select id="exp-N">
+          <option value="15" selected>15 = 3 &times; 5</option>
+          <option value="21">21 = 3 &times; 7</option>
+          <option value="33">33 = 3 &times; 11</option>
+          <option value="35">35 = 5 &times; 7</option>
+          <option value="55">55 = 5 &times; 11</option>
+          <option value="77">77 = 7 &times; 11</option>
+        </select>
+      </div>
+      <div class="control-item">
+        <label>a (base)</label>
+        <select id="exp-a"></select>
+      </div>
+      <div class="control-item">
+        <label>Counting qubits n</label>
+        <input type="range" id="exp-qubits" min="4" max="12" value="8">
+        <span id="exp-qubits-label" style="font-size:0.85rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">8</span>
+      </div>
+      <div class="control-item">
+        <button class="btn btn-primary" id="exp-run">Run Algorithm</button>
+      </div>
+    </div>
+    <div id="exp-info" class="alert-banner" style="display:none;"></div>
+
+    <div id="exp-results" style="display:none;">
+      <h3>Modular Exponentiation Table</h3>
+      <div id="exp-table-wrap" style="overflow-x:auto;"></div>
+
+      <h3 style="margin-top:1.5rem;">Measurement Probability Distribution</h3>
+      <div class="chart-container"><canvas id="exp-prob-canvas"></canvas></div>
+      <div class="chart-legend">
+        <span>Peaks occur at multiples of $Q/r$</span>
+      </div>
+
+      <div style="text-align:center; margin-top:1rem;">
+        <button class="btn btn-accent" id="exp-measure">Simulate Measurement</button>
+      </div>
+      <div id="exp-measurement-result" style="display:none;"></div>
+    </div>
+  </div>
+</section>
+
+<!-- === SECTION 6: POST-PROCESSING === -->
+<section id="postprocessing">
+  <h2 data-section="6">6. Classical Post-Processing</h2>
+
+  <p>After measuring the counting register and obtaining outcome $y$ from a register of size $Q = 2^n$, we need to extract the period $r$. The key idea: the measured $y$ satisfies:</p>
+
+  <div class="math-callout">
+    $$\frac{y}{Q} \approx \frac{s}{r}$$
+  </div>
+
+  <p>for some integer $s$ with $0 \leq s < r$. We use the <strong>continued fractions algorithm</strong> to find the best rational approximation $s/r$ from the decimal $y/Q$.</p>
+
+  <div class="definition-box">
+    <h3>Continued Fractions</h3>
+    <p>Any real number $\alpha$ can be written as $\alpha = a_0 + \cfrac{1}{a_1 + \cfrac{1}{a_2 + \cdots}}$, denoted $[a_0; a_1, a_2, \ldots]$. The <em>convergents</em> $p_k/q_k$ are the best rational approximations with denominator $\leq q_k$.</p>
+  </div>
+
+  <div class="interactive-panel">
+    <div class="panel-title">
+      <span class="icon" style="background: rgba(251,146,60,0.15); color: var(--orange);">&#8260;</span>
+      Continued Fractions Extractor
+    </div>
+    <div class="control-group">
+      <div class="control-item">
+        <label>Measured y</label>
+        <input type="number" id="cf-y" value="12" min="0" max="255" style="width:80px">
+      </div>
+      <div class="control-item">
+        <label>Q = 2<sup>n</sup></label>
+        <input type="number" id="cf-Q" value="16" min="2" max="256" style="width:80px">
+      </div>
+      <div class="control-item">
+        <label>Known N</label>
+        <input type="number" id="cf-N" value="15" min="2" max="99" style="width:80px">
+      </div>
+      <div class="control-item">
+        <label>Known a</label>
+        <input type="number" id="cf-a" value="7" min="2" max="98" style="width:80px">
+      </div>
+      <div class="control-item">
+        <button class="btn btn-success" id="cf-run">Extract Period</button>
+      </div>
+    </div>
+    <div id="cf-steps-container"></div>
+  </div>
+</section>
+
+<!-- === SECTION 7: SUMMARY === -->
+<section id="summary">
+  <h2 data-section="7">7. Putting It All Together</h2>
+
+  <p>The quantum period-finding algorithm works in these stages:</p>
+
+  <div class="interactive-panel">
+    <div class="panel-title">
+      <span class="icon" style="background: rgba(250,204,21,0.15); color: var(--yellow);">&Sigma;</span>
+      Algorithm Pipeline
+    </div>
+    <table>
+      <thead>
+        <tr><th style="width:40%">Stage</th><th>What Happens</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="stage-badge" style="--stage-color: var(--accent)">1</span> <strong>Superposition</strong></td><td>Hadamard gates create $\frac{1}{\sqrt{Q}}\sum_{x=0}^{Q-1}|x\rangle|0\rangle$</td></tr>
+        <tr><td><span class="stage-badge" style="--stage-color: var(--cyan)">2</span> <strong>Entanglement</strong></td><td>Controlled-$U_f$ maps to $\frac{1}{\sqrt{Q}}\sum_{x}|x\rangle|a^x \bmod N\rangle$</td></tr>
+        <tr><td><span class="stage-badge" style="--stage-color: var(--pink)">3</span> <strong>Interference</strong></td><td>QFT$^{-1}$ concentrates amplitudes at multiples of $Q/r$</td></tr>
+        <tr><td><span class="stage-badge" style="--stage-color: var(--green)">4</span> <strong>Measurement</strong></td><td>Yields $y \approx sQ/r$ with high probability</td></tr>
+        <tr><td><span class="stage-badge" style="--stage-color: var(--orange)">5</span> <strong>Post-processing</strong></td><td>Continued fractions extract $r$ from $y/Q$</td></tr>
+        <tr><td><span class="stage-badge" style="--stage-color: var(--yellow)">6</span> <strong>Factoring</strong></td><td>$\gcd(a^{r/2} \pm 1, N)$ yields non-trivial factors</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="warning-box">
+    <strong>Success probability.</strong> The algorithm succeeds with probability $\geq 1 - 1/2^k$ after $O(k)$ repetitions. Even a single run succeeds with probability $\Omega(1/\!\log\log N)$.
+  </div>
+
+  <div class="further-reading">
+    <h3>Further Reading</h3>
+    <ul>
+      <li>Nielsen &amp; Chuang, <em>Quantum Computation and Quantum Information</em>, Chapter 5</li>
+      <li>Shor, P. (1994). <em>Algorithms for quantum computation: discrete logarithms and factoring.</em></li>
+      <li>Mermin, N. D. <em>Quantum Computer Science</em>, Chapter 3</li>
+    </ul>
+  </div>
+</section>
+
+<script>
+// ============================================================
+//  MATH UTILITIES
+// ============================================================
+const QMath = {
+  // Complex number ops
+  complex(re, im) { return { re, im: im || 0 }; },
+  cAdd(a, b) { return { re: a.re + b.re, im: a.im + b.im }; },
+  cSub(a, b) { return { re: a.re - b.re, im: a.im - b.im }; },
+  cMul(a, b) { return { re: a.re*b.re - a.im*b.im, im: a.re*b.im + a.im*b.re }; },
+  cScale(a, s) { return { re: a.re * s, im: a.im * s }; },
+  cConj(a) { return { re: a.re, im: -a.im }; },
+  cMag2(a) { return a.re*a.re + a.im*a.im; },
+  cMag(a) { return Math.sqrt(a.re*a.re + a.im*a.im); },
+  cPhase(a) { return Math.atan2(a.im, a.re); },
+  cExp(theta) { return { re: Math.cos(theta), im: Math.sin(theta) }; },
+  ZERO: { re: 0, im: 0 },
+  ONE: { re: 1, im: 0 },
+
+  // Number theory
+  gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; },
+  modPow(base, exp, mod) {
+    let result = 1;
+    base = ((base % mod) + mod) % mod;
+    while (exp > 0) {
+      if (exp & 1) result = (result * base) % mod;
+      exp >>= 1;
+      base = (base * base) % mod;
+    }
+    return result;
+  },
+
+  // Find period of a^x mod N by brute force (for small N)
+  findPeriod(a, N) {
+    let val = 1;
+    for (let r = 1; r <= N; r++) {
+      val = (val * a) % N;
+      if (val === 1) return r;
+    }
+    return -1;
+  },
+
+  // Continued fractions: returns array of convergents [{p, q}]
+  continuedFractionConvergents(num, den, maxDen) {
+    const convergents = [];
+    const coeffs = [];
+    let n = num, d = den;
+    // Standard CF recurrence: h_n = a_n * h_{n-1} + h_{n-2}
+    // Initialize: h_{-2}=0, h_{-1}=1, k_{-2}=1, k_{-1}=0
+    let h_prev2 = 0, h_prev1 = 1;
+    let k_prev2 = 1, k_prev1 = 0;
+
+    while (d !== 0) {
+      const a = Math.floor(n / d);
+      coeffs.push(a);
+      const h = a * h_prev1 + h_prev2;
+      const k = a * k_prev1 + k_prev2;
+      if (maxDen && k > maxDen) break;
+      convergents.push({ a, p: h, q: k });
+      h_prev2 = h_prev1; h_prev1 = h;
+      k_prev2 = k_prev1; k_prev1 = k;
+      [n, d] = [d, n - a * d];
+    }
+    return { coeffs, convergents };
+  }
+};
+
+// ============================================================
+//  QUANTUM SIMULATOR (simplified for pedagogy)
+// ============================================================
+
+// Computes measurement probabilities for the counting register
+// after the full period-finding circuit, WITHOUT building the full state vector.
+// Uses the analytical formula for the probability distribution.
+function computePeriodFindingProbabilities(a, N, numCountingQubits) {
+  const Q = 1 << numCountingQubits;
+  const r = QMath.findPeriod(a, N);
+  if (r <= 0) return { probs: new Float64Array(Q), r, Q, phases: new Float64Array(Q) };
+
+  // Number of terms in the sum: how many multiples of r fit in [0, Q-1]
+  // For each measurement outcome y, the probability is:
+  // P(y) = (1/Q) |sum_{k=0}^{floor((Q-1)/r)} exp(2*pi*i*k*r*y/Q)|^2
+  // This is summed over all starting offsets x0 (0..r-1), but since they give
+  // the same probability distribution for y, we just get:
+  // P(y) = (1/Q) * (number of terms in sum)^2  when r*y/Q is integer
+  // More precisely, we compute it numerically.
+
+  const probs = new Float64Array(Q);
+  const phases = new Float64Array(Q);
+  const m = Math.floor((Q - 1) / r) + 1; // number of terms in geometric sum
+
+  for (let y = 0; y < Q; y++) {
+    // Sum exp(2*pi*i*k*r*y/Q) for k = 0..m-1
+    let sumRe = 0, sumIm = 0;
+    for (let k = 0; k < m; k++) {
+      const angle = 2 * Math.PI * k * r * y / Q;
+      sumRe += Math.cos(angle);
+      sumIm += Math.sin(angle);
+    }
+    probs[y] = (sumRe * sumRe + sumIm * sumIm) / Q;
+    phases[y] = Math.atan2(sumIm, sumRe);
+  }
+
+  return { probs, r, Q, phases };
+}
+
+// Computes step-by-step state vectors for the walkthrough (N=15, a=7, 4 counting qubits)
+// Returns array of step objects with counting-register-only probability distributions
+function computeWalkthroughSteps() {
+  const N = 15, a = 7, n = 4, r = 4;
+  const Q = 1 << n; // 16
+  const m = Math.ceil(Math.log2(N)); // 4 target qubits
+  const totalQubits = n + m;
+  const dim = 1 << totalQubits; // 256
+
+  // State vector as array of complex numbers
+  // Target register initialized to |1⟩ (required for modular multiplication approach)
+  let state = new Array(dim).fill(null).map(() => ({ re: 0, im: 0 }));
+  state[1] = { re: 1, im: 0 }; // |0...0>|0...01>
+
+  const steps = [];
+
+  // Helper: get counting register probabilities from full state
+  function getCountingProbs(st) {
+    const probs = new Float64Array(Q);
+    const phaseAccum = new Array(Q).fill(null).map(() => ({ re: 0, im: 0 }));
+    for (let i = 0; i < dim; i++) {
+      const countIdx = i >> m; // upper n bits
+      probs[countIdx] += QMath.cMag2(st[i]);
+      phaseAccum[countIdx] = QMath.cAdd(phaseAccum[countIdx], st[i]);
+    }
+    const phases = new Float64Array(Q);
+    for (let i = 0; i < Q; i++) {
+      phases[i] = QMath.cPhase(phaseAccum[i]);
+    }
+    return { probs, phases };
+  }
+
+  // Step 0: Initialization
+  steps.push({
+    label: 'Initialization',
+    description: `The <span class="ket">counting register</span> ($n = 4$ qubits, $Q = 16$ levels) is initialized to $|0\\rangle$. The <span class="ket">work register</span> ($m = 4$ qubits) is initialized to $|1\\rangle$ &mdash; this is essential because the <span class="operator">modular exponentiation</span> is implemented as successive multiplications.`,
+    formula: '|\\psi_0\\rangle = |0000\\rangle|0001\\rangle',
+    ...getCountingProbs(state)
+  });
+
+  // Step 1: Hadamard on counting register (bits m..m+n-1 in state index)
+  for (let q = 0; q < n; q++) {
+    const newState = new Array(dim).fill(null).map(() => ({ re: 0, im: 0 }));
+    const bitPos = m + q; // counting qubit q is at bit position m+q
+    const mask = 1 << bitPos;
+    for (let i = 0; i < dim; i++) {
+      if (QMath.cMag2(state[i]) < 1e-30) continue;
+      const bit = (i >> bitPos) & 1;
+      const i0 = i & ~mask; // bit=0
+      const i1 = i | mask;  // bit=1
+      const s = QMath.cScale(state[i], 1 / Math.sqrt(2));
+      if (bit === 0) {
+        newState[i0] = QMath.cAdd(newState[i0], s);
+        newState[i1] = QMath.cAdd(newState[i1], s);
+      } else {
+        newState[i0] = QMath.cAdd(newState[i0], s);
+        newState[i1] = QMath.cSub(newState[i1], s);
+      }
+    }
+    state = newState;
+  }
+
+  steps.push({
+    label: 'Hadamard Gates',
+    description: `Apply <span class="operator">$H^{\\otimes 4}$</span> to the counting register to create a <span class="ket">uniform superposition</span> over all $Q = 16$ values. Each computational basis state has equal <span class="amplitude">amplitude $1/\\sqrt{16} = 1/4$</span>.`,
+    formula: '|\\psi_1\\rangle = \\frac{1}{4} \\sum_{x=0}^{15} |x\\rangle|0001\\rangle',
+    ...getCountingProbs(state)
+  });
+
+  // Steps 2-5: Controlled modular exponentiation
+  // CU^(2^k) controlled on counting qubit k: U|y> = |a^(2^k) * y mod N>
+  // Control bit in state index: bit (m + k) corresponds to 2^k in counting register
+  for (let k = 0; k < n; k++) {
+    const power = 1 << k;
+    const aPow = QMath.modPow(a, power, N); // a^(2^k) mod N
+    const newState = new Array(dim).fill(null).map(() => ({ re: 0, im: 0 }));
+    const controlBit = m + k; // bit position for counting qubit representing 2^k
+
+    for (let i = 0; i < dim; i++) {
+      if (QMath.cMag2(state[i]) < 1e-30) continue;
+      if ((i >> controlBit) & 1) {
+        // Control qubit is 1: apply U^(2^k) to target register
+        const targetVal = i & ((1 << m) - 1); // lower m bits
+        const countVal = i >> m; // upper n bits
+        if (targetVal < N && targetVal > 0) {
+          const mapped = (targetVal * aPow) % N;
+          const newIdx = (countVal << m) | mapped;
+          newState[newIdx] = QMath.cAdd(newState[newIdx], state[i]);
+        } else {
+          // target >= N or target == 0: leave unchanged
+          newState[i] = QMath.cAdd(newState[i], state[i]);
+        }
+      } else {
+        // Control qubit is 0: no operation
+        newState[i] = QMath.cAdd(newState[i], state[i]);
+      }
+    }
+    state = newState;
+
+    const stepLabels = [
+      `Controlled-$U$ ($a^1 = 7^1 = 7$ mod $15$)`,
+      `Controlled-$U^2$ ($a^2 = 7^2 = 4$ mod $15$)`,
+      `Controlled-$U^4$ ($a^4 = 7^4 = 1$ mod $15$)`,
+      `Controlled-$U^8$ ($a^8 = 7^8 = 1$ mod $15$)`
+    ];
+    const stepDescs = [
+      `Apply <span class="operator">controlled-$U$</span> with the first counting qubit as control. The map $U|y\\rangle = |7y \\bmod 15\\rangle$ is applied to the target register when the control is $|1\\rangle$. This begins <span class="ket">entangling</span> the registers.`,
+      `Apply <span class="operator">controlled-$U^2$</span> with the second counting qubit. Since $7^2 = 49 \\equiv 4 \\pmod{15}$, this applies $|y\\rangle \\to |4y \\bmod 15\\rangle$ conditionally.`,
+      `Apply <span class="operator">controlled-$U^4$</span> with the third counting qubit. Since $7^4 = 2401 \\equiv 1 \\pmod{15}$, this is actually the <span class="amplitude">identity</span> &mdash; the state is unchanged.`,
+      `Apply <span class="operator">controlled-$U^8$</span> with the fourth counting qubit. Since $7^8 \\equiv 1 \\pmod{15}$, this is again the <span class="amplitude">identity</span>. The full <span class="ket">entangled state</span> is now $\\frac{1}{4}\\sum_{x=0}^{15}|x\\rangle|7^x \\bmod 15\\rangle$.`
+    ];
+    const stepFormulas = [
+      '|\\psi_2\\rangle = \\frac{1}{4}\\sum_{x} |x\\rangle |7^{x_0} \\bmod 15\\rangle',
+      '|\\psi_3\\rangle = \\frac{1}{4}\\sum_{x} |x\\rangle |7^{x_0 + 2x_1} \\bmod 15\\rangle',
+      '|\\psi_4\\rangle = \\frac{1}{4}\\sum_{x} |x\\rangle |7^{x_0+2x_1+4x_2} \\bmod 15\\rangle',
+      '|\\psi_5\\rangle = \\frac{1}{4}\\sum_{x=0}^{15} |x\\rangle |7^x \\bmod 15\\rangle'
+    ];
+
+    steps.push({
+      label: stepLabels[k],
+      description: stepDescs[k],
+      formula: stepFormulas[k],
+      ...getCountingProbs(state)
+    });
+  }
+
+  // Step 6: Inverse QFT on counting register
+  // Apply QFT^-1 to qubits 0..n-1
+  // QFT^-1 |j> = (1/sqrt(Q)) sum_k exp(-2*pi*i*jk/Q) |k>
+  // We implement by: SWAP qubits, then apply standard QFT circuit (H + controlled-phase)
+  // For simplicity, apply the full matrix transformation:
+  {
+    const newState = new Array(dim).fill(null).map(() => ({ re: 0, im: 0 }));
+    for (let countOut = 0; countOut < Q; countOut++) {
+      for (let target = 0; target < (1 << m); target++) {
+        let amp = { re: 0, im: 0 };
+        for (let countIn = 0; countIn < Q; countIn++) {
+          const idx = (countIn << m) | target;
+          const angle = -2 * Math.PI * countIn * countOut / Q; // inverse QFT: negative sign
+          const phase = QMath.cExp(angle);
+          amp = QMath.cAdd(amp, QMath.cMul(state[idx], phase));
+        }
+        amp = QMath.cScale(amp, 1 / Math.sqrt(Q));
+        newState[(countOut << m) | target] = amp;
+      }
+    }
+    state = newState;
+  }
+
+  steps.push({
+    label: 'Inverse QFT',
+    description: `Apply <span class="operator">$\\text{QFT}^{-1}$</span> to the counting register. The periodicity in the entangled state (period $r = 4$) causes <span class="amplitude">constructive interference</span> at measurement outcomes that are multiples of $Q/r = 16/4 = 4$. The amplitudes now concentrate at <span class="ket">$|0\\rangle, |4\\rangle, |8\\rangle, |12\\rangle$</span>.`,
+    formula: '|\\psi_6\\rangle = \\text{QFT}^{-1}\\!\\left(\\frac{1}{4}\\sum_{x}|x\\rangle\\right) \\otimes |\\text{work}\\rangle',
+    ...getCountingProbs(state)
+  });
+
+  // Step 7: Measurement
+  steps.push({
+    label: 'Measurement',
+    description: `<span class="operator">Measure</span> the counting register. With equal <span class="amplitude">probability $1/4$</span>, we obtain one of <span class="ket">$\\{0, 4, 8, 12\\}$</span>. Each outcome $y$ gives us $y/Q = y/16$, from which <span class="operator">continued fractions</span> can extract $r = 4$.`,
+    formula: '\\text{Outcome } y \\in \\{0, 4, 8, 12\\} \\text{ each with probability } 1/4',
+    ...getCountingProbs(state)
+  });
+
+  return steps;
+}
+
+// ============================================================
+//  AMPLITUDE CHART RENDERER (Canvas)
+// ============================================================
+class AmplitudeChart {
+  constructor(canvas, options = {}) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.probs = new Float64Array(0);
+    this.phases = new Float64Array(0);
+    this.targetProbs = null;
+    this.targetPhases = null;
+    this.animProgress = 1;
+    this.animId = null;
+    this.barLabels = options.barLabels || null;
+    this.maxBarLabel = options.maxBarLabel || 256;
+    this.highlightBars = options.highlightBars || null;
+    this.onClick = options.onClick || null;
+    this._setupHiDPI();
+    this._bindEvents();
+  }
+
+  _setupHiDPI() {
+    const rect = this.canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = rect.width * dpr;
+    this.canvas.height = rect.height * dpr;
+    this.ctx.scale(dpr, dpr);
+    this.width = rect.width;
+    this.height = rect.height;
+  }
+
+  _bindEvents() {
+    this.hoverIdx = -1;
+    this.canvas.addEventListener('mousemove', (e) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const n = this.probs.length;
+      if (n === 0) return;
+      const pad = { left: 45, right: 15, top: 20, bottom: 30 };
+      const barW = (this.width - pad.left - pad.right) / n;
+      const idx = Math.floor((x - pad.left) / barW);
+      if (idx >= 0 && idx < n && idx !== this.hoverIdx) {
+        this.hoverIdx = idx;
+        this.draw();
+      } else if ((idx < 0 || idx >= n) && this.hoverIdx !== -1) {
+        this.hoverIdx = -1;
+        this.draw();
+      }
+    });
+    this.canvas.addEventListener('mouseleave', () => {
+      this.hoverIdx = -1;
+      this.draw();
+    });
+    if (this.onClick) {
+      this.canvas.addEventListener('click', (e) => {
+        if (this.hoverIdx >= 0) this.onClick(this.hoverIdx);
+      });
+    }
+  }
+
+  setData(probs, phases, animate = true) {
+    if (animate && this.probs.length === probs.length) {
+      this.targetProbs = new Float64Array(probs);
+      this.targetPhases = new Float64Array(phases);
+      this.animProgress = 0;
+      if (this.animId) cancelAnimationFrame(this.animId);
+      this._animate();
+    } else {
+      this.probs = new Float64Array(probs);
+      this.phases = new Float64Array(phases);
+      this.targetProbs = null;
+      this.animProgress = 1;
+      this.draw();
+    }
+  }
+
+  _animate() {
+    this.animProgress = Math.min(1, this.animProgress + 0.04);
+    const t = this.animProgress;
+    const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t; // ease in-out quad
+    const n = this.probs.length;
+    const interpProbs = new Float64Array(n);
+    const interpPhases = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      interpProbs[i] = this.probs[i] + (this.targetProbs[i] - this.probs[i]) * ease;
+      interpPhases[i] = this.phases[i] + (this.targetPhases[i] - this.phases[i]) * ease;
+    }
+    this._drawData(interpProbs, interpPhases);
+    if (this.animProgress < 1) {
+      this.animId = requestAnimationFrame(() => this._animate());
+    } else {
+      this.probs = this.targetProbs;
+      this.phases = this.targetPhases;
+      this.targetProbs = null;
+      this.draw();
+    }
+  }
+
+  draw() {
+    this._drawData(this.probs, this.phases);
+  }
+
+  _drawData(probs, phases) {
+    const ctx = this.ctx;
+    const w = this.width, h = this.height;
+    ctx.clearRect(0, 0, w, h);
+    // Subtle background tint
+    ctx.fillStyle = 'rgba(17, 24, 39, 0.6)';
+    ctx.fillRect(0, 0, w, h);
+    const n = probs.length;
+    if (n === 0) return;
+
+    const pad = { left: 45, right: 15, top: 20, bottom: 30 };
+    const plotW = w - pad.left - pad.right;
+    const plotH = h - pad.top - pad.bottom;
+    const barW = plotW / n;
+    const gap = Math.max(1, barW * 0.15);
+
+    // Find max prob for scaling
+    let maxP = 0;
+    for (let i = 0; i < n; i++) maxP = Math.max(maxP, probs[i]);
+    if (maxP < 0.001) maxP = 1;
+    const scale = plotH / (maxP * 1.15);
+
+    // Draw axes
+    ctx.strokeStyle = '#2a3550';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top);
+    ctx.lineTo(pad.left, h - pad.bottom);
+    ctx.lineTo(w - pad.right, h - pad.bottom);
+    ctx.stroke();
+
+    // Y-axis labels
+    ctx.fillStyle = '#8892a8';
+    ctx.font = '11px Inter, sans-serif';
+    ctx.textAlign = 'right';
+    const yTicks = [0, maxP / 2, maxP];
+    for (const val of yTicks) {
+      const y = h - pad.bottom - val * scale;
+      ctx.fillText(val.toFixed(2), pad.left - 5, y + 4);
+      if (val > 0) {
+        ctx.strokeStyle = 'rgba(42, 53, 80, 0.5)';
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(w - pad.right, y);
+        ctx.stroke();
+        ctx.strokeStyle = '#2a3550';
+      }
+    }
+
+    // Draw bars
+    for (let i = 0; i < n; i++) {
+      const x = pad.left + i * barW;
+      const barH = probs[i] * scale;
+      const phase = phases[i];
+      const bx = x + gap / 2;
+      const bw = barW - gap;
+      const by = h - pad.bottom - barH;
+
+      if (this.interferenceMode && this.peakIndices) {
+        const isPeak = this.peakIndices.has(i);
+        if (isPeak && probs[i] > 0.005) {
+          // Constructive: cyan-to-indigo gradient with glow
+          const grad = ctx.createLinearGradient(bx, by, bx, h - pad.bottom);
+          grad.addColorStop(0, '#6366f1');
+          grad.addColorStop(1, '#22d3ee');
+          ctx.fillStyle = grad;
+          ctx.shadowColor = 'rgba(34, 211, 238, 0.5)';
+          ctx.shadowBlur = 10;
+          ctx.fillRect(bx, by, bw, barH);
+          ctx.shadowBlur = 0;
+        } else if (probs[i] < 0.001) {
+          // Destructive: dim red
+          ctx.fillStyle = 'rgba(248, 113, 113, 0.25)';
+          ctx.fillRect(bx, by, bw, barH);
+        } else {
+          // Neutral: standard phase
+          const hue = ((phase + Math.PI) / (2 * Math.PI)) * 360;
+          ctx.fillStyle = `hsla(${hue}, 80%, 60%, 0.6)`;
+          ctx.fillRect(bx, by, bw, barH);
+        }
+      } else {
+        // Standard phase-based coloring
+        const hue = ((phase + Math.PI) / (2 * Math.PI)) * 360;
+        const isHighlight = this.highlightBars ? this.highlightBars.includes(i) : false;
+        const alpha = (probs[i] < 0.001 && !isHighlight) ? 0.3 : 1;
+        ctx.fillStyle = `hsla(${hue}, 80%, 60%, ${alpha})`;
+        ctx.fillRect(bx, by, bw, barH);
+      }
+
+      // Hover effect
+      if (i === this.hoverIdx) {
+        ctx.fillStyle = 'rgba(99, 102, 241, 0.15)';
+        ctx.fillRect(x, pad.top, barW, plotH);
+        // Tooltip
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = 'bold 11px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`|${i}⟩: P=${probs[i].toFixed(4)}`, x + barW / 2, pad.top - 3);
+      }
+
+      // X-axis labels (only show some if too many)
+      if (n <= 32 || i % Math.ceil(n / 32) === 0) {
+        ctx.fillStyle = '#8892a8';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        const label = this.barLabels ? this.barLabels[i] : i;
+        ctx.fillText(label, x + barW / 2, h - pad.bottom + 14);
+      }
+    }
+
+    // Y-axis title
+    ctx.save();
+    ctx.translate(12, h / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#8892a8';
+    ctx.font = '11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Probability', 0, 0);
+    ctx.restore();
+  }
+
+  resize() {
+    this._setupHiDPI();
+    this.draw();
+  }
+}
+
+// ============================================================
+//  CIRCUIT RENDERER (SVG)
+// ============================================================
+function renderCircuitSVG(svgEl, activeStep) {
+  const wireSpacing = 35;
+  const gateSpacing = 80;
+  const margin = { left: 75, top: 30, right: 50, bottom: 10 };
+  const gateW = 52, gateH = 30;
+  const numWires = 5; // 4 counting + 1 work (collapsed)
+  const wireLabels = ['|q₀⟩', '|q₁⟩', '|q₂⟩', '|q₃⟩', '|work⟩'];
+
+  // Gate definitions: each step corresponds to circuit columns
+  // Steps: 0=init, 1=H, 2=CU1, 3=CU2, 4=CU4, 5=CU8, 6=QFT^-1, 7=Measure
+  const gateColumns = [
+    // col 0: H gates on wires 0-3
+    { type: 'H', wires: [0] },
+    { type: 'H', wires: [1] },
+    { type: 'H', wires: [2] },
+    { type: 'H', wires: [3] },
+    // col 1: CU^1 (control=0, target=4)
+    { type: 'CU', control: 0, target: 4, label: 'U' },
+    // col 2: CU^2
+    { type: 'CU', control: 1, target: 4, label: 'U²' },
+    // col 3: CU^4
+    { type: 'CU', control: 2, target: 4, label: 'U⁴' },
+    // col 4: CU^8
+    { type: 'CU', control: 3, target: 4, label: 'U⁸' },
+    // col 5: QFT^-1 (spanning wires 0-3)
+    { type: 'MULTI', wires: [0, 1, 2, 3], label: 'QFT⁻¹' },
+    // col 6: Measurement on wires 0-3
+    { type: 'M', wires: [0, 1, 2, 3] },
+  ];
+
+  // Map algorithm step -> which gate columns are "completed" / "active"
+  // step 0: nothing active (init), step 1: cols 0-3 (H), step 2: col 4 (CU^1), etc.
+  const stepToActiveCol = [
+    -1,   // step 0: init
+    0,    // step 1: H (cols 0-3 are one logical step)
+    4,    // step 2: CU^1
+    5,    // step 3: CU^2
+    6,    // step 4: CU^4
+    7,    // step 5: CU^8
+    8,    // step 6: QFT^-1
+    9,    // step 7: Measurement
+  ];
+
+  // Logical groupings
+  const colToLogicalStep = [1,1,1,1, 2, 3, 4, 5, 6, 7];
+
+  const activeCol = stepToActiveCol[activeStep];
+  const numCols = 7; // visual columns
+  const colPositions = [];
+  // Compute visual column positions
+  const colWidths = [gateSpacing * 0.7, gateSpacing, gateSpacing, gateSpacing, gateSpacing, gateSpacing * 1.2, gateSpacing * 0.7];
+  let cx = margin.left;
+  for (let i = 0; i < numCols; i++) {
+    cx += colWidths[i];
+    colPositions.push(cx);
+  }
+
+  const svgWidth = cx + margin.right;
+  const svgHeight = margin.top + (numWires - 1) * wireSpacing + margin.bottom + 20;
+  svgEl.setAttribute('width', svgWidth);
+  svgEl.setAttribute('height', svgHeight);
+  svgEl.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+  svgEl.innerHTML = '';
+
+  const ns = 'http://www.w3.org/2000/svg';
+
+  function wireY(i) { return margin.top + i * wireSpacing; }
+
+  // Draw wires
+  for (let i = 0; i < numWires; i++) {
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', margin.left - 5);
+    line.setAttribute('y1', wireY(i));
+    line.setAttribute('x2', svgWidth - margin.right + 10);
+    line.setAttribute('y2', wireY(i));
+    line.setAttribute('class', 'wire-line');
+    svgEl.appendChild(line);
+
+    // Labels
+    const text = document.createElementNS(ns, 'text');
+    text.setAttribute('x', margin.left - 15);
+    text.setAttribute('y', wireY(i) + 5);
+    text.setAttribute('text-anchor', 'end');
+    text.setAttribute('class', 'wire-label');
+    text.textContent = wireLabels[i];
+    svgEl.appendChild(text);
+  }
+
+  // Helper to get gate class
+  function gateClass(logicalStep) {
+    const currentLogical = colToLogicalStep[activeCol] || 0;
+    if (activeStep === 0) return 'pending';
+    if (logicalStep < currentLogical) return 'completed';
+    if (logicalStep === currentLogical) return 'active';
+    return 'pending';
+  }
+
+  // Draw gates
+  // Visual col 0: H gates
+  for (let w = 0; w < 4; w++) {
+    const cls = gateClass(1);
+    const rect = document.createElementNS(ns, 'rect');
+    const x = colPositions[0] - gateW / 2;
+    const y = wireY(w) - gateH / 2;
+    rect.setAttribute('x', x);
+    rect.setAttribute('y', y);
+    rect.setAttribute('width', gateW * 0.65);
+    rect.setAttribute('height', gateH);
+    rect.setAttribute('class', `gate-rect ${cls}`);
+    svgEl.appendChild(rect);
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', x + gateW * 0.325);
+    t.setAttribute('y', y + gateH / 2 + 5);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('class', `gate-text ${cls === 'pending' ? 'pending' : ''}`);
+    t.textContent = 'H';
+    svgEl.appendChild(t);
+  }
+
+  // Visual cols 1-4: Controlled-U gates
+  const cuLabels = ['U', 'U²', 'U⁴', 'U⁸'];
+  for (let k = 0; k < 4; k++) {
+    const cls = gateClass(2 + k);
+    const colX = colPositions[1 + k];
+
+    // Control dot
+    const dot = document.createElementNS(ns, 'circle');
+    dot.setAttribute('cx', colX);
+    dot.setAttribute('cy', wireY(k));
+    dot.setAttribute('r', 5);
+    dot.setAttribute('class', cls === 'active' ? 'control-dot' : '');
+    dot.setAttribute('fill', cls === 'pending' ? '#2a3550' : cls === 'completed' ? '#4a5568' : '#6366f1');
+    svgEl.appendChild(dot);
+
+    // Vertical line
+    const vline = document.createElementNS(ns, 'line');
+    vline.setAttribute('x1', colX);
+    vline.setAttribute('y1', wireY(k));
+    vline.setAttribute('x2', colX);
+    vline.setAttribute('y2', wireY(4));
+    vline.setAttribute('stroke', cls === 'pending' ? '#2a3550' : cls === 'completed' ? '#4a5568' : '#6366f1');
+    vline.setAttribute('stroke-width', cls === 'active' ? 2 : 1.5);
+    svgEl.appendChild(vline);
+
+    // Target gate box
+    const rect = document.createElementNS(ns, 'rect');
+    rect.setAttribute('x', colX - gateW / 2);
+    rect.setAttribute('y', wireY(4) - gateH / 2);
+    rect.setAttribute('width', gateW);
+    rect.setAttribute('height', gateH);
+    rect.setAttribute('class', `gate-rect ${cls}`);
+    svgEl.appendChild(rect);
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', colX);
+    t.setAttribute('y', wireY(4) + 5);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('class', `gate-text ${cls === 'pending' ? 'pending' : ''}`);
+    t.textContent = cuLabels[k];
+    svgEl.appendChild(t);
+  }
+
+  // Visual col 5: QFT^-1
+  {
+    const cls = gateClass(6);
+    const colX = colPositions[5];
+    const topY = wireY(0) - gateH / 2;
+    const botY = wireY(3) + gateH / 2;
+    const rect = document.createElementNS(ns, 'rect');
+    rect.setAttribute('x', colX - gateW * 0.65);
+    rect.setAttribute('y', topY);
+    rect.setAttribute('width', gateW * 1.3);
+    rect.setAttribute('height', botY - topY);
+    rect.setAttribute('class', `gate-rect ${cls}`);
+    svgEl.appendChild(rect);
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', colX);
+    t.setAttribute('y', (topY + botY) / 2 + 5);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('class', `gate-text ${cls === 'pending' ? 'pending' : ''}`);
+    t.textContent = 'QFT⁻¹';
+    svgEl.appendChild(t);
+  }
+
+  // Visual col 6: Measurement
+  {
+    const cls = gateClass(7);
+    for (let w = 0; w < 4; w++) {
+      const colX = colPositions[6];
+      const cy = wireY(w);
+      // Meter symbol: arc + arrow
+      const arc = document.createElementNS(ns, 'path');
+      const r = 10;
+      arc.setAttribute('d', `M ${colX-r} ${cy+3} A ${r} ${r} 0 0 1 ${colX+r} ${cy+3}`);
+      arc.setAttribute('class', 'meter-path');
+      arc.setAttribute('stroke', cls === 'pending' ? '#2a3550' : cls === 'completed' ? '#4a5568' : '#f87171');
+      svgEl.appendChild(arc);
+      // Arrow
+      const arrow = document.createElementNS(ns, 'line');
+      arrow.setAttribute('x1', colX);
+      arrow.setAttribute('y1', cy + 3);
+      arrow.setAttribute('x2', colX + 6);
+      arrow.setAttribute('y2', cy - 8);
+      arrow.setAttribute('stroke', cls === 'pending' ? '#2a3550' : cls === 'completed' ? '#4a5568' : '#f87171');
+      arrow.setAttribute('stroke-width', 2);
+      svgEl.appendChild(arrow);
+    }
+  }
+}
+
+// ============================================================
+//  QFT MATRIX VISUALIZATION
+// ============================================================
+function renderQFTMatrix(container, Q) {
+  container.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'qft-matrix-grid';
+  grid.style.gridTemplateColumns = `repeat(${Q}, 1fr)`;
+
+  for (let j = 0; j < Q; j++) {
+    for (let k = 0; k < Q; k++) {
+      const angle = (2 * Math.PI * j * k) / Q;
+      const hue = ((angle % (2 * Math.PI)) / (2 * Math.PI)) * 360;
+      const cell = document.createElement('div');
+      cell.className = 'qft-cell';
+      cell.style.background = `hsl(${hue}, 80%, 50%)`;
+
+      const tooltip = document.createElement('span');
+      tooltip.className = 'qft-cell-tooltip';
+      const expStr = (j * k) % Q;
+      tooltip.textContent = `ω^${j*k} (${j},${k})`;
+      cell.appendChild(tooltip);
+      grid.appendChild(cell);
+    }
+  }
+  container.appendChild(grid);
+
+  // Row/col headers would clutter; tooltip is enough
+}
+
+// ============================================================
+//  QFT DEMO (input -> output)
+// ============================================================
+function computeQFT(inputAmps) {
+  const Q = inputAmps.length;
+  const output = new Array(Q);
+  for (let k = 0; k < Q; k++) {
+    let re = 0, im = 0;
+    for (let j = 0; j < Q; j++) {
+      const angle = 2 * Math.PI * j * k / Q;
+      const cos = Math.cos(angle), sin = Math.sin(angle);
+      re += inputAmps[j].re * cos - inputAmps[j].im * sin;
+      im += inputAmps[j].re * sin + inputAmps[j].im * cos;
+    }
+    output[k] = { re: re / Math.sqrt(Q), im: im / Math.sqrt(Q) };
+  }
+  return output;
+}
+
+function getPresetState(preset, Q) {
+  const state = new Array(Q).fill(null).map(() => QMath.complex(0, 0));
+  switch (preset) {
+    case 'uniform':
+      for (let i = 0; i < Q; i++) state[i] = QMath.complex(1 / Math.sqrt(Q), 0);
+      break;
+    case 'period2':
+      for (let i = 0; i < Q; i += 2) state[i] = QMath.complex(1 / Math.sqrt(Q / 2), 0);
+      break;
+    case 'period4':
+      for (let i = 0; i < Q; i += 4) state[i] = QMath.complex(1 / Math.sqrt(Q / 4), 0);
+      break;
+    case 'delta':
+      state[3] = QMath.complex(1, 0);
+      break;
+  }
+  return state;
+}
+
+// ============================================================
+//  CONTINUED FRACTIONS VISUALIZER
+// ============================================================
+function runContinuedFractions(y, Q, N, a, container) {
+  container.innerHTML = '';
+
+  if (y === 0) {
+    const div = document.createElement('div');
+    div.className = 'cf-step visible';
+    div.innerHTML = `<span class="cf-step-num">—</span> Measured $y = 0$. This gives $y/Q = 0$, which provides no information about $r$. We would need to re-run the algorithm.`;
+    container.appendChild(div);
+    renderMathIn(container);
+    return;
+  }
+
+  const fraction = y / Q;
+  const { coeffs, convergents } = QMath.continuedFractionConvergents(y, Q, Q);
+
+  // Step: show the fraction
+  addCFStep(container, 0, `We measured $y = ${y}$ from $Q = ${Q}$. Compute $y/Q = ${y}/${Q} = ${fraction.toFixed(6)}\\ldots$`);
+
+  // Step: show CF expansion
+  addCFStep(container, 1, `Continued fraction expansion: $${fraction.toFixed(6)} = [${coeffs.join('; ')}]$`);
+
+  // Steps: show each convergent
+  let foundR = -1;
+  for (let i = 0; i < convergents.length; i++) {
+    const c = convergents[i];
+    if (c.q <= 0) continue;
+    const verify = QMath.modPow(a, c.q, N);
+    const isValid = verify === 1 && c.q > 0;
+    const cls = isValid ? 'success' : '';
+    addCFStep(container, i + 2,
+      `Convergent $${i}$: $${c.p}/${c.q}$` +
+      (isValid ? ` &nbsp;&mdash;&nbsp; Verify: $${a}^{${c.q}} \\bmod ${N} = ${verify}$ &#10003;` :
+        ` &nbsp;&mdash;&nbsp; $${a}^{${c.q}} \\bmod ${N} = ${verify} \\neq 1$`),
+      cls
+    );
+    if (isValid && foundR < 0) foundR = c.q;
+  }
+
+  // Final result — solution reveal box
+  if (foundR > 0) {
+    const box = document.createElement('div');
+    box.className = 'solution-box';
+    box.style.opacity = '0';
+    let detailsHTML = '';
+    if (foundR % 2 === 0) {
+      const f1 = QMath.gcd(QMath.modPow(a, foundR/2, N) - 1, N);
+      const f2 = QMath.gcd(QMath.modPow(a, foundR/2, N) + 1, N);
+      detailsHTML = `<div class="solution-details">$\\gcd(${a}^{${foundR/2}} - 1,\\; ${N}) = ${f1}$ &nbsp;&bull;&nbsp; $\\gcd(${a}^{${foundR/2}} + 1,\\; ${N}) = ${f2}$</div>`;
+    } else {
+      detailsHTML = `<div class="solution-details">$r$ is odd &mdash; re-run with a different $a$</div>`;
+    }
+    box.innerHTML = `<div class="solution-label">Period Found</div><div class="solution-value">r = ${foundR}</div>${detailsHTML}`;
+    container.appendChild(box);
+  }
+
+  renderMathIn(container);
+
+  // Animate visibility
+  const cfSteps = container.querySelectorAll('.cf-step');
+  cfSteps.forEach((step, i) => {
+    setTimeout(() => step.classList.add('visible'), i * 350);
+  });
+  // Reveal solution box after all CF steps
+  const solBox = container.querySelector('.solution-box');
+  if (solBox) {
+    setTimeout(() => { solBox.style.opacity = '1'; }, cfSteps.length * 350);
+  }
+}
+
+function addCFStep(container, num, html, extraClass = '') {
+  const div = document.createElement('div');
+  div.className = `cf-step ${extraClass}`;
+  div.innerHTML = `<span class="cf-step-num">${num}</span><span>${html}</span>`;
+  container.appendChild(div);
+}
+
+// ============================================================
+//  KATEX HELPER
+// ============================================================
+function renderMathIn(el) {
+  if (typeof renderMathInElement === 'function') {
+    renderMathInElement(el, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$', right: '$', display: false }
+      ],
+      throwOnError: false
+    });
+  }
+}
+
+// ============================================================
+//  PHASE LEGEND CANVAS
+// ============================================================
+function drawPhaseLegend(canvas) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  for (let x = 0; x < w; x++) {
+    const hue = (x / w) * 360;
+    ctx.fillStyle = `hsl(${hue}, 72%, 55%)`;
+    ctx.fillRect(x, 0, 1, h);
+  }
+}
+
+// ============================================================
+//  APPLICATION CONTROLLER
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  let initialized = false;
+  // Wait for KaTeX
+  const initInterval = setInterval(() => {
+    if (typeof renderMathInElement === 'function') {
+      clearInterval(initInterval);
+      if (!initialized) { initialized = true; initApp(); }
+    }
+  }, 50);
+
+  setTimeout(() => {
+    clearInterval(initInterval);
+    if (!initialized) { initialized = true; initApp(); }
+  }, 3000);
+});
+
+function initApp() {
+  // Render all static math
+  renderMathIn(document.body);
+
+  // Phase legend
+  drawPhaseLegend(document.getElementById('phase-legend-canvas'));
+
+  // ---- Navigation highlighting ----
+  const navLinks = document.querySelectorAll('nav a');
+  const sections = document.querySelectorAll('section');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const link = document.querySelector(`nav a[href="#${entry.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -60% 0px' });
+  sections.forEach(s => observer.observe(s));
+
+  // ---- Scroll progress bar ----
+  const scrollProgress = document.getElementById('scroll-progress');
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const percent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    scrollProgress.style.width = percent + '%';
+  }, { passive: true });
+
+  // ---- Section 1: Problem Explorer ----
+  setupProblemExplorer();
+
+  // ---- Section 3: Circuit Walkthrough ----
+  setupCircuitWalkthrough();
+
+  // ---- Section 4: QFT Visualizer ----
+  setupQFTVisualizer();
+
+  // ---- Section 5: Parameter Explorer ----
+  setupParameterExplorer();
+
+  // ---- Section 6: Continued Fractions ----
+  setupContinuedFractions();
+
+  // ---- Window resize ----
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      if (window._amplitudeChart) window._amplitudeChart.resize();
+      if (window._qftInputChart) window._qftInputChart.resize();
+      if (window._qftOutputChart) window._qftOutputChart.resize();
+      if (window._expProbChart) window._expProbChart.resize();
+    }, 150);
+  });
+
+  // ---- Scroll-triggered animations ----
+  const animObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Summary table rows
+        const rows = entry.target.querySelectorAll('tbody tr');
+        rows.forEach((row, i) => {
+          row.style.animation = `slideIn 0.4s ease-out ${i * 0.08}s both`;
+        });
+        // Complexity bars
+        const fills = entry.target.querySelectorAll('.complexity-fill');
+        fills.forEach(fill => {
+          fill.style.width = fill.dataset.width + '%';
+        });
+        animObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+  const summaryPanel = document.querySelector('#summary .interactive-panel');
+  if (summaryPanel) animObserver.observe(summaryPanel);
+  const complexityBars = document.querySelector('.complexity-bars');
+  if (complexityBars) animObserver.observe(complexityBars);
+}
+
+// ---- Problem Explorer ----
+function setupProblemExplorer() {
+  const btnCompute = document.getElementById('prob-compute');
+  const inputN = document.getElementById('prob-N');
+  const inputA = document.getElementById('prob-a');
+  const infoEl = document.getElementById('prob-info');
+  const tableWrap = document.getElementById('prob-table-wrap');
+
+  function compute() {
+    const N = parseInt(inputN.value);
+    const a = parseInt(inputA.value);
+    if (N < 2 || a < 2 || a >= N) {
+      infoEl.style.display = 'block';
+      infoEl.className = 'alert-banner alert-warning';
+      infoEl.textContent = 'Please enter valid values: N ≥ 2, 2 ≤ a < N.';
+      tableWrap.innerHTML = '';
+      return;
+    }
+
+    const g = QMath.gcd(a, N);
+    if (g > 1) {
+      infoEl.style.display = 'block';
+      infoEl.className = 'alert-banner alert-success';
+      infoEl.innerHTML = `Lucky! $\\gcd(${a}, ${N}) = ${g}$, so ${g} is already a factor of ${N}. No quantum computation needed!`;
+      renderMathIn(infoEl);
+      tableWrap.innerHTML = '';
+      return;
+    }
+
+    // Compute f(x) values
+    const r = QMath.findPeriod(a, N);
+    const numValues = Math.max(r * 2, 16);
+    let html = '<table><thead><tr><th>$x$</th>';
+    for (let x = 0; x < numValues; x++) html += `<th>${x}</th>`;
+    html += '</tr></thead><tbody><tr><td><strong>$f(x)$</strong></td>';
+    for (let x = 0; x < numValues; x++) {
+      const val = QMath.modPow(a, x, N);
+      const cls = x % r === 0 ? ' class="highlight-row"' : '';
+      html += `<td${cls}>${val}</td>`;
+    }
+    html += '</tr></tbody></table>';
+    tableWrap.innerHTML = html;
+
+    // Staggered slide-in for table cells
+    const cells = tableWrap.querySelectorAll('th, td');
+    cells.forEach((cell, i) => {
+      cell.style.animation = `slideIn 0.35s ease-out ${i * 0.03}s both`;
+    });
+
+    infoEl.style.display = 'block';
+    infoEl.className = 'alert-banner alert-info';
+    infoEl.innerHTML = `Period: $r = ${r}$ (the pattern $${a}^x \\bmod ${N}$ repeats every ${r} steps). Highlighted columns mark $x$ that are multiples of $r$.`;
+    renderMathIn(infoEl);
+    renderMathIn(tableWrap);
+  }
+
+  btnCompute.addEventListener('click', compute);
+  compute(); // initial
+}
+
+// ---- Circuit Walkthrough ----
+function setupCircuitWalkthrough() {
+  const steps = computeWalkthroughSteps();
+  let currentStep = 0;
+  const numSteps = steps.length;
+
+  const svgEl = document.getElementById('circuit-svg');
+  const stepLabel = document.getElementById('step-label');
+  const descEl = document.getElementById('step-description');
+  const timelineEl = document.getElementById('steps-timeline');
+  const canvas = document.getElementById('amplitude-canvas');
+  const chart = new AmplitudeChart(canvas);
+  window._amplitudeChart = chart;
+
+  // Build qubit orbs
+  const qubitViz = document.getElementById('qubit-viz');
+  const qubitLabels = ['q\u2083', 'q\u2082', 'q\u2081', 'q\u2080', 'work'];
+  const orbEls = [];
+  const stateLabelEls = [];
+  qubitLabels.forEach(label => {
+    const col = document.createElement('div');
+    col.className = 'qubit-col';
+    const orb = document.createElement('div');
+    orb.className = 'qubit-orb state-zero';
+    const lbl = document.createElement('div');
+    lbl.className = 'qubit-label';
+    lbl.textContent = label;
+    const stLbl = document.createElement('div');
+    stLbl.className = 'qubit-state-label';
+    stLbl.textContent = '|0\u27E9';
+    col.appendChild(orb);
+    col.appendChild(lbl);
+    col.appendChild(stLbl);
+    qubitViz.appendChild(col);
+    orbEls.push(orb);
+    stateLabelEls.push(stLbl);
+  });
+
+  function updateQubitViz(step) {
+    // Step 0: all zero
+    // Step 1: counting = super, work = zero
+    // Steps 2-5: all entangled
+    // Step 6: counting = super (QFT output), work = entangled
+    // Step 7: all measured
+    const states = ['state-zero', 'state-super', 'state-entangled', 'state-measured'];
+    const stateLabelsMap = { 'state-zero': '|0\u27E9', 'state-super': '|+\u27E9', 'state-entangled': '\u27E8ent\u27E9', 'state-measured': '|y\u27E9' };
+    let countingState, workState;
+    if (step === 0) { countingState = 'state-zero'; workState = 'state-zero'; }
+    else if (step === 1) { countingState = 'state-super'; workState = 'state-zero'; }
+    else if (step <= 5) { countingState = 'state-entangled'; workState = 'state-entangled'; }
+    else if (step === 6) { countingState = 'state-super'; workState = 'state-entangled'; }
+    else { countingState = 'state-measured'; workState = 'state-measured'; }
+
+    for (let i = 0; i < 4; i++) {
+      orbEls[i].className = 'qubit-orb ' + countingState;
+      stateLabelEls[i].textContent = stateLabelsMap[countingState];
+    }
+    orbEls[4].className = 'qubit-orb ' + workState;
+    stateLabelEls[4].textContent = stateLabelsMap[workState];
+  }
+
+  // Create step timeline buttons
+  const stepBtnLabels = ['Init', 'Hadamard', 'CU', 'CU\u00B2', 'CU\u2074', 'CU\u2078', 'QFT\u207B\u00B9', 'Measure'];
+  for (let i = 0; i < numSteps; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'step-btn';
+    btn.dataset.step = i;
+    btn.innerHTML = `<span class="step-num">${i}</span>${stepBtnLabels[i]}`;
+    btn.addEventListener('click', () => { currentStep = i; updateStep(); });
+    timelineEl.appendChild(btn);
+  }
+
+  function updateStep() {
+    const step = steps[currentStep];
+
+    // Immediate updates (these have their own animations)
+    renderCircuitSVG(svgEl, currentStep);
+    // Set interference coloring for QFT/Measure steps
+    const isInterference = currentStep >= 6;
+    if (isInterference) {
+      chart.interferenceMode = true;
+      chart.peakIndices = new Set([0, 4, 8, 12]); // Q/r multiples for N=15, a=7, r=4
+    } else {
+      chart.interferenceMode = false;
+      chart.peakIndices = null;
+    }
+    // Toggle chart legends
+    document.getElementById('phase-legend').style.display = isInterference ? 'none' : '';
+    document.getElementById('interference-legend').style.display = isInterference ? '' : 'none';
+    chart.setData(step.probs, step.phases, true);
+    updateQubitViz(currentStep);
+
+    // Update timeline buttons
+    timelineEl.querySelectorAll('.step-btn').forEach((btn, i) => {
+      btn.classList.remove('active', 'completed');
+      if (i < currentStep) btn.classList.add('completed');
+      if (i === currentStep) btn.classList.add('active');
+    });
+
+    // Button states
+    document.getElementById('step-prev').disabled = currentStep === 0;
+    document.getElementById('step-next').disabled = currentStep === numSteps - 1;
+
+    // Fade text content
+    stepLabel.classList.add('fading');
+    descEl.classList.add('fading');
+
+    setTimeout(() => {
+      stepLabel.innerHTML = `Step ${currentStep}: ${step.label}`;
+      renderMathIn(stepLabel);
+
+      let descHTML = `<p>${step.description}</p>`;
+      if (step.formula) descHTML += `<div class="math-callout">$$${step.formula}$$</div>`;
+      descEl.innerHTML = descHTML;
+      renderMathIn(descEl);
+
+      stepLabel.classList.remove('fading');
+      descEl.classList.remove('fading');
+    }, 250);
+  }
+
+  document.getElementById('step-prev').addEventListener('click', () => {
+    if (currentStep > 0) { currentStep--; updateStep(); }
+  });
+  document.getElementById('step-next').addEventListener('click', () => {
+    if (currentStep < numSteps - 1) { currentStep++; updateStep(); }
+  });
+
+  // Auto-play
+  let playing = false;
+  let playTimer = null;
+  let playSpeed = 1500;
+  const playBtn = document.getElementById('step-play');
+
+  function startPlay() {
+    playing = true;
+    playBtn.innerHTML = '&#9646;&#9646; Pause';
+    playBtn.classList.remove('btn-primary');
+    playBtn.classList.add('btn-accent');
+    advancePlay();
+  }
+
+  function stopPlay() {
+    playing = false;
+    clearTimeout(playTimer);
+    playTimer = null;
+    playBtn.innerHTML = '&#9654; Play';
+    playBtn.classList.remove('btn-accent');
+    playBtn.classList.add('btn-primary');
+  }
+
+  function advancePlay() {
+    if (!playing) return;
+    if (currentStep < numSteps - 1) {
+      currentStep++;
+      updateStep();
+      playTimer = setTimeout(advancePlay, playSpeed);
+    } else {
+      stopPlay();
+    }
+  }
+
+  playBtn.addEventListener('click', () => {
+    if (playing) { stopPlay(); }
+    else {
+      if (currentStep >= numSteps - 1) { currentStep = 0; updateStep(); }
+      startPlay();
+    }
+  });
+
+  document.querySelectorAll('.speed-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      playSpeed = parseInt(btn.dataset.speed);
+    });
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'ArrowLeft' && currentStep > 0) { currentStep--; updateStep(); }
+    if (e.key === 'ArrowRight' && currentStep < numSteps - 1) { currentStep++; updateStep(); }
+    if (e.key === ' ') { e.preventDefault(); playBtn.click(); }
+  });
+
+  updateStep();
+}
+
+// ---- QFT Visualizer ----
+function setupQFTVisualizer() {
+  const Q = 16; // Fixed size for demo
+  const matrixContainer = document.getElementById('qft-matrix-container');
+  const sizeSelect = document.getElementById('qft-size-select');
+
+  sizeSelect.addEventListener('change', () => {
+    renderQFTMatrix(matrixContainer, parseInt(sizeSelect.value));
+  });
+  renderQFTMatrix(matrixContainer, parseInt(sizeSelect.value));
+
+  // QFT input/output demo
+  const inputCanvas = document.getElementById('qft-input-canvas');
+  const outputCanvas = document.getElementById('qft-output-canvas');
+  const inputChart = new AmplitudeChart(inputCanvas);
+  const outputChart = new AmplitudeChart(outputCanvas);
+  window._qftInputChart = inputChart;
+  window._qftOutputChart = outputChart;
+
+  let currentPreset = 'uniform';
+  const presetBtns = document.querySelectorAll('.preset-btn');
+
+  function updateQFTDemo(preset) {
+    currentPreset = preset;
+    presetBtns.forEach(b => b.classList.toggle('active', b.dataset.preset === preset));
+    const inputState = getPresetState(preset, Q);
+    const outputState = computeQFT(inputState);
+
+    const inProbs = new Float64Array(Q);
+    const inPhases = new Float64Array(Q);
+    const outProbs = new Float64Array(Q);
+    const outPhases = new Float64Array(Q);
+    for (let i = 0; i < Q; i++) {
+      inProbs[i] = QMath.cMag2(inputState[i]);
+      inPhases[i] = QMath.cPhase(inputState[i]);
+      outProbs[i] = QMath.cMag2(outputState[i]);
+      outPhases[i] = QMath.cPhase(outputState[i]);
+    }
+
+    inputChart.setData(inProbs, inPhases, true);
+    outputChart.setData(outProbs, outPhases, true);
+  }
+
+  presetBtns.forEach(btn => {
+    btn.addEventListener('click', () => updateQFTDemo(btn.dataset.preset));
+  });
+
+  updateQFTDemo('uniform');
+}
+
+// ---- Parameter Explorer ----
+function setupParameterExplorer() {
+  const selN = document.getElementById('exp-N');
+  const selA = document.getElementById('exp-a');
+  const qubitsRange = document.getElementById('exp-qubits');
+  const qubitsLabel = document.getElementById('exp-qubits-label');
+  const btnRun = document.getElementById('exp-run');
+  const btnMeasure = document.getElementById('exp-measure');
+  const infoEl = document.getElementById('exp-info');
+  const resultsEl = document.getElementById('exp-results');
+  const tableWrap = document.getElementById('exp-table-wrap');
+  const probCanvas = document.getElementById('exp-prob-canvas');
+  const measureResult = document.getElementById('exp-measurement-result');
+
+  let probChart = null;
+  let currentResult = null;
+
+  function populateA() {
+    const N = parseInt(selN.value);
+    selA.innerHTML = '';
+    for (let a = 2; a < N; a++) {
+      if (QMath.gcd(a, N) === 1) {
+        const opt = document.createElement('option');
+        opt.value = a;
+        opt.textContent = a;
+        selA.appendChild(opt);
+      }
+    }
+    // Set sensible defaults
+    const minBits = Math.ceil(Math.log2(N)) * 2;
+    qubitsRange.min = Math.ceil(Math.log2(N)) + 1;
+    qubitsRange.max = 12;
+    if (parseInt(qubitsRange.value) < parseInt(qubitsRange.min)) {
+      qubitsRange.value = Math.max(parseInt(qubitsRange.min), minBits);
+    }
+    qubitsLabel.textContent = qubitsRange.value;
+  }
+
+  selN.addEventListener('change', populateA);
+  qubitsRange.addEventListener('input', () => { qubitsLabel.textContent = qubitsRange.value; });
+  populateA();
+
+  btnRun.addEventListener('click', () => {
+    const N = parseInt(selN.value);
+    const a = parseInt(selA.value);
+    const nQubits = parseInt(qubitsRange.value);
+
+    // Check gcd first
+    const g = QMath.gcd(a, N);
+    if (g > 1) {
+      infoEl.style.display = 'block';
+      infoEl.className = 'alert-banner alert-success';
+      infoEl.innerHTML = `Lucky! $\\gcd(${a}, ${N}) = ${g}$ is a non-trivial factor. No quantum computation needed!`;
+      renderMathIn(infoEl);
+      resultsEl.style.display = 'none';
+      return;
+    }
+
+    const result = computePeriodFindingProbabilities(a, N, nQubits);
+    currentResult = { ...result, a, N, nQubits };
+
+    // Info
+    infoEl.style.display = 'block';
+    infoEl.className = 'alert-banner alert-info';
+    infoEl.innerHTML = `Running with $a = ${a}$, $N = ${N}$, $n = ${nQubits}$ counting qubits ($Q = ${result.Q}$). True period: $r = ${result.r}$. Peaks expected at multiples of $Q/r = ${(result.Q / result.r).toFixed(1)}$.`;
+    renderMathIn(infoEl);
+
+    // Mod exp table
+    const r = result.r;
+    const numVals = Math.min(r * 2 + 2, 30);
+    let html = '<table><thead><tr><th>$x$</th>';
+    for (let x = 0; x < numVals; x++) html += `<th>${x}</th>`;
+    html += '</tr></thead><tbody><tr><td><strong>$a^x \\bmod N$</strong></td>';
+    for (let x = 0; x < numVals; x++) {
+      const val = QMath.modPow(a, x, N);
+      const cls = x % r === 0 ? ' class="highlight-row"' : '';
+      html += `<td${cls}>${val}</td>`;
+    }
+    html += '</tr></tbody></table>';
+    tableWrap.innerHTML = html;
+
+    // Staggered slide-in for table cells
+    const tableCells = tableWrap.querySelectorAll('th, td');
+    tableCells.forEach((cell, i) => {
+      cell.style.animation = `slideIn 0.35s ease-out ${i * 0.03}s both`;
+    });
+
+    renderMathIn(tableWrap);
+
+    // Probability chart
+    if (!probChart) {
+      probChart = new AmplitudeChart(probCanvas);
+      window._expProbChart = probChart;
+    }
+    probChart.setData(result.probs, result.phases, false);
+
+    resultsEl.style.display = 'block';
+    measureResult.style.display = 'none';
+  });
+
+  btnMeasure.addEventListener('click', () => {
+    if (!currentResult) return;
+    const { probs, Q, r, a, N, nQubits } = currentResult;
+
+    // Sample from probability distribution
+    const rand = Math.random();
+    let cumulative = 0;
+    let measured = 0;
+    for (let y = 0; y < Q; y++) {
+      cumulative += probs[y];
+      if (rand < cumulative) { measured = y; break; }
+    }
+
+    measureResult.style.display = 'block';
+    measureResult.innerHTML = '';
+
+    const panel = document.createElement('div');
+    panel.className = 'interactive-panel';
+    panel.innerHTML = `<h3>Measurement Result: $y = ${measured}$</h3>`;
+    measureResult.appendChild(panel);
+
+    // Run continued fractions inside this panel
+    const cfContainer = document.createElement('div');
+    panel.appendChild(cfContainer);
+    runContinuedFractions(measured, Q, N, a, cfContainer);
+    renderMathIn(panel);
+  });
+}
+
+// ---- Particle Background ----
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  const COUNT = 40;
+  const DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function create() {
+    particles = [];
+    for (let i = 0; i < COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  let paused = false;
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < DIST) {
+          ctx.strokeStyle = `rgba(99, 102, 241, ${(1 - d / DIST) * 0.15})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); create(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) requestAnimationFrame(draw);
+  });
+  resize();
+  create();
+  draw();
+})();
+
+// ---- Continued Fractions ----
+function setupContinuedFractions() {
+  const btnRun = document.getElementById('cf-run');
+  const container = document.getElementById('cf-steps-container');
+
+  btnRun.addEventListener('click', () => {
+    const y = parseInt(document.getElementById('cf-y').value);
+    const Q = parseInt(document.getElementById('cf-Q').value);
+    const N = parseInt(document.getElementById('cf-N').value);
+    const a = parseInt(document.getElementById('cf-a').value);
+    runContinuedFractions(y, Q, N, a, container);
+  });
+}
+</script>
+
+<div class="kbd-hint">
+  <kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate steps &nbsp;
+  <kbd>Space</kbd> play/pause
+</div>
+
+
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+</body>
+</html>

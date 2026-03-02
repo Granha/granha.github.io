@@ -1,0 +1,3429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grover's Algorithm — Interactive Explorer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --muted: #9999b0;
+    --accent2: #00c9a7;
+    --negative: #ff6b6b;
+    --positive: #6c63ff;
+    --oracle: #ff9f43;
+    --diffusion: #00c9a7;
+    --radius: 10px;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f5f6fa;
+    --surface: #ffffff;
+    --border: #dde0e8;
+    --text: #1a1d27;
+    --muted: #5a5e70;
+    --accent: #5a52e0;
+    --accent2: #00a88a;
+    --negative: #d94444;
+    --positive: #5a52e0;
+    --oracle: #d98020;
+    --diffusion: #00a88a;
+  }
+
+  :root[data-theme="light"] header {
+    background: linear-gradient(180deg, #eef0f5 0%, var(--bg) 100%);
+  }
+
+  :root[data-theme="light"] .math-block { background: rgba(0,0,0,.04); }
+
+  :root[data-theme="light"] #prob-history-canvas,
+  :root[data-theme="light"] #histogram-canvas,
+  :root[data-theme="light"] #geo-canvas,
+  :root[data-theme="light"] #scaling-canvas { background: rgba(0,0,0,.03); }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  header {
+    text-align: center;
+    padding: 2.5rem 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #14161f 0%, var(--bg) 100%);
+    position: relative;
+  }
+
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #6c63ff, #00c9a7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  header p { color: var(--muted); margin-top: 0.4rem; font-size: 1.05rem; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+
+  /* --- Tabs --- */
+  .tabs {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--bg);
+    padding-top: 0.5rem;
+  }
+
+  .tab-btn {
+    background: none; border: none; color: var(--muted); font-size: 0.95rem;
+    padding: 0.7rem 1.2rem; cursor: pointer; white-space: nowrap;
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+    transition: color .2s, border-color .2s, background .2s;
+    border-radius: 6px 6px 0 0;
+  }
+
+  .tab-btn:hover { color: var(--text); background: rgba(99, 102, 241, 0.04); }
+  .tab-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; background: rgba(99, 102, 241, 0.06); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* --- Cards --- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    transition: border-color 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0.6;
+    transition: opacity 0.3s;
+  }
+
+  .card:hover {
+    border-color: rgba(99, 102, 241, 0.2);
+  }
+
+  .card:hover::before {
+    opacity: 1;
+  }
+
+  .card h2 {
+    font-size: 1.15rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .card h3 { font-size: 1rem; margin-bottom: 0.5rem; color: var(--accent2); }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 100px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .badge-oracle { background: rgba(255,159,67,.15); color: var(--oracle); }
+  .badge-diffusion { background: rgba(0,201,167,.15); color: var(--diffusion); }
+
+  /* --- Controls --- */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .control-group { display: flex; flex-direction: column; gap: 0.3rem; }
+  .control-group label { font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  select, button {
+    font-family: inherit;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    padding: 0.5rem 0.8rem;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+
+  select:hover, button:hover { border-color: var(--accent); }
+
+  button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    padding: 0.55rem 1.3rem;
+    transition: all 0.2s;
+  }
+
+  .btn-primary:hover:not(:disabled) { background: #5a52e0; }
+
+  .btn-secondary {
+    background: transparent;
+    border-color: var(--border);
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(99, 102, 241, 0.06);
+  }
+
+  .btn-secondary:active:not(:disabled) {
+    background: rgba(99, 102, 241, 0.12);
+  }
+
+  .btn-icon {
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; font-size: 1.1rem;
+  }
+
+  .btn-group { display: flex; gap: 0.4rem; align-items: center; }
+
+  /* --- Amplitude chart --- */
+  .chart-container {
+    width: 100%;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+  }
+
+  .chart {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    height: 280px;
+    padding: 0 1rem;
+    position: relative;
+  }
+
+  .chart-zero {
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    border-top: 1px dashed var(--border);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .mean-line {
+    position: absolute;
+    left: 0; right: 0;
+    border-top: 2px dashed var(--accent2);
+    pointer-events: none;
+    z-index: 2;
+    transition: top 0.5s ease;
+    opacity: 0.7;
+  }
+
+  .mean-label {
+    position: absolute;
+    right: 8px;
+    font-size: 0.7rem;
+    color: var(--accent2);
+    font-weight: 600;
+    pointer-events: none;
+    z-index: 2;
+    transition: top 0.5s ease;
+    background: var(--surface);
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+
+  .bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    cursor: default;
+  }
+
+  .bar-wrapper:hover .bar { filter: brightness(1.3); }
+  .bar-wrapper:hover .bar-label { color: var(--text); }
+
+  .bar-area {
+    width: 100%;
+    flex: 1;
+    position: relative;
+  }
+
+  .bar {
+    width: 70%;
+    margin: 0 auto;
+    transition: height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.5s ease;
+    border-radius: 3px 3px 0 0;
+    position: absolute;
+    left: 15%;
+  }
+
+  .bar.positive { bottom: 50%; background: linear-gradient(180deg, var(--accent), #4a42cc); }
+  .bar.negative { top: 50%; background: linear-gradient(0deg, var(--negative), #cc4242); border-radius: 0 0 3px 3px; }
+  .bar.target { background: linear-gradient(180deg, var(--oracle), #cc7a22) !important; }
+  .bar.target.negative { background: linear-gradient(0deg, var(--oracle), #cc7a22) !important; }
+
+  .bar-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    padding-top: 6px;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    white-space: nowrap;
+    transition: color 0.2s;
+  }
+
+  .amp-label {
+    font-size: 0.72rem;
+    color: var(--text);
+    font-weight: 600;
+    padding-bottom: 4px;
+    min-height: 1.4em;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  /* --- Bar glow animation (multi-layer) --- */
+  @keyframes bar-glow {
+    0% { box-shadow: 0 0 0 0 rgba(108,99,255,.7), inset 0 0 4px rgba(108,99,255,.3); }
+    25% { box-shadow: 0 0 10px 4px rgba(108,99,255,.45), inset 0 0 8px rgba(108,99,255,.15); }
+    60% { box-shadow: 0 0 16px 6px rgba(108,99,255,.2), inset 0 0 4px rgba(108,99,255,.05); }
+    100% { box-shadow: 0 0 0 0 rgba(108,99,255,0), inset 0 0 0 rgba(108,99,255,0); }
+  }
+  @keyframes bar-glow-target {
+    0% { box-shadow: 0 0 0 0 rgba(255,159,67,.7), inset 0 0 4px rgba(255,159,67,.4); }
+    25% { box-shadow: 0 0 10px 4px rgba(255,159,67,.45), inset 0 0 8px rgba(255,159,67,.2); }
+    60% { box-shadow: 0 0 16px 6px rgba(255,159,67,.2), inset 0 0 4px rgba(255,159,67,.05); }
+    100% { box-shadow: 0 0 0 0 rgba(255,159,67,0), inset 0 0 0 rgba(255,159,67,0); }
+  }
+  .bar.glow { animation: bar-glow 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .bar.target.glow { animation: bar-glow-target 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+  /* --- Measurement collapse animation --- */
+  @keyframes measurement-flash {
+    0% { filter: brightness(1); box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+    30% { filter: brightness(1.8); box-shadow: 0 0 24px 8px rgba(34, 211, 238, 0.7); }
+    60% { filter: brightness(1.4); box-shadow: 0 0 16px 4px rgba(34, 211, 238, 0.3); }
+    100% { filter: brightness(1.2); box-shadow: 0 0 8px 2px rgba(34, 211, 238, 0.15); }
+  }
+  .bar.measured-winner { animation: measurement-flash 0.7s ease-out forwards; }
+  .bar.measured-loser { transition: opacity 0.6s ease 0.15s; opacity: 0.12; }
+
+  /* --- Stat value update bounce --- */
+  @keyframes stat-bounce {
+    0% { transform: translateY(0); }
+    30% { transform: translateY(-3px); }
+    60% { transform: translateY(1px); }
+    100% { transform: translateY(0); }
+  }
+  .stat-value.bouncing { animation: stat-bounce 0.35s ease-out; }
+
+  /* --- Step flash on chart --- */
+  @keyframes chart-flash {
+    0% { box-shadow: inset 0 0 30px rgba(99, 102, 241, 0.12); }
+    100% { box-shadow: inset 0 0 0 rgba(99, 102, 241, 0); }
+  }
+  .chart.step-flash { animation: chart-flash 0.5s ease-out; }
+
+  /* --- Step info --- */
+  .step-info {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .step-info .info-item {
+    background: rgba(108,99,255,.08);
+    border: 1px solid rgba(108,99,255,.2);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    flex: 1;
+    min-width: 150px;
+  }
+
+  .info-item .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .info-item .value { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+
+  /* --- Circuit --- */
+  .circuit-svg {
+    width: 100%;
+    overflow-x: auto;
+    background: rgba(0,0,0,.2);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin: 0.75rem 0;
+    position: relative;
+  }
+
+  /* --- Math blocks --- */
+  .math-block {
+    background: rgba(0,0,0,.3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 0.75rem 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    overflow-x: auto;
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+
+  .math-block .highlight { color: var(--accent); font-weight: 700; }
+  .math-block .oracle-color { color: var(--oracle); font-weight: 700; }
+  .math-block .diffusion-color { color: var(--diffusion); font-weight: 700; }
+
+  /* --- Theory section --- */
+  .theory-section { margin-bottom: 1.5rem; }
+  .theory-section h3 { color: var(--accent); margin-bottom: 0.5rem; font-size: 1.05rem; }
+  .theory-section p { color: var(--text); margin-bottom: 0.75rem; }
+  .theory-section ul { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+  .theory-section li { margin-bottom: 0.35rem; color: var(--text); }
+
+  .comparison-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  .comparison-table th, .comparison-table td { padding: 0.6rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+  .comparison-table th { color: var(--accent); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  .comparison-table td { font-size: 0.95rem; }
+
+  /* --- Probability display --- */
+  .prob-display {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.5rem;
+    margin: 1rem 0;
+  }
+
+  .prob-item { background: rgba(0,0,0,.2); border-radius: 6px; padding: 0.5rem; text-align: center; }
+  .prob-item .state { font-family: 'Courier New', monospace; font-size: 0.85rem; color: var(--muted); }
+  .prob-item .prob { font-size: 1.1rem; font-weight: 700; }
+  .prob-item.target-prob { border: 1px solid var(--oracle); }
+  .prob-item.target-prob .prob { color: var(--oracle); }
+
+  /* --- Responsive --- */
+  @media (max-width: 700px) {
+    header h1 { font-size: 1.5rem; }
+    .container { padding: 1rem; }
+    .controls { gap: 0.6rem; }
+    .chart { height: 200px; }
+    .geo-layout { flex-direction: column !important; }
+  }
+
+  /* --- Iteration counter --- */
+  .iter-display {
+    text-align: center;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 0.5rem 0;
+    padding: 0.4rem 0.8rem;
+    background: rgba(99, 102, 241, 0.06);
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.2px;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(108,99,255,.3); }
+    50% { box-shadow: 0 0 0 8px rgba(108,99,255,0); }
+  }
+  .pulse { animation: pulse 1s ease; }
+
+  /* --- Speed slider --- */
+  input[type="range"] {
+    -webkit-appearance: none; height: 4px; background: var(--border);
+    border-radius: 2px; outline: none; width: 100px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--accent); cursor: pointer;
+  }
+
+  .legend { display: flex; gap: 1rem; flex-wrap: wrap; margin: 0.5rem 0; font-size: 0.8rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+  .legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+  .footnote { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; font-style: italic; }
+
+  /* --- Over-rotation warning --- */
+  .overrotation-warning { color: var(--negative); font-size: 0.82rem; font-weight: 600; margin-top: 0.3rem; text-align: center; max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease; }
+  #overrotation-warning.visible { max-height: 3em; opacity: 1; }
+
+  /* --- Probability history chart --- */
+  #prob-history-canvas { width: 100%; height: 170px; background: rgba(0,0,0,.2); border-radius: var(--radius); cursor: crosshair; }
+
+  .prob-history-tooltip {
+    position: absolute; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.75rem; color: var(--text);
+    pointer-events: none; z-index: 10; display: none; white-space: nowrap;
+  }
+
+  /* --- Interference explanation --- */
+  .interference-details { margin-top: 0.75rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .interference-details summary { cursor: pointer; padding: 0.5rem 1rem; background: rgba(0,201,167,.06); color: var(--accent2); font-weight: 600; font-size: 0.88rem; list-style: none; }
+  .interference-details summary::-webkit-details-marker { display: none; }
+  .interference-details summary::before { content: '\25B6  '; font-size: 0.7rem; }
+  .interference-details[open] summary::before { content: '\25BC  '; }
+  .interference-details .detail-body { padding: 0.75rem 1rem; font-size: 0.88rem; line-height: 1.65; }
+
+  /* --- Keyboard shortcuts help --- */
+  .shortcuts-hint { position: relative; display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--muted); cursor: help; padding: 0.3rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; }
+  .shortcuts-popup {
+    display: none; position: absolute; bottom: calc(100% + 8px); left: 0;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.75rem 1rem; font-size: 0.78rem; color: var(--text); white-space: nowrap;
+    z-index: 20; box-shadow: 0 4px 20px rgba(0,0,0,.4); line-height: 1.8;
+  }
+  .shortcuts-hint:hover .shortcuts-popup { display: block; }
+  .shortcuts-popup kbd { display: inline-block; background: rgba(108,99,255,.15); border: 1px solid rgba(108,99,255,.3); border-radius: 4px; padding: 0 0.35rem; font-family: 'Courier New', monospace; font-size: 0.75rem; margin-right: 0.3rem; }
+
+  /* --- Circuit tooltip --- */
+  .circuit-tooltip {
+    position: absolute; background: var(--surface); border: 1px solid var(--accent);
+    border-radius: 8px; padding: 0.6rem 0.9rem; font-size: 0.82rem; color: var(--text);
+    max-width: 300px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    pointer-events: none; display: none; line-height: 1.5;
+  }
+  .circuit-tooltip strong { color: var(--accent); }
+
+  /* --- Auto-stop checkbox --- */
+  .auto-stop-label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--muted); cursor: pointer; }
+  .auto-stop-label input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; }
+
+  /* --- Noise badge --- */
+  .noise-badge { display: none; font-size: 0.68rem; padding: 0.1rem 0.4rem; border-radius: 100px; background: rgba(255,107,107,.15); color: var(--negative); font-weight: 600; margin-left: 0.4rem; }
+  .noise-badge.visible { display: inline-block; }
+
+  /* --- Target grid --- */
+  .target-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+  .target-grid .tg-btn { font-size: 0.72rem; padding: 0.2rem 0.45rem; min-width: 0; font-family: 'Courier New', monospace; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .target-grid .tg-btn:hover { border-color: var(--oracle); color: var(--text); }
+  .target-grid .tg-btn.active { background: var(--oracle); color: #000; border-color: var(--oracle); font-weight: 700; }
+
+  /* --- Race bars --- */
+  .race-bar-container { display: flex; gap: 2.5rem; align-items: flex-end; justify-content: center; flex-wrap: wrap; height: 180px; padding-top: 20px; }
+  .race-col { display: flex; flex-direction: column; align-items: center; width: 80px; }
+  .race-bar { width: 60px; border-radius: 4px 4px 0 0; transition: height 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); min-height: 2px; position: relative; overflow: hidden; }
+  .race-bar::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); animation: race-shine 1.2s ease-in-out infinite; }
+  @keyframes race-shine { 0%,100% { left: -100%; } 50% { left: 100%; } }
+  @keyframes race-victory { 0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); } 50% { box-shadow: 0 0 20px 8px rgba(52, 211, 153, 0.4); } 100% { box-shadow: 0 0 10px 4px rgba(52, 211, 153, 0.15); } }
+  .race-bar.winner { animation: race-victory 0.8s ease-out forwards; }
+  .race-label-top { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; min-height: 1.5em; transition: color 0.3s, transform 0.3s; }
+  .race-label-top.winner { transform: scale(1.15); }
+  .race-label-bottom { font-size: 0.82rem; color: var(--muted); margin-top: 6px; text-align: center; }
+
+  /* --- View toggle (chart/table) --- */
+  .view-toggle { display: flex; gap: 2px; margin-left: auto; font-size: 0.78rem; }
+  .view-toggle button { padding: 0.2rem 0.55rem; font-size: 0.72rem; border-radius: 4px; }
+  .view-toggle button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* --- State vector table --- */
+  .state-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-family: 'Courier New', monospace; }
+  .state-table th { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; padding: 0.4rem 0.6rem; text-align: right; border-bottom: 1px solid var(--border); }
+  .state-table td { padding: 0.3rem 0.6rem; text-align: right; border-bottom: 1px solid rgba(255,255,255,.03); }
+  .state-table tr.target-row { background: rgba(255,159,67,.06); }
+
+  /* --- Histogram --- */
+  #histogram-canvas { width: 100%; height: 180px; background: rgba(0,0,0,.2); border-radius: var(--radius); }
+  .histogram-summary { text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: var(--text); }
+  .histogram-controls { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+
+  /* --- Theme toggle --- */
+  #theme-toggle {
+    position: absolute; top: 1rem; right: 1.5rem; font-size: 1.3rem;
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; cursor: pointer; transition: border-color .2s;
+  }
+  #theme-toggle:hover { border-color: var(--accent); color: var(--text); }
+
+  /* --- Ghost bars (previous amplitude overlay) --- */
+  .bar-ghost {
+    position: absolute; left: 15%; width: 70%; border-radius: 3px 3px 0 0;
+    opacity: 0.35; pointer-events: none;
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.3s, height 0.3s ease;
+    border: 2px dashed var(--accent);
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.08), transparent);
+  }
+  .bar-ghost.neg { bottom: auto; top: 50%; border-radius: 0 0 3px 3px; background: linear-gradient(0deg, rgba(255, 107, 107, 0.08), transparent); }
+  .bar-ghost.pos { top: auto; bottom: 50%; }
+  .bar-ghost.target { border-color: var(--oracle); background: linear-gradient(180deg, rgba(255, 159, 67, 0.1), transparent); }
+  .bar-ghost.target.neg { background: linear-gradient(0deg, rgba(255, 159, 67, 0.1), transparent); }
+  .bar-ghost.fade { opacity: 0; }
+
+  /* --- Onboarding hints --- */
+  .onboard-hint {
+    position: absolute; z-index: 50; background: var(--accent); color: #fff;
+    border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.85rem; max-width: 260px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.4); animation: onboard-in 0.4s ease; line-height: 1.5;
+  }
+  .onboard-hint::after {
+    content: ''; position: absolute; border: 8px solid transparent;
+  }
+  .onboard-hint.arrow-top::after { bottom: 100%; left: 30px; border-bottom-color: var(--accent); }
+  .onboard-hint.arrow-left::after { right: 100%; top: 12px; border-right-color: var(--accent); }
+  @keyframes onboard-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .onboard-hint .hint-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; justify-content: space-between; align-items: center; }
+  .onboard-hint .hint-btn {
+    background: rgba(255,255,255,.2); border: none; color: #fff;
+    padding: 0.25rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.78rem;
+  }
+  .onboard-hint .hint-btn:hover { background: rgba(255,255,255,.35); }
+  .onboard-hint .hint-counter { font-size: 0.72rem; opacity: 0.7; }
+
+  /* --- Accessibility --- */
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  button:focus-visible, select:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* --- Control strip (integrated controls + stats) --- */
+  .control-strip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.06);
+  }
+
+  .control-strip-stats {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.04), rgba(0, 201, 167, 0.02));
+  }
+
+  :root[data-theme="light"] .control-strip-stats {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(0, 201, 167, 0.03));
+  }
+
+  .control-strip-stats .stat-item {
+    flex: 1;
+    padding: 0.55rem 0.75rem;
+    text-align: center;
+    border-right: 1px solid var(--border);
+    min-width: 0;
+    transition: background 0.3s;
+  }
+
+  .control-strip-stats .stat-item:last-child {
+    border-right: none;
+  }
+
+  .control-strip-stats .stat-label {
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 600;
+  }
+
+  .control-strip-stats .stat-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-top: 0.1rem;
+    font-family: 'JetBrains Mono', monospace;
+    transition: color 0.3s;
+  }
+
+  .control-strip-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 1rem;
+    flex-wrap: wrap;
+  }
+
+  .control-strip-buttons .btn-primary {
+    padding: 0.55rem 1.6rem;
+    font-size: 0.95rem;
+    letter-spacing: 0.2px;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+    transition: all 0.2s;
+  }
+
+  .control-strip-buttons .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .control-strip-buttons .btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .control-divider {
+    width: 1px;
+    height: 22px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  .control-spacer {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .control-strip-explanation {
+    border-top: 1px solid var(--border);
+    padding: 0.75rem 1.25rem;
+    background: rgba(0, 0, 0, 0.06);
+    max-height: 500px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+
+  :root[data-theme="light"] .control-strip-explanation {
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  .control-strip-explanation .theory-section h3 {
+    font-size: 0.95rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .control-strip-explanation .math-block {
+    font-size: 0.88rem;
+    margin: 0.5rem 0;
+    padding: 0.7rem 1rem;
+  }
+
+  @media (max-width: 700px) {
+    .control-strip-stats {
+      flex-wrap: wrap;
+    }
+    .control-strip-stats .stat-item {
+      flex: 1 1 45%;
+      border-bottom: 1px solid var(--border);
+    }
+    .control-strip-stats .stat-item:nth-child(2) {
+      border-right: none;
+    }
+    .control-strip-buttons .btn-primary {
+      padding: 0.5rem 1.2rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  /* --- Analysis grid (geo + prob history) --- */
+  .analysis-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .analysis-grid > .card {
+    margin-bottom: 0;
+    min-width: 0;
+  }
+
+  .analysis-grid .geo-layout {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  .analysis-grid #geo-canvas {
+    width: 100% !important;
+    max-width: 340px;
+    height: auto !important;
+    aspect-ratio: 1;
+    align-self: center;
+  }
+
+  .analysis-grid #geo-info {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .analysis-grid #prob-history-canvas {
+    height: 150px;
+  }
+
+  .analysis-grid .legend {
+    font-size: 0.72rem;
+    gap: 0.5rem;
+  }
+
+  @media (max-width: 900px) {
+    .analysis-grid {
+      grid-template-columns: 1fr;
+    }
+    .analysis-grid #prob-history-canvas {
+      height: 170px;
+    }
+  }
+
+  /* --- Key insight callout --- */
+  .key-insight {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(0, 201, 167, 0.05));
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.95rem;
+  }
+  .key-insight strong { color: var(--accent); }
+
+  :root[data-theme="light"] .key-insight {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(0, 201, 167, 0.04));
+  }
+
+  /* --- Worked example --- */
+  .worked-example {
+    border: 1px solid rgba(0, 201, 167, 0.25);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin: 1rem 0;
+    background: rgba(0, 201, 167, 0.03);
+  }
+  .worked-example h4 {
+    font-size: 0.95rem;
+    color: var(--accent2);
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent2);
+    color: #000;
+    font-weight: 700;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+  .example-step {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    margin-bottom: 0.6rem;
+    padding: 0.4rem 0;
+  }
+  .example-step p { margin: 0; font-size: 0.9rem; }
+
+  /* --- Circuit decomposition --- */
+  .circuit-step-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+  .circuit-step-card {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+  .circuit-step-card:hover { border-color: var(--accent); }
+  .circuit-step-card .gate-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  .circuit-step-card .gate-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .circuit-step-card .gate-arrow {
+    color: var(--accent2);
+    font-size: 1.2rem;
+    margin: 0.2rem 0;
+  }
+
+  :root[data-theme="light"] .circuit-step-card { background: rgba(0, 0, 0, 0.03); }
+
+  /* --- Resource table --- */
+  .resource-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.9rem; }
+  .resource-table th { color: var(--accent); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+  .resource-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,.04); }
+  .resource-table td:first-child { font-weight: 600; }
+  .resource-table code { background: rgba(99,102,241,.1); padding: 0.1rem 0.4rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+
+  :root[data-theme="light"] .resource-table td { border-bottom-color: rgba(0,0,0,.06); }
+  :root[data-theme="light"] .resource-table code { background: rgba(99,102,241,.08); }
+
+  /* --- Quiz improvements --- */
+  .quiz-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .quiz-card:hover { border-color: rgba(99, 102, 241, 0.2); box-shadow: 0 2px 8px rgba(99, 102, 241, 0.06); }
+  .quiz-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.82rem;
+    flex-shrink: 0;
+    margin-right: 0.6rem;
+  }
+  .quiz-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.25rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border: 1px solid transparent;
+  }
+  .quiz-option:hover { background: rgba(99, 102, 241, 0.06); border-color: rgba(99, 102, 241, 0.15); }
+  .quiz-option:has(input:checked) { background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.25); }
+  .quiz-score-bar {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border-radius: var(--radius);
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  /* Particle background canvas */
+  #particleBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /* --- Explanation pulse animation --- */
+  @keyframes explanation-pulse {
+    0% { box-shadow: inset 0 0 0 0 rgba(99, 102, 241, 0); }
+    30% { box-shadow: inset 0 0 12px 2px rgba(99, 102, 241, 0.12); }
+    100% { box-shadow: inset 0 0 0 0 rgba(99, 102, 241, 0); }
+  }
+  .explanation-pulse { animation: explanation-pulse 0.8s ease-out; }
+
+  /* --- Challenge box --- */
+  .challenge-box {
+    border: 1.5px dashed var(--oracle);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    background: rgba(255, 159, 67, 0.04);
+    position: relative;
+  }
+  .challenge-box::before {
+    content: '\1F9EA';
+    position: absolute;
+    top: -0.6rem;
+    left: 1rem;
+    background: var(--surface);
+    padding: 0 0.4rem;
+    font-size: 0.95rem;
+  }
+  .challenge-box h4 {
+    font-size: 0.9rem;
+    color: var(--oracle);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+  .challenge-box p { font-size: 0.88rem; margin-bottom: 0.3rem; }
+  .challenge-box code { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+  :root[data-theme="light"] .challenge-box { background: rgba(255, 159, 67, 0.03); }
+
+  /* --- Interactive iterations calculator --- */
+  .iter-calculator {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin: 1rem 0;
+  }
+  .iter-calculator h4 {
+    font-size: 0.95rem;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .iter-calculator .calc-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .iter-calculator label {
+    font-size: 0.88rem;
+    color: var(--text);
+    min-width: 120px;
+  }
+  .iter-calculator .calc-result {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+  .iter-calculator .calc-stat {
+    text-align: center;
+    padding: 0.5rem;
+    border-radius: 6px;
+    background: rgba(99, 102, 241, 0.06);
+  }
+  .iter-calculator .calc-stat .calc-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .iter-calculator .calc-stat .calc-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.15rem;
+  }
+  :root[data-theme="light"] .iter-calculator { background: rgba(0, 0, 0, 0.02); }
+
+  /* --- Quiz progress dots --- */
+  .quiz-progress {
+    display: flex;
+    gap: 0.4rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .quiz-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s, transform 0.2s;
+    cursor: pointer;
+  }
+  .quiz-dot.answered { background: var(--accent); transform: scale(1.15); }
+  .quiz-dot.correct { background: var(--accent2); }
+  .quiz-dot.incorrect { background: var(--negative); }
+
+  /* --- Module navigation footer --- */
+  .module-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 0;
+    margin-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+  .module-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  .module-nav a:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: var(--accent);
+  }
+  .module-nav .nav-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .module-nav .nav-title { font-size: 0.9rem; }
+
+  /* --- Progress bar label overlay --- */
+  .progress-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.6rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    text-shadow: 0 0 4px var(--bg);
+    pointer-events: none;
+    opacity: 0.85;
+    white-space: nowrap;
+  }
+  @keyframes progress-glow {
+    0%, 100% { box-shadow: 0 0 6px 1px rgba(0, 201, 167, 0.4); }
+    50% { box-shadow: 0 0 14px 3px rgba(0, 201, 167, 0.7); }
+  }
+  #progress-fill.at-optimal {
+    animation: progress-glow 1.2s ease-in-out infinite;
+  }
+  #progress-fill.past-optimal {
+    animation: none;
+    box-shadow: 0 0 8px 2px rgba(255, 99, 71, 0.5);
+  }
+  @keyframes target-shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  .bar.target:not(.measured-loser) {
+    background-image: linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: target-shimmer 3s linear infinite;
+  }
+
+  /* --- Sandwich analogy card --- */
+  .sandwich-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    margin: 0.75rem 0;
+    flex-wrap: wrap;
+  }
+  .sandwich-layer {
+    padding: 0.35rem 0.6rem;
+    border-radius: 5px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
+    min-width: 60px;
+  }
+  .sandwich-arrow {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+<canvas id="particleBg"></canvas>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+
+<header>
+  <h1>Grover's Algorithm</h1>
+  <p>Interactive Quantum Search Explorer</p>
+  <button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">&#9790;</button>
+</header>
+
+<div class="container">
+
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="simulator" role="tab">Simulator</button>
+    <button class="tab-btn" data-tab="theory" role="tab">Theory</button>
+    <button class="tab-btn" data-tab="circuit" role="tab">Circuit</button>
+    <button class="tab-btn" data-tab="quiz" role="tab">Quiz</button>
+  </div>
+
+  <!-- ==================== SIMULATOR TAB ==================== -->
+  <div id="simulator" class="tab-panel active">
+
+    <div class="card">
+      <h2>Configuration</h2>
+      <div class="controls">
+        <div class="control-group">
+          <label>Qubits (n)</label>
+          <select id="qubit-select">
+            <option value="2">2 qubits (4 states)</option>
+            <option value="3" selected>3 qubits (8 states)</option>
+            <option value="4">4 qubits (16 states)</option>
+            <option value="5">5 qubits (32 states)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Target states <span id="target-count-badge" style="font-size:0.7rem;color:var(--oracle);font-weight:400;">(1 marked)</span></label>
+          <div class="target-grid" id="target-grid"></div>
+        </div>
+        <div class="control-group">
+          <label>Speed</label>
+          <input type="range" id="speed-slider" min="1" max="10" value="5">
+        </div>
+        <div class="control-group">
+          <label>Noise <span id="noise-badge" class="noise-badge">active</span></label>
+          <input type="range" id="noise-slider" min="0" max="30" value="0" style="width:80px;" title="Decoherence noise level (0 = ideal)">
+        </div>
+        <div class="control-group">
+          <label>&nbsp;</label>
+          <button class="btn-primary" id="btn-reset" title="Reset">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Amplitude Visualization
+        <span class="view-toggle">
+          <button class="btn-secondary active" id="view-chart-btn">Chart</button>
+          <button class="btn-secondary" id="view-table-btn">Table</button>
+        </span>
+      </h2>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--accent)"></div> Non-target</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--oracle)"></div> Target</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--negative)"></div> Negative amplitude</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--accent2);height:3px;width:16px;align-self:center;"></div> Mean (&#956;)</div>
+      </div>
+      <div class="chart-container" id="chart-view">
+        <div class="chart" id="chart">
+          <div class="chart-zero"></div>
+          <div class="mean-line" id="mean-line"></div>
+          <div class="mean-label" id="mean-label"></div>
+        </div>
+      </div>
+      <div id="state-table-container" style="display:none;max-height:320px;overflow-y:auto;"></div>
+      <div class="iter-display" id="iter-display">Initial State: Equal Superposition</div>
+      <div class="overrotation-warning" id="overrotation-warning">Past optimal iterations &mdash; probability decreasing (over-rotation)</div>
+    </div>
+
+    <div class="control-strip">
+      <div class="control-strip-progress" id="control-progress" style="height:6px;background:var(--border);overflow:hidden;position:relative;">
+        <div id="progress-fill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 0.5s ease;border-radius:0 2px 2px 0;"></div>
+        <span class="progress-label" id="progress-label"></span>
+      </div>
+      <div class="control-strip-stats">
+        <div class="stat-item"><div class="stat-label">Iteration</div><div class="stat-value" id="stat-iter">0</div></div>
+        <div class="stat-item"><div class="stat-label">Stage</div><div class="stat-value" id="stat-substep">-</div></div>
+        <div class="stat-item"><div class="stat-label">Target Probability</div><div class="stat-value" id="stat-prob">-</div></div>
+        <div class="stat-item"><div class="stat-label">Optimal Iterations</div><div class="stat-value" id="stat-optimal">-</div></div>
+      </div>
+      <div class="control-strip-buttons">
+        <div class="btn-group">
+          <button class="btn-secondary btn-icon" id="btn-prev" title="Previous step (Left arrow)" aria-label="Previous step">&#9664;</button>
+          <button class="btn-primary" id="btn-step" title="Next step (Right arrow)">Next Step</button>
+          <button class="btn-secondary btn-icon" id="btn-next-fast" title="Skip to next iteration" aria-label="Skip to next iteration">&#9654;&#9654;</button>
+        </div>
+        <div class="control-divider"></div>
+        <button class="btn-secondary" id="btn-auto" title="Toggle auto-run (Space)" aria-label="Toggle auto-run">&#9654; Auto-run</button>
+        <button class="btn-secondary" id="btn-measure" title="Measure (M)">Measure</button>
+        <div class="control-divider"></div>
+        <label class="auto-stop-label" title="Automatically stop auto-run at the optimal iteration count">
+          <input type="checkbox" id="auto-stop-check" checked> Auto-stop at optimal
+        </label>
+        <div class="control-spacer"></div>
+        <button class="btn-secondary" id="btn-share" title="Copy shareable link" style="font-size:0.82rem;">Copy Link</button>
+        <div class="shortcuts-hint">
+          &#9000; Shortcuts
+          <div class="shortcuts-popup">
+            <kbd>&#8594;</kbd> Next step<br>
+            <kbd>&#8592;</kbd> Previous step<br>
+            <kbd>Space</kbd> Toggle auto-run<br>
+            <kbd>M</kbd> Measure<br>
+            <kbd>R</kbd> Reset<br>
+            <kbd>1</kbd>-<kbd>4</kbd> Switch tabs
+          </div>
+        </div>
+      </div>
+      <div class="control-strip-explanation">
+        <div id="step-explanation" class="theory-section" style="margin:0;">
+          <p>Press <strong>Next Step</strong> to begin stepping through Grover's algorithm. Each iteration has two stages: the <span style="color:var(--oracle);font-weight:600;">Oracle</span> flips the target's phase, then the <span style="color:var(--diffusion);font-weight:600;">Diffusion</span> amplifies its amplitude. Watch the bars and geometric view to see amplification in action.</p>
+        </div>
+      </div>
+      <div id="live-status" aria-live="polite" class="sr-only"></div>
+    </div>
+
+    <div class="analysis-grid">
+
+    <div class="card" style="position:relative;">
+      <h2>Target Probability History</h2>
+      <div class="legend" style="margin-bottom:0.3rem;">
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--oracle);border-radius:50%;width:8px;height:8px;"></div> Measured P(target)</div>
+        <div class="legend-item"><div style="width:16px;height:0;border-top:2px dashed var(--accent);align-self:center;opacity:0.5;"></div> Theoretical sin&#178;</div>
+        <div class="legend-item"><div style="width:0;height:12px;border-left:2px dashed var(--accent2);align-self:center;opacity:0.5;"></div> Optimal</div>
+      </div>
+      <canvas id="prob-history-canvas" role="img" aria-label="Target probability history line chart"></canvas>
+      <div class="prob-history-tooltip" id="prob-history-tooltip"></div>
+      <p class="footnote">Click any point to jump to that step. The curve reveals the sine-squared oscillation and why overshoot occurs.</p>
+    </div>
+
+    <div class="card">
+      <h2>Geometric View <span class="badge badge-diffusion">2D Plane</span></h2>
+      <p style="color:var(--muted);margin-bottom:0.5rem;">Each Grover iteration rotates the state vector by 2&#952; toward the target |w&#10217; in a 2D subspace. The goal: reach 90&#176; (target probability &asymp; 100%).</p>
+      <div class="geo-layout" style="display:flex;gap:1.5rem;align-items:center;justify-content:center;flex-wrap:wrap;">
+        <canvas id="geo-canvas" width="340" height="340" role="img" aria-label="Geometric rotation view of state vector" style="background:rgba(0,0,0,.2);border-radius:var(--radius);flex-shrink:0;"></canvas>
+        <div id="geo-info" style="min-width:200px;max-width:280px;">
+          <div class="math-block" id="geo-math" style="font-size:0.85rem;line-height:1.7;margin:0;"></div>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- /analysis-grid -->
+
+    <div class="card">
+      <h2>Measurement Probabilities</h2>
+      <div class="prob-display" id="prob-display"></div>
+      <p class="footnote">Probability = |amplitude|&sup2;. Target state probability grows with each iteration.</p>
+    </div>
+
+    <div class="card">
+      <h2>Repeated Measurement Statistics</h2>
+      <p style="color:var(--muted);margin-bottom:0.75rem;">Run many measurements to verify Born's rule in action: outcomes distribute according to |amplitude|&sup2;. Compare measured frequencies against theoretical predictions.</p>
+      <div class="histogram-controls">
+        <button class="btn-secondary" id="btn-hist-100">Run 100</button>
+        <button class="btn-secondary" id="btn-hist-1000">Run 1000</button>
+        <button class="btn-secondary" id="btn-hist-clear">Clear</button>
+        <label class="auto-stop-label" title="Accumulate runs instead of replacing">
+          <input type="checkbox" id="hist-accumulate"> Accumulate
+        </label>
+      </div>
+      <canvas id="histogram-canvas" role="img" aria-label="Measurement outcome histogram"></canvas>
+      <div class="histogram-summary" id="histogram-summary"></div>
+    </div>
+
+    <div class="card">
+      <h2>Classical vs. Quantum Race</h2>
+      <p style="color:var(--muted);margin-bottom:0.5rem;">See the quadratic speedup live: classical random search checks items one by one until a target is found, while Grover's algorithm needs only &radic;N oracle queries. Run multiple races to see the statistical advantage.</p>
+      <div class="race-bar-container" id="race-container">
+        <div class="race-col">
+          <div class="race-label-top" id="race-c-label" style="color:var(--negative);">-</div>
+          <div class="race-bar" id="race-c-bar" style="background:var(--negative);height:2px;"></div>
+          <div class="race-label-bottom">Classical<br>(random)</div>
+        </div>
+        <div class="race-col">
+          <div class="race-label-top" id="race-q-label" style="color:var(--accent);">-</div>
+          <div class="race-bar" id="race-q-bar" style="background:var(--accent);height:2px;"></div>
+          <div class="race-label-bottom">Grover<br>(quantum)</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:0.75rem;">
+        <button class="btn-secondary" id="btn-race">Run Race</button>
+      </div>
+      <p class="footnote" id="race-result" style="text-align:center;"></p>
+    </div>
+  </div>
+
+  <!-- ==================== THEORY TAB ==================== -->
+  <div id="theory" class="tab-panel">
+
+    <div class="card">
+      <h2>What is Grover's Algorithm?</h2>
+      <div class="theory-section">
+        <p>Grover's algorithm (1996) solves the <strong>unstructured search problem</strong>: given a function f(x) that returns 1 for M "marked" inputs out of N possibilities, find a marked input. Classically, this requires checking items one by one &mdash; O(N) queries on average. Grover's quantum algorithm does it in just <strong>O(&radic;N)</strong> queries, a provably optimal quadratic speedup.</p>
+        <div class="key-insight">
+          <strong>Why it matters:</strong> Unlike many quantum algorithms that require specific problem structure, Grover's applies to <em>any</em> search problem where you can verify a solution. This generality makes it one of the most broadly applicable quantum algorithms &mdash; and its quadratic speedup is the best possible for unstructured search.
+        </div>
+      </div>
+      <table class="comparison-table">
+        <thead><tr><th>Property</th><th>Classical Search</th><th>Grover's Algorithm</th></tr></thead>
+        <tbody>
+          <tr><td>Query complexity</td><td>O(N)</td><td>O(&radic;N)</td></tr>
+          <tr><td>For N = 1,000,000</td><td>~500,000 queries (avg)</td><td>~785 queries</td></tr>
+          <tr><td>For N = 2<sup>256</sup> (AES-256)</td><td>~2<sup>255</sup> queries</td><td>~2<sup>128</sup> queries</td></tr>
+          <tr><td>Deterministic?</td><td>Yes (exhaustive)</td><td>Probabilistic (&gt; 99% success)</td></tr>
+          <tr><td>Optimality</td><td>Best possible classically</td><td>Best possible quantum (BBBV 1997)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Algorithm Steps</h2>
+      <div class="theory-section">
+        <h3>1. Initialization</h3>
+        <p>Start with n qubits in state |0...0&rang; and apply Hadamard gates to create an equal superposition of all N = 2<sup>n</sup> computational basis states:</p>
+        <div class="math-block">|&psi;&rang; = H<sup>&otimes;n</sup>|0&rang;<sup>&otimes;n</sup> = <span class="highlight">1/&radic;N</span> &sum;<sub>x=0</sub><sup>N-1</sup> |x&rang;</div>
+        <p>Every state has amplitude 1/&radic;N, so equal probability 1/N of being measured. The search target is hidden in this uniform fog &mdash; no state is preferred yet.</p>
+      </div>
+      <div class="theory-section">
+        <h3>2. Oracle (Phase Flip)</h3>
+        <p>The oracle O<sub>f</sub> recognizes target states and flips their phase (amplitude sign), while leaving all other states unchanged:</p>
+        <div class="math-block">O<sub>f</sub>|x&rang; = <span class="oracle-color">(-1)<sup>f(x)</sup></span>|x&rang;
+
+where f(x) = 1 if x is a target, 0 otherwise</div>
+        <p>This is invisible to measurement (probabilities depend on |amplitude|<sup>2</sup>), but it creates a subtle asymmetry that the Diffusion operator will exploit.</p>
+        <div class="key-insight">
+          <strong>Geometric view:</strong> The oracle is a <em>reflection</em> about the hyperplane perpendicular to |w&rang; (the target superposition). It flips the component along |w&rang; while preserving everything orthogonal to it.
+        </div>
+      </div>
+      <div class="theory-section">
+        <h3>3. Diffusion Operator (Inversion about the Mean)</h3>
+        <p>The diffusion operator D reflects every amplitude about the mean amplitude &lang;&alpha;&rang;:</p>
+        <div class="math-block">D = <span class="diffusion-color">2|&psi;&rang;&lang;&psi;| - I</span>
+
+For each amplitude &alpha;<sub>x</sub>:
+  &alpha;<sub>x</sub> &rarr; 2&middot;&lang;&alpha;&rang; - &alpha;<sub>x</sub></div>
+        <p>After the oracle, the target amplitude is negative (below the mean). Here's why the mean trick works:</p>
+        <ul>
+          <li><strong>Target amplitude</strong> is far below the mean &rarr; reflection pushes it <em>far above</em></li>
+          <li><strong>Non-target amplitudes</strong> are slightly above the mean &rarr; reflection pushes them <em>slightly below</em></li>
+          <li>Net effect: the target gains amplitude at the expense of all non-targets</li>
+        </ul>
+        <div class="key-insight">
+          <strong>The core mechanism:</strong> Oracle creates a phase difference. Diffusion converts it into an amplitude difference through <em>quantum interference</em>. Constructive interference boosts the target; destructive interference suppresses non-targets &mdash; repeated iteration after iteration until probability peaks.
+        </div>
+      </div>
+      <div class="theory-section">
+        <h3>4. Repeat</h3>
+        <div class="math-block">k<sub>opt</sub> = round(<span class="highlight">&pi;/4 &middot; &radic;(N/M)</span>)
+
+where M = number of marked (target) states</div>
+        <p>After k<sub>opt</sub> iterations, target probability approaches 1. Going beyond causes <strong>over-rotation</strong> &mdash; the state vector swings past the target, and probability starts decreasing. This is unique to quantum algorithms; classically, more searching never hurts.</p>
+
+        <!-- Interactive Iterations Calculator -->
+        <div class="iter-calculator" id="theory-iter-calc">
+          <h4>&#128172; Try It: Iteration Calculator</h4>
+          <div class="calc-row">
+            <label for="calc-n-slider">Search space N = 2<sup><span id="calc-n-val">10</span></sup></label>
+            <input type="range" id="calc-n-slider" min="2" max="30" value="10" style="flex:1;max-width:220px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:var(--accent);min-width:80px;" id="calc-n-display">1,024</span>
+          </div>
+          <div class="calc-row">
+            <label for="calc-m-slider">Targets M = <span id="calc-m-val">1</span></label>
+            <input type="range" id="calc-m-slider" min="1" max="16" value="1" style="flex:1;max-width:220px;">
+          </div>
+          <div class="calc-result" id="calc-result">
+            <div class="calc-stat"><div class="calc-val" id="calc-k">25</div><div class="calc-label">Optimal Iterations</div></div>
+            <div class="calc-stat"><div class="calc-val" id="calc-theta">1.8&deg;</div><div class="calc-label">&theta; (rotation angle)</div></div>
+            <div class="calc-stat"><div class="calc-val" id="calc-prob">99.9%</div><div class="calc-label">Success Probability</div></div>
+            <div class="calc-stat"><div class="calc-val" id="calc-speedup">16&times;</div><div class="calc-label">vs Classical</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="theory-section">
+        <h3>5. Measurement</h3>
+        <p>Measure all qubits in the computational basis. At the optimal iteration count, the probability of collapsing to a target state is at least 1 &minus; M/N (typically &gt; 99%). If the measurement fails, simply reset and try again.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Worked Example: Searching 4 States</h2>
+      <p style="color:var(--muted);margin-bottom:0.75rem;">Let's trace through Grover's algorithm on n = 2 qubits (N = 4 states), searching for target |11&rang;. Optimal iterations: k = 1.</p>
+      <div class="worked-example">
+        <h4>Initialization: Apply H&otimes;H to |00&rang;</h4>
+        <div class="math-block" style="margin:0.4rem 0;">|&psi;&rang; = &frac12;(|00&rang; + |01&rang; + |10&rang; + <span class="oracle-color">|11&rang;</span>)
+
+Amplitudes: [<span class="highlight">0.5</span>, <span class="highlight">0.5</span>, <span class="highlight">0.5</span>, <span class="oracle-color">0.5</span>]   Mean = 0.5</div>
+      </div>
+      <div class="worked-example">
+        <h4>Step 1: Oracle &mdash; Flip |11&rang;</h4>
+        <div class="example-step">
+          <div>
+            <p>The oracle negates the amplitude of the target state |11&rang;:</p>
+            <div class="math-block" style="margin:0.4rem 0;">Amplitudes: [0.5, 0.5, 0.5, <span class="oracle-color">&minus;0.5</span>]   Mean = <span class="oracle-color">0.25</span></div>
+            <p style="color:var(--muted);font-size:0.88rem;">Probabilities are unchanged (|&pm;0.5|<sup>2</sup> = 0.25 for all), but the mean has shifted down.</p>
+          </div>
+        </div>
+      </div>
+      <div class="worked-example">
+        <h4>Step 2: Diffusion &mdash; Inversion about the Mean</h4>
+        <div class="example-step">
+          <div>
+            <p>Reflect each amplitude about the mean (0.25): &alpha;<sub>x</sub> &rarr; 2(0.25) &minus; &alpha;<sub>x</sub></p>
+            <div class="math-block" style="margin:0.4rem 0;">|00&rang;: 2(0.25) &minus; 0.5  = <span class="highlight">0</span>
+|01&rang;: 2(0.25) &minus; 0.5  = <span class="highlight">0</span>
+|10&rang;: 2(0.25) &minus; 0.5  = <span class="highlight">0</span>
+|11&rang;: 2(0.25) &minus; (&minus;0.5) = <span class="diffusion-color">1.0</span></div>
+            <p style="color:var(--muted);font-size:0.88rem;">After just <strong>one iteration</strong>, |11&rang; has amplitude 1.0 &mdash; measurement gives the target with <strong>100% probability</strong>. This perfect result is special to N = 4 (where &theta; = 30&deg; and 3&theta; = 90&deg; exactly).</p>
+          </div>
+        </div>
+      </div>
+      <div class="challenge-box">
+        <h4>&#129518; Try This</h4>
+        <p>Switch to the <strong>Simulator</strong> tab, set <strong>2 qubits</strong>, mark |11&rang; as the target, and step through one full iteration. Verify that the target reaches amplitude 1.0 exactly.</p>
+        <p>Then try <strong>3 qubits</strong> with target |101&rang;. After 2 iterations, check: is the success probability exactly 100%? Why not?</p>
+        <p style="color:var(--muted);font-size:0.82rem;margin-top:0.4rem;"><em>Hint: compute &theta; = arcsin(&radic;(1/8)) &asymp; 20.7&deg;, so (2&middot;2+1)&theta; = 5&theta; &asymp; 103.5&deg; &ne; 90&deg;.</em></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Deeper Concepts</h2>
+      <div class="theory-section">
+        <h3>The Oracle as a Black Box</h3>
+        <p>A common confusion: &ldquo;If the oracle already knows the answer, why search?&rdquo; The key is the <strong>query complexity model</strong>. The oracle is a function evaluator &mdash; it can answer &ldquo;is x the target?&rdquo; but cannot simply output the target. Think of it as a lock that clicks when you insert the right key: it can <em>verify</em> but not <em>produce</em> the answer.</p>
+        <details class="interference-details">
+          <summary>Why this matters in practice</summary>
+          <div class="detail-body">
+            <p>Many real problems have this structure: checking a solution is easy, but finding one is hard. Verifying that a database record matches a query is O(1), but finding it in an unsorted database requires O(N) checks. The oracle encapsulates the efficient verification step, and Grover&rsquo;s algorithm reduces the number of calls from O(N) to O(&radic;N). In cryptography, the &ldquo;oracle&rdquo; is the encryption function &mdash; you can check if a key is correct, but finding the right key requires exhaustive search.</p>
+          </div>
+        </details>
+      </div>
+      <div class="theory-section">
+        <h3>Phase Kickback</h3>
+        <p>How does the oracle flip a phase without measuring? Through <strong>phase kickback</strong>. The trick is an ancilla qubit prepared in the state |&minus;&rang; = (|0&rang; &minus; |1&rang;)/&radic;2:</p>
+        <div class="math-block">Standard oracle: U<sub>f</sub>|x&rang;|y&rang; = |x&rang;|y &oplus; f(x)&rang;
+
+With ancilla |&minus;&rang;:
+  U<sub>f</sub>|x&rang;|&minus;&rang; = |x&rang; &middot; (|f(x) &oplus; 0&rang; &minus; |f(x) &oplus; 1&rang;) / &radic;2
+                   = <span class="oracle-color">(&minus;1)<sup>f(x)</sup></span> |x&rang;|&minus;&rang;</div>
+        <p>When f(x) = 0, the ancilla stays |&minus;&rang; unchanged. When f(x) = 1, XOR flips the ancilla to (|1&rang; &minus; |0&rang;)/&radic;2 = &minus;|&minus;&rang;, kicking a global &minus;1 phase onto the input register. The ancilla returns to |&minus;&rang; in both cases &mdash; it's the input |x&rang; that acquires the conditional phase.</p>
+        <div class="key-insight">
+          <strong>Why &ldquo;kickback&rdquo;?</strong> The phase that should apply to the ancilla &ldquo;kicks back&rdquo; to the input register. This converts a classical bit-flip oracle into a phase oracle, and it appears in nearly every quantum algorithm: Deutsch&ndash;Jozsa, Bernstein&ndash;Vazirani, Shor's, and Grover's all use it.
+        </div>
+      </div>
+      <div class="theory-section">
+        <h3>Amplitude Amplification</h3>
+        <p>Grover&rsquo;s algorithm is a special case of <strong>amplitude amplification</strong> (Brassard et al., 2002). The general technique works with any quantum algorithm A that produces a &ldquo;good&rdquo; state with probability p: amplitude amplification boosts success probability to near 1 using O(1/&radic;p) repetitions. Grover&rsquo;s search is the case where A = Hadamard and p = M/N. This generalization is used as a subroutine in many more advanced quantum algorithms.</p>
+      </div>
+      <div class="theory-section">
+        <h3>Practical Applications</h3>
+        <ul style="margin:0.5rem 0 0 1.5rem; line-height:1.9;">
+          <li><strong>Unstructured database search</strong> &mdash; finding a record in an unsorted dataset with quadratic speedup</li>
+          <li><strong>SAT solving</strong> &mdash; searching the 2<sup>n</sup> space of Boolean assignments; combines with backtracking for further speedup</li>
+          <li><strong>Cryptographic key search</strong> &mdash; effectively halves key length (AES-128 &rarr; 2<sup>64</sup> Grover queries, AES-256 &rarr; 2<sup>128</sup>)</li>
+          <li><strong>Optimization</strong> &mdash; finding the minimum of a function by repeatedly searching for values below a decreasing threshold</li>
+          <li><strong>Graph problems</strong> &mdash; collision finding, element distinctness, triangle detection using quantum walk variants</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Geometric Interpretation</h2>
+      <div class="theory-section">
+        <p>The key insight is that Grover's algorithm operates entirely within a <strong>2D subspace</strong> spanned by:</p>
+        <ul>
+          <li><strong>|w&rang;</strong> = (1/&radic;M) &sum; |target&rang; &mdash; uniform superposition of M target states</li>
+          <li><strong>|s'&rang;</strong> = (1/&radic;(N&minus;M)) &sum; |non-target&rang; &mdash; uniform superposition of non-target states</li>
+        </ul>
+
+        <!-- Inline SVG geometric diagram -->
+        <div style="display:flex;justify-content:center;margin:1.25rem 0;">
+          <svg viewBox="0 0 320 260" width="320" height="260" style="max-width:100%;font-family:'Inter',sans-serif;" role="img" aria-label="Geometric diagram showing the 2D rotation of Grover's algorithm">
+            <!-- Background -->
+            <rect x="0" y="0" width="320" height="260" rx="8" fill="rgba(0,0,0,0.15)" stroke="var(--border)" stroke-width="1"/>
+            <!-- Axes -->
+            <line x1="40" y1="230" x2="300" y2="230" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
+            <line x1="40" y1="230" x2="40" y2="20" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
+            <!-- Axis labels -->
+            <text x="305" y="234" fill="var(--muted)" font-size="12" font-weight="600">|s'&rang;</text>
+            <text x="30" y="16" fill="var(--oracle)" font-size="12" font-weight="600">|w&rang;</text>
+            <!-- Angle arc: theta from |s'> to |psi> -->
+            <path d="M 100,230 A 60,60 0 0,0 96,206" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity="0.7"/>
+            <text x="104" y="218" fill="var(--accent)" font-size="11" font-weight="500">&theta;</text>
+            <!-- |psi> vector (initial state, small angle from |s'>) -->
+            <line x1="40" y1="230" x2="270" y2="180" stroke="var(--accent)" stroke-width="2" opacity="0.4" stroke-dasharray="6,4"/>
+            <text x="250" y="175" fill="var(--accent)" font-size="11" font-weight="500" opacity="0.6">|&psi;&rang;</text>
+            <!-- After 1 iteration: rotated by 2theta -->
+            <line x1="40" y1="230" x2="240" y2="120" stroke="var(--accent)" stroke-width="2" opacity="0.6" stroke-dasharray="6,4"/>
+            <text x="244" y="118" fill="var(--accent)" font-size="10" opacity="0.6">3&theta;</text>
+            <!-- After k iterations: near |w> -->
+            <line x1="40" y1="230" x2="110" y2="40" stroke="var(--accent2)" stroke-width="2.5"/>
+            <circle cx="110" cy="40" r="4" fill="var(--accent2)"/>
+            <text x="116" y="38" fill="var(--accent2)" font-size="11" font-weight="600">(2k+1)&theta;</text>
+            <!-- Target axis |w> -->
+            <line x1="40" y1="230" x2="40" y2="30" stroke="var(--oracle)" stroke-width="2" opacity="0.3"/>
+            <!-- Curved arrow showing rotation -->
+            <path d="M 180,195 A 140,140 0 0,0 115,55" fill="none" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arrowGeo)" opacity="0.5"/>
+            <defs>
+              <marker id="arrowGeo" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--accent)" opacity="0.5"/></marker>
+            </defs>
+            <!-- Labels -->
+            <text x="160" y="252" fill="var(--muted)" font-size="10" text-anchor="middle">Rotation by 2&theta; per iteration</text>
+          </svg>
+        </div>
+
+        <p>The initial state |&psi;&rang; lies in this plane, making a small angle &theta; with |s'&rang;:</p>
+        <div class="math-block">&theta; = arcsin(&radic;(M/N))
+
+After k iterations: angle from |s'&rang; = <span class="highlight">(2k+1)&theta;</span>
+
+Target probability = sin&sup2;((2k+1)&theta;)</div>
+        <div class="key-insight">
+          <strong>Each iteration = rotation by 2&theta;.</strong> The Oracle reflects about |s'&rang;, the Diffusion reflects about |&psi;&rang;. Two reflections compose into a rotation. We want the total angle (2k+1)&theta; to reach &pi;/2 (i.e. the |w&rang; axis), which happens at k &asymp; &pi;/(4&theta;) &asymp; (&pi;/4)&radic;(N/M) iterations. Overshooting rotates the vector <em>past</em> |w&rang;, which is why over-rotation decreases the success probability.
+        </div>
+        <p style="color:var(--muted);margin-top:0.5rem;">Switch to the <strong>Simulator</strong> tab and watch the Geometric View panel to see this rotation in real time.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Complexity Analysis</h2>
+      <div class="theory-section">
+        <h3>Why O(&radic;N)?</h3>
+        <p>Each iteration rotates by 2&theta;, where &theta; &asymp; arcsin(1/&radic;N) &asymp; 1/&radic;N for small angles. We need a total rotation of ~&pi;/2:</p>
+        <div class="math-block">Rotations needed = &pi;/2 &divide; 2&theta; &asymp; <span class="highlight">&pi;&radic;N / 4</span></div>
+        <p>This is <strong>provably optimal</strong>. Bennett, Bernstein, Brassard, and Vazirani (1997) showed that <em>any</em> quantum algorithm for unstructured search requires &Omega;(&radic;N) oracle queries. No quantum algorithm &mdash; no matter how clever &mdash; can do better.</p>
+        <h3 style="margin-top:1rem;">Scaling Visualization</h3>
+        <p style="color:var(--muted);margin-bottom:0.5rem;">Classical search grows linearly with N; Grover's grows as &radic;N. The gap widens exponentially as the number of qubits increases.</p>
+        <div style="display:flex;justify-content:center;">
+          <canvas id="scaling-canvas" width="520" height="280" role="img" aria-label="Classical vs quantum scaling comparison chart" style="width:100%;max-width:520px;background:rgba(0,0,0,.2);border-radius:var(--radius);"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Limitations &amp; Practical Considerations</h2>
+      <div class="theory-section">
+        <h3>What Grover's Cannot Do</h3>
+        <ul>
+          <li><strong>No exponential speedup</strong> &mdash; the improvement is quadratic (&radic;N vs N), unlike Shor's exponential speedup for factoring. For many practical databases, a quadratic speedup alone may not justify quantum hardware.</li>
+          <li><strong>Oracle must be efficient</strong> &mdash; the oracle itself must be implementable as a quantum circuit with polynomial gate count. Not all problems have efficient oracles.</li>
+          <li><strong>Must know M (approximately)</strong> &mdash; the optimal iteration count depends on M/N. If M is unknown, <strong>quantum counting</strong> (a related algorithm) can estimate it first.</li>
+        </ul>
+        <h3 style="margin-top:1rem;">Noise &amp; Hardware Challenges</h3>
+        <p>On real quantum hardware, Grover's algorithm faces decoherence and gate errors. Each iteration adds circuit depth, and errors accumulate. For large N, the required circuit depth exceeds current hardware coherence times. Use the <strong>Noise slider</strong> in the Simulator to see how decoherence degrades the algorithm's performance.</p>
+        <details class="interference-details">
+          <summary>Current hardware status</summary>
+          <div class="detail-body">
+            <p>As of 2024, Grover's has been demonstrated on small instances (3&ndash;5 qubits) on superconducting and trapped-ion hardware. Scaling to practically useful sizes (hundreds of qubits with error correction) remains a major engineering challenge. The algorithm itself is well-understood; the bottleneck is hardware maturity.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CIRCUIT TAB ==================== -->
+  <div id="circuit" class="tab-panel">
+
+    <div class="card">
+      <h2>How to Read This Circuit</h2>
+      <div class="theory-section">
+        <p>A quantum circuit reads <strong>left to right</strong>, like a musical score. Each horizontal line is a qubit (initialized to |0&rang;). Gates are operations applied to qubits as time flows rightward.</p>
+        <!-- Gate legend -->
+        <div style="display:flex;flex-wrap:wrap;gap:1rem;margin:0.75rem 0;">
+          <div style="flex:1;min-width:140px;"><span style="display:inline-block;width:28px;height:28px;border:1.5px solid var(--accent);border-radius:4px;text-align:center;line-height:28px;font-weight:700;color:var(--accent);margin-right:0.4rem;font-size:0.9rem;">H</span> <strong>Hadamard</strong> &mdash; creates superposition</div>
+          <div style="flex:1;min-width:140px;"><span style="display:inline-block;width:28px;height:28px;border:1.5px solid var(--oracle);border-radius:4px;text-align:center;line-height:28px;font-weight:700;color:var(--oracle);margin-right:0.4rem;font-size:0.9rem;">O</span> <strong>Oracle</strong> &mdash; marks target states</div>
+          <div style="flex:1;min-width:140px;"><span style="display:inline-block;width:28px;height:28px;border:1.5px solid var(--accent2);border-radius:4px;text-align:center;line-height:28px;font-weight:700;color:var(--accent2);margin-right:0.4rem;font-size:0.9rem;">D</span> <strong>Diffusion</strong> &mdash; amplifies target amplitude</div>
+          <div style="flex:1;min-width:140px;"><span style="display:inline-block;width:28px;height:28px;border:1.5px solid var(--text);border-radius:4px;text-align:center;line-height:28px;font-weight:700;color:var(--text);margin-right:0.4rem;font-size:0.9rem;">M</span> <strong>Measurement</strong> &mdash; reads the result</div>
+        </div>
+        <!-- Pipeline summary -->
+        <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;justify-content:center;margin:1rem 0 0.5rem;padding:0.75rem;background:rgba(0,0,0,0.1);border-radius:8px;">
+          <span style="background:rgba(99,102,241,0.15);color:var(--accent);padding:0.3rem 0.7rem;border-radius:5px;font-weight:600;font-size:0.85rem;">H<sup>&otimes;n</sup></span>
+          <span style="color:var(--muted);">&rarr;</span>
+          <span style="border:1.5px dashed var(--muted);border-radius:5px;padding:0.3rem 0.5rem;font-size:0.8rem;color:var(--muted);">repeat k&times;</span>
+          <span style="color:var(--muted);">{</span>
+          <span style="background:rgba(255,159,67,0.15);color:var(--oracle);padding:0.3rem 0.7rem;border-radius:5px;font-weight:600;font-size:0.85rem;">Oracle</span>
+          <span style="color:var(--muted);">&rarr;</span>
+          <span style="background:rgba(0,201,167,0.12);color:var(--accent2);padding:0.3rem 0.7rem;border-radius:5px;font-weight:600;font-size:0.85rem;">Diffusion</span>
+          <span style="color:var(--muted);">}</span>
+          <span style="color:var(--muted);">&rarr;</span>
+          <span style="background:rgba(226,232,240,0.1);color:var(--text);padding:0.3rem 0.7rem;border-radius:5px;font-weight:600;font-size:0.85rem;">Measure</span>
+        </div>
+        <p style="color:var(--muted);font-size:0.88rem;">Hover over any gate in the diagram below for a detailed tooltip.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Circuit Diagram</h2>
+      <p style="color:var(--muted); margin-bottom:0.75rem;">The full circuit for <strong id="circuit-qubit-label">3 qubits</strong> with <strong id="circuit-iter-label">2 optimal iterations</strong>. The Oracle&ndash;Diffusion pair repeats k times.</p>
+      <div class="circuit-svg" id="circuit-container">
+        <div class="circuit-tooltip" id="circuit-tooltip"></div>
+      </div>
+      <div class="key-insight" style="margin-top:0.75rem;">
+        <strong>Structure:</strong> H<sup>&otimes;n</sup> &rarr; (Oracle &middot; Diffusion)<sup>&times;k</sup> &rarr; Measure. The initialization creates equal superposition, the repeated Grover iterations amplify the target, and measurement collapses to the answer.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Oracle Gate Decomposition (U<sub>f</sub>)</h2>
+      <div class="theory-section">
+        <p>The oracle is <strong>problem-specific</strong>: its circuit depends on which states are marked. For a single target |x*&rang;, it applies a phase of &minus;1 to exactly that state using multi-controlled Z gates.</p>
+        <div class="key-insight">
+          <strong>Key principle:</strong> The oracle doesn't "know" the answer &mdash; it implements the function f(x) as a reversible quantum circuit. Building this circuit requires knowing f, but <em>running</em> the search requires only O(&radic;N) calls to it.
+        </div>
+        <h3 style="margin-top:1rem;">Example: Marking |101&rang; in a 3-qubit system</h3>
+        <p>To flip the phase of |101&rang; specifically, we use controlled gates that activate only when qubits match the target pattern:</p>
+        <div class="circuit-step-grid">
+          <div class="circuit-step-card">
+            <div class="gate-name" style="color:var(--oracle);">X</div>
+            <div class="gate-desc">Flip qubit q<sub>1</sub> (the 0-bit in "101"). Now |101&rang; maps to |111&rang;.</div>
+          </div>
+          <div class="circuit-step-card">
+            <div class="gate-name" style="color:var(--oracle);">CCZ</div>
+            <div class="gate-desc">Multi-controlled Z gate: applies &minus;1 phase when all qubits are |1&rang;.</div>
+          </div>
+          <div class="circuit-step-card">
+            <div class="gate-name" style="color:var(--oracle);">X</div>
+            <div class="gate-desc">Undo the flip on q<sub>1</sub>. Only |101&rang; received the &minus;1 phase.</div>
+          </div>
+        </div>
+        <p style="color:var(--muted);font-size:0.88rem;">For multiple targets, oracle circuits are combined. In practice, oracles are often constructed from classical Boolean circuits compiled into reversible quantum gates.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Diffusion Gate Decomposition (D)</h2>
+      <div class="theory-section">
+        <p>The diffusion operator performs "inversion about the mean" and has a <strong>fixed structure</strong> independent of the search target:</p>
+        <div class="math-block">D = H<sup>&otimes;n</sup> &middot; (2|0&rang;&lang;0| &minus; I) &middot; H<sup>&otimes;n</sup></div>
+        <p>This decomposes into 5 stages. The key idea is a <strong>&ldquo;sandwich&rdquo; pattern</strong>: wrap a simple operation inside basis changes. Think of it like translating a book &mdash; translate to English, read it, translate back:</p>
+        <div class="sandwich-diagram">
+          <span class="sandwich-layer" style="background:rgba(99,102,241,0.12);color:var(--accent);">H<sup>&otimes;n</sup></span>
+          <span class="sandwich-arrow">&rarr;</span>
+          <span class="sandwich-layer" style="background:rgba(244,114,182,0.12);color:var(--pink);">X<sup>&otimes;n</sup></span>
+          <span class="sandwich-arrow">&rarr;</span>
+          <span class="sandwich-layer" style="background:rgba(0,201,167,0.15);color:var(--accent2);border:1.5px solid var(--accent2);">MCZ</span>
+          <span class="sandwich-arrow">&rarr;</span>
+          <span class="sandwich-layer" style="background:rgba(244,114,182,0.12);color:var(--pink);">X<sup>&otimes;n</sup></span>
+          <span class="sandwich-arrow">&rarr;</span>
+          <span class="sandwich-layer" style="background:rgba(99,102,241,0.12);color:var(--accent);">H<sup>&otimes;n</sup></span>
+        </div>
+        <p style="color:var(--muted);font-size:0.88rem;text-align:center;margin-bottom:0.75rem;">Outer bread = basis change &nbsp;|&nbsp; Inner filling = the actual phase flip &nbsp;|&nbsp; Symmetric = undo the basis change</p>
+        <p>Follow the numbered flow below:</p>
+        <div class="circuit-step-grid" style="grid-template-columns:repeat(5,1fr);">
+          <div class="circuit-step-card" style="border-top:2px solid var(--accent);">
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem;">Step 1</div>
+            <div class="gate-name" style="color:var(--accent);">H<sup>&otimes;n</sup></div>
+            <div class="gate-desc">Change basis: computational &rarr; Hadamard</div>
+          </div>
+          <div class="circuit-step-card" style="border-top:2px solid var(--pink);">
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem;">Step 2</div>
+            <div class="gate-name" style="color:var(--pink);">X<sup>&otimes;n</sup></div>
+            <div class="gate-desc">Flip all bits so |00...0&rang; becomes |11...1&rang;</div>
+          </div>
+          <div class="circuit-step-card" style="border-top:2px solid var(--accent2);background:rgba(0,201,167,0.05);">
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem;">Step 3 (core)</div>
+            <div class="gate-name" style="color:var(--accent2);">MCZ</div>
+            <div class="gate-desc">Phase &minus;1 when all qubits |1&rang;. The conditional phase flip.</div>
+          </div>
+          <div class="circuit-step-card" style="border-top:2px solid var(--pink);">
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem;">Step 4</div>
+            <div class="gate-name" style="color:var(--pink);">X<sup>&otimes;n</sup></div>
+            <div class="gate-desc">Undo the flips &mdash; back to original labeling</div>
+          </div>
+          <div class="circuit-step-card" style="border-top:2px solid var(--accent);">
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem;">Step 5</div>
+            <div class="gate-name" style="color:var(--accent);">H<sup>&otimes;n</sup></div>
+            <div class="gate-desc">Change basis back: Hadamard &rarr; computational</div>
+          </div>
+        </div>
+        <div class="key-insight" style="margin-top:0.5rem;">
+          <strong>Why this works:</strong> In the Hadamard basis, |0...0&rang; corresponds to the equal superposition |&psi;&rang;. Steps 2&ndash;4 apply a &minus;1 phase to |0...0&rang; only &mdash; equivalent to (2|0&rang;&lang;0| &minus; I). Wrapping in H gates (steps 1 &amp; 5) converts this to a reflection about |&psi;&rang; in the original basis. The symmetric sandwich structure is a common pattern in quantum computing called <strong>basis conjugation</strong>.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Resource Requirements</h2>
+      <div class="theory-section">
+        <p>Understanding the cost of Grover's algorithm is essential for assessing its practical feasibility.</p>
+        <table class="resource-table" id="resource-table">
+          <thead><tr><th>Resource</th><th>Per Iteration</th><th>Total (k iterations)</th></tr></thead>
+          <tbody>
+            <tr><td>Oracle calls</td><td>1</td><td><code id="res-oracle">2</code></td></tr>
+            <tr><td>Hadamard gates</td><td>2n</td><td><code id="res-hadamard">12 + 2n</code></td></tr>
+            <tr><td>X (NOT) gates</td><td>2n</td><td><code id="res-x">12</code></td></tr>
+            <tr><td>Multi-controlled Z</td><td>1 (in diffusion)</td><td><code id="res-mcz">2</code></td></tr>
+            <tr><td>Total circuit depth</td><td>O(n)</td><td><code id="res-depth">O(n&radic;N)</code></td></tr>
+            <tr><td>Ancilla qubits</td><td colspan="2">1 (for phase kickback) + O(n) for MCZ decomposition</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);font-size:0.88rem;margin-top:0.5rem;">Values update based on the current qubit count in the Simulator. The multi-controlled Z gate itself requires O(n) basic gates (Toffoli decomposition), making total depth O(n<sup>2</sup> &middot; &radic;N) for a full implementation.</p>
+        <div class="challenge-box" style="margin-top:1rem;">
+          <h4>&#129518; Circuit Exercise</h4>
+          <p>Try changing the qubit count in the <strong>Simulator</strong> tab and return here. Watch how the resource table updates &mdash; notice that oracle calls grow as &radic;N while Hadamard gates grow as n&middot;&radic;N. Which resource becomes the bottleneck for large n?</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== QUIZ TAB ==================== -->
+  <div id="quiz" class="tab-panel">
+    <div class="card" style="margin-bottom:1.5rem;">
+      <h2>Test Your Understanding</h2>
+      <p style="color:var(--muted);">12 questions covering core concepts, geometric intuition, complexity analysis, and practical implications. Questions progress from fundamentals to deeper reasoning.</p>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.75rem;">
+        <span style="font-size:0.78rem;padding:0.25rem 0.6rem;border-radius:100px;background:rgba(99,102,241,0.1);color:var(--accent);">Q1&ndash;5: Core Concepts</span>
+        <span style="font-size:0.78rem;padding:0.25rem 0.6rem;border-radius:100px;background:rgba(0,201,167,0.1);color:var(--accent2);">Q6&ndash;8: Geometry &amp; Proofs</span>
+        <span style="font-size:0.78rem;padding:0.25rem 0.6rem;border-radius:100px;background:rgba(255,159,67,0.1);color:var(--oracle);">Q9&ndash;12: Applications &amp; Reasoning</span>
+      </div>
+    </div>
+    <div id="quiz-container"></div>
+  </div>
+
+  <!-- Module Navigation -->
+  <div class="module-nav">
+    <a href="14_quantum_key_distribution.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <div><div class="nav-label">Previous</div><div class="nav-title">Quantum Key Distribution</div></div>
+    </a>
+    <a href="../index.html" style="border-style:dashed;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <div><div class="nav-label">Course</div><div class="nav-title">All Modules</div></div>
+    </a>
+  </div>
+
+</div>
+
+<script>
+// ===========================
+// STATE
+// ===========================
+let nQubits = 3;
+let N = 8;
+let targetIndices = [5];
+let amplitudes = [];
+let history = [];
+let currentStep = 0;
+let autoRunning = false;
+let autoTimer = null;
+let measured = false;
+let probHistory = [];
+let noiseLevel = 0;
+let autoStopAtOptimal = true;
+let viewMode = 'chart';
+let geoAnimAngle = null;
+let geoTargetAngle = null;
+let geoAngleHistory = [];
+let geoAnimFrame = null;
+let histogramData = null;
+
+// ===========================
+// DOM
+// ===========================
+const qubitSelect = document.getElementById('qubit-select');
+const targetGrid = document.getElementById('target-grid');
+const targetBadge = document.getElementById('target-count-badge');
+const chart = document.getElementById('chart');
+const iterDisplay = document.getElementById('iter-display');
+const probDisplay = document.getElementById('prob-display');
+const btnStep = document.getElementById('btn-step');
+const btnPrev = document.getElementById('btn-prev');
+const btnNextFast = document.getElementById('btn-next-fast');
+const btnAuto = document.getElementById('btn-auto');
+const btnMeasure = document.getElementById('btn-measure');
+const btnReset = document.getElementById('btn-reset');
+const speedSlider = document.getElementById('speed-slider');
+const noiseSlider = document.getElementById('noise-slider');
+const noiseBadge = document.getElementById('noise-badge');
+const stepExplanation = document.getElementById('step-explanation');
+const statIter = document.getElementById('stat-iter');
+const statSubstep = document.getElementById('stat-substep');
+const statProb = document.getElementById('stat-prob');
+const statOptimal = document.getElementById('stat-optimal');
+const overrotationWarning = document.getElementById('overrotation-warning');
+const autoStopCheck = document.getElementById('auto-stop-check');
+
+// ===========================
+// THEME
+// ===========================
+function themeColor(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-toggle').textContent = theme === 'light' ? '\u2600' : '\u263E';
+  localStorage.setItem('grover-theme', theme);
+  if (typeof drawProbHistory === 'function') drawProbHistory();
+  if (typeof renderGeo === 'function' && geoAnimAngle !== null) renderGeo(geoAnimAngle);
+  if (histogramData) drawHistogram();
+}
+
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+});
+
+(function() { const s = localStorage.getItem('grover-theme'); if (s) applyTheme(s); })();
+
+// ===========================
+// TABS
+// ===========================
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'circuit') drawCircuit();
+    if (btn.dataset.tab === 'theory') drawScalingChart();
+  });
+});
+
+function switchTab(name) {
+  const btn = document.querySelector(`.tab-btn[data-tab="${name}"]`);
+  if (btn) btn.click();
+}
+
+// ===========================
+// HELPERS
+// ===========================
+function isTarget(i) { return targetIndices.includes(i); }
+function firstNonTarget() { for (let i = 0; i < N; i++) { if (!isTarget(i)) return i; } return 0; }
+function targetProb() { return targetIndices.reduce((s, t) => s + amplitudes[t] * amplitudes[t], 0); }
+
+function gaussianRandom() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+function applyNoise() {
+  if (noiseLevel <= 0) return;
+  for (let i = 0; i < N; i++) amplitudes[i] += noiseLevel * gaussianRandom();
+  const norm = Math.sqrt(amplitudes.reduce((s, a) => s + a * a, 0));
+  if (norm > 0) for (let i = 0; i < N; i++) amplitudes[i] /= norm;
+}
+
+function optimalIterations() {
+  const M = targetIndices.length;
+  return Math.max(1, Math.round(Math.PI / 4 * Math.sqrt(N / M)));
+}
+
+// ===========================
+// INITIALIZATION
+// ===========================
+function populateTargets() {
+  targetGrid.innerHTML = '';
+  for (let i = 0; i < N; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'tg-btn' + (isTarget(i) ? ' active' : '');
+    btn.textContent = i.toString(2).padStart(nQubits, '0');
+    btn.addEventListener('click', () => toggleTarget(i));
+    targetGrid.appendChild(btn);
+  }
+  targetBadge.textContent = `(${targetIndices.length} marked)`;
+}
+
+function toggleTarget(idx) {
+  const pos = targetIndices.indexOf(idx);
+  if (pos >= 0 && targetIndices.length > 1) targetIndices.splice(pos, 1);
+  else if (pos < 0) targetIndices.push(idx);
+  populateTargets();
+  init();
+}
+
+function init() {
+  nQubits = parseInt(qubitSelect.value);
+  N = Math.pow(2, nQubits);
+  targetIndices = targetIndices.filter(t => t < N);
+  if (targetIndices.length === 0) targetIndices = [0];
+  amplitudes = new Array(N).fill(1 / Math.sqrt(N));
+  history = [amplitudes.slice()];
+  currentStep = 0;
+  measured = false;
+  probHistory = [{ step: 0, prob: targetProb(), isOracle: false }];
+  geoAnimAngle = null; geoAngleHistory = [];
+  histogramData = null;
+  const hCanvas = document.getElementById('histogram-canvas');
+  if (hCanvas) { const hc = hCanvas.getContext('2d'); hc.clearRect(0, 0, hCanvas.width, hCanvas.height); }
+  const hSummary = document.getElementById('histogram-summary');
+  if (hSummary) hSummary.textContent = '';
+  stopAuto();
+  buildChart();
+  updateDisplay();
+  updateStats();
+  updateButtonStates();
+  scheduleHashUpdate();
+  const amp = (1/Math.sqrt(N)).toFixed(4);
+  setExplanation(`<h3>Initial State: Equal Superposition</h3>
+    <p>Hadamard gates create a uniform superposition of all ${N} basis states. Every state is equally likely &mdash; the search hasn't started yet.</p>
+    <div class="math-block">|&psi;&rang; = H<sup>&otimes;${nQubits}</sup>|${'0'.repeat(nQubits)}&rang; = <span class="highlight">1/&radic;${N}</span> &sum; |x&rang;
+
+Each amplitude = ${amp}   |   Each probability = ${(100/N).toFixed(1)}%
+Marked targets: ${targetIndices.length} of ${N} states</div>
+    <p>Press <strong>Next Step</strong> to apply the <span style="color:var(--oracle)">Oracle</span> (phase flip on target states).</p>`);
+}
+
+qubitSelect.addEventListener('change', () => {
+  nQubits = parseInt(qubitSelect.value);
+  N = Math.pow(2, nQubits);
+  targetIndices = targetIndices.filter(t => t < N);
+  if (targetIndices.length === 0) targetIndices = [0];
+  populateTargets();
+  init();
+});
+
+noiseSlider.addEventListener('input', () => {
+  noiseLevel = parseInt(noiseSlider.value) / 100;
+  noiseBadge.classList.toggle('visible', noiseLevel > 0);
+});
+
+autoStopCheck.addEventListener('change', () => { autoStopAtOptimal = autoStopCheck.checked; });
+btnReset.addEventListener('click', init);
+
+// ===========================
+// ALGORITHM STEPS
+// ===========================
+function applyOracle() { for (const t of targetIndices) amplitudes[t] *= -1; }
+
+function applyDiffusion() {
+  const mean = amplitudes.reduce((s, a) => s + a, 0) / N;
+  for (let i = 0; i < N; i++) amplitudes[i] = 2 * mean - amplitudes[i];
+}
+
+function doStep() {
+  if (measured) return;
+  const prevAmps = amplitudes.slice();
+  currentStep++;
+  if (currentStep % 2 === 1) applyOracle();
+  else applyDiffusion();
+  applyNoise();
+  history.push(amplitudes.slice());
+  probHistory.push({ step: currentStep, prob: targetProb(), isOracle: currentStep % 2 === 1 });
+  updateDisplay();
+  highlightChangedBars(prevAmps);
+  showGhostBars(prevAmps);
+  updateStats();
+  updateExplanationForStep();
+  updateButtonStates();
+  scheduleHashUpdate();
+
+  // Step flash on chart
+  chart.classList.remove('step-flash');
+  void chart.offsetWidth;
+  chart.classList.add('step-flash');
+
+  // Stat value bounce
+  document.querySelectorAll('.stat-value').forEach(sv => {
+    sv.classList.remove('bouncing');
+    void sv.offsetWidth;
+    sv.classList.add('bouncing');
+  });
+}
+
+function undoStep() {
+  if (currentStep <= 0 || measured) return;
+  history.pop();
+  probHistory.pop();
+  currentStep--;
+  amplitudes = history[history.length - 1].slice();
+  updateDisplay();
+  updateStats();
+  updateExplanationForStep();
+  updateButtonStates();
+  scheduleHashUpdate();
+}
+
+function skipToNextIteration() {
+  if (measured) return;
+  if (currentStep % 2 === 1) doStep();
+  else { doStep(); doStep(); }
+}
+
+function doMeasure() {
+  if (measured || currentStep === 0) return;
+  stopAuto();
+
+  // Calculate result first
+  const probs = amplitudes.map(a => a * a);
+  let r = Math.random(), cumulative = 0, result = 0;
+  for (let i = 0; i < N; i++) { cumulative += probs[i]; if (r <= cumulative) { result = i; break; } }
+
+  // Phase 1: Visual collapse animation — highlight winner, fade losers
+  for (let i = 0; i < N; i++) {
+    const bar = document.getElementById(`bar-${i}`);
+    if (!bar) continue;
+    if (i === result) {
+      bar.classList.add('measured-winner');
+    } else {
+      bar.classList.add('measured-loser');
+    }
+  }
+
+  // Phase 2: After animation, update state
+  setTimeout(() => {
+    measured = true;
+    amplitudes = new Array(N).fill(0);
+    amplitudes[result] = 1;
+    probHistory.push({ step: currentStep + 0.5, prob: isTarget(result) ? 1 : 0, isOracle: false, measured: true });
+
+    // Clear animation classes and update display
+    for (let i = 0; i < N; i++) {
+      const bar = document.getElementById(`bar-${i}`);
+      if (bar) { bar.classList.remove('measured-winner', 'measured-loser'); bar.style.opacity = ''; bar.style.filter = ''; }
+    }
+
+    updateDisplay();
+    updateProbDisplay();
+    updateButtonStates();
+    const success = isTarget(result);
+    const resultBin = result.toString(2).padStart(nQubits, '0');
+    const iterCount = Math.floor(currentStep / 2);
+    setExplanation(`<h3>Measurement Result</h3>
+      <p style="font-size:1.15rem;font-weight:700;color:${success ? 'var(--accent2)' : 'var(--negative)'}; margin:0.5rem 0;">
+      |${resultBin}&#10217; (decimal ${result}) &mdash; ${success ? 'Target found!' : 'Not a target.'}</p>
+      <p style="color:var(--muted);margin-bottom:0.5rem;">After ${iterCount} Grover iteration${iterCount !== 1 ? 's' : ''} on ${N} states, the quantum state collapsed to this outcome.
+      ${success ? 'Grover\'s algorithm successfully identified a marked state.' : 'The search missed &mdash; this can happen with small probability. Try again or add more iterations.'}</p>
+      <p>Press <strong>Reset</strong> to start over.</p>`);
+  }, 700);
+}
+
+// ===========================
+// BAR GLOW HIGHLIGHT
+// ===========================
+function highlightChangedBars(prevAmps) {
+  const threshold = 0.5 / Math.sqrt(N);
+  for (let i = 0; i < N; i++) {
+    const bar = document.getElementById(`bar-${i}`);
+    if (!bar) continue;
+    bar.classList.remove('glow');
+    if (Math.abs(amplitudes[i] - prevAmps[i]) > threshold) {
+      void bar.offsetWidth;
+      bar.classList.add('glow');
+      bar.addEventListener('animationend', () => bar.classList.remove('glow'), { once: true });
+    }
+  }
+}
+
+function showGhostBars(prevAmps) {
+  document.querySelectorAll('.bar-ghost').forEach(g => g.remove());
+  for (let i = 0; i < N; i++) {
+    const barArea = document.querySelector(`#bw-${i} .bar-area`);
+    if (!barArea) continue;
+    const amp = prevAmps[i];
+    const heightPct = (Math.abs(amp) / 1.05) * 50;
+    if (heightPct < 0.5) continue;
+    const ghost = document.createElement('div');
+    ghost.className = `bar-ghost ${amp >= 0 ? 'pos' : 'neg'}${isTarget(i) ? ' target' : ''}`;
+    ghost.style.height = heightPct + '%';
+    barArea.appendChild(ghost);
+    requestAnimationFrame(() => requestAnimationFrame(() => ghost.classList.add('fade')));
+    ghost.addEventListener('transitionend', () => ghost.remove());
+  }
+}
+
+// ===========================
+// BUTTON STATES
+// ===========================
+function updateButtonStates() {
+  btnPrev.disabled = currentStep === 0 || measured;
+  btnStep.disabled = measured;
+  btnNextFast.disabled = measured;
+  btnAuto.disabled = measured;
+  btnMeasure.disabled = measured || currentStep === 0;
+  const histBtns = [document.getElementById('btn-hist-100'), document.getElementById('btn-hist-1000')];
+  histBtns.forEach(b => { if (b) b.disabled = measured || currentStep === 0; });
+  const iter = Math.floor(currentStep / 2);
+  const pastOptimal = currentStep > 0 && !measured && iter > optimalIterations();
+  overrotationWarning.classList.toggle('visible', pastOptimal);
+}
+
+// ===========================
+// AUTO-RUN
+// ===========================
+function startAuto() {
+  if (measured) return;
+  autoRunning = true;
+  btnAuto.textContent = '\u23F8 Pause';
+  btnAuto.style.borderColor = 'var(--accent2)';
+  btnAuto.style.color = 'var(--accent2)';
+  const delay = 1100 - speedSlider.value * 100;
+  autoTimer = setInterval(() => {
+    if (autoStopAtOptimal) {
+      const iterNow = Math.ceil((currentStep + 1) / 2);
+      if (iterNow >= optimalIterations()) {
+        stopAuto();
+        if (currentStep % 2 === 1) doStep();
+        setExplanation(stepExplanation.innerHTML + `<p style="color:var(--accent2);font-weight:600;margin-top:0.5rem;">Reached optimal. Measure now for highest success probability.</p>`);
+        return;
+      }
+    } else {
+      const iterNow = Math.floor((currentStep + 1) / 2);
+      if (iterNow >= optimalIterations() + 2) { stopAuto(); return; }
+    }
+    doStep();
+  }, delay);
+}
+
+function stopAuto() {
+  autoRunning = false;
+  btnAuto.textContent = '\u25B6 Auto-run';
+  btnAuto.style.borderColor = '';
+  btnAuto.style.color = '';
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+}
+
+btnStep.addEventListener('click', doStep);
+btnPrev.addEventListener('click', undoStep);
+btnNextFast.addEventListener('click', skipToNextIteration);
+btnMeasure.addEventListener('click', doMeasure);
+btnAuto.addEventListener('click', () => autoRunning ? stopAuto() : startAuto());
+speedSlider.addEventListener('input', () => { if (autoRunning) { stopAuto(); startAuto(); } });
+
+// ===========================
+// KEYBOARD SHORTCUTS
+// ===========================
+document.addEventListener('keydown', (e) => {
+  if (['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)) return;
+  switch(e.key) {
+    case 'ArrowRight': e.preventDefault(); doStep(); break;
+    case 'ArrowLeft': e.preventDefault(); undoStep(); break;
+    case ' ': e.preventDefault(); autoRunning ? stopAuto() : startAuto(); break;
+    case 'm': case 'M': doMeasure(); break;
+    case 'r': case 'R': init(); break;
+    case '1': switchTab('simulator'); break;
+    case '2': switchTab('theory'); break;
+    case '3': switchTab('circuit'); break;
+    case '4': switchTab('quiz'); break;
+  }
+});
+
+// ===========================
+// DISPLAY — BUILD CHART ONCE
+// ===========================
+function buildChart() {
+  const zeroLine = chart.querySelector('.chart-zero');
+  const meanLine = document.getElementById('mean-line');
+  const meanLabel = document.getElementById('mean-label');
+  chart.innerHTML = '';
+  chart.appendChild(zeroLine);
+  chart.appendChild(meanLine);
+  chart.appendChild(meanLabel);
+  for (let i = 0; i < N; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'bar-wrapper'; wrapper.id = `bw-${i}`;
+    const ampLabel = document.createElement('div');
+    ampLabel.className = 'amp-label'; ampLabel.id = `amp-${i}`;
+    const barArea = document.createElement('div');
+    barArea.className = 'bar-area';
+    const bar = document.createElement('div');
+    bar.className = 'bar positive'; bar.id = `bar-${i}`;
+    barArea.appendChild(bar);
+    const label = document.createElement('div');
+    label.className = 'bar-label'; label.id = `bl-${i}`;
+    label.textContent = N <= 32 ? '|' + i.toString(2).padStart(nQubits, '0') + '\u27E9' : i;
+    wrapper.appendChild(ampLabel);
+    wrapper.appendChild(barArea);
+    wrapper.appendChild(label);
+    chart.appendChild(wrapper);
+  }
+}
+
+// ===========================
+// DISPLAY — LIGHTWEIGHT UPDATE
+// ===========================
+function updateDisplay() {
+  for (let i = 0; i < N; i++) {
+    const bar = document.getElementById(`bar-${i}`);
+    const ampLabel = document.getElementById(`amp-${i}`);
+    const wrapper = document.getElementById(`bw-${i}`);
+    if (!bar) continue;
+    const tgt = isTarget(i);
+    const amp = amplitudes[i];
+    const heightPct = (Math.abs(amp) / 1.05) * 50;
+    bar.className = `bar ${amp >= 0 ? 'positive' : 'negative'}${tgt ? ' target' : ''}`;
+    bar.style.height = heightPct + '%';
+    if (N <= 16) ampLabel.textContent = amp.toFixed(3);
+    else ampLabel.textContent = '';
+    if (wrapper) wrapper.title = `|${i.toString(2).padStart(nQubits, '0')}\u27E9\nAmplitude: ${amp.toFixed(4)}\nProbability: ${(amp*amp*100).toFixed(1)}%${tgt ? '\n(TARGET)' : ''}`;
+  }
+  const mean = amplitudes.reduce((s, a) => s + a, 0) / N;
+  const meanLine = document.getElementById('mean-line');
+  const meanLabel = document.getElementById('mean-label');
+  if (meanLine && meanLabel) {
+    const pct = 50 - (mean / 1.05) * 50;
+    meanLine.style.top = pct + '%';
+    meanLabel.style.top = (pct - 1.8) + '%';
+    meanLabel.textContent = '\u03BC=' + mean.toFixed(3);
+  }
+  updateProbDisplay();
+  updateStateTable();
+  drawGeometric();
+  drawProbHistory();
+}
+
+function updateProbDisplay() {
+  probDisplay.innerHTML = '';
+  for (let i = 0; i < N; i++) {
+    const item = document.createElement('div');
+    const tgt = isTarget(i);
+    item.className = `prob-item${tgt ? ' target-prob' : ''}`;
+    const prob = amplitudes[i] * amplitudes[i];
+    item.innerHTML = `<div class="state">|${i.toString(2).padStart(nQubits, '0')}\u27E9</div><div class="prob" style="color:${tgt ? 'var(--oracle)' : (prob > 0.5 ? 'var(--accent)' : 'var(--text)')}">${(prob * 100).toFixed(1)}%</div>`;
+    probDisplay.appendChild(item);
+  }
+}
+
+// ===========================
+// STATE VECTOR TABLE
+// ===========================
+function updateStateTable() {
+  const container = document.getElementById('state-table-container');
+  if (!container || viewMode !== 'table') return;
+  let html = '<table class="state-table"><thead><tr><th style="text-align:left">State</th><th>Amplitude</th><th>Phase</th><th>Probability</th></tr></thead><tbody>';
+  for (let i = 0; i < N; i++) {
+    const tgt = isTarget(i);
+    const amp = amplitudes[i];
+    html += `<tr class="${tgt ? 'target-row' : ''}">`;
+    html += `<td style="text-align:left">|${i.toString(2).padStart(nQubits, '0')}\u27E9${tgt ? ' <span style="color:var(--oracle)">*</span>' : ''}</td>`;
+    html += `<td>${amp.toFixed(5)}</td>`;
+    html += `<td style="color:${amp >= 0 ? 'var(--accent2)' : 'var(--negative)'}">${amp >= 0 ? '+' : '\u2212'}</td>`;
+    html += `<td>${(amp * amp * 100).toFixed(2)}%</td></tr>`;
+  }
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+document.getElementById('view-chart-btn').addEventListener('click', () => {
+  viewMode = 'chart';
+  document.getElementById('view-chart-btn').classList.add('active');
+  document.getElementById('view-table-btn').classList.remove('active');
+  document.getElementById('chart-view').style.display = '';
+  document.getElementById('state-table-container').style.display = 'none';
+});
+
+document.getElementById('view-table-btn').addEventListener('click', () => {
+  viewMode = 'table';
+  document.getElementById('view-table-btn').classList.add('active');
+  document.getElementById('view-chart-btn').classList.remove('active');
+  document.getElementById('chart-view').style.display = 'none';
+  document.getElementById('state-table-container').style.display = '';
+  updateStateTable();
+});
+
+function updateStats() {
+  const iter = Math.floor(currentStep / 2);
+  const sub = currentStep === 0 ? 'Ready' : (currentStep % 2 === 1 ? 'Oracle' : 'Diffusion');
+  const subLabel = currentStep === 0 ? 'Ready' : (currentStep % 2 === 1 ? 'Phase Flip' : 'Amplify');
+  const prob = targetProb();
+  const opt = optimalIterations();
+  statIter.textContent = iter + ' / ' + opt;
+  statSubstep.textContent = subLabel;
+  statSubstep.style.color = sub === 'Oracle' ? 'var(--oracle)' : (sub === 'Diffusion' ? 'var(--diffusion)' : 'var(--accent)');
+  statProb.textContent = (prob * 100).toFixed(1) + '%';
+  // Color the probability based on how close to target
+  if (prob > 0.9) statProb.style.color = 'var(--accent2)';
+  else if (prob > 0.5) statProb.style.color = 'var(--accent)';
+  else statProb.style.color = 'var(--oracle)';
+  statOptimal.textContent = opt;
+  // Update progress bar with label
+  const progressFill = document.getElementById('progress-fill');
+  const progressLabel = document.getElementById('progress-label');
+  if (progressFill) {
+    const progress = Math.min((iter / Math.max(opt, 1)) * 100, 100);
+    progressFill.style.width = progress + '%';
+    if (iter > opt) { progressFill.style.background = 'linear-gradient(90deg, var(--oracle), var(--negative))'; progressFill.className = 'past-optimal'; }
+    else if (iter >= opt - 1 && iter > 0) { progressFill.style.background = 'linear-gradient(90deg, var(--accent2), var(--green))'; progressFill.className = 'at-optimal'; }
+    else { progressFill.style.background = 'linear-gradient(90deg, var(--accent), var(--accent2))'; progressFill.className = ''; }
+  }
+  if (progressLabel) {
+    progressLabel.textContent = currentStep === 0 ? '' : `${iter}/${opt}`;
+  }
+  // Richer iteration display
+  if (currentStep === 0) {
+    iterDisplay.textContent = 'Initial State: Equal Superposition';
+  } else if (measured) {
+    iterDisplay.textContent = `Measured after ${iter} iteration${iter !== 1 ? 's' : ''}`;
+  } else {
+    const pctStr = (prob * 100).toFixed(1);
+    const stageStr = currentStep % 2 === 1 ? 'Oracle (phase flip)' : 'Diffusion (amplification)';
+    iterDisplay.textContent = `Iteration ${Math.ceil(currentStep / 2)} of ${opt} \u2014 ${stageStr} \u2014 P(target) = ${pctStr}%`;
+  }
+  // Richer live status for accessibility
+  clearTimeout(updateStats._t);
+  updateStats._t = setTimeout(() => {
+    const ls = document.getElementById('live-status');
+    if (!ls) return;
+    if (currentStep === 0) {
+      ls.textContent = `Initial state. ${N} states, ${targetIndices.length} target${targetIndices.length>1?'s':''}. Optimal: ${opt} iterations.`;
+    } else if (measured) {
+      ls.textContent = `Measurement complete after ${iter} iterations.`;
+    } else {
+      const remaining = opt - iter;
+      const statusHint = remaining > 0 ? `${remaining} iteration${remaining>1?'s':''} to optimal.` :
+        remaining === 0 ? 'At optimal \u2014 measure now!' : 'Past optimal \u2014 over-rotating.';
+      ls.textContent = `Iteration ${Math.ceil(currentStep/2)}, ${sub}. Target probability ${(prob*100).toFixed(1)} percent. ${statusHint}`;
+    }
+  }, 300);
+}
+
+function setExplanation(html) {
+  stepExplanation.innerHTML = html;
+  // Add pulse animation to the explanation container
+  const container = stepExplanation.closest('.control-strip-explanation');
+  if (container) {
+    container.classList.remove('explanation-pulse');
+    void container.offsetWidth; // force reflow
+    container.classList.add('explanation-pulse');
+  }
+}
+
+// ===========================
+// STEP EXPLANATIONS
+// ===========================
+function updateExplanationForStep() {
+  if (currentStep === 0) {
+    const amp = (1/Math.sqrt(N)).toFixed(4);
+    setExplanation(`<h3>Initial State</h3><div class="math-block">Each amplitude = 1/&radic;${N} = <span class="highlight">${amp}</span>
+Each probability = 1/${N} = ${(100/N).toFixed(1)}%</div>`);
+    return;
+  }
+  const iter = Math.ceil(currentStep / 2);
+  const isOracleStep = currentStep % 2 === 1;
+  const M = targetIndices.length;
+  const t0 = targetIndices[0];
+  const nt = firstNonTarget();
+  const targetBin = t0.toString(2).padStart(nQubits, '0');
+  const prob = (targetProb() * 100).toFixed(1);
+  const prevAmps = history[history.length - 2];
+  const mean = amplitudes.reduce((s, a) => s + a, 0) / N;
+  const prevMean = prevAmps.reduce((s, a) => s + a, 0) / N;
+
+  if (isOracleStep) {
+    setExplanation(`
+      <h3><span class="badge badge-oracle">Oracle</span> Iteration ${iter} of ${optimalIterations()} &mdash; Phase Flip</h3>
+      <p style="color:var(--muted);margin-bottom:0.4rem;">The oracle marks ${M > 1 ? M + ' target states' : '|' + targetBin + '\u27E9'} by flipping ${M > 1 ? 'their' : 'its'} amplitude sign. Non-targets are untouched.</p>
+      <div class="math-block"><span class="oracle-color">O<sub>f</sub></span>|x&rang; = (-1)<sup>f(x)</sup>|x&rang;
+
+Target${M>1?'s':''}: ${prevAmps[t0].toFixed(4)} &rarr; <span class="oracle-color">${amplitudes[t0].toFixed(4)}</span>  (&times; &minus;1)
+Others:  ${prevAmps[nt].toFixed(4)} &rarr; ${amplitudes[nt].toFixed(4)}  (unchanged)
+
+Mean shifted: ${prevMean.toFixed(4)} &rarr; <span class="oracle-color">${mean.toFixed(4)}</span></div>
+      <p>The target is now <strong>below the mean</strong> &mdash; the Diffusion operator will exploit this. Press <strong>Next Step</strong>.</p>`);
+  } else {
+    const remainMsg = iter > optimalIterations()
+      ? '<span style="color:var(--oracle);font-weight:600;">Over-rotation: probability is now decreasing. Consider measuring or resetting.</span>'
+      : iter === optimalIterations()
+        ? '<span style="color:var(--accent2);font-weight:600;">Optimal reached &mdash; measure now for maximum success probability!</span>'
+        : `<strong>${optimalIterations() - iter}</strong> iteration${optimalIterations() - iter > 1 ? 's' : ''} remaining to optimal.`;
+    const interferenceHTML = `
+      <details class="interference-details">
+        <summary>Why does this work? Constructive &amp; Destructive Interference</summary>
+        <div class="detail-body">
+          <p><strong style="color:var(--accent2)">Constructive on target:</strong> 2&mu; &minus; (${prevAmps[t0].toFixed(4)}) = <strong>${amplitudes[t0].toFixed(4)}</strong> &mdash; subtracting a negative adds amplitude.</p>
+          <p style="margin-top:0.3rem;"><strong style="color:var(--negative)">Destructive on non-targets:</strong> 2&mu; &minus; (${prevAmps[nt].toFixed(4)}) = <strong>${amplitudes[nt].toFixed(4)}</strong> &mdash; above the mean, so reduced.</p>
+          <p style="margin-top:0.3rem;color:var(--muted);">This is the heart of the algorithm: the Oracle creates a phase difference; Diffusion converts it into an amplitude difference through quantum interference.</p>
+        </div>
+      </details>`;
+    setExplanation(`
+      <h3><span class="badge badge-diffusion">Diffusion</span> Iteration ${iter} of ${optimalIterations()} &mdash; Inversion about Mean</h3>
+      <p style="color:var(--muted);margin-bottom:0.4rem;">Each amplitude is reflected about the mean. The negated target gets a big boost; non-targets shrink slightly.</p>
+      <div class="math-block"><span class="diffusion-color">D</span>: &alpha;<sub>x</sub> &rarr; 2&mu; &minus; &alpha;<sub>x</sub>,  &mu; = ${prevMean.toFixed(4)}
+
+Target${M>1?'s':''}:  2(${prevMean.toFixed(4)}) &minus; (${prevAmps[t0].toFixed(4)}) = <span class="diffusion-color">${amplitudes[t0].toFixed(4)}</span>
+Others:  2(${prevMean.toFixed(4)}) &minus; (${prevAmps[nt].toFixed(4)}) = ${amplitudes[nt].toFixed(4)}
+
+P(target) = <span class="highlight">${prob}%</span></div>
+      <p>${remainMsg}</p>
+      ${interferenceHTML}`);
+  }
+}
+
+// ===========================
+// GEOMETRIC ROTATION VIEW (animated)
+// ===========================
+function renderGeo(angle) {
+  const canvas = document.getElementById('geo-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+  const R = Math.min(W, H) / 2 - 45;
+  const M = targetIndices.length;
+  const theta = Math.asin(Math.sqrt(M / N));
+  const gridColor = themeColor('--border') || '#2a2d3a';
+  const mutedColor = themeColor('--muted') || '#8888a0';
+
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.strokeStyle = 'rgba(128,128,128,0.08)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = 'rgba(128,128,128,0.15)';
+  ctx.beginPath(); ctx.arc(cx, cy, R, -Math.PI/2, 0); ctx.stroke();
+
+  ctx.strokeStyle = gridColor; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx - R - 15, cy); ctx.lineTo(cx + R + 25, cy);
+  ctx.moveTo(cx, cy + R + 15); ctx.lineTo(cx, cy - R - 25);
+  ctx.stroke();
+
+  ctx.font = '13px monospace'; ctx.textAlign = 'left';
+  ctx.fillStyle = themeColor('--accent') || '#6c63ff';
+  ctx.fillText("|s'\u27E9", cx + R + 6, cy - 4);
+  ctx.fillStyle = themeColor('--oracle') || '#ff9f43';
+  ctx.textAlign = 'center';
+  ctx.fillText("|w\u27E9", cx + 14, cy - R - 10);
+
+  ctx.strokeStyle = 'rgba(128,128,128,0.2)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + R * Math.cos(theta), cy - R * Math.sin(theta)); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = mutedColor; ctx.font = '11px monospace'; ctx.textAlign = 'left';
+  ctx.fillText('|\u03C8\u2080\u27E9', cx + (R + 8) * Math.cos(theta), cy - (R + 8) * Math.sin(theta) + 4);
+
+  ctx.strokeStyle = mutedColor; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, 35, -theta, 0); ctx.stroke();
+  ctx.fillStyle = mutedColor; ctx.font = '11px monospace'; ctx.textAlign = 'left';
+  ctx.fillText('\u03B8', cx + 39, cy - 6);
+
+  // Rotation trail: draw previous angle positions as fading dots
+  if (geoAngleHistory.length > 1) {
+    const trailColor = themeColor('--accent2') || '#00c9a7';
+    for (let i = 0; i < geoAngleHistory.length - 1; i++) {
+      const a = geoAngleHistory[i];
+      const tx = cx + R * Math.cos(a);
+      const ty = cy - R * Math.sin(a);
+      const alpha = 0.12 + 0.35 * (i / (geoAngleHistory.length - 1));
+      ctx.fillStyle = trailColor;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath(); ctx.arc(tx, ty, 3, 0, Math.PI * 2); ctx.fill();
+    }
+    // Connect trail with faint arc
+    ctx.globalAlpha = 0.15;
+    ctx.strokeStyle = trailColor; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    const startA = geoAngleHistory[0];
+    const endA = geoAngleHistory[geoAngleHistory.length - 1];
+    if (endA > startA) ctx.arc(cx, cy, R, -endA, -startA);
+    else ctx.arc(cx, cy, R, -startA, -endA);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  const stateX = cx + R * Math.cos(angle);
+  const stateY = cy - R * Math.sin(angle);
+  ctx.strokeStyle = themeColor('--accent2') || '#00c9a7'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(stateX, stateY); ctx.stroke();
+
+  const arrowDir = Math.atan2(-(stateY - cy), stateX - cx);
+  ctx.fillStyle = themeColor('--accent2') || '#00c9a7';
+  ctx.beginPath(); ctx.moveTo(stateX, stateY);
+  ctx.lineTo(stateX - 12 * Math.cos(arrowDir - 0.3), stateY + 12 * Math.sin(arrowDir - 0.3));
+  ctx.lineTo(stateX - 12 * Math.cos(arrowDir + 0.3), stateY + 12 * Math.sin(arrowDir + 0.3));
+  ctx.closePath(); ctx.fill();
+
+  // Pulsing endpoint dot
+  const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 300);
+  const dotR = 4 + pulse * 2;
+  ctx.fillStyle = themeColor('--accent2') || '#00c9a7';
+  ctx.globalAlpha = 0.6 + pulse * 0.4;
+  ctx.beginPath(); ctx.arc(stateX, stateY, dotR, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = 1;
+
+  if (Math.abs(angle) > 0.02) {
+    ctx.strokeStyle = themeColor('--accent2') || '#00c9a7'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (angle > 0) ctx.arc(cx, cy, 50, -angle, 0);
+    else ctx.arc(cx, cy, 50, 0, -angle);
+    ctx.stroke();
+    const midA = angle / 2;
+    const mult = angle / theta;
+    const labelText = Math.abs(mult - 1) < 0.1 ? '\u03B8' :
+      Math.abs(mult - Math.round(mult)) < 0.15 ? Math.round(mult) + '\u03B8' : mult.toFixed(1) + '\u03B8';
+    ctx.fillStyle = themeColor('--accent2') || '#00c9a7';
+    ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(labelText, cx + 65 * Math.cos(midA), cy - 65 * Math.sin(midA));
+  }
+
+  ctx.strokeStyle = 'rgba(255,159,67,0.15)'; ctx.setLineDash([2, 4]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - R); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = themeColor('--accent2') || '#00c9a7'; ctx.font = '11px monospace'; ctx.textAlign = 'left';
+  const lx = stateX + (angle > Math.PI/4 ? -30 : 8);
+  ctx.fillText('|\u03C8\u27E9', lx, stateY - 8);
+
+  const geoMath = document.getElementById('geo-math');
+  if (geoMath) {
+    const thetaDeg = (theta * 180 / Math.PI).toFixed(1);
+    const curDeg = (angle * 180 / Math.PI).toFixed(1);
+    const pTarget = (Math.sin(angle) ** 2 * 100).toFixed(1);
+    geoMath.innerHTML = `\u03B8 = arcsin(\u221A(${M}/${N})) = <span class="highlight">${thetaDeg}\u00B0</span>
+
+Current angle = <span class="diffusion-color">${curDeg}\u00B0</span>
+= ${(angle / theta).toFixed(2)}\u03B8
+
+P(target) = sin\u00B2(${curDeg}\u00B0)
+= <span class="highlight">${pTarget}%</span>
+
+Goal: rotate to 90\u00B0 (\u2248 ${optimalIterations()} iterations)`;
+  }
+}
+
+function animateGeo(startTime, startAngle) {
+  const duration = 400;
+  const now = performance.now();
+  const t = Math.min((now - startTime) / duration, 1);
+  const eased = t < 1 ? t * (2 - t) : 1;
+  const angle = startAngle + (geoTargetAngle - startAngle) * eased;
+  renderGeo(angle);
+  if (t < 1) {
+    geoAnimFrame = requestAnimationFrame(() => animateGeo(startTime, startAngle));
+  } else {
+    geoAnimAngle = geoTargetAngle;
+    geoAnimFrame = null;
+  }
+}
+
+function drawGeometric() {
+  const M = targetIndices.length;
+  const compW = targetIndices.reduce((s, t) => s + amplitudes[t], 0) / Math.sqrt(M);
+  const ntIdx = firstNonTarget();
+  const compS = amplitudes[ntIdx] * Math.sqrt(N - M);
+  const targetAngle = Math.atan2(compW, compS);
+
+  if (geoAnimAngle === null) {
+    geoAnimAngle = targetAngle;
+    geoAngleHistory = [targetAngle];
+    renderGeo(targetAngle);
+    return;
+  }
+
+  geoAngleHistory.push(targetAngle);
+  geoTargetAngle = targetAngle;
+  if (geoAnimFrame) cancelAnimationFrame(geoAnimFrame);
+  const startAngle = geoAnimAngle;
+  geoAnimFrame = requestAnimationFrame(() => animateGeo(performance.now(), startAngle));
+}
+
+// ===========================
+// PROBABILITY HISTORY CHART
+// ===========================
+function drawProbHistory() {
+  const canvas = document.getElementById('prob-history-canvas');
+  if (!canvas) return;
+  const container = canvas.parentElement;
+  canvas.width = container.clientWidth - 36;
+  canvas.height = 170;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const pad = { top: 15, right: 20, bottom: 30, left: 45 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+  const gridColor = themeColor('--border') || '#2a2d3a';
+  const mutedColor = themeColor('--muted') || '#8888a0';
+  const accentColor = themeColor('--accent') || '#6c63ff';
+  const oracleColor = themeColor('--oracle') || '#ff9f43';
+  const accent2Color = themeColor('--accent2') || '#00c9a7';
+
+  ctx.clearRect(0, 0, W, H);
+
+  const M = targetIndices.length;
+  const theta = Math.asin(Math.sqrt(M / N));
+  const optStep = optimalIterations() * 2;
+  const maxSteps = Math.max(probHistory.length - 1, optStep + 2, 4);
+
+  function toX(s) { return pad.left + (s / maxSteps) * plotW; }
+  function toY(p) { return H - pad.bottom - p * plotH; }
+
+  ctx.strokeStyle = gridColor + '40'; ctx.lineWidth = 1;
+  for (let p = 0.25; p <= 1; p += 0.25) {
+    ctx.beginPath(); ctx.moveTo(pad.left, toY(p)); ctx.lineTo(W - pad.right, toY(p)); ctx.stroke();
+  }
+
+  ctx.strokeStyle = accentColor + '40'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  for (let s = 0; s <= maxSteps; s += 0.5) {
+    const angle = (2 * s / 2 + 1) * theta;
+    const p = Math.min(Math.sin(angle) ** 2, 1);
+    s === 0 ? ctx.moveTo(toX(s), toY(p)) : ctx.lineTo(toX(s), toY(p));
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+
+  ctx.strokeStyle = accent2Color + '60'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(toX(optStep), pad.top); ctx.lineTo(toX(optStep), H - pad.bottom);
+  ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = accent2Color + '99'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('optimal', toX(optStep), pad.top - 3);
+
+  if (probHistory.length > 1) {
+    ctx.strokeStyle = oracleColor; ctx.lineWidth = 2; ctx.beginPath();
+    probHistory.forEach((p, i) => {
+      const x = toX(p.step), y = toY(Math.min(p.prob, 1));
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+
+  probHistory.forEach((p, i) => {
+    const x = toX(p.step), y = toY(Math.min(p.prob, 1));
+    ctx.fillStyle = oracleColor;
+    ctx.beginPath(); ctx.arc(x, y, i === probHistory.length - 1 ? 5 : 3.5, 0, Math.PI * 2); ctx.fill();
+    if (i === probHistory.length - 1) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
+  });
+
+  ctx.strokeStyle = gridColor; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, H - pad.bottom);
+  ctx.lineTo(W - pad.right, H - pad.bottom); ctx.stroke();
+
+  ctx.fillStyle = mutedColor; ctx.font = '10px monospace'; ctx.textAlign = 'right';
+  for (let p = 0; p <= 1; p += 0.25) ctx.fillText((p * 100).toFixed(0) + '%', pad.left - 5, toY(p) + 4);
+
+  ctx.textAlign = 'center';
+  const stepInterval = maxSteps <= 8 ? 1 : (maxSteps <= 16 ? 2 : 4);
+  for (let s = 0; s <= maxSteps; s += stepInterval) ctx.fillText(s, toX(s), H - pad.bottom + 14);
+  ctx.font = '11px sans-serif';
+  ctx.fillText('Step', W / 2, H - 2);
+
+  canvas._toX = toX; canvas._toY = toY; canvas._maxSteps = maxSteps; canvas._pad = pad;
+}
+
+// Prob history click-to-jump and hover
+(function() {
+  const canvas = document.getElementById('prob-history-canvas');
+  const tooltip = document.getElementById('prob-history-tooltip');
+  canvas.addEventListener('click', (e) => {
+    if (!canvas._toX || probHistory.length < 2) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const pad = canvas._pad, plotW = canvas.width - pad.left - pad.right;
+    const step = Math.round(((x - pad.left) / plotW) * canvas._maxSteps);
+    let closest = 0, minDist = Infinity;
+    probHistory.forEach((p, i) => { const d = Math.abs(p.step - step); if (d < minDist) { minDist = d; closest = i; } });
+    const target = probHistory[closest];
+    if (target && target.step <= currentStep && !target.measured) {
+      const ts = Math.round(target.step);
+      if (ts >= 0 && ts < history.length) {
+        currentStep = ts; amplitudes = history[ts].slice();
+        probHistory = probHistory.slice(0, closest + 1);
+        measured = false; geoAnimAngle = null;
+        updateDisplay(); updateStats(); updateExplanationForStep(); updateButtonStates(); scheduleHashUpdate();
+      }
+    }
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    if (!canvas._toX || probHistory.length < 2) { tooltip.style.display = 'none'; return; }
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const pad = canvas._pad, plotW = canvas.width - pad.left - pad.right;
+    const step = ((x - pad.left) / plotW) * canvas._maxSteps;
+    let closest = 0, minDist = Infinity;
+    probHistory.forEach((p, i) => { const d = Math.abs(p.step - step); if (d < minDist) { minDist = d; closest = i; } });
+    const entry = probHistory[closest];
+    if (entry && minDist < canvas._maxSteps * 0.08) {
+      const iter = Math.ceil(entry.step / 2);
+      const sub = entry.step === 0 ? 'Init' : (entry.step % 2 === 1 ? 'Oracle' : 'Diffusion');
+      tooltip.innerHTML = `Step ${Math.round(entry.step)} (Iter ${iter} ${sub})<br>P(target) = ${(entry.prob * 100).toFixed(1)}%`;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX - rect.left + 12) + 'px';
+      tooltip.style.top = (e.clientY - rect.top - 40) + 'px';
+    } else tooltip.style.display = 'none';
+  });
+  canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+})();
+
+// ===========================
+// MEASUREMENT HISTOGRAM
+// ===========================
+function runHistogram(numRuns) {
+  if (currentStep === 0 || measured) return;
+  const probs = amplitudes.map(a => a * a);
+  const cumul = [];
+  let sum = 0;
+  for (let i = 0; i < N; i++) { sum += probs[i]; cumul.push(sum); }
+  const accumulate = document.getElementById('hist-accumulate').checked;
+  if (!accumulate || !histogramData || histogramData.counts.length !== N) {
+    histogramData = { counts: new Array(N).fill(0), total: 0, expectedProb: probs.slice() };
+  }
+  histogramData.total += numRuns;
+  histogramData.expectedProb = probs.slice();
+  for (let r = 0; r < numRuns; r++) {
+    const rand = Math.random();
+    for (let i = 0; i < N; i++) { if (rand <= cumul[i]) { histogramData.counts[i]++; break; } }
+  }
+  drawHistogram();
+}
+
+function drawHistogram() {
+  const canvas = document.getElementById('histogram-canvas');
+  if (!canvas || !histogramData) return;
+  const container = canvas.parentElement;
+  canvas.width = container.clientWidth - 36;
+  canvas.height = 180;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const pad = { top: 15, right: 15, bottom: 35, left: 45 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+  const gridColor = themeColor('--border') || '#2a2d3a';
+  const mutedColor = themeColor('--muted') || '#8888a0';
+
+  ctx.clearRect(0, 0, W, H);
+
+  const maxCount = Math.max(...histogramData.counts, 1);
+  const barW = Math.max(2, (plotW / N) - 4);
+
+  for (let i = 0; i < N; i++) {
+    const x = pad.left + (i + 0.5) * (plotW / N) - barW / 2;
+    const count = histogramData.counts[i];
+    const h = (count / maxCount) * plotH;
+    const tgt = isTarget(i);
+    ctx.fillStyle = tgt ? (themeColor('--oracle') || '#ff9f43') : (themeColor('--accent') || '#6c63ff');
+    ctx.fillRect(x, H - pad.bottom - h, barW, h);
+
+    // Expected line
+    const expected = histogramData.expectedProb[i] * histogramData.total;
+    const ey = H - pad.bottom - (expected / maxCount) * plotH;
+    ctx.strokeStyle = mutedColor; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(x - 2, ey); ctx.lineTo(x + barW + 2, ey); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Axes
+  ctx.strokeStyle = gridColor; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, H - pad.bottom);
+  ctx.lineTo(W - pad.right, H - pad.bottom); ctx.stroke();
+
+  // X labels
+  ctx.fillStyle = mutedColor; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+  if (N <= 16) {
+    for (let i = 0; i < N; i++) {
+      ctx.fillText('|' + i.toString(2).padStart(nQubits, '0') + '\u27E9', pad.left + (i + 0.5) * (plotW / N), H - pad.bottom + 13);
+    }
+  } else {
+    for (let i = 0; i < N; i += 4) {
+      ctx.fillText(i, pad.left + (i + 0.5) * (plotW / N), H - pad.bottom + 13);
+    }
+  }
+
+  // Y labels
+  ctx.textAlign = 'right'; ctx.font = '10px monospace';
+  for (let f = 0; f <= 1; f += 0.25) {
+    const v = Math.round(maxCount * f);
+    ctx.fillText(v, pad.left - 5, H - pad.bottom - f * plotH + 4);
+  }
+
+  // Summary
+  const summary = document.getElementById('histogram-summary');
+  if (summary) {
+    let targetHits = 0;
+    targetIndices.forEach(t => { targetHits += histogramData.counts[t]; });
+    const pct = (targetHits / histogramData.total * 100).toFixed(1);
+    const expectedPct = (targetIndices.reduce((s, t) => s + histogramData.expectedProb[t], 0) * 100).toFixed(1);
+    summary.innerHTML = `Target found: <strong>${targetHits}/${histogramData.total}</strong> (${pct}%) &mdash; Expected: ${expectedPct}%`;
+  }
+}
+
+document.getElementById('btn-hist-100').addEventListener('click', () => runHistogram(100));
+document.getElementById('btn-hist-1000').addEventListener('click', () => runHistogram(1000));
+document.getElementById('btn-hist-clear').addEventListener('click', () => {
+  histogramData = null;
+  const c = document.getElementById('histogram-canvas');
+  if (c) { const ctx = c.getContext('2d'); ctx.clearRect(0, 0, c.width, c.height); }
+  document.getElementById('histogram-summary').textContent = '';
+  document.getElementById('hist-accumulate').checked = false;
+});
+
+// ===========================
+// CLASSICAL vs QUANTUM RACE
+// ===========================
+document.getElementById('btn-race').addEventListener('click', runRace);
+
+function runRace() {
+  const cBar = document.getElementById('race-c-bar'), qBar = document.getElementById('race-q-bar');
+  const cLabel = document.getElementById('race-c-label'), qLabel = document.getElementById('race-q-label');
+  const result = document.getElementById('race-result');
+  const items = Array.from({length: N}, (_, i) => i);
+  for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [items[i], items[j]] = [items[j], items[i]]; }
+  let classicalQ = 0;
+  for (let i = 0; i < N; i++) { classicalQ++; if (isTarget(items[i])) break; }
+  const quantumQ = optimalIterations();
+  const maxQ = Math.max(classicalQ, quantumQ, 1), maxH = 130, duration = 1200;
+  const startTime = performance.now();
+  // Reset state
+  cBar.style.height = '2px'; qBar.style.height = '2px';
+  cBar.classList.remove('winner'); qBar.classList.remove('winner');
+  cLabel.textContent = '0'; cLabel.classList.remove('winner'); cLabel.style.color = '';
+  qLabel.textContent = '0'; qLabel.classList.remove('winner'); qLabel.style.color = '';
+  result.innerHTML = '';
+  function animate(now) {
+    const p = Math.min((now - startTime) / duration, 1);
+    // Use ease-out for more dramatic buildup
+    const eased = 1 - Math.pow(1 - p, 3);
+    const cQ = Math.round(classicalQ * eased), qQ = Math.round(quantumQ * eased);
+    cBar.style.height = Math.max(2, cQ / maxQ * maxH) + 'px';
+    qBar.style.height = Math.max(2, qQ / maxQ * maxH) + 'px';
+    cLabel.textContent = cQ; qLabel.textContent = qQ;
+    if (p < 1) requestAnimationFrame(animate);
+    else {
+      // Victory effects
+      const quantumWins = quantumQ <= classicalQ;
+      const winnerBar = quantumWins ? qBar : cBar;
+      const winnerLabel = quantumWins ? qLabel : cLabel;
+      winnerBar.classList.add('winner');
+      winnerLabel.classList.add('winner');
+      winnerLabel.style.color = 'var(--accent2)';
+      const speedup = (classicalQ / Math.max(quantumQ, 1)).toFixed(1);
+      const winnerText = quantumWins
+        ? `<span style="color:var(--accent2);font-weight:700;">Quantum wins!</span>`
+        : `<span style="color:var(--oracle);font-weight:700;">Classical got lucky!</span>`;
+      result.innerHTML = `${winnerText} Classical: ${classicalQ} | Quantum: ${quantumQ} | Speedup: <strong>${speedup}\u00D7</strong> (theoretical \u221A${N} \u2248 ${Math.sqrt(N).toFixed(1)}\u00D7)`;
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+// ===========================
+// CIRCUIT DRAWING (with tooltips)
+// ===========================
+const gateDescriptions = {
+  hadamard: '<strong>Hadamard Gate (H)</strong><br>Creates equal superposition.<br>|0\u27E9 \u2192 (|0\u27E9+|1\u27E9)/\u221A2',
+  oracle: '<strong>Oracle Gate (U<sub>f</sub>)</strong><br>Flips the phase of target state(s).<br>Applies \u22121 to marked states.',
+  diffusion: '<strong>Diffusion Operator (D)</strong><br>Inverts amplitudes about their mean.<br>Decomposed: H \u2192 X \u2192 MCZ \u2192 X \u2192 H',
+  measurement: '<strong>Measurement (M)</strong><br>Collapses the quantum state.<br>Yields a target with high probability.'
+};
+
+function updateResourceTable() {
+  const n = nQubits, opt = optimalIterations();
+  const el = (id) => document.getElementById(id);
+  if (el('circuit-qubit-label')) el('circuit-qubit-label').textContent = n + ' qubits';
+  if (el('circuit-iter-label')) el('circuit-iter-label').textContent = opt + ' optimal iteration' + (opt !== 1 ? 's' : '');
+  if (el('res-oracle')) el('res-oracle').textContent = opt;
+  if (el('res-hadamard')) el('res-hadamard').textContent = (2 * n * opt + n) + ' (' + n + ' init + ' + (2*n) + '/iter)';
+  if (el('res-x')) el('res-x').textContent = 2 * n * opt;
+  if (el('res-mcz')) el('res-mcz').textContent = opt;
+  if (el('res-depth')) el('res-depth').textContent = 'O(' + n + ' \u00B7 ' + opt + ') \u2248 ' + (n * opt * 3);
+}
+
+function drawCircuit() {
+  updateResourceTable();
+  const container = document.getElementById('circuit-container');
+  const tooltipEl = document.getElementById('circuit-tooltip');
+  const n = nQubits, opt = optimalIterations();
+  const wireSpacing = 40, labelWidth = 50, iterWidth = 100;
+  const shownIters = Math.min(opt, 5);
+  const totalWidth = labelWidth + 50 + shownIters * iterWidth + (opt > 5 ? 60 : 0) + 60 + 20;
+  const totalHeight = n * wireSpacing + 40;
+
+  let svg = `<svg width="${Math.max(totalWidth, 400)}" height="${totalHeight}" viewBox="0 0 ${Math.max(totalWidth, 400)} ${totalHeight}" xmlns="http://www.w3.org/2000/svg" style="font-family:monospace;">`;
+  for (let i = 0; i < n; i++) {
+    const y = 20 + i * wireSpacing + wireSpacing / 2;
+    svg += `<line x1="${labelWidth}" y1="${y}" x2="${totalWidth - 10}" y2="${y}" stroke="${themeColor('--border')}" stroke-width="1.5"/>`;
+    svg += `<text x="5" y="${y + 5}" fill="${themeColor('--muted')}" font-size="13">q${i}</text>`;
+    svg += `<text x="${labelWidth - 5}" y="${y + 5}" fill="${themeColor('--muted')}" font-size="13">|0\u27E9</text>`;
+  }
+  let xOff = labelWidth + 10;
+  for (let i = 0; i < n; i++) {
+    const y = 20 + i * wireSpacing + wireSpacing / 2;
+    svg += `<g class="gate-hover" data-gate="hadamard" style="cursor:pointer;"><rect x="${xOff}" y="${y - 15}" width="30" height="30" rx="4" fill="${themeColor('--surface')}" stroke="${themeColor('--accent')}" stroke-width="1.5"/><text x="${xOff + 15}" y="${y + 5}" text-anchor="middle" fill="${themeColor('--accent')}" font-size="14" font-weight="bold">H</text></g>`;
+  }
+  xOff += 50;
+  for (let k = 0; k < shownIters; k++) {
+    const boxHeight = (n - 1) * wireSpacing + 30;
+    const topY = 20 + wireSpacing / 2 - 15;
+    svg += `<g class="gate-hover" data-gate="oracle" style="cursor:pointer;"><rect x="${xOff}" y="${topY}" width="35" height="${boxHeight}" rx="4" fill="rgba(255,159,67,.1)" stroke="${themeColor('--oracle')}" stroke-width="1.5"/><text x="${xOff + 17}" y="${topY + boxHeight/2 + 5}" text-anchor="middle" fill="${themeColor('--oracle')}" font-size="11" font-weight="bold">O</text></g>`;
+    xOff += 50;
+    svg += `<g class="gate-hover" data-gate="diffusion" style="cursor:pointer;"><rect x="${xOff}" y="${topY}" width="35" height="${boxHeight}" rx="4" fill="rgba(0,201,167,.1)" stroke="${themeColor('--accent2')}" stroke-width="1.5"/><text x="${xOff + 17}" y="${topY + boxHeight/2 + 5}" text-anchor="middle" fill="${themeColor('--accent2')}" font-size="11" font-weight="bold">D</text></g>`;
+    xOff += 50;
+  }
+  if (opt > 5) { svg += `<text x="${xOff}" y="${20 + wireSpacing}" fill="${themeColor('--muted')}" font-size="14">... \u00D7${opt}</text>`; xOff += 50; }
+  for (let i = 0; i < n; i++) {
+    const y = 20 + i * wireSpacing + wireSpacing / 2;
+    svg += `<g class="gate-hover" data-gate="measurement" style="cursor:pointer;"><rect x="${xOff}" y="${y - 15}" width="30" height="30" rx="4" fill="${themeColor('--surface')}" stroke="${themeColor('--text')}" stroke-width="1.5"/><text x="${xOff + 15}" y="${y + 4}" text-anchor="middle" fill="${themeColor('--text')}" font-size="12">M</text></g>`;
+  }
+  const braceX1 = labelWidth + 60, braceX2 = labelWidth + 60 + shownIters * 100 - 10;
+  svg += `<text x="${(braceX1 + braceX2) / 2}" y="${totalHeight - 5}" text-anchor="middle" fill="${themeColor('--muted')}" font-size="11">repeat \u00D7${opt} (optimal)</text>`;
+  svg += '</svg>';
+  const existingSvg = container.querySelector('svg');
+  if (existingSvg) existingSvg.remove();
+  container.insertAdjacentHTML('afterbegin', svg);
+  container.onmouseover = (e) => {
+    const g = e.target.closest('.gate-hover');
+    if (!g) { tooltipEl.style.display = 'none'; return; }
+    tooltipEl.innerHTML = gateDescriptions[g.dataset.gate] || '';
+    tooltipEl.style.display = 'block';
+    const rect = g.getBoundingClientRect(), cRect = container.getBoundingClientRect();
+    tooltipEl.style.left = (rect.left - cRect.left + rect.width / 2) + 'px';
+    tooltipEl.style.top = (rect.top - cRect.top - tooltipEl.offsetHeight - 8) + 'px';
+  };
+  container.onmouseout = (e) => {
+    if (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('.gate-hover')) tooltipEl.style.display = 'none';
+  };
+}
+
+// ===========================
+// SCALING CHART
+// ===========================
+function drawScalingChart() {
+  const canvas = document.getElementById('scaling-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const pad = {top: 25, right: 30, bottom: 45, left: 65};
+  const gridColor = themeColor('--border') || '#2a2d3a';
+  const mutedColor = themeColor('--muted') || '#8888a0';
+  ctx.clearRect(0, 0, W, H);
+  const points = [];
+  for (let n = 2; n <= 20; n++) { const Nv = Math.pow(2, n); points.push({ n, classical: Nv / 2, quantum: Math.round(Math.PI / 4 * Math.sqrt(Nv)) }); }
+  const plotW = W - pad.left - pad.right, plotH = H - pad.top - pad.bottom;
+  const logMax = Math.log10(points[points.length-1].classical);
+  function toX(n) { return pad.left + (n - 2) / 18 * plotW; }
+  function toY(val) { return H - pad.bottom - (Math.log10(Math.max(val, 1)) / logMax) * plotH; }
+  ctx.strokeStyle = gridColor + '40'; ctx.lineWidth = 1;
+  for (let p = 1; p <= 6; p++) { const y = toY(Math.pow(10, p)); ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke(); ctx.fillStyle = mutedColor; ctx.font = '10px monospace'; ctx.textAlign = 'right'; ctx.fillText('10' + '\u2070\u00B9\u00B2\u00B3\u2074\u2075\u2076'[p], pad.left - 5, y + 4); }
+  ctx.strokeStyle = gridColor; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, H - pad.bottom); ctx.lineTo(W - pad.right, H - pad.bottom); ctx.stroke();
+  ctx.fillStyle = mutedColor; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+  for (let n = 2; n <= 20; n += 2) ctx.fillText(n, toX(n), H - pad.bottom + 16);
+  ctx.font = '11px sans-serif'; ctx.fillText('Number of qubits (n)', W / 2, H - 5);
+  ctx.save(); ctx.translate(14, H / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('Queries (log scale)', 0, 0); ctx.restore();
+  ctx.strokeStyle = themeColor('--negative') || '#ff6b6b'; ctx.lineWidth = 2.5; ctx.beginPath();
+  points.forEach((p, i) => { i === 0 ? ctx.moveTo(toX(p.n), toY(p.classical)) : ctx.lineTo(toX(p.n), toY(p.classical)); }); ctx.stroke();
+  ctx.strokeStyle = themeColor('--accent') || '#6c63ff'; ctx.lineWidth = 2.5; ctx.beginPath();
+  points.forEach((p, i) => { i === 0 ? ctx.moveTo(toX(p.n), toY(p.quantum)) : ctx.lineTo(toX(p.n), toY(p.quantum)); }); ctx.stroke();
+  points.forEach(p => {
+    ctx.fillStyle = themeColor('--negative') || '#ff6b6b'; ctx.beginPath(); ctx.arc(toX(p.n), toY(p.classical), 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = themeColor('--accent') || '#6c63ff'; ctx.beginPath(); ctx.arc(toX(p.n), toY(p.quantum), 2.5, 0, Math.PI*2); ctx.fill();
+  });
+  const lx = pad.left + 15, ly = pad.top + 10;
+  ctx.fillStyle = themeColor('--negative') || '#ff6b6b'; ctx.fillRect(lx, ly, 16, 3);
+  ctx.font = '11px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('Classical O(N/2)', lx + 22, ly + 5);
+  ctx.fillStyle = themeColor('--accent') || '#6c63ff'; ctx.fillRect(lx, ly + 18, 16, 3); ctx.fillText('Grover O(\u221AN)', lx + 22, ly + 23);
+}
+
+// ===========================
+// SHAREABLE URL
+// ===========================
+function encodeStateToHash() {
+  const params = new URLSearchParams();
+  params.set('q', nQubits);
+  params.set('t', targetIndices.join(','));
+  params.set('s', currentStep);
+  if (noiseLevel > 0) params.set('n', Math.round(noiseLevel * 100));
+  history.replaceState(null, '', '#' + params.toString());
+}
+
+function scheduleHashUpdate() {
+  if (measured) return;
+  clearTimeout(scheduleHashUpdate._t);
+  scheduleHashUpdate._t = setTimeout(encodeStateToHash, 300);
+}
+
+function loadStateFromHash() {
+  const hash = window.location.hash.slice(1);
+  if (!hash) return false;
+  try {
+    const params = new URLSearchParams(hash);
+    if (params.has('q')) {
+      const q = parseInt(params.get('q'));
+      if (q >= 2 && q <= 5) { nQubits = q; N = Math.pow(2, nQubits); qubitSelect.value = q; }
+    }
+    if (params.has('t')) {
+      const targets = params.get('t').split(',').map(Number).filter(t => t >= 0 && t < N);
+      if (targets.length > 0) targetIndices = targets;
+    }
+    if (params.has('n')) {
+      const nl = parseInt(params.get('n'));
+      if (nl >= 0 && nl <= 30) { noiseLevel = nl / 100; noiseSlider.value = nl; noiseBadge.classList.toggle('visible', noiseLevel > 0); }
+    }
+    populateTargets();
+    init();
+    if (params.has('s')) {
+      const targetStep = parseInt(params.get('s'));
+      if (targetStep > 0 && targetStep <= 50) {
+        geoAnimAngle = null; geoAngleHistory = []; // skip animation during replay
+        for (let i = 0; i < targetStep; i++) doStep();
+      }
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+document.getElementById('btn-share').addEventListener('click', () => {
+  encodeStateToHash();
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    const btn = document.getElementById('btn-share');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy Link', 1500);
+  }).catch(() => {});
+});
+
+// ===========================
+// QUIZ
+// ===========================
+const quizQuestions = [
+  { q: "What is the query complexity of Grover's algorithm for searching N items?", opts: ["O(N)", "O(N log N)", "O(\u221AN)", "O(log N)"], answer: 2, explanation: "Grover's algorithm finds a marked item using O(\u221AN) oracle queries \u2014 a quadratic improvement over classical O(N) search." },
+  { q: "What does the Oracle do in Grover's algorithm?", opts: ["Measures the qubits to find the target", "Flips the phase of the target state(s)", "Creates a superposition of all states", "Entangles qubits with an ancilla"], answer: 1, explanation: "The oracle applies a phase flip (\u00D7\u22121) to target state amplitudes. This is invisible to measurement directly, but creates an asymmetry the Diffusion operator exploits." },
+  { q: "What does the Diffusion operator do?", opts: ["Collapses the quantum state", "Randomly flips amplitudes", "Reflects amplitudes about their mean", "Applies a Hadamard to all qubits"], answer: 2, explanation: "The diffusion operator performs 'inversion about the mean': \u03B1\u2093 \u2192 2\u27E8\u03B1\u27E9 \u2212 \u03B1\u2093. Since the target's amplitude is below the mean (after oracle), this reflection boosts it above." },
+  { q: null, opts: null, answer: null, explanation: null, dynamic: true },
+  { q: "What happens if you perform too many iterations?", opts: ["Result becomes more accurate", "Nothing \u2014 probability stays at maximum", "Target probability decreases (over-rotation)", "The qubits irreversibly decohere"], answer: 2, explanation: "Over-rotation: the state vector rotates past the target |w\u27E9 axis, reducing the success probability. This is a purely quantum effect \u2014 classically, more searching never hurts." },
+  { q: "Geometrically, one Grover iteration corresponds to:", opts: ["A projection onto the target state", "A rotation by 2\u03B8 toward the target", "A reflection about the computational basis", "A random unitary in the full Hilbert space"], answer: 1, explanation: "The Oracle reflects about |s'\u27E9, and Diffusion reflects about |\u03C8\u27E9. Two reflections compose into a rotation by 2\u03B8 toward |w\u27E9 in the 2D plane. It's a rotation, not a projection \u2014 which is why over-rotation can occur." },
+  { q: "Is Grover's quadratic speedup provably optimal for unstructured search?", opts: ["Yes \u2014 no quantum algorithm can do better", "No \u2014 faster quantum algorithms exist", "Only for power-of-two database sizes", "It depends on the quantum hardware"], answer: 0, explanation: "Bennett, Bernstein, Brassard, and Vazirani (1997) proved an \u03A9(\u221AN) lower bound: any quantum algorithm for unstructured search must make at least \u03A9(\u221AN) oracle queries." },
+  { q: "What is the initial state after applying Hadamard gates to |0\u27E9\u2297n?", opts: ["|0\u27E9\u2297n (unchanged)", "The target state |x*\u27E9", "Equal superposition of all N states", "A random computational basis state"], answer: 2, explanation: "H\u2297n|0\u27E9\u2297n = (1/\u221AN)\u03A3|x\u27E9 \u2014 every state gets equal amplitude 1/\u221AN, so each has probability 1/N of being measured." },
+  { q: "Why can't the oracle simply output the answer instead of just marking it?", opts: ["It can, but Grover's is more efficient", "The oracle only evaluates f(x), it cannot invert it", "Quantum no-cloning prevents direct output", "The oracle is randomized and unreliable"], answer: 1, explanation: "In the query complexity model, the oracle evaluates f(x) \u2014 it answers 'is this x the target?' but cannot invert to produce x. Think of it like a lock: it clicks for the right key but can't tell you what the key is. This verify-but-not-produce structure appears in databases, cryptography, and NP problems." },
+  { q: "In a 2-qubit system (4 states) with 1 target, what is the success probability after 1 iteration?", opts: ["25%", "50%", "75%", "100%"], answer: 3, explanation: "For N=4, M=1: \u03B8 = arcsin(\u221A(1/4)) = 30\u00B0. After 1 iteration, angle = 3\u03B8 = 90\u00B0, so P(target) = sin\u00B2(90\u00B0) = 100%. This perfect result is special to N=4." },
+  { q: "If you double the database size from N to 2N, how does the number of Grover iterations change?", opts: ["Doubles (2\u00D7 more)", "Increases by factor \u221A2 (\u224841%)", "Stays the same", "Quadruples (4\u00D7 more)"], answer: 1, explanation: "Optimal iterations \u221D \u221AN. When N doubles: \u221A(2N) = \u221A2 \u00B7 \u221AN, so iterations increase by a factor of \u221A2 \u2248 1.41. This gentle scaling is what makes Grover's powerful." },
+  { q: "How does Grover's algorithm impact AES-256 encryption security?", opts: ["Breaks it completely in polynomial time", "Reduces effective key length from 256 to 128 bits", "Has no practical impact on symmetric encryption", "Makes AES-256 equivalent to classical AES-192"], answer: 1, explanation: "Grover's provides a quadratic speedup for brute-force key search: searching 2\u00B2\u2075\u2076 keys takes \u221A(2\u00B2\u2075\u2076) = 2\u00B9\u00B2\u2078 queries. This effectively halves the security level (256 \u2192 128 bits). AES-256 remains secure since 2\u00B9\u00B2\u2078 is still astronomical, but this is why NIST post-quantum standards recommend doubling symmetric key sizes for long-term security." }
+];
+
+function getDynamicQ4() {
+  const n = nQubits;
+  const numStates = Math.pow(2, n);
+  const M = targetIndices.length;
+  const k = Math.max(1, Math.round(Math.PI / 4 * Math.sqrt(numStates / M)));
+  // Generate plausible distractors
+  const distractors = new Set();
+  distractors.add(k);
+  [k - 1, k + 1, k + 2, Math.max(1, k - 2), Math.round(k * 1.5), 1].forEach(d => { if (d > 0 && d !== k) distractors.add(d); });
+  const opts = [k];
+  for (const d of distractors) { if (d !== k && opts.length < 4) opts.push(d); }
+  while (opts.length < 4) opts.push(opts.length + k);
+  opts.sort((a, b) => a - b);
+  const answerIdx = opts.indexOf(k);
+  return {
+    q: `For ${n} qubits (${numStates} states, ${M} target${M>1?'s':''}), how many Grover iterations are optimal?`,
+    opts: opts.map(String),
+    answer: answerIdx,
+    explanation: `Optimal k = round(\u03C0/4 \u00B7 \u221A(${numStates}/${M})) \u2248 round(${(Math.PI/4 * Math.sqrt(numStates/M)).toFixed(2)}) = ${k} iterations. <a href="#" onclick="switchTab('simulator');return false;" style="color:var(--accent);text-decoration:underline;">Verify in the Simulator \u2192</a>`
+  };
+}
+
+function buildQuiz() {
+  const container = document.getElementById('quiz-container');
+  container.innerHTML = '';
+  // Progress dots
+  const dotsDiv = document.createElement('div');
+  dotsDiv.className = 'quiz-progress';
+  dotsDiv.id = 'quiz-dots';
+  for (let i = 0; i < quizQuestions.length; i++) {
+    const dot = document.createElement('span');
+    dot.className = 'quiz-dot';
+    dot.title = `Question ${i + 1}`;
+    dot.dataset.qi = i;
+    dot.addEventListener('click', () => {
+      const card = document.querySelectorAll('.quiz-card')[i];
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    dotsDiv.appendChild(dot);
+  }
+  container.appendChild(dotsDiv);
+
+  // Resolve dynamic questions
+  const resolvedQuestions = quizQuestions.map(q => q.dynamic ? getDynamicQ4() : q);
+
+  resolvedQuestions.forEach((q, qi) => {
+    const div = document.createElement('div');
+    div.className = 'quiz-card';
+    div.innerHTML = `<p style="font-weight:600;margin-bottom:0.75rem;display:flex;align-items:flex-start;"><span class="quiz-number">${qi + 1}</span><span>${q.q}</span></p>
+      <div class="quiz-options" data-qi="${qi}">${q.opts.map((opt, oi) => `
+        <label class="quiz-option">
+          <input type="radio" name="q${qi}" value="${oi}" style="accent-color:var(--accent);flex-shrink:0;"><span>${opt}</span>
+        </label>`).join('')}</div>
+      <div class="quiz-feedback" id="feedback-${qi}" style="margin-top:0.6rem;display:none;padding:0.6rem 1rem;border-radius:6px;font-size:0.9rem;line-height:1.5;"></div>`;
+    container.appendChild(div);
+    // Update dots on answer selection
+    div.querySelectorAll('input[type=radio]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const dot = dotsDiv.children[qi];
+        if (dot) dot.classList.add('answered');
+      });
+    });
+  });
+  // Store resolved for checking
+  container._resolved = resolvedQuestions;
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:0.75rem;margin-top:0.75rem;flex-wrap:wrap;';
+  const btn = document.createElement('button');
+  btn.className = 'btn-primary'; btn.textContent = 'Check Answers'; btn.id = 'quiz-check-btn';
+  btn.addEventListener('click', checkQuiz);
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'btn-secondary'; resetBtn.textContent = 'Try Again'; resetBtn.style.display = 'none'; resetBtn.id = 'quiz-reset-btn';
+  resetBtn.addEventListener('click', () => { buildQuiz(); });
+  btnRow.appendChild(btn); btnRow.appendChild(resetBtn);
+  container.appendChild(btnRow);
+  const score = document.createElement('div');
+  score.id = 'quiz-score'; score.className = 'quiz-score-bar'; score.style.display = 'none';
+  container.appendChild(score);
+}
+
+function checkQuiz() {
+  let correct = 0;
+  const container = document.getElementById('quiz-container');
+  const resolvedQuestions = container._resolved || quizQuestions;
+  const dots = document.querySelectorAll('.quiz-dot');
+  // Simulator link snippets for relevant questions
+  const simLinks = {
+    0: '',
+    1: ' <a href="#" onclick="switchTab(\'simulator\');return false;" style="color:var(--accent);text-decoration:underline;font-size:0.85rem;">See Oracle in action \u2192</a>',
+    2: ' <a href="#" onclick="switchTab(\'simulator\');return false;" style="color:var(--accent);text-decoration:underline;font-size:0.85rem;">Watch Diffusion step \u2192</a>',
+    4: ' <a href="#" onclick="switchTab(\'simulator\');return false;" style="color:var(--accent);text-decoration:underline;font-size:0.85rem;">Try over-rotating in Simulator \u2192</a>',
+    5: ' <a href="#" onclick="switchTab(\'simulator\');return false;" style="color:var(--accent);text-decoration:underline;font-size:0.85rem;">Watch rotation in Geometric View \u2192</a>',
+    9: ' <a href="#" onclick="switchTab(\'simulator\');document.getElementById(\'qubit-select\').value=\'2\';document.getElementById(\'qubit-select\').dispatchEvent(new Event(\'change\'));return false;" style="color:var(--accent);text-decoration:underline;font-size:0.85rem;">Try N=4 in Simulator \u2192</a>'
+  };
+  resolvedQuestions.forEach((q, qi) => {
+    const selected = document.querySelector(`input[name="q${qi}"]:checked`);
+    const feedback = document.getElementById(`feedback-${qi}`);
+    feedback.style.display = 'block';
+    // Disable all radio buttons after checking
+    document.querySelectorAll(`input[name="q${qi}"]`).forEach(r => { r.disabled = true; });
+    const simLink = simLinks[qi] || '';
+    if (!selected) {
+      feedback.style.background = 'rgba(255,107,107,.08)';
+      feedback.style.border = '1px solid rgba(255,107,107,.2)';
+      feedback.innerHTML = `<span style="color:var(--negative);font-weight:600;">No answer selected.</span> ${q.explanation}${simLink}`;
+      if (dots[qi]) { dots[qi].classList.add('incorrect'); }
+      return;
+    }
+    if (parseInt(selected.value) === q.answer) {
+      correct++;
+      feedback.style.background = 'rgba(0,201,167,.08)';
+      feedback.style.border = '1px solid rgba(0,201,167,.2)';
+      feedback.innerHTML = `<span style="color:var(--accent2);font-weight:600;">Correct!</span> ${q.explanation}${simLink}`;
+      selected.closest('.quiz-option').style.background = 'rgba(0,201,167,.08)';
+      selected.closest('.quiz-option').style.borderColor = 'rgba(0,201,167,.3)';
+      if (dots[qi]) { dots[qi].classList.remove('answered'); dots[qi].classList.add('correct'); }
+    } else {
+      feedback.style.background = 'rgba(255,107,107,.08)';
+      feedback.style.border = '1px solid rgba(255,107,107,.2)';
+      feedback.innerHTML = `<span style="color:var(--negative);font-weight:600;">Incorrect.</span> ${q.explanation}${simLink}`;
+      selected.closest('.quiz-option').style.background = 'rgba(255,107,107,.08)';
+      selected.closest('.quiz-option').style.borderColor = 'rgba(255,107,107,.3)';
+      // Highlight correct answer
+      const correctRadio = document.querySelectorAll(`input[name="q${qi}"]`)[q.answer];
+      if (correctRadio) {
+        correctRadio.closest('.quiz-option').style.background = 'rgba(0,201,167,.08)';
+        correctRadio.closest('.quiz-option').style.borderColor = 'rgba(0,201,167,.3)';
+      }
+      if (dots[qi]) { dots[qi].classList.remove('answered'); dots[qi].classList.add('incorrect'); }
+    }
+  });
+  const scoreEl = document.getElementById('quiz-score');
+  const pct = Math.round(correct / quizQuestions.length * 100);
+  scoreEl.style.display = 'block';
+  if (pct === 100) {
+    scoreEl.style.background = 'rgba(0,201,167,.1)'; scoreEl.style.border = '1px solid rgba(0,201,167,.3)'; scoreEl.style.color = 'var(--accent2)';
+    scoreEl.textContent = `\uD83C\uDF89 Perfect: ${correct}/${quizQuestions.length} (${pct}%)`;
+  } else if (pct >= 70) {
+    scoreEl.style.background = 'rgba(99,102,241,.1)'; scoreEl.style.border = '1px solid rgba(99,102,241,.3)'; scoreEl.style.color = 'var(--accent)';
+    scoreEl.textContent = `Score: ${correct}/${quizQuestions.length} (${pct}%)`;
+  } else {
+    scoreEl.style.background = 'rgba(255,107,107,.08)'; scoreEl.style.border = '1px solid rgba(255,107,107,.2)'; scoreEl.style.color = 'var(--oracle)';
+    scoreEl.textContent = `Score: ${correct}/${quizQuestions.length} (${pct}%) \u2014 Review the Theory tab and try again!`;
+  }
+  document.getElementById('quiz-check-btn').style.display = 'none';
+  document.getElementById('quiz-reset-btn').style.display = '';
+}
+
+// ===========================
+// ONBOARDING HINTS
+// ===========================
+(function() {
+  if (localStorage.getItem('grover-onboarded')) return;
+  const hints = [
+    { target: '#qubit-select', text: 'Choose how many qubits to simulate. More qubits = more states to search through.', arrow: 'top' },
+    { target: '#btn-step', text: 'Step through the algorithm one sub-step at a time. Watch Oracle and Diffusion alternate.', arrow: 'top' },
+    { target: '#geo-canvas', text: 'This 2D view shows the state vector rotating toward the target \u2014 the core geometric intuition behind Grover\u2019s algorithm.', arrow: 'left' }
+  ];
+  let current = 0;
+  let hintEl = null;
+
+  function showHint(idx) {
+    if (hintEl) hintEl.remove();
+    if (idx >= hints.length) { localStorage.setItem('grover-onboarded', '1'); return; }
+    const h = hints[idx];
+    const anchor = document.querySelector(h.target);
+    if (!anchor) { localStorage.setItem('grover-onboarded', '1'); return; }
+    hintEl = document.createElement('div');
+    hintEl.className = `onboard-hint arrow-${h.arrow}`;
+    hintEl.innerHTML = `<div>${h.text}</div>
+      <div class="hint-actions">
+        <span class="hint-counter">${idx+1}/${hints.length}</span>
+        <span>
+          <button class="hint-btn" data-action="skip">Skip all</button>
+          <button class="hint-btn" data-action="next">${idx < hints.length-1 ? 'Next' : 'Got it'}</button>
+        </span>
+      </div>`;
+    document.body.appendChild(hintEl);
+    const rect = anchor.getBoundingClientRect();
+    const scrollY = window.scrollY;
+    if (h.arrow === 'top') {
+      hintEl.style.left = Math.max(8, rect.left) + 'px';
+      hintEl.style.top = (rect.bottom + scrollY + 12) + 'px';
+    } else {
+      hintEl.style.left = (rect.right + 12) + 'px';
+      hintEl.style.top = (rect.top + scrollY - 10) + 'px';
+    }
+    hintEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'skip') {
+        hintEl.remove(); hintEl = null;
+        localStorage.setItem('grover-onboarded', '1');
+      } else {
+        current++; showHint(current);
+      }
+    });
+  }
+
+  setTimeout(() => showHint(0), 800);
+})();
+
+// ===========================
+// INTERACTIVE ITERATIONS CALCULATOR
+// ===========================
+(function() {
+  const nSlider = document.getElementById('calc-n-slider');
+  const mSlider = document.getElementById('calc-m-slider');
+  if (!nSlider || !mSlider) return;
+
+  function updateCalc() {
+    const nBits = parseInt(nSlider.value);
+    const calcN = Math.pow(2, nBits);
+    const calcM = Math.min(parseInt(mSlider.value), calcN - 1);
+    mSlider.max = Math.min(calcN - 1, 128);
+    if (parseInt(mSlider.value) > parseInt(mSlider.max)) mSlider.value = mSlider.max;
+
+    document.getElementById('calc-n-val').textContent = nBits;
+    document.getElementById('calc-n-display').textContent = calcN.toLocaleString();
+    document.getElementById('calc-m-val').textContent = calcM;
+
+    const theta = Math.asin(Math.sqrt(calcM / calcN));
+    const k = Math.max(1, Math.round(Math.PI / 4 * Math.sqrt(calcN / calcM)));
+    const totalAngle = (2 * k + 1) * theta;
+    const successProb = Math.sin(totalAngle) ** 2;
+    const classicalAvg = Math.round(calcN / (2 * calcM));
+    const speedup = (classicalAvg / k).toFixed(1);
+
+    document.getElementById('calc-k').textContent = k;
+    document.getElementById('calc-theta').innerHTML = (theta * 180 / Math.PI).toFixed(2) + '&deg;';
+    document.getElementById('calc-prob').textContent = (successProb * 100).toFixed(1) + '%';
+    document.getElementById('calc-speedup').textContent = speedup + '\u00D7';
+  }
+
+  nSlider.addEventListener('input', updateCalc);
+  mSlider.addEventListener('input', updateCalc);
+  updateCalc();
+})();
+
+// ===========================
+// INIT
+// ===========================
+populateTargets();
+if (!loadStateFromHash()) init();
+buildQuiz();
+</script>
+
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+
+<!-- Particle Background -->
+<script>
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 45;
+  const CONNECT_DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+</script>
+</body>
+</html>

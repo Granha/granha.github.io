@@ -1,0 +1,2482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Understanding Qubits — Interactive Quantum Computing Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --primary: var(--accent);
+    --primary-light: #818cf8;
+    --primary-glow: rgba(99, 102, 241, 0.3);
+    --accent2: #f472b6;
+    --accent3: #34d399;
+    --glow: rgba(99, 102, 241, 0.3);
+    --card: #111827;
+    --card-border: #2a3550;
+    --card-elevated: #1a2236;
+    --radius: 16px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 16px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Particle background */
+  #particleBg {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1; pointer-events: none;
+  }
+
+  /* Card title with icon badge */
+  .card-title {
+    font-size: 1.15rem; font-weight: 600; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .card-title .icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; flex-shrink: 0;
+  }
+
+  /* Uppercase label style (Simon's pattern) */
+  .label-sm {
+    font-size: 0.78rem; font-weight: 500; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+
+  header {
+    text-align: center;
+    padding: 72px 20px 20px;
+    position: relative;
+  }
+  header::after {
+    content: ''; display: block; width: 160px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary), var(--accent), transparent);
+    margin: 1.5rem auto 0;
+  }
+
+  header h1 {
+    font-size: 2.6rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--primary), var(--accent), var(--pink));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+  }
+
+  header p { color: var(--text-dim); font-size: 1.1rem; font-weight: 300; max-width: 600px; margin: 8px auto 0; }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 16px; }
+
+  /* Navigation */
+  .tabs {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(17,24,39,0.82);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: center; gap: 4px; padding: 10px 12px; flex-wrap: wrap;
+    border-radius: 0;
+  }
+
+  .tab-btn {
+    text-decoration: none; color: var(--text-dim); padding: 5px 14px;
+    border-radius: 20px; font-size: 0.88rem; transition: all 0.2s; white-space: nowrap;
+    font-weight: 500; border: none; background: none; cursor: pointer;
+    font-family: 'Inter', -apple-system, sans-serif;
+  }
+  .tab-btn:hover { background: rgba(99,102,241,0.15); color: var(--primary-light); }
+  .tab-btn.active {
+    background: linear-gradient(135deg, var(--primary), #818cf8);
+    color: white;
+    font-weight: 600;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; animation: sectionIn 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes sectionIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.99); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .card:hover { border-color: rgba(99,102,241,0.4); }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    opacity: 0.5;
+  }
+  .card h2 {
+    color: var(--text); font-size: 1.35rem; margin-bottom: 1.1rem;
+    padding-bottom: 8px; display: flex; align-items: center; gap: 0.5rem; font-weight: 700;
+    background-image: linear-gradient(90deg, var(--primary), var(--accent));
+    background-size: 100% 2px; background-position: bottom; background-repeat: no-repeat;
+  }
+  .card h3 { color: var(--text); font-size: 1.15rem; margin: 1.6rem 0 0.6rem; font-weight: 600; }
+
+  .highlight {
+    background: rgba(34,211,238,0.05);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    padding: 16px 20px;
+    margin: 1.2rem 0;
+    font-size: 0.97rem;
+  }
+  .highlight strong { color: var(--accent); }
+
+  .math { font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif; font-style: normal; color: var(--accent); font-size: 0.95em; }
+
+  .math-block {
+    text-align: center; font-size: 1.3rem; padding: 1.2rem; margin: 1rem 0;
+    background: rgba(34,211,238,0.04); border-radius: 12px;
+    border: 1px solid rgba(34,211,238,0.12);
+    font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif;
+  }
+
+  /* Bloch Sphere */
+  .bloch-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+  @media (max-width: 768px) { .bloch-container { grid-template-columns: 1fr; } }
+
+  canvas.bloch-canvas {
+    width: 100%; aspect-ratio: 1; max-width: 450px; border-radius: 12px;
+    background: radial-gradient(circle at center, #0f1628 0%, #080d18 100%);
+    border: 1px solid var(--border); cursor: grab; margin: 0 auto; display: block;
+  }
+  canvas.bloch-canvas:active { cursor: grabbing; }
+
+  .controls label { display: block; color: var(--text-dim); font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0.3rem; font-weight: 500; }
+  .controls input[type="range"] { width: 100%; accent-color: var(--primary); height: 6px; cursor: pointer; }
+
+  .state-display {
+    font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif; font-size: 1.05rem; text-align: center;
+    padding: 1rem; margin-top: 1rem;
+    background: var(--surface2); border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .prob-bars { margin-top: 1rem; }
+  .prob-bar-row { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.6rem; }
+  .prob-bar-label { font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif; width: 30px; text-align: right; font-size: 1rem; font-weight: 600; }
+  .prob-bar-track { flex: 1; height: 24px; background: rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; }
+  .prob-bar-fill-0 { height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius: 12px; transition: width 0.35s ease; }
+  .prob-bar-fill-1 { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); border-radius: 12px; transition: width 0.35s ease; }
+  .prob-bar-value { width: 55px; text-align: left; font-size: 0.9rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+  .preset-btns { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+  .preset-btn {
+    padding: 6px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text-dim); cursor: pointer; font-size: 0.88rem;
+    transition: all 0.2s; font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif; font-weight: 500;
+  }
+  .preset-btn:hover { border-color: var(--primary); color: var(--text); box-shadow: 0 4px 20px rgba(99,102,241,0.08); }
+
+  /* Measurement */
+  .measure-btn {
+    padding: 0.7rem 1.8rem; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, var(--pink), #e879a8); color: white; cursor: pointer;
+    font-size: 0.95rem; font-weight: 600; transition: all 0.25s; margin: 1rem 0.5rem;
+    font-family: 'Inter', sans-serif; letter-spacing: 0.01em;
+  }
+  .measure-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px var(--pink-glow); }
+  .measure-btn:active { transform: translateY(0); }
+  .measure-btn.secondary {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+  }
+  .measure-btn.secondary:hover { border-color: var(--primary); color: var(--text); box-shadow: 0 4px 20px rgba(99,102,241,0.1); }
+
+  .measurement-result { font-size: 2rem; font-weight: 700; margin: 1rem 0; min-height: 3rem; text-align: center; }
+  .result-0 { color: var(--primary-light); }
+  .result-1 { color: var(--accent); }
+
+  .histogram { display: flex; justify-content: center; gap: 2.5rem; margin-top: 1.5rem; }
+  .hist-col { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+  .hist-bar-container { width: 80px; height: 180px; background: rgba(255,255,255,0.03); border-radius: 10px; display: flex; align-items: flex-end; overflow: hidden; position: relative; }
+  .hist-theory-line {
+    position: absolute; left: -4px; right: -4px; height: 2px;
+    background: var(--orange); border-radius: 1px; transition: bottom 0.3s;
+    box-shadow: 0 0 6px rgba(251,146,60,0.5);
+  }
+  .hist-bar { width: 100%; transition: height 0.35s ease; border-radius: 10px 10px 0 0; position: relative; }
+  .hist-bar-0 { background: linear-gradient(0deg, var(--primary), var(--primary-light)); box-shadow: 0 0 10px var(--glow); }
+  .hist-bar-1 { background: linear-gradient(0deg, var(--accent), var(--green)); box-shadow: 0 0 10px var(--accent-glow); }
+  .hist-pct {
+    position: absolute; bottom: 4px; left: 0; right: 0; text-align: center;
+    font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.85);
+    font-family: 'JetBrains Mono', monospace; pointer-events: none;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .hist-bar[style*="height: 2"]  .hist-pct,
+  .hist-bar[style*="height: 3"]  .hist-pct,
+  .hist-bar[style*="height: 4"]  .hist-pct,
+  .hist-bar[style*="height: 5"]  .hist-pct,
+  .hist-bar[style*="height: 6"]  .hist-pct,
+  .hist-bar[style*="height: 7"]  .hist-pct,
+  .hist-bar[style*="height: 8"]  .hist-pct,
+  .hist-bar[style*="height: 9"]  .hist-pct,
+  .hist-bar[style*="height: 100"] .hist-pct { opacity: 1; }
+  .hist-label { font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif; font-size: 1.1rem; font-weight: 600; }
+  .hist-count { font-size: 0.9rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+  /* Gates */
+  .gate-btns { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin: 1rem 0; }
+  .gate-btn {
+    width: 56px; height: 56px; border-radius: 12px;
+    border: 2px solid color-mix(in srgb, var(--gc, var(--border)) 60%, transparent);
+    background: var(--surface2); color: var(--gc, var(--text)); font-size: 1.1rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif;
+  }
+  .gate-btn:hover {
+    border-color: var(--gc, var(--primary));
+    box-shadow: 0 0 18px color-mix(in srgb, var(--gc, var(--primary)) 40%, transparent);
+    transform: translateY(-2px);
+    background: color-mix(in srgb, var(--gc, var(--primary)) 10%, transparent);
+  }
+  .gate-btn[data-gate="X"] { --gc: #f87171; }
+  .gate-btn[data-gate="Y"] { --gc: #34d399; }
+  .gate-btn[data-gate="Z"] { --gc: #22d3ee; }
+  .gate-btn[data-gate="H"] { --gc: #818cf8; }
+  .gate-btn[data-gate="S"] { --gc: #fb923c; }
+  .gate-btn[data-gate="T"] { --gc: #f472b6; }
+  @keyframes gateFlash { 0%{transform:scale(0.85)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+
+  .gate-history { display: flex; flex-wrap: wrap; gap: 0.3rem; justify-content: center; margin: 1rem 0; min-height: 2rem; }
+  .gate-chip {
+    padding: 0.2rem 0.6rem; border-radius: 6px;
+    background: rgba(99,102,241,0.15); color: #c7d2fe;
+    font-size: 0.8rem; font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif; font-weight: 600;
+  }
+
+  /* Gate circuit diagram */
+  .circuit-diagram {
+    display: flex; align-items: center; margin: 1rem 0; min-height: 2.5rem;
+    overflow-x: auto; padding: 0.5rem 0;
+  }
+  .circuit-ket {
+    font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif; font-size: 0.85rem;
+    font-weight: 600; color: var(--primary-light); white-space: nowrap; margin-right: 0.3rem;
+  }
+  .circuit-wire {
+    flex: 0 0 auto; height: 2px; background: var(--text-dim); min-width: 16px;
+  }
+  .circuit-gate-box {
+    flex-shrink: 0; width: 36px; height: 36px; border-radius: 6px;
+    border: 2px solid; display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif; font-weight: 700;
+    font-size: 0.85rem; background: var(--surface2); position: relative;
+  }
+  .circuit-gate-box[data-g="X"] { border-color: #f87171; color: #f87171; }
+  .circuit-gate-box[data-g="Y"] { border-color: #34d399; color: #34d399; }
+  .circuit-gate-box[data-g="Z"] { border-color: #22d3ee; color: #22d3ee; }
+  .circuit-gate-box[data-g="H"] { border-color: #818cf8; color: #818cf8; }
+  .circuit-gate-box[data-g="S"] { border-color: #fb923c; color: #fb923c; }
+  .circuit-gate-box[data-g="T"] { border-color: #f472b6; color: #f472b6; }
+  .circuit-empty { color: var(--text-dim); font-size: 0.85rem; font-style: italic; }
+  .gate-info {
+    margin-top: 1rem; padding: 1rem; background: var(--surface2);
+    border-radius: 10px; border: 1px solid var(--border); min-height: 80px;
+  }
+  .gate-info h4 { color: var(--accent); margin-bottom: 0.3rem; font-weight: 600; }
+  .gate-info p { font-size: 0.9rem; color: var(--text-dim); }
+
+  .reset-btn {
+    padding: 6px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text-dim); cursor: pointer; font-size: 0.9rem; transition: all 0.2s;
+    font-family: 'Inter', sans-serif; font-weight: 500;
+  }
+  .reset-btn:hover { border-color: var(--pink); color: var(--pink); }
+
+  /* Comparison table */
+  .compare-table {
+    width: 100%; border-collapse: separate; border-spacing: 0; margin: 1rem 0;
+    border-radius: 12px; overflow: hidden; border: 1px solid var(--border);
+  }
+  .compare-table th { background: rgba(99,102,241,0.12); color: #c7d2fe; padding: 0.8rem 1rem; text-align: left; font-weight: 600; font-size: 0.92rem; }
+  .compare-table td { padding: 0.7rem 1rem; border-top: 1px solid var(--border); font-size: 0.95rem; }
+  .compare-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+  /* Animated spinning qubit */
+  .spin-demo { display: flex; justify-content: center; gap: 3rem; margin: 1.5rem 0; flex-wrap: wrap; }
+  .spin-box { text-align: center; }
+  .spin-circle {
+    width: 90px; height: 90px; border-radius: 50%; margin: 0 auto 0.5rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; font-weight: 700;
+  }
+  .spin-classical { background: linear-gradient(135deg, var(--primary), var(--primary-light)); }
+  .spin-quantum { background: linear-gradient(135deg, var(--primary), var(--accent)); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(34,211,238,0.4); } 50% { box-shadow: 0 0 0 15px rgba(34,211,238,0); } }
+  .spin-label { font-size: 0.9rem; color: var(--text-dim); margin-top: 0.3rem; }
+
+  /* Coin flip visual */
+  .coin-area { display: flex; justify-content: center; gap: 2rem; margin: 2rem 0; flex-wrap: wrap; align-items: center; }
+  .coin {
+    width: 100px; height: 100px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 2rem; font-weight: 700;
+    transition: all 0.3s; cursor: pointer; position: relative;
+  }
+  .coin-classical {
+    background: linear-gradient(135deg, var(--orange), #ef4444);
+    border: 3px solid #ef4444;
+  }
+  .coin-quantum {
+    border: 3px solid var(--accent);
+    position: relative; overflow: hidden;
+  }
+  .coin-quantum-inner {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 50%, var(--accent) 50%);
+    transition: transform 0.1s;
+  }
+  .coin-label { text-align: center; font-size: 0.85rem; color: var(--text-dim); max-width: 120px; }
+
+  /* Quiz */
+  .quiz-question {
+    margin-bottom: 1.5rem; padding: 1.5rem;
+    background: var(--surface2); border-radius: 12px; border: 1px solid var(--border);
+  }
+  .quiz-question p { font-weight: 600; margin-bottom: 0.8rem; }
+  .quiz-options { display: flex; flex-direction: column; gap: 0.4rem; }
+  .quiz-opt {
+    padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-dim); cursor: pointer; transition: all 0.2s;
+    text-align: left; font-size: 0.95rem; font-family: 'Inter', sans-serif;
+  }
+  .quiz-opt:hover { border-color: var(--primary); color: var(--text); background: rgba(99,102,241,0.06); }
+  .quiz-opt.correct { border-color: var(--green); background: rgba(52,211,153,0.1); color: #6ee7b7; }
+  .quiz-opt.wrong { border-color: var(--red); background: rgba(248,113,113,0.1); color: #fca5a5; }
+  .quiz-feedback { margin-top: 0.6rem; font-size: 0.9rem; min-height: 1.5em; }
+  .quiz-score { text-align: center; font-size: 1.2rem; margin-top: 1rem; color: var(--accent); font-weight: 700; }
+
+  /* Progress steps (intro) */
+  .step-indicator {
+    display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem;
+  }
+  .step-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--card-border); transition: all 0.3s;
+  }
+  .step-dot.active { background: var(--primary-light); box-shadow: 0 0 8px var(--primary-glow); }
+  .step-dot.done { background: var(--accent); }
+
+  /* Superposition animation */
+  .superpos-visual {
+    display: flex; align-items: center; justify-content: center; gap: 1rem;
+    margin: 1.5rem 0; padding: 1.5rem; border-radius: 12px;
+    background: var(--surface2); border: 1px solid var(--border);
+  }
+  .ket-box {
+    padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 1.3rem;
+    font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif; font-weight: 600;
+    text-align: center; min-width: 60px;
+  }
+  .ket-0 { background: rgba(99,102,241,0.15); color: #c7d2fe; border: 1px solid rgba(99,102,241,0.3); }
+  .ket-1 { background: rgba(34,211,238,0.12); color: var(--accent); border: 1px solid rgba(34,211,238,0.3); }
+  .ket-plus { font-size: 1.5rem; color: var(--text-dim); }
+  .ket-amp { font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif; font-size: 1.05rem; color: var(--pink); font-weight: 600; }
+
+  /* Animated superposition bars */
+  .superpos-anim {
+    height: 60px; position: relative; margin: 1.5rem 0;
+    border-radius: 12px; overflow: hidden;
+    background: rgba(255,255,255,0.03);
+  }
+  .superpos-bar-0, .superpos-bar-1 {
+    position: absolute; top: 0; height: 100%; transition: width 0.5s ease;
+  }
+  .superpos-bar-0 {
+    left: 0; background: linear-gradient(90deg, rgba(99,102,241,0.5), rgba(129,140,248,0.3));
+    border-radius: 12px 0 0 12px;
+  }
+  .superpos-bar-1 {
+    right: 0; background: linear-gradient(270deg, rgba(34,211,238,0.5), rgba(52,211,153,0.3));
+    border-radius: 0 12px 12px 0;
+  }
+  .superpos-label {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: 1rem; font-weight: 600; z-index: 2;
+    font-family: 'Cambria Math', Georgia, serif;
+  }
+  .superpos-label-0 { left: 1rem; color: var(--primary-light); }
+  .superpos-label-1 { right: 1rem; color: var(--accent); }
+
+  .matrix-display {
+    display: inline-block; padding: 0.5rem; margin: 0.5rem 0;
+    font-family: 'Cambria Math', Georgia, serif; font-size: 1.1rem;
+  }
+  .matrix-bracket {
+    display: inline-flex; flex-direction: column; gap: 0.2rem;
+    border-left: 2px solid var(--text-dim); border-right: 2px solid var(--text-dim);
+    padding: 0.3rem 0.8rem; border-radius: 3px;
+    font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif;
+  }
+  .matrix-row { display: flex; gap: 1rem; justify-content: center; }
+  .matrix-row span { min-width: 2.5rem; text-align: center; }
+
+  /* Gate cards grid */
+  .gate-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+  .gate-card-ref {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.2rem; transition: all 0.3s;
+  }
+  .gate-card-ref:hover { border-color: rgba(99,102,241,0.5); box-shadow: 0 4px 20px rgba(99,102,241,0.08); }
+  .gate-card-ref h4 { color: #c7d2fe; margin-bottom: 0.3rem; font-weight: 600; }
+  .gate-card-ref .gate-subtitle { font-size: 0.85rem; color: var(--accent); margin-bottom: 0.5rem; }
+  .gate-card-ref p { font-size: 0.88rem; color: var(--text-dim); }
+  .gate-card-ref .effects { margin-top: 0.5rem; font-size: 0.82rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+  .gate-card-ref .effects span { color: var(--accent); }
+
+  /* Measurement flash */
+  .measure-flash {
+    position: fixed; inset: 0; pointer-events: none; z-index: 999;
+    animation: flashAnim 0.4s ease-out forwards;
+  }
+  @keyframes flashAnim {
+    0% { background: rgba(244,114,182,0.2); }
+    100% { background: transparent; }
+  }
+
+  /* Gate button pulse */
+  .gate-btn.pulsing {
+    animation: gatePulse 0.3s ease;
+  }
+  @keyframes gatePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); box-shadow: 0 0 25px var(--glow); }
+    100% { transform: scale(1); }
+  }
+
+  /* Gate prob bars */
+  .gate-prob-bars { margin-top: 0.8rem; }
+  .gate-prob-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; }
+  .gate-prob-label { font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif; width: 28px; text-align: right; font-size: 0.9rem; font-weight: 600; }
+  .gate-prob-track { flex: 1; height: 18px; background: rgba(255,255,255,0.05); border-radius: 9px; overflow: hidden; }
+  .gate-prob-fill-0 { height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius: 9px; transition: width 0.4s ease; }
+  .gate-prob-fill-1 { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); border-radius: 9px; transition: width 0.4s ease; }
+  .gate-prob-value { width: 50px; text-align: left; font-size: 0.8rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+  /* Gate challenges */
+  .challenge-row {
+    display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 1rem;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    font-size: 0.92rem; transition: border-color 0.3s;
+  }
+  .challenge-row.solved { border-color: var(--green); background: rgba(52,211,153,0.06); }
+  .challenge-target { font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif; font-weight: 600; color: var(--accent); min-width: 140px; }
+  .challenge-hint { color: var(--text-dim); font-size: 0.82rem; flex: 1; }
+  .challenge-check {
+    padding: 4px 14px; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text-dim); cursor: pointer; font-size: 0.82rem;
+    font-family: 'Inter', sans-serif; font-weight: 500; transition: all 0.2s; white-space: nowrap;
+  }
+  .challenge-check:hover { border-color: var(--green); color: var(--green); }
+  .challenge-status { font-size: 1.1rem; min-width: 1.5rem; text-align: center; }
+  details[open] > summary span:first-child { transform: rotate(90deg); }
+  details summary::-webkit-details-marker { display: none; }
+
+  p { margin-bottom: 1rem; }
+  strong { color: var(--text); }
+
+  /* Responsive — tablet */
+  @media (max-width: 860px) {
+    .qubit-grid-2x2 { grid-template-columns: 1fr 1fr; }
+    .phase-circle-wrap { gap: 1rem; }
+  }
+  @media (max-width: 700px) {
+    .card { padding: 24px 16px; }
+    header h1 { font-size: 1.9rem; }
+    .bloch-container { grid-template-columns: 1fr; }
+    .gate-cards { grid-template-columns: 1fr; }
+    .qubit-grid-2x2 { grid-template-columns: 1fr; }
+    .histogram { gap: 2rem; }
+    .hist-bar-container { width: 70px; height: 160px; }
+    .basis-btns { flex-wrap: wrap; }
+  }
+
+  /* Progress tracker */
+  .progress-track {
+    display: flex; align-items: center; justify-content: center; gap: 0;
+    margin: -4px 0 8px; padding: 6px 0;
+  }
+  .progress-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border); transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer; flex-shrink: 0;
+  }
+  .progress-dot:hover { background: var(--primary-light); transform: scale(1.3); }
+  .progress-dot.active { background: var(--primary); box-shadow: 0 0 8px var(--glow); transform: scale(1.25); }
+  .progress-dot.done { background: var(--accent); }
+  .progress-line {
+    width: 28px; height: 2px; background: var(--border); transition: background 0.4s;
+    flex-shrink: 0;
+  }
+  .progress-line.done { background: var(--accent); }
+
+  /* Enhanced quantum coin glow */
+  .coin-quantum {
+    box-shadow: 0 0 20px rgba(34,211,238,0.2), 0 0 40px rgba(34,211,238,0.08);
+    animation: coinGlow 2.5s ease-in-out infinite;
+  }
+  @keyframes coinGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(34,211,238,0.2), 0 0 40px rgba(34,211,238,0.08); }
+    50% { box-shadow: 0 0 30px rgba(34,211,238,0.35), 0 0 60px rgba(34,211,238,0.15); }
+  }
+
+  /* Measurement collapse animation */
+  .collapse-anim {
+    display: inline-block;
+    animation: collapseIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes collapseIn {
+    0% { transform: scale(2.5) rotate(180deg); opacity: 0; filter: blur(8px); }
+    60% { transform: scale(1.1) rotate(-5deg); opacity: 1; filter: blur(0); }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+
+  /* Mobile small-screen improvements */
+  @media (max-width: 500px) {
+    header h1 { font-size: 1.6rem; }
+    header { padding: 36px 12px 14px; }
+    .tabs { gap: 2px; padding: 8px 4px; }
+    .tab-btn { font-size: 0.76rem; padding: 4px 8px; }
+    .spin-demo { gap: 1.2rem; }
+    .spin-circle { width: 68px; height: 68px; font-size: 1.3rem; }
+    .coin-area { gap: 0.8rem; }
+    .coin { width: 76px; height: 76px; font-size: 1.5rem; }
+    .gate-btns { gap: 0.35rem; }
+    .gate-btn { width: 44px; height: 44px; font-size: 0.9rem; border-radius: 10px; }
+    .histogram { gap: 1.2rem; }
+    .hist-bar-container { width: 60px; height: 140px; }
+    .math-block { font-size: 1rem; padding: 0.7rem; }
+    .progress-line { width: 14px; }
+    .nav-btn { font-size: 0.78rem; padding: 4px 10px; }
+  }
+
+  /* Phase circle visualization */
+  .phase-circle-wrap {
+    display: flex; align-items: center; justify-content: center; gap: 1.5rem;
+    margin: 1.2rem 0; flex-wrap: wrap;
+  }
+  .phase-circle-svg { width: 120px; height: 120px; flex-shrink: 0; }
+  .phase-info { font-size: 0.9rem; color: var(--text-dim); max-width: 280px; }
+  .phase-info strong { color: var(--pink); }
+
+  /* Measurement basis selector */
+  .basis-btns { display: flex; gap: 0.4rem; margin: 0.8rem 0; }
+  .basis-btn {
+    padding: 5px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text-dim); cursor: pointer; font-size: 0.85rem;
+    font-family: 'JetBrains Mono', monospace; font-weight: 600; transition: all 0.2s;
+  }
+  .basis-btn:hover { border-color: var(--primary); color: var(--text); }
+  .basis-btn.active {
+    background: linear-gradient(135deg, var(--primary), #818cf8);
+    color: white; border-color: var(--primary);
+  }
+
+  /* Keyboard focus styles */
+  .tab-btn:focus-visible, .gate-btn:focus-visible, .preset-btn:focus-visible,
+  .measure-btn:focus-visible, .nav-btn:focus-visible, .reset-btn:focus-visible {
+    outline: 2px solid var(--primary-light);
+    outline-offset: 2px;
+  }
+
+  /* ========== ROUND 6: SVG Icon Badges ========== */
+  .card h2 .icon {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0; vertical-align: middle;
+  }
+  .card h2 .icon svg { width: 18px; height: 18px; }
+
+  /* Qubit technology cards */
+  .qubit-tech-card {
+    padding: 1.2rem; border-radius: 12px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--card-border);
+    transition: all 0.3s ease;
+  }
+  .qubit-tech-card:hover {
+    border-color: rgba(99,102,241,0.4);
+    background: rgba(99,102,241,0.04);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .qubit-tech-card h3 { margin-top: 0; display: flex; align-items: center; gap: 0.5rem; }
+  .qubit-tech-card h3 .tech-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .qubit-tech-card h3 .tech-icon svg { width: 16px; height: 16px; }
+
+  /* Summary box (What You Learned) */
+  .summary-box { position: relative; }
+  .summary-box h2 .icon svg { width: 16px; height: 16px; }
+  .summary-box ul { list-style: none; margin-left: 0 !important; padding-left: 0; }
+  .summary-box ul li {
+    padding-left: 1.6rem; position: relative; margin-bottom: 0.4rem;
+  }
+  .summary-box ul li::before {
+    content: ''; position: absolute; left: 0; top: 0.55em;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: rgba(52,211,153,0.15); border: 1.5px solid var(--green);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2334d399' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+    background-size: 9px; background-repeat: no-repeat; background-position: center;
+  }
+
+  /* Polished footer */
+  .site-footer {
+    text-align: center; padding: 2.5rem 1.5rem; margin-top: 3rem;
+    border-top: 1px solid var(--border);
+    background: linear-gradient(180deg, transparent, rgba(17,24,39,0.5));
+  }
+  .site-footer .footer-divider {
+    width: 60px; height: 2px; margin: 0 auto 1rem;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    border-radius: 1px;
+  }
+  .site-footer .footer-label {
+    font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--orange); margin-bottom: 0.4rem;
+  }
+  .site-footer .footer-author {
+    font-size: 0.82rem; color: var(--text-dim);
+  }
+  .site-footer .footer-author a {
+    color: var(--primary-light); text-decoration: none; transition: color 0.2s;
+  }
+  .site-footer .footer-author a:hover { color: var(--accent); }
+  .site-footer .footer-nav {
+    display: flex; justify-content: center; gap: 1.5rem;
+    margin-top: 1rem; flex-wrap: wrap;
+  }
+  .site-footer .footer-nav a {
+    font-size: 0.78rem; color: var(--text-dim); text-decoration: none;
+    transition: color 0.2s; font-weight: 500;
+  }
+  .site-footer .footer-nav a:hover { color: var(--primary-light); }
+
+  /* Improved nav arrows */
+  .nav-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 2rem; padding-top: 1.2rem;
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(90deg, transparent, var(--border), transparent) 1;
+  }
+  .nav-btn {
+    padding: 0.6rem 1.5rem; border-radius: 10px; border: 1px solid rgba(99,102,241,0.3);
+    background: rgba(99,102,241,0.08); color: var(--primary-light); cursor: pointer;
+    font-size: 0.88rem; transition: all 0.25s; display: flex; align-items: center; gap: 0.5rem;
+    font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: 0.01em;
+    backdrop-filter: blur(4px);
+  }
+  .nav-btn:hover {
+    background: linear-gradient(135deg, var(--primary), #818cf8);
+    color: white; border-color: var(--primary);
+    transform: translateY(-1px); box-shadow: 0 4px 20px var(--glow);
+  }
+  .nav-btn:active { transform: translateY(0); }
+  .nav-btn .arrow { font-size: 1.1rem; transition: transform 0.2s; }
+  .nav-btn:hover .arrow { transform: translateX(3px); }
+  .nav-btn:first-child:hover .arrow { transform: translateX(-3px); }
+</style>
+</head>
+<body>
+<canvas id="particleBg"></canvas>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+
+<header>
+  <h1>Understanding the Qubit</h1>
+  <p>An interactive guide to the fundamental unit of quantum information</p>
+</header>
+
+<nav class="tabs" id="tabsBar">
+  <button class="tab-btn active" data-tab="intro">What is a Qubit?</button>
+  <button class="tab-btn" data-tab="superposition">Superposition</button>
+  <button class="tab-btn" data-tab="bloch">Bloch Sphere</button>
+  <button class="tab-btn" data-tab="measure">Measurement</button>
+  <button class="tab-btn" data-tab="gates">Quantum Gates</button>
+  <button class="tab-btn" data-tab="quiz">Quiz</button>
+</nav>
+
+<div class="container">
+  <div class="progress-track" id="progressTrack">
+    <div class="progress-dot active" data-tab="intro" title="What is a Qubit?"></div>
+    <div class="progress-line"></div>
+    <div class="progress-dot" data-tab="superposition" title="Superposition"></div>
+    <div class="progress-line"></div>
+    <div class="progress-dot" data-tab="bloch" title="Bloch Sphere"></div>
+    <div class="progress-line"></div>
+    <div class="progress-dot" data-tab="measure" title="Measurement"></div>
+    <div class="progress-line"></div>
+    <div class="progress-dot" data-tab="gates" title="Quantum Gates"></div>
+    <div class="progress-line"></div>
+    <div class="progress-dot" data-tab="quiz" title="Quiz"></div>
+  </div>
+
+  <!-- ================= SECTION 1: INTRO ================= -->
+  <div id="intro" class="section active">
+    <div class="card" style="background:linear-gradient(135deg, rgba(99,102,241,0.06), rgba(34,211,238,0.04)); border-color:rgba(99,102,241,0.25);">
+      <h2><span class="icon" style="background:rgba(99,102,241,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg></span> Why Quantum Computing?</h2>
+      <p>Classical computers encode everything as sequences of 0s and 1s. They've taken us incredibly far &mdash; but some problems remain stubbornly out of reach: simulating molecules for drug discovery, breaking modern encryption, or optimizing complex logistics.</p>
+      <p>Quantum computers approach computation differently. Instead of bits locked to 0 or 1, they use <strong>qubits</strong> that exploit the strange rules of quantum mechanics &mdash; <em>superposition</em>, <em>interference</em>, and <em>entanglement</em> &mdash; to explore many possibilities in parallel.</p>
+      <p>This module introduces the <strong>qubit</strong>: the fundamental building block that makes it all possible.</p>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(99,102,241,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><path d="M7 17v.01"/><path d="M17 17v.01"/><path d="m10 10 4 4"/></svg></span> Classical Bit vs. Qubit</h2>
+      <p>In classical computing, information is stored in <strong>bits</strong>. A bit is always in one of two definite states: <span class="math">0</span> or <span class="math">1</span>.</p>
+      <p style="margin-top:0.8rem;">A <strong>qubit</strong> (quantum bit) is the quantum-mechanical analogue of a classical bit. The key difference? A qubit can exist in a <em>superposition</em> of both states simultaneously.</p>
+
+      <div class="spin-demo">
+        <div class="spin-box">
+          <div class="spin-circle spin-classical" id="classicalSpin">0</div>
+          <div class="spin-label">Classical Bit</div>
+          <div class="spin-label">Always 0 <strong>or</strong> 1</div>
+        </div>
+        <div class="spin-box">
+          <div class="spin-circle spin-quantum" id="quantumSpin">?</div>
+          <div class="spin-label">Qubit</div>
+          <div class="spin-label">Both until measured</div>
+        </div>
+      </div>
+
+      <div class="highlight">
+        <strong>Key Insight:</strong> A qubit can exist in a <em>superposition</em> of |0&#10217; and |1&#10217; simultaneously. Only when we <em>measure</em> it does it "choose" one outcome.
+      </div>
+
+      <details style="margin-top:1rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0;">
+        <summary style="padding:0.8rem 1rem;cursor:pointer;font-weight:600;font-size:0.92rem;color:var(--primary-light);list-style:none;display:flex;align-items:center;gap:0.5rem;">
+          <span style="transition:transform 0.2s;display:inline-block;">&#x25B6;</span> What does the |&#10217; notation mean?
+        </summary>
+        <div style="padding:0 1rem 1rem;font-size:0.9rem;color:var(--text-dim);line-height:1.7;">
+          <p>This is <strong style="color:var(--text);">Dirac notation</strong> (also called "bra-ket" notation), the standard way physicists write quantum states:</p>
+          <ul style="margin:0.5rem 0 0.5rem 1.2rem;">
+            <li><span class="math">|0&#10217;</span> and <span class="math">|1&#10217;</span> are <strong style="color:var(--text);">ket</strong> vectors &mdash; they represent quantum states</li>
+            <li>The <span class="math">|</span> and <span class="math">&#10217;</span> are just brackets, like parentheses</li>
+            <li><span class="math">|0&#10217;</span> means "the quantum state labeled 0" &mdash; think of it as "definitely 0"</li>
+            <li><span class="math">|&psi;&#10217;</span> (psi) is the conventional name for an arbitrary quantum state</li>
+          </ul>
+          <p>Don't worry if it looks strange at first &mdash; it's simply a compact way to write quantum states. You'll get used to it quickly!</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(251,146,60,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M15.5 9.4a3.5 3.5 0 1 0 0 5.2"/></svg></span> Think of It Like a Coin</h2>
+      <p>A classical bit is like a coin lying on a table &mdash; it's heads (0) or tails (1). A qubit is like a coin <strong>spinning in the air</strong>: it's in a combination of both until it lands.</p>
+
+      <div class="coin-area">
+        <div>
+          <div class="coin coin-classical" id="classicalCoin" title="Click to flip">0</div>
+          <div class="coin-label">Classical: click to flip (always definite)</div>
+        </div>
+        <div style="font-size:1.5rem;color:var(--text-dim);">vs.</div>
+        <div>
+          <div class="coin coin-quantum" id="quantumCoin" title="Click to measure">
+            <div class="coin-quantum-inner" id="qCoinInner"></div>
+            <span style="position:relative;z-index:2;text-shadow:0 0 8px #000;">?</span>
+          </div>
+          <div class="coin-label">Quantum: click to "measure" (collapses!)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(34,211,238,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v19"/><path d="M5 8h14"/><path d="m5 8-3 8h6l-3-8"/><path d="m19 8-3 8h6l-3-8"/></svg></span> Bit vs. Qubit Comparison</h2>
+      <table class="compare-table">
+        <thead><tr><th>Property</th><th>Classical Bit</th><th>Qubit</th></tr></thead>
+        <tbody>
+          <tr><td>Possible values</td><td>0 or 1</td><td>Superposition of |0&#10217; and |1&#10217;</td></tr>
+          <tr><td>State space</td><td>{0, 1} &mdash; two points</td><td>Surface of Bloch sphere (continuous)</td></tr>
+          <tr><td>Reading the value</td><td>Non-destructive</td><td>Collapses the superposition</td></tr>
+          <tr><td>Copying</td><td>Freely copyable</td><td>No-cloning theorem forbids it</td></tr>
+          <tr><td>Operations</td><td>Logic gates (AND, OR, NOT)</td><td>Unitary transformations (rotations)</td></tr>
+          <tr><td>Correlations</td><td>Classical correlations</td><td>Entanglement (non-classical)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="background:linear-gradient(135deg, rgba(99,102,241,0.08), rgba(34,211,238,0.06)); border-color:rgba(99,102,241,0.25);">
+      <h2><span class="icon" style="background:rgba(52,211,153,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> How Are Qubits Made?</h2>
+      <p>Qubits can be physically realized in many ways:</p>
+      <div class="qubit-grid-2x2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;">
+        <div class="qubit-tech-card">
+          <h3><span class="tech-icon" style="background:rgba(99,102,241,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4"/><path d="M18 12h4"/><circle cx="12" cy="12" r="4"/><path d="M12 2v4"/><path d="M12 18v4"/></svg></span> Superconducting</h3>
+          <p style="font-size:0.88rem;color:var(--text-dim);">Tiny circuits cooled near absolute zero. Used by IBM and Google.</p>
+        </div>
+        <div class="qubit-tech-card">
+          <h3><span class="tech-icon" style="background:rgba(251,146,60,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="m16.24 16.24 2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="m4.93 19.07 2.83-2.83"/><path d="m16.24 7.76 2.83-2.83"/></svg></span> Trapped Ions</h3>
+          <p style="font-size:0.88rem;color:var(--text-dim);">Individual atoms held by electromagnetic fields. Used by IonQ and Quantinuum.</p>
+        </div>
+        <div class="qubit-tech-card">
+          <h3><span class="tech-icon" style="background:rgba(34,211,238,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-1.2 0-2.4.6-3 1.7A3.6 3.6 0 0 0 4.6 9c-1 .6-1.7 1.8-1.7 3s.7 2.4 1.7 3c-.3 1.2 0 2.5 1 3.4.8.8 2.1 1.2 3.3 1 .6 1 1.8 1.6 3 1.6s2.4-.6 3-1.7c1.2.3 2.5 0 3.4-1 .8-.8 1.2-2 1-3.3 1-.6 1.6-1.8 1.6-3s-.6-2.4-1.7-3c.3-1.2 0-2.5-1-3.4a3.7 3.7 0 0 0-3.3-1C14.4 3.6 13.2 3 12 3z"/><path d="m8 12 3 3 5-5"/></svg></span> Photonic</h3>
+          <p style="font-size:0.88rem;color:var(--text-dim);">Photon polarization encodes |0&#10217; and |1&#10217;. Used by Xanadu and PsiQuantum.</p>
+        </div>
+        <div class="qubit-tech-card">
+          <h3><span class="tech-icon" style="background:rgba(244,114,182,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><path d="M20.2 20.2c2.04-2.03.02-7.36-4.5-11.9-4.54-4.52-9.87-6.54-11.9-4.5-2.04 2.03-.02 7.36 4.5 11.9 4.54 4.52 9.87 6.54 11.9 4.5z"/><path d="M15.7 15.7c4.52-4.54 6.54-9.87 4.5-11.9-2.03-2.04-7.36-.02-11.9 4.5-4.52 4.54-6.54 9.87-4.5 11.9 2.03 2.04 7.36.02 11.9-4.5z"/></svg></span> Spin Qubits</h3>
+          <p style="font-size:0.88rem;color:var(--text-dim);">Electron spin in quantum dots. Compatible with semiconductor fabrication.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="background:linear-gradient(135deg, rgba(34,211,238,0.06), rgba(244,114,182,0.04)); border-color:rgba(34,211,238,0.2);">
+      <h2><span class="icon" style="background:rgba(244,114,182,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><path d="M20.2 20.2c2.04-2.03.02-7.36-4.5-11.9-4.54-4.52-9.87-6.54-11.9-4.5-2.04 2.03-.02 7.36 4.5 11.9 4.54 4.52 9.87 6.54 11.9 4.5z"/><path d="M15.7 15.7c4.52-4.54 6.54-9.87 4.5-11.9-2.03-2.04-7.36-.02-11.9 4.5-4.52 4.54-6.54 9.87-4.5 11.9 2.03 2.04 7.36.02 11.9-4.5z"/></svg></span> Beyond Single Qubits</h2>
+      <p>Once you understand single qubits, the next frontier is <strong>multi-qubit systems</strong>:</p>
+      <div class="highlight" style="border-color:var(--accent);">
+        <strong>Entanglement:</strong> Two qubits can be correlated in ways impossible classically. Measuring one <em>instantly</em> determines the other, regardless of distance. This is the key resource for quantum algorithms and quantum teleportation.
+      </div>
+      <p style="margin-top:0.8rem;">With <span class="math">n</span> qubits, the state space has <span class="math">2<sup>n</sup></span> dimensions &mdash; exponential growth that gives quantum computers their power for certain problems.</p>
+      <a href="06_multi_qubit_systems.html" style="display:inline-flex;align-items:center;gap:0.5rem;margin-top:1rem;padding:0.6rem 1.2rem;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:10px;color:var(--accent);font-weight:600;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='rgba(99,102,241,0.2)';this.style.borderColor='var(--accent)'" onmouseout="this.style.background='rgba(99,102,241,0.12)';this.style.borderColor='rgba(99,102,241,0.3)'">Explore Multi-Qubit Systems &rarr;</a>
+    </div>
+
+    <div class="nav-row">
+      <span></span>
+      <button class="nav-btn" onclick="goTab('superposition')">Superposition <span class="arrow">&rarr;</span></button>
+    </div>
+  </div>
+
+  <!-- =============== SECTION 2: SUPERPOSITION =============== -->
+  <div id="superposition" class="section">
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(34,211,238,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg></span> Superposition: The Heart of Quantum</h2>
+      <p>A classical bit is like a light switch &mdash; it's either on or off. A qubit is more like a dial that can point anywhere between "off" and "on". The magic is that until you look at it (measure), the qubit genuinely holds <em>both possibilities at once</em>, weighted by numbers called <strong>amplitudes</strong>.</p>
+      <p>Mathematically, we write this as:</p>
+      <div class="math-block">|&psi;&#10217; = &alpha;|0&#10217; + &beta;|1&#10217;</div>
+      <p>The numbers <span class="math">&alpha;</span> and <span class="math">&beta;</span> are <strong>complex-valued amplitudes</strong>. Their squared magnitudes give probabilities, and they must add up to&nbsp;1:</p>
+      <div class="math-block">|&alpha;|&sup2; + |&beta;|&sup2; = 1</div>
+
+      <div class="highlight">
+        <strong>What do the amplitudes mean?</strong><br>
+        &bull; |&alpha;|&sup2; = probability of measuring <span class="math">|0&#10217;</span><br>
+        &bull; |&beta;|&sup2; = probability of measuring <span class="math">|1&#10217;</span><br>
+        &bull; The <em>phase</em> (angle) of &alpha; and &beta; affects quantum interference &mdash; it's invisible to a single measurement, but crucial when combining quantum operations
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(99,102,241,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg></span> Explore Superposition Interactively</h2>
+      <p>Drag the slider to change the probability of measuring |0&#10217; vs |1&#10217;:</p>
+
+      <div style="margin:1.5rem 0;">
+        <label style="color:var(--text-dim);font-size:0.9rem;">Probability of |0&#10217;: <strong id="supSliderVal" style="color:var(--primary-light);">50%</strong></label>
+        <input type="range" id="supSlider" min="0" max="100" value="50" style="width:100%;accent-color:var(--primary);margin-top:0.3rem;">
+      </div>
+
+      <div class="superpos-anim" id="supAnim">
+        <div class="superpos-bar-0" id="supBar0" style="width:50%"></div>
+        <div class="superpos-bar-1" id="supBar1" style="width:50%"></div>
+        <span class="superpos-label superpos-label-0" id="supLabel0">|0&#10217; 50%</span>
+        <span class="superpos-label superpos-label-1" id="supLabel1">50% |1&#10217;</span>
+      </div>
+
+      <div class="superpos-visual">
+        <span class="ket-amp" id="supAmpA">0.707</span>
+        <span class="ket-box ket-0">|0&#10217;</span>
+        <span class="ket-plus">+</span>
+        <span class="ket-amp" id="supAmpB">0.707</span>
+        <span class="ket-box ket-1">|1&#10217;</span>
+      </div>
+
+      <div class="preset-btns" style="margin-top:1rem;">
+        <button class="preset-btn" onclick="document.getElementById('supSlider').value=100;updateSuperposition()">Pure |0&#10217;</button>
+        <button class="preset-btn" onclick="document.getElementById('supSlider').value=0;updateSuperposition()">Pure |1&#10217;</button>
+        <button class="preset-btn" onclick="document.getElementById('supSlider').value=50;updateSuperposition()">|+&#10217; (equal)</button>
+        <button class="preset-btn" onclick="document.getElementById('supSlider').value=75;updateSuperposition()">75/25 mix</button>
+      </div>
+
+      <div style="margin-top:1.5rem;padding-top:1.2rem;border-top:1px solid var(--border);">
+        <label style="color:var(--text-dim);font-size:0.9rem;">Relative phase &phi;: <strong id="supPhaseVal" style="color:var(--pink);">0&deg;</strong></label>
+        <input type="range" id="supPhaseSlider" min="0" max="360" value="0" style="width:100%;accent-color:var(--pink);margin-top:0.3rem;">
+        <div class="phase-circle-wrap">
+          <svg class="phase-circle-svg" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="48" fill="none" stroke="var(--border)" stroke-width="1.5"/>
+            <line x1="60" y1="60" x2="108" y2="60" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3 3"/>
+            <line id="phaseArrow" x1="60" y1="60" x2="108" y2="60" stroke="var(--pink)" stroke-width="2.5" stroke-linecap="round"/>
+            <circle id="phaseDot" cx="108" cy="60" r="4" fill="var(--pink)"/>
+            <circle cx="60" cy="60" r="2.5" fill="var(--text-dim)"/>
+            <text x="112" y="64" fill="var(--text-dim)" font-size="10" font-family="JetBrains Mono, monospace">0</text>
+            <text x="55" y="16" fill="var(--text-dim)" font-size="10" font-family="JetBrains Mono, monospace">&pi;/2</text>
+            <text x="4" y="64" fill="var(--text-dim)" font-size="10" font-family="JetBrains Mono, monospace">&pi;</text>
+            <text x="50" y="116" fill="var(--text-dim)" font-size="10" font-family="JetBrains Mono, monospace">3&pi;/2</text>
+          </svg>
+          <div class="phase-info">
+            <div id="phaseExplain">Phase = 0&deg;: the |1&#10217; amplitude is <strong>positive real</strong>. This is the |+&#10217; state when probabilities are 50/50.</div>
+            <div style="margin-top:0.5rem;font-size:0.82rem;font-family:'JetBrains Mono',monospace;" id="phaseStateLabel">|&psi;&#10217; = 0.707|0&#10217; + 0.707|1&#10217;</div>
+          </div>
+        </div>
+        <div class="preset-btns">
+          <button class="preset-btn" onclick="document.getElementById('supPhaseSlider').value=0;updateSuperposition()">|+&#10217; (&phi;=0)</button>
+          <button class="preset-btn" onclick="document.getElementById('supPhaseSlider').value=180;updateSuperposition()">|&minus;&#10217; (&phi;=&pi;)</button>
+          <button class="preset-btn" onclick="document.getElementById('supPhaseSlider').value=90;updateSuperposition()">|+i&#10217; (&phi;=&pi;/2)</button>
+          <button class="preset-btn" onclick="document.getElementById('supPhaseSlider').value=270;updateSuperposition()">|&minus;i&#10217; (&phi;=3&pi;/2)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(251,146,60,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/><line x1="7" x2="17" y1="12" y2="12"/></svg></span> Bloch Sphere Parameterization</h2>
+      <p>Any pure qubit state can be written using two angles:</p>
+      <div class="math-block">|&psi;&#10217; = cos(&theta;/2)|0&#10217; + e<sup>i&phi;</sup> sin(&theta;/2)|1&#10217;</div>
+      <p>where:</p>
+      <ul style="margin-left:1.5rem;margin-top:0.5rem;">
+        <li><span class="math">&theta;</span> (theta) is the <strong>polar angle</strong> &mdash; controls the probability balance (0 to &pi;)</li>
+        <li><span class="math">&phi;</span> (phi) is the <strong>azimuthal angle</strong> &mdash; controls the relative phase (0 to 2&pi;)</li>
+      </ul>
+      <p style="margin-top:0.8rem;">This maps every qubit state to a point on the surface of a sphere &mdash; the <strong>Bloch sphere</strong>. Explore it in the next tab!</p>
+    </div>
+
+    <div class="card summary-box" style="background:linear-gradient(135deg, rgba(99,102,241,0.06), rgba(34,211,238,0.04)); border-color:rgba(99,102,241,0.25);">
+      <h2 style="font-size:1.1rem;"><span class="icon" style="background:rgba(99,102,241,0.15);color:var(--accent);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span> What You Learned</h2>
+      <ul style="margin:0.5rem 0 0;line-height:2;color:var(--text-dim);font-size:0.92rem;">
+        <li>A qubit state is <span class="math">|&psi;&#10217; = &alpha;|0&#10217; + &beta;|1&#10217;</span> where <span class="math">|&alpha;|&sup2; + |&beta;|&sup2; = 1</span></li>
+        <li>Amplitudes are complex numbers that encode probability <em>and</em> phase</li>
+        <li>The probability of measuring |0&#10217; is <span class="math">|&alpha;|&sup2;</span>, and |1&#10217; is <span class="math">|&beta;|&sup2;</span></li>
+        <li>Any single-qubit state can be parameterized by two angles &theta; and &phi;</li>
+      </ul>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" onclick="goTab('intro')"><span class="arrow">&larr;</span> What is a Qubit?</button>
+      <button class="nav-btn" onclick="goTab('bloch')">Bloch Sphere <span class="arrow">&rarr;</span></button>
+    </div>
+  </div>
+
+  <!-- =============== SECTION 3: BLOCH SPHERE =============== -->
+  <div id="bloch" class="section">
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(244,114,182,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> Interactive Bloch Sphere</h2>
+      <p>The Bloch sphere is a geometric representation of any single-qubit pure state. <strong>Drag to rotate</strong> the view. Use sliders to change the qubit state.</p>
+      <div class="bloch-container">
+        <div>
+          <canvas id="blochCanvas" class="bloch-canvas" width="450" height="450"></canvas>
+        </div>
+        <div class="controls">
+          <div class="state-display" id="stateDisplay">|&psi;&#10217; = |0&#10217;</div>
+          <div id="namedStateLabel" style="text-align:center;font-size:0.85rem;color:var(--green);font-weight:600;min-height:1.4em;margin-bottom:0.3rem;">&#x2248; |0&#10217; (North pole)</div>
+
+          <label>&theta; (polar angle): <span id="thetaVal">0</span>&deg;</label>
+          <input type="range" id="thetaSlider" min="0" max="180" value="0" step="1">
+
+          <label>&phi; (azimuthal angle): <span id="phiVal">0</span>&deg;</label>
+          <input type="range" id="phiSlider" min="0" max="360" value="0" step="1">
+
+          <div class="prob-bars">
+            <div class="prob-bar-row">
+              <div class="prob-bar-label">|0&#10217;</div>
+              <div class="prob-bar-track"><div class="prob-bar-fill-0" id="prob0Bar" style="width:100%"></div></div>
+              <div class="prob-bar-value" id="prob0Val">100%</div>
+            </div>
+            <div class="prob-bar-row">
+              <div class="prob-bar-label">|1&#10217;</div>
+              <div class="prob-bar-track"><div class="prob-bar-fill-1" id="prob1Bar" style="width:0%"></div></div>
+              <div class="prob-bar-value" id="prob1Val">0%</div>
+            </div>
+          </div>
+
+          <label style="margin-top:1.2rem;">Preset States:</label>
+          <div class="preset-btns">
+            <button class="preset-btn" onclick="setBlochPreset(0,0)">|0&#10217;</button>
+            <button class="preset-btn" onclick="setBlochPreset(180,0)">|1&#10217;</button>
+            <button class="preset-btn" onclick="setBlochPreset(90,0)">|+&#10217;</button>
+            <button class="preset-btn" onclick="setBlochPreset(90,180)">|&minus;&#10217;</button>
+            <button class="preset-btn" onclick="setBlochPreset(90,90)">|+i&#10217;</button>
+            <button class="preset-btn" onclick="setBlochPreset(90,270)">|&minus;i&#10217;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(52,211,153,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span> Understanding the Bloch Sphere</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+        <div>
+          <h3>North &amp; South Poles</h3>
+          <p><span class="math">|0&#10217;</span> is at the <strong>north pole</strong> (&theta;=0). <span class="math">|1&#10217;</span> is at the <strong>south pole</strong> (&theta;=180&deg;).</p>
+          <h3 style="margin-top:1rem;">The Equator</h3>
+          <p>All states on the equator (&theta;=90&deg;) have <strong>equal probability</strong> of being measured as |0&#10217; or |1&#10217;. They differ only in <em>phase</em>.</p>
+        </div>
+        <div>
+          <h3>Key States on the Equator</h3>
+          <ul style="margin-left:1rem;font-size:0.95rem;">
+            <li><span class="math">|+&#10217;</span> = (|0&#10217;+|1&#10217;)/&radic;2 &mdash; positive X</li>
+            <li><span class="math">|&minus;&#10217;</span> = (|0&#10217;&minus;|1&#10217;)/&radic;2 &mdash; negative X</li>
+            <li><span class="math">|+i&#10217;</span> = (|0&#10217;+i|1&#10217;)/&radic;2 &mdash; positive Y</li>
+            <li><span class="math">|&minus;i&#10217;</span> = (|0&#10217;&minus;i|1&#10217;)/&radic;2 &mdash; negative Y</li>
+          </ul>
+          <h3 style="margin-top:1rem;">Opposite Points</h3>
+          <p>Diametrically opposite points on the Bloch sphere are <strong>orthogonal</strong> quantum states.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card summary-box" style="background:linear-gradient(135deg, rgba(244,114,182,0.06), rgba(99,102,241,0.04)); border-color:rgba(244,114,182,0.25);">
+      <h2 style="font-size:1.1rem;"><span class="icon" style="background:rgba(244,114,182,0.15);color:var(--pink);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span> What You Learned</h2>
+      <ul style="margin:0.5rem 0 0;line-height:2;color:var(--text-dim);font-size:0.92rem;">
+        <li>The Bloch sphere maps every qubit state to a point on a unit sphere</li>
+        <li>North pole = |0&#10217;, south pole = |1&#10217;, equator = equal superpositions</li>
+        <li>&theta; controls how much |0&#10217; vs |1&#10217;; &phi; controls the relative phase</li>
+        <li>Every single-qubit gate is a rotation on the Bloch sphere</li>
+      </ul>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" onclick="goTab('superposition')"><span class="arrow">&larr;</span> Superposition</button>
+      <button class="nav-btn" onclick="goTab('measure')">Measurement <span class="arrow">&rarr;</span></button>
+    </div>
+  </div>
+
+  <!-- =============== SECTION 4: MEASUREMENT =============== -->
+  <div id="measure" class="section">
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(244,114,182,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg></span> Quantum Measurement</h2>
+      <p>When we measure a qubit, its superposition <strong>collapses</strong> to either |0&#10217; or |1&#10217;. Which one we get is governed by probability:</p>
+
+      <div class="highlight">
+        <strong>Born Rule:</strong> For a state |&psi;&#10217; = &alpha;|0&#10217; + &beta;|1&#10217;,<br>
+        &bull; P(|0&#10217;) = |&alpha;|&sup2;<br>
+        &bull; P(|1&#10217;) = |&beta;|&sup2;<br>
+        After measurement, the qubit <strong>stays</strong> in whichever state was measured. The superposition is destroyed.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(99,102,241,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M16 8h.01"/><path d="M12 12h.01"/><path d="M8 16h.01"/></svg></span> Simulate Measurement</h2>
+      <p>Prepare a qubit state using &theta;, then click <strong>Measure</strong> repeatedly to build up statistics. Watch how the histogram converges to the theoretical probabilities!</p>
+
+      <div style="margin:0.8rem 0;">
+        <span style="font-size:0.85rem;color:var(--text-dim);margin-right:0.5rem;">Measurement basis:</span>
+        <div class="basis-btns" style="display:inline-flex;">
+          <button class="basis-btn active" data-basis="Z">Z (computational)</button>
+          <button class="basis-btn" data-basis="X">X (Hadamard)</button>
+        </div>
+        <div id="basisExplain" style="font-size:0.82rem;color:var(--text-dim);margin-top:0.3rem;">Z-basis: measures in the standard |0&#10217;/|1&#10217; basis.</div>
+      </div>
+
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin:1rem 0;align-items:start;">
+        <div style="flex:1;min-width:200px;">
+          <label style="color:var(--text-dim);font-size:0.9rem;">&theta; (tilt from |0&#10217;): <span id="measThetaVal">90</span>&deg;</label>
+          <input type="range" id="measTheta" min="0" max="180" value="90" step="1" style="width:100%;accent-color:var(--primary);">
+          <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-dim);margin-top:2px;">
+            <span>0&deg; &mdash; pure |0&#10217;</span>
+            <span>90&deg; &mdash; equal mix</span>
+            <span>180&deg; &mdash; pure |1&#10217;</span>
+          </div>
+        </div>
+        <div style="font-size:0.95rem;padding-top:0.2rem;">
+          <div style="margin-bottom:0.3rem;">State: <strong id="measStateLabel" style="color:var(--pink);font-family:'JetBrains Mono','Cambria Math',Georgia,serif;">0.707|0&#10217; + 0.707|1&#10217;</strong></div>
+          <div>
+            P(|0&#10217;) = <strong id="measProb0" style="color:var(--primary-light)">50.0</strong>%
+            &emsp;
+            P(|1&#10217;) = <strong id="measProb1" style="color:var(--accent)">50.0</strong>%
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;">
+        <button class="measure-btn" id="singleMeasBtn">Measure Once</button>
+        <button class="measure-btn" style="background:linear-gradient(135deg, var(--accent), var(--primary));" id="tenMeasBtn">Measure 10x</button>
+        <button class="measure-btn" style="background:linear-gradient(135deg, var(--primary), #818cf8);" id="multiMeasBtn">Measure 100x</button>
+        <button class="reset-btn" id="resetMeasBtn">Reset</button>
+        <div class="measurement-result" id="measureResult"></div>
+
+        <div class="histogram">
+          <div class="hist-col">
+            <div class="hist-count" id="hist0Count">0</div>
+            <div class="hist-bar-container">
+              <div class="hist-bar hist-bar-0" id="hist0Bar" style="height:0%"><span class="hist-pct" id="hist0Pct"></span></div>
+              <div class="hist-theory-line" id="histTheory0" style="bottom:50%" title="Theoretical"></div>
+            </div>
+            <div class="hist-label" id="histLabel0">|0&#10217;</div>
+          </div>
+          <div class="hist-col">
+            <div class="hist-count" id="hist1Count">0</div>
+            <div class="hist-bar-container">
+              <div class="hist-bar hist-bar-1" id="hist1Bar" style="height:0%"><span class="hist-pct" id="hist1Pct"></span></div>
+              <div class="hist-theory-line" id="histTheory1" style="bottom:50%" title="Theoretical"></div>
+            </div>
+            <div class="hist-label" id="histLabel1">|1&#10217;</div>
+          </div>
+        </div>
+        <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--text-dim);">
+          <span style="display:inline-block;width:20px;height:2px;background:#fdcb6e;vertical-align:middle;margin-right:4px;"></span> = theoretical probability
+        </p>
+        <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-dim);" id="totalMeas">Total: 0 measurements</p>
+        <p style="margin-top:0.3rem;font-size:0.82rem;min-height:1.2em;" id="convergenceNote"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(251,146,60,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg></span> Why Measurement Matters</h2>
+      <ul style="margin-left:1.5rem;">
+        <li><strong>Irreversible:</strong> Once measured, the superposition is gone. You cannot "un-measure" a qubit.</li>
+        <li><strong>Probabilistic:</strong> A single measurement gives a random result. Only by repeating many times can you estimate the probabilities.</li>
+        <li><strong>No-Cloning:</strong> You cannot copy a qubit to measure it multiple times in the same state (no-cloning theorem).</li>
+        <li><strong>Basis-Dependent:</strong> The outcome depends on <em>which basis</em> you measure in (computational, Hadamard, etc.).</li>
+      </ul>
+    </div>
+
+    <div class="card summary-box" style="background:linear-gradient(135deg, rgba(34,211,238,0.06), rgba(52,211,153,0.04)); border-color:rgba(34,211,238,0.25);">
+      <h2 style="font-size:1.1rem;"><span class="icon" style="background:rgba(34,211,238,0.15);color:var(--cyan);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span> What You Learned</h2>
+      <ul style="margin:0.5rem 0 0;line-height:2;color:var(--text-dim);font-size:0.92rem;">
+        <li>Measurement collapses superposition &mdash; you get |0&#10217; or |1&#10217;, never both</li>
+        <li>The Born rule gives the probability: P(|0&#10217;) = |&alpha;|&sup2;, P(|1&#10217;) = |&beta;|&sup2;</li>
+        <li>Measurement is irreversible &mdash; the pre-measurement state is lost</li>
+        <li>You can't copy a qubit (no-cloning theorem), so measurement is your only window</li>
+      </ul>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" onclick="goTab('bloch')"><span class="arrow">&larr;</span> Bloch Sphere</button>
+      <button class="nav-btn" onclick="goTab('gates')">Quantum Gates <span class="arrow">&rarr;</span></button>
+    </div>
+  </div>
+
+  <!-- =============== SECTION 5: QUANTUM GATES =============== -->
+  <div id="gates" class="section">
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(34,211,238,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span> Quantum Gate Playground</h2>
+      <p>Quantum gates are <strong>unitary operations</strong> &mdash; reversible rotations on the Bloch sphere. Start from |0&#10217; and apply gates to see how the state evolves.</p>
+
+      <div class="bloch-container">
+        <div>
+          <canvas id="gateCanvas" class="bloch-canvas" width="400" height="400"></canvas>
+        </div>
+        <div>
+          <p style="font-size:0.9rem;color:var(--text-dim);margin-bottom:0.5rem;">Click a gate to apply it:</p>
+          <div class="gate-btns">
+            <button class="gate-btn" data-gate="X" title="Pauli-X (bit flip)">X</button>
+            <button class="gate-btn" data-gate="Y" title="Pauli-Y">Y</button>
+            <button class="gate-btn" data-gate="Z" title="Pauli-Z (phase flip)">Z</button>
+            <button class="gate-btn" data-gate="H" title="Hadamard">H</button>
+            <button class="gate-btn" data-gate="S" title="S gate">S</button>
+            <button class="gate-btn" data-gate="T" title="T gate">T</button>
+          </div>
+
+          <div style="margin-top:0.8rem;text-align:center;display:flex;gap:0.5rem;justify-content:center;">
+            <button class="reset-btn" id="undoGateBtn" title="Undo last gate">&#x21A9; Undo</button>
+            <button class="reset-btn" id="resetGatesBtn">Reset to |0&#10217;</button>
+          </div>
+
+          <p style="font-size:0.85rem;color:var(--text-dim);margin-top:1rem;">Circuit:</p>
+          <div class="circuit-diagram" id="gateCircuit"><span class="circuit-ket">|0&#10217;</span><span class="circuit-wire"></span><span class="circuit-empty">apply gates above</span></div>
+          <div class="gate-history" id="gateHistory" style="display:none;"></div>
+
+          <div class="state-display" id="gateStateDisplay" style="margin-top:1rem;">|&psi;&#10217; = |0&#10217;</div>
+
+          <div class="gate-prob-bars">
+            <div class="gate-prob-row">
+              <div class="gate-prob-label">|0&#10217;</div>
+              <div class="gate-prob-track"><div class="gate-prob-fill-0" id="gateProb0Bar" style="width:100%"></div></div>
+              <div class="gate-prob-value" id="gateProb0Val">100%</div>
+            </div>
+            <div class="gate-prob-row">
+              <div class="gate-prob-label">|1&#10217;</div>
+              <div class="gate-prob-track"><div class="gate-prob-fill-1" id="gateProb1Bar" style="width:0%"></div></div>
+              <div class="gate-prob-value" id="gateProb1Val">0%</div>
+            </div>
+          </div>
+
+          <div class="gate-info" id="gateInfo">
+            <h4>Click a gate to see its effect</h4>
+            <p>Each gate rotates the state vector on the Bloch sphere.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="background:linear-gradient(135deg, rgba(251,146,60,0.05), rgba(250,204,21,0.04)); border-color:rgba(251,146,60,0.2);">
+      <h2><span class="icon" style="background:rgba(251,146,60,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1.5 1.5 0 0 0 1.296 2.244h11.968a1.5 1.5 0 0 0 1.296-2.244l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16.5h10"/></svg></span> Try These Experiments</h2>
+      <p style="font-size:0.92rem;color:var(--text-dim);">Use the playground above, then click <strong>Run</strong> to auto-apply each sequence and see the result:</p>
+      <div style="display:flex;flex-direction:column;gap:0.6rem;margin-top:1rem;" id="gateExperiments"></div>
+    </div>
+
+    <div class="card" style="background:linear-gradient(135deg, rgba(52,211,153,0.06), rgba(34,211,238,0.04)); border-color:rgba(52,211,153,0.25);">
+      <h2><span class="icon" style="background:rgba(250,204,21,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span> Gate Challenges</h2>
+      <p>Try to reach each target state using the gate playground above. Click <strong>Check</strong> to verify!</p>
+      <div id="gateChallenges" style="display:flex;flex-direction:column;gap:0.6rem;margin-top:1rem;"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(52,211,153,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M12 6v7"/><path d="m15 9-3-3-3 3"/></svg></span> Gate Reference</h2>
+      <div class="gate-cards">
+        <div class="gate-card-ref">
+          <h4>X &mdash; Pauli-X (NOT)</h4>
+          <div class="gate-subtitle">180&deg; rotation around X-axis</div>
+          <div class="matrix-display"><div class="matrix-bracket"><div class="matrix-row"><span>0</span><span>1</span></div><div class="matrix-row"><span>1</span><span>0</span></div></div></div>
+          <p>Flips |0&#10217; &harr; |1&#10217;. The quantum NOT gate.</p>
+          <div class="effects"><span>|0&#10217; &rarr; |1&#10217;</span> &bull; <span>|1&#10217; &rarr; |0&#10217;</span></div>
+        </div>
+        <div class="gate-card-ref">
+          <h4>Y &mdash; Pauli-Y</h4>
+          <div class="gate-subtitle">180&deg; rotation around Y-axis</div>
+          <div class="matrix-display"><div class="matrix-bracket"><div class="matrix-row"><span>0</span><span>&minus;i</span></div><div class="matrix-row"><span>i</span><span>0</span></div></div></div>
+          <p>Combines bit-flip and phase-flip.</p>
+          <div class="effects"><span>|0&#10217; &rarr; i|1&#10217;</span> &bull; <span>|1&#10217; &rarr; &minus;i|0&#10217;</span></div>
+        </div>
+        <div class="gate-card-ref">
+          <h4>Z &mdash; Pauli-Z (Phase Flip)</h4>
+          <div class="gate-subtitle">180&deg; rotation around Z-axis</div>
+          <div class="matrix-display"><div class="matrix-bracket"><div class="matrix-row"><span>1</span><span>0</span></div><div class="matrix-row"><span>0</span><span>&minus;1</span></div></div></div>
+          <p>Leaves |0&#10217; alone, flips phase of |1&#10217;.</p>
+          <div class="effects"><span>|+&#10217; &rarr; |&minus;&#10217;</span> &bull; <span>|&minus;&#10217; &rarr; |+&#10217;</span></div>
+        </div>
+        <div class="gate-card-ref">
+          <h4>H &mdash; Hadamard</h4>
+          <div class="gate-subtitle">Creates equal superposition</div>
+          <div class="matrix-display"><div class="matrix-bracket"><div class="matrix-row"><span>1/&radic;2</span><span>1/&radic;2</span></div><div class="matrix-row"><span>1/&radic;2</span><span>&minus;1/&radic;2</span></div></div></div>
+          <p>The most important gate for creating superposition. Self-inverse: H&sup2; = I.</p>
+          <div class="effects"><span>|0&#10217; &rarr; |+&#10217;</span> &bull; <span>|1&#10217; &rarr; |&minus;&#10217;</span></div>
+        </div>
+        <div class="gate-card-ref">
+          <h4>S &mdash; Phase Gate (&radic;Z)</h4>
+          <div class="gate-subtitle">90&deg; rotation around Z-axis</div>
+          <div class="matrix-display"><div class="matrix-bracket"><div class="matrix-row"><span>1</span><span>0</span></div><div class="matrix-row"><span>0</span><span>i</span></div></div></div>
+          <p>Adds &pi;/2 phase to |1&#10217;. S&sup2; = Z.</p>
+          <div class="effects"><span>|0&#10217; &rarr; |0&#10217;</span> &bull; <span>|1&#10217; &rarr; i|1&#10217;</span></div>
+        </div>
+        <div class="gate-card-ref">
+          <h4>T &mdash; &pi;/8 Gate (&radic;S)</h4>
+          <div class="gate-subtitle">45&deg; rotation around Z-axis</div>
+          <div class="matrix-display"><div class="matrix-bracket"><div class="matrix-row"><span>1</span><span>0</span></div><div class="matrix-row"><span>0</span><span>e<sup>i&pi;/4</sup></span></div></div></div>
+          <p>Key for universal quantum computation. T&sup2; = S, T&sup4; = Z.</p>
+          <div class="effects"><span>|0&#10217; &rarr; |0&#10217;</span> &bull; <span>|1&#10217; &rarr; e<sup>i&pi;/4</sup>|1&#10217;</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card summary-box" style="background:linear-gradient(135deg, rgba(52,211,153,0.06), rgba(99,102,241,0.04)); border-color:rgba(52,211,153,0.25);">
+      <h2 style="font-size:1.1rem;"><span class="icon" style="background:rgba(52,211,153,0.15);color:var(--green);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span> What You Learned</h2>
+      <ul style="margin:0.5rem 0 0;line-height:2;color:var(--text-dim);font-size:0.92rem;">
+        <li>Quantum gates are unitary (reversible) operations on qubit states</li>
+        <li>X flips |0&#10217; &harr; |1&#10217;; Z flips phase; H creates superposition</li>
+        <li>Gates compose: applying H then Z then H is the same as applying X</li>
+        <li>The set {H, T} is universal &mdash; any single-qubit gate can be approximated with these</li>
+      </ul>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" onclick="goTab('measure')"><span class="arrow">&larr;</span> Measurement</button>
+      <button class="nav-btn" onclick="goTab('quiz')">Take the Quiz <span class="arrow">&rarr;</span></button>
+    </div>
+  </div>
+
+  <!-- =============== SECTION 6: QUIZ =============== -->
+  <div id="quiz" class="section">
+    <div class="card">
+      <h2><span class="icon" style="background:rgba(250,204,21,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg></span> Test Your Knowledge</h2>
+      <p>Answer these questions to check your understanding of qubits and quantum gates.</p>
+      <div id="quizContainer" style="margin-top:1rem;"></div>
+      <div class="quiz-score" id="quizScore"></div>
+      <div style="text-align:center;margin-top:1rem;">
+        <button class="reset-btn" id="retryQuizBtn">Retry Quiz</button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" onclick="goTab('gates')"><span class="arrow">&larr;</span> Quantum Gates</button>
+      <button class="nav-btn" onclick="goTab('intro')"><span class="arrow">&#8634;</span> Start Over</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================================================================
+// TAB NAVIGATION
+// ===================================================================
+const tabOrder = ['intro', 'superposition', 'bloch', 'measure', 'gates', 'quiz'];
+const visitedTabs = new Set(['intro']);
+
+function goTab(tab) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (tab === 'bloch') requestAnimationFrame(drawBloch);
+  if (tab === 'gates') requestAnimationFrame(drawGateBloch);
+
+  // Update progress tracker
+  visitedTabs.add(tab);
+  const dots = document.querySelectorAll('.progress-dot');
+  const lines = document.querySelectorAll('.progress-line');
+  const currentIdx = tabOrder.indexOf(tab);
+  dots.forEach((dot, i) => {
+    dot.classList.remove('active', 'done');
+    if (i === currentIdx) dot.classList.add('active');
+    else if (visitedTabs.has(tabOrder[i])) dot.classList.add('done');
+  });
+  lines.forEach((line, i) => {
+    line.classList.toggle('done', visitedTabs.has(tabOrder[i]) && visitedTabs.has(tabOrder[i + 1]));
+  });
+}
+
+document.getElementById('tabsBar').addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn');
+  if (!btn) return;
+  goTab(btn.dataset.tab);
+});
+
+// Progress dots are also clickable
+document.getElementById('progressTrack').addEventListener('click', e => {
+  const dot = e.target.closest('.progress-dot');
+  if (dot && dot.dataset.tab) goTab(dot.dataset.tab);
+});
+
+// Keyboard navigation: arrow keys to move between tabs
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  const cur = tabOrder.findIndex(t => document.getElementById(t).classList.contains('active'));
+  if (e.key === 'ArrowRight' && cur < tabOrder.length - 1) { e.preventDefault(); goTab(tabOrder[cur + 1]); }
+  if (e.key === 'ArrowLeft' && cur > 0) { e.preventDefault(); goTab(tabOrder[cur - 1]); }
+});
+
+// Quantum spin animation
+const qChars = ['?', '0', '1', '+', '-', 'i'];
+setInterval(() => {
+  const el = document.getElementById('quantumSpin');
+  if (el) el.textContent = qChars[Math.floor(Math.random() * qChars.length)];
+}, 300);
+
+// Quantum coin spin
+let qCoinAngle = 0;
+function spinQuantumCoin() {
+  qCoinAngle += 3;
+  const inner = document.getElementById('qCoinInner');
+  if (inner) inner.style.transform = `rotateY(${qCoinAngle}deg)`;
+  requestAnimationFrame(spinQuantumCoin);
+}
+spinQuantumCoin();
+
+// Classical coin click — random flip with animation
+document.getElementById('classicalCoin').addEventListener('click', function() {
+  const coin = this;
+  coin.style.pointerEvents = 'none';
+  let flips = 0;
+  const totalFlips = 8 + Math.floor(Math.random() * 5);
+  const result = Math.random() < 0.5 ? '0' : '1';
+  const flipInterval = setInterval(() => {
+    coin.textContent = Math.random() < 0.5 ? '0' : '1';
+    coin.style.transform = `scale(${0.85 + Math.random() * 0.15}) rotate(${(Math.random()-0.5)*20}deg)`;
+    flips++;
+    if (flips >= totalFlips) {
+      clearInterval(flipInterval);
+      coin.textContent = result;
+      coin.style.transform = '';
+      coin.style.pointerEvents = '';
+    }
+  }, 60);
+});
+
+// Quantum coin click (measure)
+document.getElementById('quantumCoin').addEventListener('click', function() {
+  const result = Math.random() < 0.5 ? '0' : '1';
+  const inner = document.getElementById('qCoinInner');
+  inner.style.background = result === '0'
+    ? 'linear-gradient(135deg, var(--primary), var(--primary-light))'
+    : 'linear-gradient(135deg, var(--accent), #55efc4)';
+  inner.style.transform = 'rotateY(0deg)';
+  this.querySelector('span').textContent = result;
+  this.style.transform = 'scale(0.9)';
+  setTimeout(() => {
+    this.style.transform = '';
+    setTimeout(() => {
+      inner.style.background = 'linear-gradient(135deg, var(--primary) 50%, var(--accent) 50%)';
+      this.querySelector('span').textContent = '?';
+      spinQuantumCoin();
+    }, 1500);
+  }, 150);
+});
+
+// ===================================================================
+// SUPERPOSITION SLIDER
+// ===================================================================
+const supSlider = document.getElementById('supSlider');
+const supPhaseSlider = document.getElementById('supPhaseSlider');
+supSlider.addEventListener('input', updateSuperposition);
+supPhaseSlider.addEventListener('input', updateSuperposition);
+
+function updateSuperposition() {
+  const p0 = +supSlider.value;
+  const p1 = 100 - p0;
+  const phi = +supPhaseSlider.value;
+  const phiRad = phi * Math.PI / 180;
+  document.getElementById('supSliderVal').textContent = p0 + '%';
+  document.getElementById('supBar0').style.width = p0 + '%';
+  document.getElementById('supBar1').style.width = p1 + '%';
+  document.getElementById('supLabel0').textContent = `|0⟩ ${p0}%`;
+  document.getElementById('supLabel1').textContent = `${p1}% |1⟩`;
+
+  const ampA = Math.sqrt(p0 / 100);
+  const ampBmag = Math.sqrt(p1 / 100);
+  document.getElementById('supAmpA').textContent = ampA.toFixed(3);
+
+  // Show complex coefficient when phase ≠ 0
+  if (phi === 0 || p1 === 0) {
+    document.getElementById('supAmpB').textContent = ampBmag.toFixed(3);
+  } else if (Math.abs(phi - 180) < 1) {
+    document.getElementById('supAmpB').textContent = '−' + ampBmag.toFixed(3);
+  } else {
+    const re = ampBmag * Math.cos(phiRad);
+    const im = ampBmag * Math.sin(phiRad);
+    const sign = im >= 0 ? '+' : '';
+    document.getElementById('supAmpB').textContent = `(${re.toFixed(2)}${sign}${im.toFixed(2)}i)`;
+  }
+
+  // Phase circle
+  document.getElementById('supPhaseVal').textContent = phi + '°';
+  const arrowX = 60 + 48 * Math.cos(-phiRad);
+  const arrowY = 60 + 48 * Math.sin(-phiRad);
+  document.getElementById('phaseArrow').setAttribute('x2', arrowX);
+  document.getElementById('phaseArrow').setAttribute('y2', arrowY);
+  document.getElementById('phaseDot').setAttribute('cx', arrowX);
+  document.getElementById('phaseDot').setAttribute('cy', arrowY);
+
+  // Phase explanation
+  const phaseNames = [
+    { deg: 0, name: '|+⟩', desc: 'positive real' },
+    { deg: 90, name: '|+i⟩', desc: 'positive imaginary' },
+    { deg: 180, name: '|−⟩', desc: 'negative real' },
+    { deg: 270, name: '|−i⟩', desc: 'negative imaginary' },
+  ];
+  let explain = '';
+  const closest = phaseNames.reduce((best, p) => Math.abs(phi - p.deg) < Math.abs(phi - best.deg) ? p : best);
+  if (Math.abs(phi - closest.deg) < 5 && p0 > 0 && p1 > 0) {
+    explain = `Phase = ${phi}°: the |1⟩ amplitude is <strong>${closest.desc}</strong>. ${p0 === 50 ? 'This is the ' + closest.name + ' state.' : ''}`;
+  } else {
+    explain = `Phase = ${phi}°: the relative phase between |0⟩ and |1⟩ affects quantum interference, even though it <strong>doesn't change</strong> measurement probabilities.`;
+  }
+  document.getElementById('phaseExplain').innerHTML = explain;
+
+  // Full state label with phase
+  let stateLabel = '';
+  if (ampA > 0.001) stateLabel += ampA.toFixed(3) + '|0⟩';
+  if (ampBmag > 0.001) {
+    if (stateLabel) stateLabel += ' + ';
+    if (phi === 0) stateLabel += ampBmag.toFixed(3) + '|1⟩';
+    else if (Math.abs(phi - 180) < 1) stateLabel = stateLabel.replace(' + ', ' − ') + ampBmag.toFixed(3) + '|1⟩';
+    else stateLabel += 'e^(i' + phi + '°)·' + ampBmag.toFixed(3) + '|1⟩';
+  }
+  document.getElementById('phaseStateLabel').textContent = '|ψ⟩ = ' + (stateLabel || '0');
+}
+
+// ===================================================================
+// BLOCH SPHERE
+// ===================================================================
+let bTheta = 0, bPhi = 0;
+let camRotX = -0.4, camRotY = 0.5;
+let dragging = false, lastMX = 0, lastMY = 0;
+
+const blochCanvas = document.getElementById('blochCanvas');
+const bCtx = blochCanvas.getContext('2d');
+
+function project3D(x, y, z, cx, cy, scale) {
+  let x1 = x * Math.cos(camRotY) + z * Math.sin(camRotY);
+  let z1 = -x * Math.sin(camRotY) + z * Math.cos(camRotY);
+  let y2 = y * Math.cos(camRotX) - z1 * Math.sin(camRotX);
+  let z2 = y * Math.sin(camRotX) + z1 * Math.cos(camRotX);
+  return { x: cx + x1 * scale, y: cy - y2 * scale, z: z2 };
+}
+
+function drawBlochSphere(canvas, ctx, cRX, cRY, sx, sy, sz, projFn) {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2, scale = Math.min(w, h) * 0.34;
+
+  const drawCircle = (fn, style, lw) => {
+    ctx.strokeStyle = style || 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = lw || 1;
+    ctx.beginPath();
+    for (let i = 0; i <= 64; i++) {
+      const a = (i / 64) * Math.PI * 2;
+      const p = projFn(...fn(a));
+      i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+  };
+
+  // Main great circles
+  drawCircle(a => [Math.cos(a), 0, Math.sin(a)]);
+  drawCircle(a => [Math.cos(a), Math.sin(a), 0]);
+  drawCircle(a => [0, Math.sin(a), Math.cos(a)]);
+
+  // Latitude lines at ±45°
+  const latitudes = [45, -45];
+  latitudes.forEach(lat => {
+    const r = Math.cos(lat * Math.PI / 180);
+    const yy = Math.sin(lat * Math.PI / 180);
+    drawCircle(a => [r * Math.cos(a), yy, r * Math.sin(a)], 'rgba(255,255,255,0.04)', 0.5);
+  });
+
+  // Axes with negative extensions
+  const axes = [
+    { to: [1.25,0,0], label: 'X', color: '#f87171' },
+    { to: [-1.25,0,0], label: '-X', color: '#f87171', dim: true },
+    { to: [0,1.25,0], label: '|0⟩', color: '#818cf8' },
+    { to: [0,-1.25,0], label: '|1⟩', color: '#22d3ee' },
+    { to: [0,0,1.25], label: 'Y', color: '#fb923c' },
+    { to: [0,0,-1.25], label: '-Y', color: '#fb923c', dim: true },
+  ];
+
+  axes.forEach(ax => {
+    const p1 = projFn(0, 0, 0);
+    const p2 = projFn(...ax.to);
+    const alpha = ax.dim ? '30' : '50';
+    ctx.strokeStyle = ax.color + alpha;
+    ctx.lineWidth = ax.dim ? 1 : 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = ax.dim ? ax.color + '50' : ax.color;
+    ctx.font = (ax.dim ? '11' : '13') + 'px "Cambria Math", Georgia, serif';
+    ctx.fillText(ax.label, p2.x + 5, p2.y - 5);
+  });
+
+  // State vector
+  const origin = projFn(0, 0, 0);
+  const tip = projFn(sx, sy, sz);
+
+  // Shadow on equator
+  const shadow = projFn(sx, 0, sz);
+  ctx.strokeStyle = 'rgba(244,114,182,0.12)';
+  ctx.setLineDash([3, 3]);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(tip.x, tip.y);
+  ctx.lineTo(shadow.x, shadow.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(244,114,182,0.2)';
+  ctx.beginPath(); ctx.arc(shadow.x, shadow.y, 3, 0, Math.PI * 2); ctx.fill();
+
+  // Arrow shaft
+  ctx.strokeStyle = '#f472b6';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(origin.x, origin.y);
+  ctx.lineTo(tip.x, tip.y);
+  ctx.stroke();
+
+  // Arrowhead
+  const dx = tip.x - origin.x;
+  const dy = tip.y - origin.y;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len > 8) {
+    const ux = dx / len, uy = dy / len;
+    const headLen = 14, headW = 6;
+    ctx.fillStyle = '#f472b6';
+    ctx.beginPath();
+    ctx.moveTo(tip.x, tip.y);
+    ctx.lineTo(tip.x - headLen * ux + headW * uy, tip.y - headLen * uy - headW * ux);
+    ctx.lineTo(tip.x - headLen * ux - headW * uy, tip.y - headLen * uy + headW * ux);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Tip glow
+  ctx.fillStyle = 'rgba(244,114,182,0.2)';
+  ctx.beginPath(); ctx.arc(tip.x, tip.y, 12, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#f472b6';
+  ctx.beginPath(); ctx.arc(tip.x, tip.y, 5, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawBloch() {
+  const tRad = bTheta * Math.PI / 180;
+  const pRad = bPhi * Math.PI / 180;
+  const sx = Math.sin(tRad) * Math.cos(pRad);
+  const sy = Math.cos(tRad);
+  const sz = Math.sin(tRad) * Math.sin(pRad);
+  const w = blochCanvas.width, h = blochCanvas.height;
+  const cx = w / 2, cy = h / 2, scale = Math.min(w, h) * 0.34;
+
+  drawBlochSphere(blochCanvas, bCtx, camRotX, camRotY, sx, sy, sz,
+    (x, y, z) => project3D(x, y, z, cx, cy, scale));
+}
+
+// Mouse drag for Bloch sphere
+function setupDrag(canvas, draw, getCam, setCam) {
+  let d = false, lx = 0, ly = 0;
+  canvas.addEventListener('mousedown', e => { d = true; lx = e.clientX; ly = e.clientY; });
+  canvas.addEventListener('mousemove', e => {
+    if (!d) return;
+    const c = getCam();
+    c.ry += (e.clientX - lx) * 0.008;
+    c.rx += (e.clientY - ly) * 0.008;
+    c.rx = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, c.rx));
+    setCam(c);
+    lx = e.clientX; ly = e.clientY;
+    draw();
+  });
+  canvas.addEventListener('mouseup', () => d = false);
+  canvas.addEventListener('mouseleave', () => d = false);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); d = true; lx = e.touches[0].clientX; ly = e.touches[0].clientY; }, { passive: false });
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (!d) return;
+    const c = getCam();
+    c.ry += (e.touches[0].clientX - lx) * 0.008;
+    c.rx += (e.touches[0].clientY - ly) * 0.008;
+    c.rx = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, c.rx));
+    setCam(c);
+    lx = e.touches[0].clientX; ly = e.touches[0].clientY;
+    draw();
+  }, { passive: false });
+  canvas.addEventListener('touchend', () => d = false);
+}
+
+setupDrag(blochCanvas, drawBloch,
+  () => ({ rx: camRotX, ry: camRotY }),
+  c => { camRotX = c.rx; camRotY = c.ry; });
+
+// Sliders
+const thetaSlider = document.getElementById('thetaSlider');
+const phiSlider = document.getElementById('phiSlider');
+
+function updateBlochState() {
+  bTheta = +thetaSlider.value;
+  bPhi = +phiSlider.value;
+  document.getElementById('thetaVal').textContent = bTheta;
+  document.getElementById('phiVal').textContent = bPhi;
+
+  const tRad = bTheta * Math.PI / 180;
+  const pRad = bPhi * Math.PI / 180;
+  const alpha = Math.cos(tRad / 2);
+  const betaR = Math.sin(tRad / 2) * Math.cos(pRad);
+  const betaI = Math.sin(tRad / 2) * Math.sin(pRad);
+
+  const prob0 = alpha * alpha;
+  const prob1 = 1 - prob0;
+  document.getElementById('prob0Bar').style.width = (prob0 * 100) + '%';
+  document.getElementById('prob1Bar').style.width = (prob1 * 100) + '%';
+  document.getElementById('prob0Val').textContent = (prob0 * 100).toFixed(1) + '%';
+  document.getElementById('prob1Val').textContent = (prob1 * 100).toFixed(1) + '%';
+
+  let stateStr = '|ψ⟩ = ';
+  if (Math.abs(alpha) > 0.001) stateStr += alpha.toFixed(3) + '|0⟩';
+  if (Math.abs(betaR) > 0.001 || Math.abs(betaI) > 0.001) {
+    if (Math.abs(alpha) > 0.001) {
+      if (Math.abs(betaI) < 0.001) {
+        stateStr += (betaR < 0 ? ' − ' + Math.abs(betaR).toFixed(3) : ' + ' + betaR.toFixed(3)) + '|1⟩';
+      } else if (Math.abs(betaR) < 0.001) {
+        stateStr += (betaI < 0 ? ' − ' + Math.abs(betaI).toFixed(3) : ' + ' + betaI.toFixed(3)) + 'i|1⟩';
+      } else {
+        stateStr += ' + (' + betaR.toFixed(3) + (betaI < 0 ? '' : '+') + betaI.toFixed(3) + 'i)|1⟩';
+      }
+    } else {
+      if (Math.abs(betaI) < 0.001) stateStr += betaR.toFixed(3) + '|1⟩';
+      else if (Math.abs(betaR) < 0.001) stateStr += betaI.toFixed(3) + 'i|1⟩';
+      else stateStr += '(' + betaR.toFixed(3) + (betaI < 0 ? '' : '+') + betaI.toFixed(3) + 'i)|1⟩';
+    }
+  }
+  document.getElementById('stateDisplay').textContent = stateStr;
+
+  // Named state indicator
+  const knownStates = [
+    { t: 0, p: null, name: '|0⟩ (North pole)' },
+    { t: 180, p: null, name: '|1⟩ (South pole)' },
+    { t: 90, p: 0, name: '|+⟩ (+X equator)' },
+    { t: 90, p: 180, name: '|−⟩ (−X equator)' },
+    { t: 90, p: 90, name: '|+i⟩ (+Y equator)' },
+    { t: 90, p: 270, name: '|−i⟩ (−Y equator)' },
+  ];
+  const tol = 4;
+  let foundName = '';
+  for (const s of knownStates) {
+    const tMatch = Math.abs(bTheta - s.t) < tol;
+    const pMatch = s.p === null || Math.abs(bPhi - s.p) < tol || Math.abs(bPhi - s.p - 360) < tol;
+    if (tMatch && pMatch) { foundName = '≈ ' + s.name; break; }
+  }
+  document.getElementById('namedStateLabel').textContent = foundName;
+
+  drawBloch();
+}
+
+thetaSlider.addEventListener('input', updateBlochState);
+phiSlider.addEventListener('input', updateBlochState);
+
+let blochAnimId = null;
+function setBlochPreset(t, p) {
+  if (blochAnimId) cancelAnimationFrame(blochAnimId);
+  const startT = +thetaSlider.value, startP = +phiSlider.value;
+  const duration = 400;
+  const startTime = performance.now();
+  function step(now) {
+    const frac = Math.min(1, (now - startTime) / duration);
+    const ease = frac < 0.5 ? 2*frac*frac : 1 - Math.pow(-2*frac+2,2)/2;
+    thetaSlider.value = Math.round(startT + (t - startT) * ease);
+    phiSlider.value = Math.round(startP + (p - startP) * ease);
+    updateBlochState();
+    if (frac < 1) blochAnimId = requestAnimationFrame(step);
+    else blochAnimId = null;
+  }
+  blochAnimId = requestAnimationFrame(step);
+}
+
+// ===================================================================
+// MEASUREMENT SIMULATION
+// ===================================================================
+let meas0 = 0, meas1 = 0;
+let measBasis = 'Z';
+
+const measTheta = document.getElementById('measTheta');
+
+// Basis toggle
+document.querySelectorAll('.basis-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.basis-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    measBasis = btn.dataset.basis;
+    const explains = {
+      Z: 'Z-basis: measures in the standard |0⟩/|1⟩ basis.',
+      X: 'X-basis: measures in the |+⟩/|−⟩ basis (applies H before measuring). Try |0⟩ — it gives 50/50 in X-basis!',
+    };
+    document.getElementById('basisExplain').textContent = explains[measBasis];
+    updateMeasTheory();
+    resetMeasure();
+  });
+});
+
+function getMeasProb0() {
+  const t = +measTheta.value;
+  const tRad = t * Math.PI / 180;
+  const alpha = Math.cos(tRad / 2);
+  const beta = Math.sin(tRad / 2);
+  if (measBasis === 'Z') {
+    return alpha * alpha;
+  } else {
+    // X-basis: |+⟩ = (|0⟩+|1⟩)/√2, |−⟩ = (|0⟩−|1⟩)/√2
+    // P(+) = |⟨+|ψ⟩|² = |(α+β)/√2|² = (α+β)²/2
+    const pPlus = (alpha + beta) * (alpha + beta) / 2;
+    return pPlus;
+  }
+}
+
+function updateMeasTheory() {
+  const t = +measTheta.value;
+  document.getElementById('measThetaVal').textContent = t;
+  const tRad = t * Math.PI / 180;
+  const alpha = Math.cos(tRad / 2);
+  const beta = Math.sin(tRad / 2);
+  const p0raw = getMeasProb0();
+  const p0 = p0raw * 100;
+  document.getElementById('measProb0').textContent = p0.toFixed(1);
+  document.getElementById('measProb1').textContent = (100 - p0).toFixed(1);
+  // State label
+  let label = '';
+  if (Math.abs(alpha) > 0.001) label += alpha.toFixed(3) + '|0⟩';
+  if (Math.abs(beta) > 0.001) {
+    if (label) label += ' + ';
+    label += beta.toFixed(3) + '|1⟩';
+  }
+  document.getElementById('measStateLabel').textContent = label || '|0⟩';
+  // Move theory lines on histogram
+  document.getElementById('histTheory0').style.bottom = p0 + '%';
+  document.getElementById('histTheory1').style.bottom = (100 - p0) + '%';
+}
+measTheta.addEventListener('input', () => { updateMeasTheory(); resetMeasure(); });
+updateMeasTheory();
+
+function doMeasure(count) {
+  const p0 = getMeasProb0();
+  let lastOutcome = 0;
+
+  for (let i = 0; i < count; i++) {
+    const outcome = Math.random() < p0 ? 0 : 1;
+    if (outcome === 0) meas0++; else meas1++;
+    lastOutcome = outcome;
+  }
+
+  const total = meas0 + meas1;
+  const max = Math.max(meas0, meas1, 1);
+  const bLabel0 = measBasis === 'Z' ? '|0⟩' : '|+⟩';
+  const bLabel1 = measBasis === 'Z' ? '|1⟩' : '|−⟩';
+
+  if (count === 1) {
+    const label = lastOutcome === 0 ? bLabel0 : bLabel1;
+    document.getElementById('measureResult').innerHTML = `<span class="result-${lastOutcome} collapse-anim">${label}</span>`;
+    const flash = document.createElement('div');
+    flash.className = 'measure-flash';
+    document.body.appendChild(flash);
+    flash.addEventListener('animationend', () => flash.remove());
+  } else {
+    document.getElementById('measureResult').innerHTML = `<span style="font-size:1rem;color:var(--text-dim);">${count} measurements done</span>`;
+  }
+
+  const pct0 = (meas0/total*100).toFixed(1);
+  const pct1 = (meas1/total*100).toFixed(1);
+  document.getElementById('hist0Bar').style.height = (meas0 / max * 100) + '%';
+  document.getElementById('hist1Bar').style.height = (meas1 / max * 100) + '%';
+  document.getElementById('hist0Count').textContent = meas0;
+  document.getElementById('hist1Count').textContent = meas1;
+  document.getElementById('hist0Pct').textContent = pct0 + '%';
+  document.getElementById('hist1Pct').textContent = pct1 + '%';
+  document.getElementById('hist0Pct').style.opacity = (meas0 / max > 0.2) ? '1' : '0';
+  document.getElementById('hist1Pct').style.opacity = (meas1 / max > 0.2) ? '1' : '0';
+  document.getElementById('histLabel0').textContent = bLabel0;
+  document.getElementById('histLabel1').textContent = bLabel1;
+  document.getElementById('totalMeas').textContent =
+    `Total: ${total} | Ratio: ${pct0}% ${bLabel0}, ${pct1}% ${bLabel1}`;
+
+  // Convergence annotation
+  const theoryP0 = p0 * 100;
+  const measuredP0 = meas0 / total * 100;
+  const deviation = Math.abs(measuredP0 - theoryP0);
+  const convEl = document.getElementById('convergenceNote');
+  if (total >= 5) {
+    const color = deviation < 3 ? 'var(--green)' : deviation < 10 ? 'var(--orange)' : 'var(--red)';
+    convEl.innerHTML = `<span style="color:${color};">Deviation from theory: ±${deviation.toFixed(1)}%</span>` +
+      (total >= 50 && deviation < 5 ? ' — <span style="color:var(--green);">converging!</span>' :
+       total < 20 ? ' — <span style="color:var(--text-dim);">keep measuring to see convergence</span>' : '');
+  } else {
+    convEl.textContent = '';
+  }
+}
+
+function resetMeasure() {
+  meas0 = 0; meas1 = 0;
+  document.getElementById('hist0Bar').style.height = '0%';
+  document.getElementById('hist1Bar').style.height = '0%';
+  document.getElementById('hist0Count').textContent = '0';
+  document.getElementById('hist1Count').textContent = '0';
+  document.getElementById('hist0Pct').style.opacity = '0';
+  document.getElementById('hist1Pct').style.opacity = '0';
+  document.getElementById('measureResult').innerHTML = '';
+  document.getElementById('totalMeas').textContent = 'Total: 0 measurements';
+  document.getElementById('convergenceNote').textContent = '';
+  const bLabel0 = measBasis === 'Z' ? '|0⟩' : '|+⟩';
+  const bLabel1 = measBasis === 'Z' ? '|1⟩' : '|−⟩';
+  document.getElementById('histLabel0').textContent = bLabel0;
+  document.getElementById('histLabel1').textContent = bLabel1;
+}
+
+document.getElementById('singleMeasBtn').addEventListener('click', () => doMeasure(1));
+document.getElementById('tenMeasBtn').addEventListener('click', () => doMeasure(10));
+document.getElementById('multiMeasBtn').addEventListener('click', () => doMeasure(100));
+document.getElementById('resetMeasBtn').addEventListener('click', resetMeasure);
+
+// ===================================================================
+// QUANTUM GATES PLAYGROUND
+// ===================================================================
+let gateState = [1, 0, 0, 0]; // [alpha_r, alpha_i, beta_r, beta_i]
+let gHistory = [];
+
+const gateCanvas = document.getElementById('gateCanvas');
+const gCtx = gateCanvas.getContext('2d');
+let gCamRX = -0.4, gCamRY = 0.5;
+
+setupDrag(gateCanvas, drawGateBloch,
+  () => ({ rx: gCamRX, ry: gCamRY }),
+  c => { gCamRX = c.rx; gCamRY = c.ry; });
+
+let ghostBloch = null; // {x,y,z} of previous state
+let ghostAlpha = 0;    // fades from 1 to 0
+let ghostFadeId = null;
+
+function gateProjectFn(x, y, z) {
+  const w = gateCanvas.width, h = gateCanvas.height;
+  const cx = w / 2, cy = h / 2, scale = Math.min(w, h) * 0.34;
+  let x1 = x * Math.cos(gCamRY) + z * Math.sin(gCamRY);
+  let z1 = -x * Math.sin(gCamRY) + z * Math.cos(gCamRY);
+  let y2 = y * Math.cos(gCamRX) - z1 * Math.sin(gCamRX);
+  return { x: cx + x1 * scale, y: cy - y2 * scale, z: 0 };
+}
+
+function drawGateBloch() {
+  const [ar, ai, br, bi] = gateState;
+  const probA = ar*ar + ai*ai;
+  const thetaG = 2 * Math.acos(Math.min(1, Math.sqrt(probA)));
+  const phiG = Math.atan2(bi, br) - Math.atan2(ai, ar);
+  const sx = Math.sin(thetaG) * Math.cos(phiG);
+  const sy = Math.cos(thetaG);
+  const sz = Math.sin(thetaG) * Math.sin(phiG);
+
+  drawBlochSphere(gateCanvas, gCtx, gCamRX, gCamRY, sx, sy, sz, gateProjectFn);
+
+  // Draw ghost trail of previous position
+  if (ghostBloch && ghostAlpha > 0.02) {
+    const gp = gateProjectFn(ghostBloch.x, ghostBloch.y, ghostBloch.z);
+    const tp = gateProjectFn(sx, sy, sz);
+    // Ghost dot
+    gCtx.globalAlpha = ghostAlpha * 0.5;
+    gCtx.fillStyle = '#f472b6';
+    gCtx.beginPath(); gCtx.arc(gp.x, gp.y, 7, 0, Math.PI * 2); gCtx.fill();
+    // Dashed line from ghost to current
+    gCtx.globalAlpha = ghostAlpha * 0.3;
+    gCtx.strokeStyle = '#f472b6';
+    gCtx.lineWidth = 1.5;
+    gCtx.setLineDash([4, 4]);
+    gCtx.beginPath(); gCtx.moveTo(gp.x, gp.y); gCtx.lineTo(tp.x, tp.y); gCtx.stroke();
+    gCtx.setLineDash([]);
+    gCtx.globalAlpha = 1;
+  }
+}
+
+function cMul(a, b) { return [a[0]*b[0]-a[1]*b[1], a[0]*b[1]+a[1]*b[0]]; }
+function cAdd(a, b) { return [a[0]+b[0], a[1]+b[1]]; }
+
+const SQRT2 = 1 / Math.sqrt(2);
+const gateMatrices = {
+  X: [[0,0,1,0],[1,0,0,0]],
+  Y: [[0,0,0,-1],[0,1,0,0]],
+  Z: [[1,0,0,0],[0,0,-1,0]],
+  H: [[SQRT2,0,SQRT2,0],[SQRT2,0,-SQRT2,0]],
+  S: [[1,0,0,0],[0,0,0,1]],
+  T: [[1,0,0,0],[0,0,Math.cos(Math.PI/4),Math.sin(Math.PI/4)]],
+};
+
+const gateDescriptions = {
+  X: { name: 'Pauli-X (NOT)', desc: 'Rotates 180° around X-axis. Flips |0⟩ ↔ |1⟩.' },
+  Y: { name: 'Pauli-Y', desc: 'Rotates 180° around Y-axis. |0⟩ → i|1⟩, |1⟩ → -i|0⟩.' },
+  Z: { name: 'Pauli-Z (Phase Flip)', desc: 'Rotates 180° around Z-axis. |0⟩ → |0⟩, |1⟩ → -|1⟩.' },
+  H: { name: 'Hadamard', desc: 'Creates equal superposition. |0⟩ → |+⟩, |1⟩ → |-⟩. Self-inverse.' },
+  S: { name: 'S Gate (√Z)', desc: '90° around Z-axis. Adds phase i to |1⟩. S² = Z.' },
+  T: { name: 'T Gate (π/8)', desc: '45° around Z-axis. Adds phase e^(iπ/4) to |1⟩. T² = S.' },
+};
+
+// Animated gate application
+let gateAnimId = null;
+
+function getBlochFromState(state) {
+  const [ar, ai, br, bi] = state;
+  const probA = ar*ar + ai*ai;
+  const thetaG = 2 * Math.acos(Math.min(1, Math.sqrt(probA)));
+  const phiG = Math.atan2(bi, br) - Math.atan2(ai, ar);
+  return {
+    x: Math.sin(thetaG) * Math.cos(phiG),
+    y: Math.cos(thetaG),
+    z: Math.sin(thetaG) * Math.sin(phiG)
+  };
+}
+
+function applyGate(name) {
+  const oldBloch = getBlochFromState(gateState);
+  // Set ghost trail
+  ghostBloch = { ...oldBloch };
+  ghostAlpha = 1;
+  if (ghostFadeId) cancelAnimationFrame(ghostFadeId);
+  const fadeStart = performance.now();
+  function fadeGhost(now) {
+    ghostAlpha = Math.max(0, 1 - (now - fadeStart) / 2000);
+    if (ghostAlpha > 0.02) ghostFadeId = requestAnimationFrame(fadeGhost);
+    else { ghostBloch = null; ghostFadeId = null; }
+    if (!gateAnimId) drawGateBloch(); // redraw if not already animating
+  }
+  ghostFadeId = requestAnimationFrame(fadeGhost);
+
+  const m = gateMatrices[name];
+  const [ar, ai, br, bi] = gateState;
+  const newA = cAdd(cMul([m[0][0], m[0][1]], [ar, ai]), cMul([m[0][2], m[0][3]], [br, bi]));
+  const newB = cAdd(cMul([m[1][0], m[1][1]], [ar, ai]), cMul([m[1][2], m[1][3]], [br, bi]));
+  gateState = [newA[0], newA[1], newB[0], newB[1]];
+  gHistory.push(name);
+  if (gHistory.length > 15) gHistory.shift();
+
+  const info = gateDescriptions[name];
+  document.getElementById('gateInfo').innerHTML = `<h4>${info.name}</h4><p>${info.desc}</p>`;
+
+  // Animate the Bloch vector from old to new position
+  const newBloch = getBlochFromState(gateState);
+  if (gateAnimId) cancelAnimationFrame(gateAnimId);
+  const duration = 350;
+  const startTime = performance.now();
+  function animStep(now) {
+    const t = Math.min(1, (now - startTime) / duration);
+    const ease = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2; // ease in-out
+    // Slerp-like interpolation on sphere surface
+    const ix = oldBloch.x + (newBloch.x - oldBloch.x) * ease;
+    const iy = oldBloch.y + (newBloch.y - oldBloch.y) * ease;
+    const iz = oldBloch.z + (newBloch.z - oldBloch.z) * ease;
+    const len = Math.sqrt(ix*ix + iy*iy + iz*iz) || 1;
+    const w = gateCanvas.width, h = gateCanvas.height;
+    const cxc = w/2, cyc = h/2, sc = Math.min(w,h)*0.34;
+    drawBlochSphere(gateCanvas, gCtx, gCamRX, gCamRY, ix/len, iy/len, iz/len,
+      (x,y,z) => {
+        let x1 = x*Math.cos(gCamRY)+z*Math.sin(gCamRY);
+        let z1 = -x*Math.sin(gCamRY)+z*Math.cos(gCamRY);
+        let y2 = y*Math.cos(gCamRX)-z1*Math.sin(gCamRX);
+        return {x:cxc+x1*sc, y:cyc-y2*sc, z:0};
+      });
+    if (t < 1) gateAnimId = requestAnimationFrame(animStep);
+    else { gateAnimId = null; updateGateUI(); }
+  }
+  gateAnimId = requestAnimationFrame(animStep);
+
+  // Update text displays immediately
+  updateGateText();
+
+  // Detect known gate identities
+  if (gHistory.length >= 2) {
+    const last2 = gHistory.slice(-2).join('');
+    const last3 = gHistory.slice(-3).join('');
+    const identities = {
+      'XX': 'X² = I (bit flip cancels itself)',
+      'YY': 'Y² = I',
+      'ZZ': 'Z² = I (phase flip cancels itself)',
+      'HH': 'H² = I (Hadamard is its own inverse!)',
+      'SS': 'S² = Z',
+      'HZH': 'HZH = X (conjugation trick!)',
+      'HXH': 'HXH = Z (conjugation trick!)',
+    };
+    const found = identities[last3] || identities[last2];
+    if (found) {
+      const infoEl = document.getElementById('gateInfo');
+      infoEl.innerHTML += '<p style="color:var(--green);font-weight:600;margin-top:0.5rem;">&#x1F4A1; ' + found + '</p>';
+    }
+  }
+}
+
+function updateGateText() {
+  const [ar, ai, br, bi] = gateState;
+  const aMag = Math.sqrt(ar*ar + ai*ai);
+  const bMag = Math.sqrt(br*br + bi*bi);
+
+  let str = '|ψ⟩ = ';
+  const fmtCoeff = (re, im) => {
+    if (Math.abs(im) < 0.001) return re.toFixed(3);
+    if (Math.abs(re) < 0.001) return im.toFixed(3) + 'i';
+    return `(${re.toFixed(2)}${im < 0 ? '' : '+'}${im.toFixed(2)}i)`;
+  };
+  if (aMag > 0.001) str += fmtCoeff(ar, ai) + '|0⟩';
+  if (bMag > 0.001) {
+    if (aMag > 0.001) {
+      // Use minus sign for purely real negative coefficients
+      if (Math.abs(bi) < 0.001 && br < 0) str += ' − ' + Math.abs(br).toFixed(3) + '|1⟩';
+      else str += ' + ' + fmtCoeff(br, bi) + '|1⟩';
+    } else {
+      str += fmtCoeff(br, bi) + '|1⟩';
+    }
+  }
+  document.getElementById('gateStateDisplay').textContent = str;
+  document.getElementById('gateHistory').innerHTML =
+    gHistory.map(g => `<span class="gate-chip">${g}</span>`).join('');
+  // Update circuit diagram
+  const circEl = document.getElementById('gateCircuit');
+  if (gHistory.length === 0) {
+    circEl.innerHTML = '<span class="circuit-ket">|0⟩</span><span class="circuit-wire"></span><span class="circuit-empty">apply gates above</span>';
+  } else {
+    circEl.innerHTML = '<span class="circuit-ket">|0⟩</span><span class="circuit-wire"></span>' +
+      gHistory.map(g => `<span class="circuit-gate-box" data-g="${g}">${g}</span><span class="circuit-wire"></span>`).join('') +
+      '<span class="circuit-ket" style="color:var(--pink);margin-left:0.3rem;">|ψ⟩</span>';
+  }
+
+  // Probability bars
+  const p0 = (aMag * aMag * 100);
+  const p1 = (bMag * bMag * 100);
+  document.getElementById('gateProb0Bar').style.width = p0 + '%';
+  document.getElementById('gateProb1Bar').style.width = p1 + '%';
+  document.getElementById('gateProb0Val').textContent = p0.toFixed(1) + '%';
+  document.getElementById('gateProb1Val').textContent = p1.toFixed(1) + '%';
+}
+
+function updateGateUI() {
+  updateGateText();
+  drawGateBloch();
+}
+
+function resetGates() {
+  gateState = [1, 0, 0, 0];
+  gHistory = [];
+  document.getElementById('gateHistory').innerHTML = '';
+  document.getElementById('gateCircuit').innerHTML = '<span class="circuit-ket">|0⟩</span><span class="circuit-wire"></span><span class="circuit-empty">apply gates above</span>';
+  document.getElementById('gateStateDisplay').textContent = '|ψ⟩ = |0⟩';
+  document.getElementById('gateInfo').innerHTML = '<h4>Click a gate to see its effect</h4><p>Each gate rotates the state vector on the Bloch sphere.</p>';
+  document.getElementById('gateProb0Bar').style.width = '100%';
+  document.getElementById('gateProb1Bar').style.width = '0%';
+  document.getElementById('gateProb0Val').textContent = '100%';
+  document.getElementById('gateProb1Val').textContent = '0%';
+  drawGateBloch();
+}
+
+document.querySelectorAll('.gate-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.classList.remove('pulsing');
+    void btn.offsetWidth; // trigger reflow
+    btn.classList.add('pulsing');
+    applyGate(btn.dataset.gate);
+  });
+});
+document.getElementById('resetGatesBtn').addEventListener('click', resetGates);
+
+document.getElementById('undoGateBtn').addEventListener('click', () => {
+  if (gHistory.length === 0) return;
+  gHistory.pop();
+  // Replay from |0⟩
+  gateState = [1, 0, 0, 0];
+  gHistory.forEach(name => {
+    const m = gateMatrices[name];
+    const [ar, ai, br, bi] = gateState;
+    const newA = cAdd(cMul([m[0][0], m[0][1]], [ar, ai]), cMul([m[0][2], m[0][3]], [br, bi]));
+    const newB = cAdd(cMul([m[1][0], m[1][1]], [ar, ai]), cMul([m[1][2], m[1][3]], [br, bi]));
+    gateState = [newA[0], newA[1], newB[0], newB[1]];
+  });
+  if (gHistory.length === 0) {
+    document.getElementById('gateInfo').innerHTML = '<h4>Click a gate to see its effect</h4><p>Each gate rotates the state vector on the Bloch sphere.</p>';
+  } else {
+    const last = gateDescriptions[gHistory[gHistory.length - 1]];
+    document.getElementById('gateInfo').innerHTML = '<h4>' + last.name + '</h4><p>' + last.desc + '</p>';
+  }
+  updateGateUI();
+});
+
+// ===================================================================
+// GATE CHALLENGES
+// ===================================================================
+const gateChallenges = [
+  { name: '|1⟩', target: [0, 0, 1, 0], hint: 'One gate flips |0⟩ ↔ |1⟩' },
+  { name: '|+⟩ = (|0⟩+|1⟩)/√2', target: [Math.SQRT1_2, 0, Math.SQRT1_2, 0], hint: 'One gate creates equal superposition' },
+  { name: '|−⟩ = (|0⟩−|1⟩)/√2', target: [Math.SQRT1_2, 0, -Math.SQRT1_2, 0], hint: 'Superposition with a relative phase' },
+  { name: '(|0⟩+i|1⟩)/√2', target: [Math.SQRT1_2, 0, 0, Math.SQRT1_2], hint: 'Reach the +Y axis on the Bloch sphere' },
+];
+const challengeSolved = new Array(gateChallenges.length).fill(false);
+const challengeContainer = document.getElementById('gateChallenges');
+
+function statesMatch(a, b, tol) {
+  tol = tol || 0.05;
+  // States equal up to global phase: check a ≈ b or a ≈ -b
+  const direct = a.every((v, i) => Math.abs(v - b[i]) < tol);
+  const neg = a.every((v, i) => Math.abs(v + b[i]) < tol);
+  return direct || neg;
+}
+
+gateChallenges.forEach((ch, i) => {
+  const row = document.createElement('div');
+  row.className = 'challenge-row';
+  row.id = 'challenge-' + i;
+  row.innerHTML =
+    '<span class="challenge-status"></span>' +
+    '<span class="challenge-target">' + ch.name + '</span>' +
+    '<span class="challenge-hint">' + ch.hint + '</span>' +
+    '<button class="challenge-check" onclick="checkChallenge(' + i + ')">Check</button>';
+  challengeContainer.appendChild(row);
+});
+
+function checkChallenge(i) {
+  const ch = gateChallenges[i];
+  const row = document.getElementById('challenge-' + i);
+  const status = row.querySelector('.challenge-status');
+  if (statesMatch(gateState, ch.target)) {
+    challengeSolved[i] = true;
+    row.classList.add('solved');
+    status.textContent = '✓';
+    row.querySelector('.challenge-check').disabled = true;
+    if (challengeSolved.every(Boolean)) {
+      const msg = document.createElement('p');
+      msg.style.cssText = 'color:var(--green);font-weight:600;margin-top:0.8rem;text-align:center;';
+      msg.textContent = 'All challenges complete! You\'ve mastered single-qubit gates.';
+      challengeContainer.parentNode.appendChild(msg);
+    }
+  } else {
+    status.textContent = '✗';
+    row.style.borderColor = 'var(--red)';
+    setTimeout(() => { status.textContent = ''; row.style.borderColor = ''; }, 1200);
+  }
+}
+
+// ===================================================================
+// GATE EXPERIMENTS ("Try this")
+// ===================================================================
+const gateExperiments = [
+  { gates: ['H', 'H'], label: 'H → H', question: 'Does Hadamard cancel itself?', insight: 'H² = I — applying Hadamard twice returns to the original state!' },
+  { gates: ['H', 'Z', 'H'], label: 'H → Z → H', question: 'What single gate is this equivalent to?', insight: 'HZH = X — conjugating Z by H swaps the X and Z axes!' },
+  { gates: ['H', 'S', 'H'], label: 'H → S → H', question: 'S acts on Z, so what does HSH do?', insight: 'HSH swaps axes too — it\'s a √X-like rotation!' },
+  { gates: ['X', 'Z'], label: 'X → Z', question: 'What does bit-flip then phase-flip give?', insight: 'XZ = −iY — combining Pauli gates produces the third (up to phase)!' },
+];
+
+(function buildExperiments() {
+  const container = document.getElementById('gateExperiments');
+  gateExperiments.forEach((exp, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:0.8rem;padding:0.7rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:0.92rem;';
+    row.innerHTML =
+      '<span style="font-family:\'JetBrains Mono\',monospace;font-weight:600;color:var(--orange);min-width:90px;">' + exp.label + '</span>' +
+      '<span style="flex:1;color:var(--text-dim);font-size:0.85rem;">' + exp.question + '</span>' +
+      '<button class="challenge-check" id="expBtn' + i + '">Run</button>' +
+      '<span id="expInsight' + i + '" style="display:none;font-size:0.82rem;color:var(--green);font-weight:500;flex-basis:100%;margin-top:0.4rem;"></span>';
+    row.style.flexWrap = 'wrap';
+    container.appendChild(row);
+  });
+
+  gateExperiments.forEach((exp, i) => {
+    document.getElementById('expBtn' + i).addEventListener('click', () => {
+      resetGates();
+      let delay = 100;
+      exp.gates.forEach((g, gi) => {
+        setTimeout(() => {
+          applyGate(g);
+          const btn = document.querySelector('.gate-btn[data-gate="' + g + '"]');
+          if (btn) { btn.classList.remove('pulsing'); void btn.offsetWidth; btn.classList.add('pulsing'); }
+        }, delay + gi * 450);
+      });
+      setTimeout(() => {
+        const el = document.getElementById('expInsight' + i);
+        el.style.display = '';
+        el.textContent = '💡 ' + exp.insight;
+      }, delay + exp.gates.length * 450 + 200);
+    });
+  });
+})();
+
+// ===================================================================
+// QUIZ
+// ===================================================================
+const quizData = [
+  { q: 'What are the two computational basis states of a qubit?',
+    opts: ['|0⟩ and |1⟩', '|+⟩ and |-⟩', 'True and False', '0.5 and -0.5'],
+    correct: 0,
+    explanation: 'The computational basis states are |0⟩ and |1⟩. Other bases like |+⟩/|-⟩ exist but are not the standard computational basis.' },
+  { q: 'What must be true about α and β in |ψ⟩ = α|0⟩ + β|1⟩?',
+    opts: ['α + β = 1', '|α|² + |β|² = 1', 'α = β', 'α and β are always real'],
+    correct: 1,
+    explanation: 'The normalization constraint |α|² + |β|² = 1 ensures total probability equals 1. α and β can be complex numbers.' },
+  { q: 'What does the Hadamard gate do to |0⟩?',
+    opts: ['Flips it to |1⟩', 'Creates (|0⟩ + |1⟩)/√2', 'Adds a phase of -1', 'Nothing'],
+    correct: 1,
+    explanation: 'H|0⟩ = (|0⟩ + |1⟩)/√2, creating an equal superposition — the most common way to enter superposition.' },
+  { q: 'What happens when you measure a qubit in superposition?',
+    opts: ['You see both 0 and 1', 'It collapses to |0⟩ or |1⟩ probabilistically', 'The qubit is destroyed', 'Nothing changes'],
+    correct: 1,
+    explanation: 'Measurement collapses superposition to one basis state. The probability of each outcome follows the Born rule.' },
+  { q: 'Which theorem says you cannot copy an unknown qubit?',
+    opts: ['Bell\'s theorem', 'No-cloning theorem', 'Uncertainty principle', 'Schrödinger\'s theorem'],
+    correct: 1,
+    explanation: 'The no-cloning theorem proves it\'s impossible to create an identical copy of an arbitrary unknown quantum state.' },
+  { q: 'Where is |+⟩ = (|0⟩ + |1⟩)/√2 on the Bloch sphere?',
+    opts: ['North pole', 'South pole', 'On the equator (+X direction)', 'Center of the sphere'],
+    correct: 2,
+    explanation: '|+⟩ is on the equator at the +X axis. North pole = |0⟩, south pole = |1⟩, equator = equal superpositions.' },
+  { q: 'What does the Pauli-X gate do?',
+    opts: ['Adds a phase to |1⟩', 'Flips |0⟩ ↔ |1⟩ (quantum NOT)', 'Creates superposition', 'Measures the qubit'],
+    correct: 1,
+    explanation: 'The X gate is the quantum NOT gate — it swaps the amplitudes of |0⟩ and |1⟩.' },
+  { q: 'The Z gate leaves |0⟩ unchanged and maps |1⟩ to:',
+    opts: ['|0⟩', '-|1⟩', 'i|1⟩', '|+⟩'],
+    correct: 1,
+    explanation: 'Z|1⟩ = -|1⟩. The Z gate adds a phase of π (factor of -1) to the |1⟩ component.' },
+  { q: 'How many real parameters define a single qubit pure state?',
+    opts: ['1', '2', '3', '4'],
+    correct: 1,
+    explanation: 'Two parameters: θ (polar) and φ (azimuthal) on the Bloch sphere fully define any pure qubit state.' },
+  { q: 'Which set forms a universal gate set for quantum computation?',
+    opts: ['X + Z', 'H + T + CNOT', 'X + Y + Z', 'H + S'],
+    correct: 1,
+    explanation: '{H, T, CNOT} is universal — any quantum computation can be approximated to arbitrary precision using only these gates.' },
+];
+
+let quizAnswered = [];
+let quizOrder = quizData.map((_, i) => i);
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function buildQuiz() {
+  quizOrder = shuffleArray(quizData.map((_, i) => i));
+  const container = document.getElementById('quizContainer');
+  container.innerHTML = quizOrder.map((qi, displayIdx) => {
+    const q = quizData[qi];
+    return `
+    <div class="quiz-question" id="qq${qi}">
+      <p>${displayIdx + 1}. ${q.q}</p>
+      <div class="quiz-options">
+        ${q.opts.map((o, oi) => `<button class="quiz-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('')}
+      </div>
+      <div class="quiz-feedback" id="qf${qi}"></div>
+    </div>
+  `; }).join('');
+  quizAnswered = new Array(quizData.length).fill(false);
+  document.getElementById('quizScore').textContent = '';
+
+  container.querySelectorAll('.quiz-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = +btn.dataset.qi;
+      const oi = +btn.dataset.oi;
+      if (quizAnswered[qi]) return;
+      quizAnswered[qi] = true;
+
+      const q = quizData[qi];
+      const qqEl = document.getElementById('qq' + qi);
+      const btns = qqEl.querySelectorAll('.quiz-opt');
+      btns.forEach((b, i) => {
+        if (i === q.correct) b.classList.add('correct');
+        else if (i === oi && oi !== q.correct) b.classList.add('wrong');
+        b.style.pointerEvents = 'none';
+      });
+
+      const fb = document.getElementById('qf' + qi);
+      fb.innerHTML = oi === q.correct
+        ? `<span style="color:#55efc4">&#x2714; Correct!</span> ${q.explanation}`
+        : `<span style="color:#ff7675">&#x2718; Not quite.</span> ${q.explanation}`;
+
+      // Update running score
+      const answered = quizAnswered.filter(Boolean).length;
+      let score = 0;
+      quizData.forEach((q, i) => {
+        if (quizAnswered[i] && document.getElementById('qf' + i).innerHTML.includes('Correct!')) score++;
+      });
+      const scoreEl = document.getElementById('quizScore');
+      if (answered < quizData.length) {
+        scoreEl.textContent = `${score} / ${answered} correct so far (${quizData.length - answered} remaining)`;
+        scoreEl.style.color = 'var(--text-dim)';
+      } else {
+        const pct = Math.round(score / quizData.length * 100);
+        const emoji = pct >= 80 ? '&#x1F389;' : pct >= 50 ? '&#x1F44D;' : '&#x1F4AA;';
+        scoreEl.innerHTML = `${emoji} Final Score: ${score} / ${quizData.length} (${pct}%)`;
+        scoreEl.style.color = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--accent)' : 'var(--orange)';
+      }
+    });
+  });
+}
+
+document.getElementById('retryQuizBtn').addEventListener('click', buildQuiz);
+
+// ===================================================================
+// INIT
+// ===================================================================
+buildQuiz();
+drawBloch();
+
+// Particle background handled by the standard course script below
+</script>
+
+<footer class="site-footer">
+  <div class="footer-divider"></div>
+  <div class="footer-label">Beta Version</div>
+  <div class="footer-author">By <a href="https://granha.github.io" target="_blank" rel="noopener">Fernando Granha Jeronimo</a></div>
+  <nav class="footer-nav">
+    <a href="../index.html">Course Home</a>
+    <a href="06_multi_qubit_systems.html">Next Module</a>
+  </nav>
+</footer>
+
+<!-- Particle Background -->
+<script>
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 45;
+  const CONNECT_DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+</script>
+</body>
+</html>

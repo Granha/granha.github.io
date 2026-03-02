@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Computing — Interactive Course</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  #particleBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .page-wrapper {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ═══════════════ HERO ═══════════════ */
+  .hero {
+    text-align: center;
+    padding: 6rem 2rem 3rem;
+    position: relative;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 100px;
+    padding: 0.4rem 1.2rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .hero-badge .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.5); }
+  }
+
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+  }
+
+  .hero h1 .gradient-text {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--cyan) 50%, var(--pink) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero h1 .line2 {
+    display: block;
+    font-size: 0.6em;
+    font-weight: 300;
+    color: var(--text-dim);
+    -webkit-text-fill-color: var(--text-dim);
+    letter-spacing: 0.02em;
+    margin-top: 0.3rem;
+  }
+
+  .hero-sub {
+    font-size: 1.15rem;
+    color: var(--text-dim);
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  .hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-number {
+    font-size: 1.8rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    background: linear-gradient(135deg, var(--accent), var(--cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.2rem;
+  }
+
+  .hero-divider {
+    width: 200px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), var(--pink), transparent);
+    margin: 3rem auto 0;
+  }
+
+  .beta-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(251, 146, 60, 0.06);
+    border: 1px solid rgba(251, 146, 60, 0.18);
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    margin: 1.5rem auto 0;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    max-width: 520px;
+    line-height: 1.5;
+  }
+
+  .beta-tag {
+    background: var(--orange);
+    color: #0a0e1a;
+    font-weight: 600;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.12rem 0.45rem;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  /* ═══════════════ CTA BUTTON ═══════════════ */
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    padding: 0.75rem 2rem;
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+    letter-spacing: 0.01em;
+  }
+
+  .hero-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.45);
+  }
+
+  .hero-cta svg {
+    transition: transform 0.3s;
+  }
+
+  .hero-cta:hover svg {
+    transform: translateX(3px);
+  }
+
+  /* ═══════════════ HIGHLIGHTS ═══════════════ */
+  .highlights {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    flex-wrap: wrap;
+  }
+
+  .highlight-card {
+    flex: 1;
+    min-width: 200px;
+    max-width: 240px;
+    text-align: center;
+    padding: 1.5rem 1rem;
+  }
+
+  .highlight-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .highlight-icon.viz { background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.25); }
+  .highlight-icon.hands { background: rgba(34, 211, 238, 0.12); border: 1px solid rgba(34, 211, 238, 0.25); }
+  .highlight-icon.path { background: rgba(244, 114, 182, 0.12); border: 1px solid rgba(244, 114, 182, 0.25); }
+
+  .highlight-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    letter-spacing: -0.01em;
+  }
+
+  .highlight-desc {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ═══════════════ PROGRESS BAR ═══════════════ */
+  .progress-section {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+  }
+
+  .progress-bar-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .progress-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  .progress-track {
+    flex: 1;
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 100px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan), var(--green));
+    width: 0%;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .progress-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--cyan);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* ═══════════════ SECTIONS ═══════════════ */
+  .course-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1rem 2rem 4rem;
+  }
+
+  .section {
+    margin-bottom: 3rem;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-left: 0.25rem;
+  }
+
+  .section-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+  }
+
+  .section-icon.foundations { background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); }
+  .section-icon.protocols { background: rgba(34, 211, 238, 0.15); border: 1px solid rgba(34, 211, 238, 0.3); }
+  .section-icon.algorithms { background: rgba(244, 114, 182, 0.15); border: 1px solid rgba(244, 114, 182, 0.3); }
+  .section-icon.shor { background: rgba(251, 146, 60, 0.15); border: 1px solid rgba(251, 146, 60, 0.3); }
+  .section-icon.advanced { background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); }
+
+  .section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .section-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    font-weight: 400;
+    margin-top: 0.15rem;
+  }
+
+  /* ═══════════════ MODULE CARDS ═══════════════ */
+  .modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+
+  .module-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: var(--text);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+  }
+
+  .module-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .module-card:hover {
+    border-color: rgba(99, 102, 241, 0.5);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.12), 0 0 0 1px rgba(99, 102, 241, 0.1);
+  }
+
+  .module-card:hover::before { opacity: 1; }
+
+  .module-card.completed {
+    border-color: rgba(52, 211, 153, 0.3);
+  }
+
+  .module-card.completed::before {
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    opacity: 0.5;
+  }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .module-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 6px;
+    padding: 0.2rem 0.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  .module-check {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    transition: all 0.3s;
+    cursor: pointer;
+    flex-shrink: 0;
+    background: transparent;
+    color: transparent;
+    position: relative;
+    z-index: 2;
+  }
+
+  .module-check:hover {
+    border-color: var(--green);
+  }
+
+  .module-check.checked {
+    background: var(--green);
+    border-color: var(--green);
+    color: #0a0e1a;
+  }
+
+  .module-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  .module-desc {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.55;
+    flex: 1;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(42, 53, 80, 0.4);
+  }
+
+  .card-tags {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: 0.68rem;
+    font-weight: 500;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    letter-spacing: 0.02em;
+  }
+
+  .tag.interactive {
+    background: rgba(34, 211, 238, 0.1);
+    color: var(--cyan);
+    border: 1px solid rgba(34, 211, 238, 0.2);
+  }
+
+  .tag.math {
+    background: rgba(244, 114, 182, 0.1);
+    color: var(--pink);
+    border: 1px solid rgba(244, 114, 182, 0.2);
+  }
+
+  .tag.game {
+    background: rgba(251, 146, 60, 0.1);
+    color: var(--orange);
+    border: 1px solid rgba(251, 146, 60, 0.2);
+  }
+
+  .tag.visual {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+  }
+
+  .card-arrow {
+    color: var(--text-dim);
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+
+  .module-card:hover .card-arrow {
+    color: var(--accent);
+    transform: translateX(3px);
+  }
+
+  /* ═══════════════ CONNECTORS (vertical lines between sections) ═══════════════ */
+  .section-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin: 0.5rem 0 1rem;
+    padding-left: 22px;
+  }
+
+  .section-connector .dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+
+  .section-connector .line {
+    width: 1.5px;
+    height: 1.2rem;
+    background: linear-gradient(180deg, var(--border), transparent);
+    border-radius: 2px;
+  }
+
+  /* ═══════════════ FOOTER ═══════════════ */
+  footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.82rem;
+  }
+
+  footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  footer a:hover {
+    text-decoration: underline;
+  }
+
+  /* ═══════════════ RESPONSIVE ═══════════════ */
+  @media (max-width: 768px) {
+    .hero { padding: 3.5rem 1.5rem 2rem; }
+    .hero h1 { font-size: 2.2rem; }
+    .hero-stats { gap: 1.5rem; }
+    .modules-grid { grid-template-columns: 1fr; }
+    .course-content { padding: 1rem 1rem 3rem; }
+    .progress-section { padding: 0 1rem; }
+    .highlights { gap: 0.5rem; }
+    .highlight-card { min-width: 140px; padding: 1rem 0.5rem; }
+    .beta-banner { font-size: 0.75rem; padding: 0.4rem 0.8rem; }
+  }
+
+  /* ═══════════════ ANIMATIONS ═══════════════ */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section {
+    opacity: 0;
+    animation: fadeInUp 0.6s ease forwards;
+  }
+
+  .section:nth-child(1) { animation-delay: 0.05s; }
+  .section:nth-child(2) { animation-delay: 0.1s; }
+  .section:nth-child(3) { animation-delay: 0.15s; }
+  .section:nth-child(4) { animation-delay: 0.2s; }
+  .section:nth-child(5) { animation-delay: 0.25s; }
+  .section:nth-child(6) { animation-delay: 0.3s; }
+  .section:nth-child(7) { animation-delay: 0.35s; }
+  .section:nth-child(8) { animation-delay: 0.4s; }
+  .section:nth-child(9) { animation-delay: 0.45s; }
+  .section:nth-child(10) { animation-delay: 0.5s; }
+
+  .section-icon.prereq { background: rgba(250, 204, 21, 0.12); border: 1px solid rgba(250, 204, 21, 0.3); }
+  .section-icon.bonus { background: rgba(251, 146, 60, 0.12); border: 1px solid rgba(251, 146, 60, 0.3); }
+  .section-icon.addl-protocols { background: rgba(34, 211, 238, 0.12); border: 1px solid rgba(34, 211, 238, 0.25); }
+  .section-icon.complexity { background: rgba(168, 139, 250, 0.15); border: 1px solid rgba(168, 139, 250, 0.3); }
+
+  .module-number.prereq {
+    color: var(--yellow);
+    background: rgba(250, 204, 21, 0.1);
+    border-color: rgba(250, 204, 21, 0.25);
+  }
+
+  .module-number.bonus-num {
+    color: var(--orange);
+    background: rgba(251, 146, 60, 0.1);
+    border-color: rgba(251, 146, 60, 0.25);
+  }
+
+  .module-card {
+    opacity: 0;
+    animation: fadeInUp 0.5s ease forwards;
+  }
+
+  /* stagger animation per card */
+  .modules-grid .module-card:nth-child(1) { animation-delay: 0.05s; }
+  .modules-grid .module-card:nth-child(2) { animation-delay: 0.1s; }
+  .modules-grid .module-card:nth-child(3) { animation-delay: 0.15s; }
+  .modules-grid .module-card:nth-child(4) { animation-delay: 0.2s; }
+  .modules-grid .module-card:nth-child(5) { animation-delay: 0.25s; }
+  .modules-grid .module-card:nth-child(6) { animation-delay: 0.3s; }
+
+  /* Scroll reveal */
+  .section.visible {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+<canvas id="particleBg"></canvas>
+
+<div class="page-wrapper">
+  <!-- ═══════════════ HERO ═══════════════ -->
+  <section class="hero">
+    <div class="hero-badge"><span class="dot"></span> Interactive Learning</div>
+    <h1>
+      <span class="gradient-text">Quantum Computing</span>
+      <span class="line2">From Qubits to Shor's Algorithm</span>
+    </h1>
+    <p class="hero-sub">
+      A hands-on journey through quantum computation. Each module features
+      interactive visualizations, step-by-step circuit builders, and real-time simulations.
+    </p>
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-number">24</div>
+        <div class="stat-label">Modules</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">7+</div>
+        <div class="stat-label">Chapters</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">100%</div>
+        <div class="stat-label">Interactive</div>
+      </div>
+    </div>
+    <a class="hero-cta" href="#sec-foundations">
+      Start Learning
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hero-divider"></div>
+    <div class="beta-banner">
+      <span class="beta-tag">Beta</span>
+      This course is under active development. Content may change, and some modules are still being refined.
+    </div>
+  </section>
+
+  <!-- ═══════════════ HIGHLIGHTS ═══════════════ -->
+  <div class="highlights">
+    <div class="highlight-card">
+      <div class="highlight-icon viz">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10"/><path d="M2 12h20"/></svg>
+      </div>
+      <div class="highlight-title">Visual Intuition</div>
+      <div class="highlight-desc">Bloch spheres, circuit diagrams, and animated simulations bring abstract concepts to life</div>
+    </div>
+    <div class="highlight-card">
+      <div class="highlight-icon hands">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+      </div>
+      <div class="highlight-title">Learn by Doing</div>
+      <div class="highlight-desc">Every module has interactive widgets &mdash; tweak parameters and see quantum effects in real time</div>
+    </div>
+    <div class="highlight-card">
+      <div class="highlight-icon path">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+      </div>
+      <div class="highlight-title">Structured Path</div>
+      <div class="highlight-desc">From basic qubits to Shor's algorithm &mdash; a carefully ordered progression with built-in progress tracking</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PROGRESS ═══════════════ -->
+  <section class="progress-section">
+    <div class="progress-bar-container">
+      <span class="progress-label">Progress</span>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <span class="progress-count" id="progressCount">0 / 24</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════ COURSE CONTENT ═══════════════ -->
+  <div class="course-content">
+
+    <!-- ══════ CHAPTER 0: BACKGROUND ══════ -->
+    <div class="section" id="sec-prereq">
+      <div class="section-header">
+        <div class="section-icon prereq">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </div>
+        <div>
+          <div class="section-title">0. Background Refresher</div>
+          <div class="section-subtitle">Mathematical prerequisites &mdash; review before diving in</div>
+        </div>
+      </div>
+      <div class="modules-grid">
+        <a class="module-card" href="modules/00_linear_algebra.html" data-module="0">
+          <div class="card-top">
+            <span class="module-number prereq">00</span>
+            <div class="module-check" data-id="0">&#10003;</div>
+          </div>
+          <div class="module-title">Linear Algebra for QC</div>
+          <div class="module-desc">Vectors, matrices, eigenvalues, and unitary operators &mdash; the mathematical language of quantum mechanics.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag math">Math</span>
+              <span class="tag interactive">Interactive</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="section-connector"><span class="dot"></span><span class="line"></span><span class="dot"></span></div>
+
+    <!-- ══════ CHAPTER 1: FOUNDATIONS ══════ -->
+    <div class="section" id="sec-foundations">
+      <div class="section-header">
+        <div class="section-icon foundations">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div>
+          <div class="section-title">I. Foundations</div>
+          <div class="section-subtitle">Qubits, measurements, and the mathematical framework</div>
+        </div>
+      </div>
+      <div class="modules-grid">
+        <!-- 01 -->
+        <a class="module-card" href="modules/01_qubits.html" data-module="1">
+          <div class="card-top">
+            <span class="module-number">01</span>
+            <div class="module-check" data-id="1">&#10003;</div>
+          </div>
+          <div class="module-title">Understanding Qubits</div>
+          <div class="module-desc">The building blocks of quantum computing &mdash; superposition, Bloch sphere visualization, and the quantum bit.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag visual">Bloch Sphere</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 02 -->
+        <a class="module-card" href="modules/02_measurements.html" data-module="2">
+          <div class="card-top">
+            <span class="module-number">02</span>
+            <div class="module-check" data-id="2">&#10003;</div>
+          </div>
+          <div class="module-title">Single-Qubit Measurements</div>
+          <div class="module-desc">Explore measurement in different bases, Born's rule, and the probabilistic nature of quantum observation.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag math">Probabilities</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 03 -->
+        <a class="module-card" href="modules/03_bomb_tester.html" data-module="3">
+          <div class="card-top">
+            <span class="module-number">03</span>
+            <div class="module-check" data-id="3">&#10003;</div>
+          </div>
+          <div class="module-title">Elitzur-Vaidman Bomb Tester</div>
+          <div class="module-desc">Interaction-free measurement &mdash; detect a bomb without detonating it using quantum interference.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag game">Thought Experiment</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 06 -->
+        <a class="module-card" href="modules/06_multi_qubit_systems.html" data-module="6">
+          <div class="card-top">
+            <span class="module-number">04</span>
+            <div class="module-check" data-id="6">&#10003;</div>
+          </div>
+          <div class="module-title">Multi-Qubit Systems &amp; Tensor Products</div>
+          <div class="module-desc">Combining qubits &mdash; tensor products, entanglement, Bell states, and multi-qubit gate operations.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag math">Tensor Products</span>
+              <span class="tag interactive">Interactive</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 07 -->
+        <a class="module-card" href="modules/07_reversible_computation.html" data-module="7">
+          <div class="card-top">
+            <span class="module-number">05</span>
+            <div class="module-check" data-id="7">&#10003;</div>
+          </div>
+          <div class="module-title">Reversible Computation</div>
+          <div class="module-desc">Why quantum gates must be reversible, garbage qubits, uncomputation, and the Bennett trick.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag visual">Circuits</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 05 -->
+        <a class="module-card" href="modules/05_hadamard_transform.html" data-module="5">
+          <div class="card-top">
+            <span class="module-number">06</span>
+            <div class="module-check" data-id="5">&#10003;</div>
+          </div>
+          <div class="module-title">The n-Qubit Hadamard Transform</div>
+          <div class="module-desc">From single-qubit H gates to full superposition &mdash; how Hadamard creates uniform quantum states.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag visual">Visualization</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="section-connector"><span class="dot"></span><span class="line"></span><span class="dot"></span></div>
+
+    <!-- ══════ CHAPTER 2: PROTOCOLS & APPLICATIONS ══════ -->
+    <div class="section" id="sec-protocols">
+      <div class="section-header">
+        <div class="section-icon protocols">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <div class="section-title">II. Protocols &amp; Phenomena</div>
+          <div class="section-subtitle">Teleportation, entanglement, and Bell inequalities</div>
+        </div>
+      </div>
+      <div class="modules-grid">
+        <!-- 08 -->
+        <a class="module-card" href="modules/08_teleportation.html" data-module="8">
+          <div class="card-top">
+            <span class="module-number">07</span>
+            <div class="module-check" data-id="8">&#10003;</div>
+          </div>
+          <div class="module-title">Quantum Teleportation</div>
+          <div class="module-desc">Transfer quantum states using entanglement and classical communication &mdash; the teleportation protocol step by step.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag visual">Protocol</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 13 -->
+        <a class="module-card" href="modules/13_chsh_game.html" data-module="13">
+          <div class="card-top">
+            <span class="module-number">08</span>
+            <div class="module-check" data-id="13">&#10003;</div>
+          </div>
+          <div class="module-title">The CHSH Game</div>
+          <div class="module-desc">Bell inequalities in action &mdash; prove that quantum entanglement outperforms any classical strategy.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag game">Game</span>
+              <span class="tag math">Bell Inequality</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="section-connector"><span class="dot"></span><span class="line"></span><span class="dot"></span></div>
+
+    <!-- ══════ CHAPTER 3: QUANTUM ALGORITHMS ══════ -->
+    <div class="section" id="sec-algorithms">
+      <div class="section-header">
+        <div class="section-icon algorithms">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+        </div>
+        <div>
+          <div class="section-title">III. Quantum Algorithms</div>
+          <div class="section-subtitle">Deutsch, Simon, Grover, and computational speedups</div>
+        </div>
+      </div>
+      <div class="modules-grid">
+        <!-- 11 -->
+        <a class="module-card" href="modules/11_deutsch_algorithm.html" data-module="11">
+          <div class="card-top">
+            <span class="module-number">09</span>
+            <div class="module-check" data-id="11">&#10003;</div>
+          </div>
+          <div class="module-title">The Deutsch Algorithm</div>
+          <div class="module-desc">The first quantum speedup &mdash; determine a function's global property with a single query using phase kickback.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag visual">Circuits</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 12 -->
+        <a class="module-card" href="modules/12_simons_algorithm.html" data-module="12">
+          <div class="card-top">
+            <span class="module-number">10</span>
+            <div class="module-check" data-id="12">&#10003;</div>
+          </div>
+          <div class="module-title">Simon's Algorithm</div>
+          <div class="module-desc">Exponential quantum speedup &mdash; find a hidden period using quantum parallelism and linear algebra.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag math">Linear Algebra</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 15 -->
+        <a class="module-card" href="modules/15_grovers_algorithm.html" data-module="15">
+          <div class="card-top">
+            <span class="module-number">11</span>
+            <div class="module-check" data-id="15">&#10003;</div>
+          </div>
+          <div class="module-title">Grover's Search Algorithm</div>
+          <div class="module-desc">Quadratic speedup for unstructured search &mdash; amplitude amplification and the diffusion operator.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag visual">Amplitudes</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="section-connector"><span class="dot"></span><span class="line"></span><span class="dot"></span></div>
+
+    <!-- ══════ CHAPTER 4: SHOR'S ALGORITHM ══════ -->
+    <div class="section" id="sec-shor">
+      <div class="section-header">
+        <div class="section-icon shor">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <div>
+          <div class="section-title">IV. The Road to Shor's Algorithm</div>
+          <div class="section-subtitle">Modular arithmetic, QFT, period finding, and factoring</div>
+        </div>
+      </div>
+      <div class="modules-grid">
+        <!-- 18 -->
+        <a class="module-card" href="modules/18_modular_arithmetic.html#top" data-module="18">
+          <div class="card-top">
+            <span class="module-number">12</span>
+            <div class="module-check" data-id="18">&#10003;</div>
+          </div>
+          <div class="module-title">Modular Arithmetic</div>
+          <div class="module-desc">The number theory behind Shor &mdash; modular exponentiation, Euler's theorem, and the connection to factoring.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag math">Number Theory</span>
+              <span class="tag interactive">Interactive</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 19 -->
+        <a class="module-card" href="modules/19_quantum_fourier_transform.html" data-module="19">
+          <div class="card-top">
+            <span class="module-number">13</span>
+            <div class="module-check" data-id="19">&#10003;</div>
+          </div>
+          <div class="module-title">Quantum Fourier Transform</div>
+          <div class="module-desc">The quantum analog of the DFT &mdash; exponential speedup through quantum phase estimation.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag visual">Visualization</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 20 -->
+        <a class="module-card" href="modules/20_factoring_to_period_finding.html" data-module="20">
+          <div class="card-top">
+            <span class="module-number">14</span>
+            <div class="module-check" data-id="20">&#10003;</div>
+          </div>
+          <div class="module-title">From Factoring to Period Finding</div>
+          <div class="module-desc">The key reduction &mdash; how factoring integers reduces to finding the period of modular exponentiation.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag math">Reduction</span>
+              <span class="tag interactive">Interactive</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 21 -->
+        <a class="module-card" href="modules/21_period_finding.html" data-module="21">
+          <div class="card-top">
+            <span class="module-number">15</span>
+            <div class="module-check" data-id="21">&#10003;</div>
+          </div>
+          <div class="module-title">Quantum Period Finding</div>
+          <div class="module-desc">The quantum subroutine at the heart of Shor &mdash; using QFT to extract periods from quantum states.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag visual">Circuits</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 22 -->
+        <a class="module-card" href="modules/22_shors_algorithm.html" data-module="22">
+          <div class="card-top">
+            <span class="module-number">16</span>
+            <div class="module-check" data-id="22">&#10003;</div>
+          </div>
+          <div class="module-title">Shor's Algorithm</div>
+          <div class="module-desc">The crown jewel &mdash; factor large integers in polynomial time and break RSA encryption.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag visual">Full Simulation</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="section-connector"><span class="dot"></span><span class="line"></span><span class="dot"></span></div>
+
+    <!-- ══════ CHAPTER 5: COMPLEXITY THEORY ══════ -->
+    <div class="section" id="sec-complexity">
+      <div class="section-header">
+        <div class="section-icon complexity">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div>
+          <div class="section-title">V. Complexity Theory</div>
+          <div class="section-subtitle">BQP, lower bounds, and the limits of quantum computation</div>
+        </div>
+      </div>
+      <div class="modules-grid">
+        <!-- 16 -->
+        <a class="module-card" href="modules/16_complexity_theory.html" data-module="16">
+          <div class="card-top">
+            <span class="module-number">17</span>
+            <div class="module-check" data-id="16">&#10003;</div>
+          </div>
+          <div class="module-title">Quantum Complexity Theory</div>
+          <div class="module-desc">BQP, QMA, and the computational hierarchy &mdash; where quantum computers sit in the complexity landscape.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag math">Theory</span>
+              <span class="tag interactive">Interactive</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 17 -->
+        <a class="module-card" href="modules/17_hybrid_method.html" data-module="17">
+          <div class="card-top">
+            <span class="module-number">18</span>
+            <div class="module-check" data-id="17">&#10003;</div>
+          </div>
+          <div class="module-title">The Hybrid Method (BBBV)</div>
+          <div class="module-desc">Proving Grover's algorithm is optimal &mdash; the polynomial method and quantum query lower bounds.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag math">Proof</span>
+              <span class="tag interactive">Interactive</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="section-connector"><span class="dot"></span><span class="line"></span><span class="dot"></span></div>
+
+    <!-- ══════ CHAPTER 6: QUANTUM ERROR CORRECTION ══════ -->
+    <div class="section" id="sec-advanced">
+      <div class="section-header">
+        <div class="section-icon advanced">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div>
+          <div class="section-title">VI. Quantum Error Correction</div>
+          <div class="section-subtitle">Protecting quantum information from decoherence</div>
+        </div>
+      </div>
+      <div class="modules-grid">
+        <!-- 23 -->
+        <a class="module-card" href="modules/23_error_correction.html" data-module="23">
+          <div class="card-top">
+            <span class="module-number">19</span>
+            <div class="module-check" data-id="23">&#10003;</div>
+          </div>
+          <div class="module-title">Shor's 9-Qubit Code</div>
+          <div class="module-desc">The first quantum error-correcting code &mdash; protect against bit-flip and phase-flip errors simultaneously.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag visual">Error Correction</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <!-- 24 -->
+        <a class="module-card" href="modules/24_toric_code.html" data-module="24">
+          <div class="card-top">
+            <span class="module-number">20</span>
+            <div class="module-check" data-id="24">&#10003;</div>
+          </div>
+          <div class="module-title">The Toric Code</div>
+          <div class="module-desc">Topological quantum error correction &mdash; protect qubits using the topology of a torus surface.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag math">Topology</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="section-connector"><span class="dot"></span><span class="line"></span><span class="dot"></span></div>
+
+    <!-- ══════ CHAPTER 6: ADDITIONAL PROTOCOLS ══════ -->
+    <div class="section" id="sec-addl-protocols">
+      <div class="section-header">
+        <div class="section-icon addl-protocols">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        </div>
+        <div>
+          <div class="section-title">VII. Additional Protocols</div>
+          <div class="section-subtitle">Cryptography, state reconstruction, and practical quantum techniques</div>
+        </div>
+      </div>
+      <div class="modules-grid">
+        <a class="module-card" href="modules/09_state_tomography.html" data-module="9">
+          <div class="card-top">
+            <span class="module-number">21</span>
+            <div class="module-check" data-id="9">&#10003;</div>
+          </div>
+          <div class="module-title">Quantum State Tomography</div>
+          <div class="module-desc">Reconstruct an unknown quantum state from measurement statistics across multiple bases.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag math">Statistics</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+        <a class="module-card" href="modules/14_quantum_key_distribution.html" data-module="14">
+          <div class="card-top">
+            <span class="module-number">22</span>
+            <div class="module-check" data-id="14">&#10003;</div>
+          </div>
+          <div class="module-title">BB84 Quantum Key Distribution</div>
+          <div class="module-desc">Unbreakable cryptography &mdash; use quantum mechanics to securely exchange encryption keys.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag interactive">Interactive</span>
+              <span class="tag visual">Protocol</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="section-connector"><span class="dot"></span><span class="line"></span><span class="dot"></span></div>
+
+    <!-- ══════ BONUS ══════ -->
+    <div class="section" id="sec-bonus">
+      <div class="section-header">
+        <div class="section-icon bonus">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <div>
+          <div class="section-title">Bonus</div>
+          <div class="section-subtitle">Fun extras &mdash; test your quantum intuition</div>
+        </div>
+      </div>
+      <div class="modules-grid">
+        <a class="module-card" href="modules/25_quantum_game_bonus.html" data-module="25">
+          <div class="card-top">
+            <span class="module-number bonus-num">&#9733;</span>
+            <div class="module-check" data-id="25">&#10003;</div>
+          </div>
+          <div class="module-title">Quantum Collapse Game</div>
+          <div class="module-desc">Play an interactive game that builds intuition for quantum measurement, superposition, and wave function collapse.</div>
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag game">Game</span>
+              <span class="tag interactive">Interactive</span>
+            </div>
+            <svg class="card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════ FOOTER ═══════════════ -->
+  
+</div>
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+
+<!-- ═══════════════ PARTICLE BACKGROUND ═══════════════ -->
+<script>
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 60;
+  const CONNECT_DIST = 130;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+</script>
+
+<!-- ═══════════════ PROGRESS TRACKING ═══════════════ -->
+<script>
+(function initProgress() {
+  const STORAGE_KEY = 'quantum-course-progress';
+  const TOTAL = 24;
+
+  function getCompleted() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch { return []; }
+  }
+
+  function saveCompleted(arr) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+  }
+
+  function updateUI() {
+    const completed = getCompleted();
+
+    // Update checkmarks
+    document.querySelectorAll('.module-check').forEach(el => {
+      const id = el.dataset.id;
+      if (completed.includes(id)) {
+        el.classList.add('checked');
+        el.closest('.module-card')?.classList.add('completed');
+      } else {
+        el.classList.remove('checked');
+        el.closest('.module-card')?.classList.remove('completed');
+      }
+    });
+
+    // Update progress bar
+    const fill = document.getElementById('progressFill');
+    const count = document.getElementById('progressCount');
+    const pct = (completed.length / TOTAL) * 100;
+    fill.style.width = pct + '%';
+    count.textContent = `${completed.length} / ${TOTAL}`;
+  }
+
+  // Click handler for checkmarks
+  document.addEventListener('click', (e) => {
+    const check = e.target.closest('.module-check');
+    if (!check) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const id = check.dataset.id;
+    let completed = getCompleted();
+    if (completed.includes(id)) {
+      completed = completed.filter(x => x !== id);
+    } else {
+      completed.push(id);
+    }
+    saveCompleted(completed);
+    updateUI();
+  });
+
+  // Initial render
+  updateUI();
+
+  // Animate progress bar on load
+  setTimeout(() => {
+    const completed = getCompleted();
+    const fill = document.getElementById('progressFill');
+    fill.style.width = ((completed.length / TOTAL) * 100) + '%';
+  }, 300);
+})();
+</script>
+
+<!-- ═══════════════ SCROLL ANIMATIONS ═══════════════ -->
+<script>
+(function initScrollReveal() {
+  const sections = document.querySelectorAll('.section');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  sections.forEach(s => observer.observe(s));
+})();
+</script>
+
+</body>
+</html>

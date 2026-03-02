@@ -1,0 +1,2344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum State Tomography — Interactive Visualization</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+
+    /* Module-specific variables */
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.7;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* Particle background */
+  #particleBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ---- sticky nav ---- */
+  nav.section-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(10,14,26,.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: .55rem 0;
+    margin: 0 -1.5rem 2rem;
+    display: flex;
+    justify-content: center;
+    gap: .25rem;
+    flex-wrap: wrap;
+  }
+
+  nav.section-nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: .78rem;
+    font-weight: 500;
+    padding: .35rem .75rem;
+    border-radius: 6px;
+    transition: color .2s, background .2s;
+    white-space: nowrap;
+  }
+
+  nav.section-nav a:hover {
+    color: var(--text);
+    background: rgba(99,102,241,.08);
+  }
+
+  nav.section-nav a.active {
+    color: var(--accent);
+    background: rgba(99,102,241,.15);
+  }
+
+  header {
+    text-align: center;
+    padding: 3rem 0 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+
+  header::after {
+    content: '';
+    display: block;
+    width: 140px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), transparent);
+    margin: 1.5rem auto 0;
+  }
+
+  header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--cyan), var(--pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+    margin-bottom: .5rem;
+  }
+
+  header p {
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    font-weight: 300;
+  }
+
+  /* ---- sections ---- */
+  section { margin-bottom: 3rem; scroll-margin-top: 3.5rem; }
+
+  h2 {
+    font-size: 1.45rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+
+  h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  h2 .title-text {
+    background: linear-gradient(135deg, var(--cyan), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    margin: 1.5rem 0 .75rem;
+    color: var(--cyan);
+    font-weight: 600;
+  }
+
+  p, li { color: var(--text); margin-bottom: .75rem; }
+  ul, ol { padding-left: 1.4rem; }
+  li { margin-bottom: .4rem; }
+
+  /* ---- cards ---- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.75rem;
+    margin: 1.25rem 0;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .3s;
+  }
+
+  .card:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: .5;
+  }
+
+  .math {
+    font-family: var(--font-mono);
+    background: var(--surface2);
+    border: 1px solid rgba(42,53,80,.5);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    margin: 1rem 0;
+    overflow-x: auto;
+    font-size: .92rem;
+    line-height: 1.9;
+    color: var(--cyan);
+  }
+
+  .math .label { color: var(--pink); font-weight: 600; }
+  .math .op { color: var(--accent); font-weight: 500; }
+  .math .note { color: var(--text-dim); font-style: italic; font-size: .83rem; }
+
+  .matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+
+  .matrix-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+    text-align: center;
+    transition: border-color .3s, transform .3s, box-shadow .3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .matrix-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: .4;
+  }
+
+  .matrix-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px var(--accent-glow);
+  }
+
+  .matrix-card .name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: .4rem;
+  }
+
+  .matrix-card .name.sigma-i { color: var(--text-dim); }
+  .matrix-card .name.sigma-x { color: var(--pink); }
+  .matrix-card .name.sigma-y { color: var(--orange); }
+  .matrix-card .name.sigma-z { color: var(--cyan); }
+
+  .matrix-card .aka {
+    font-size: .78rem;
+    color: var(--text-dim);
+    margin-bottom: .6rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-weight: 500;
+  }
+
+  .mat {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    display: inline-block;
+    position: relative;
+    padding: 0 .75rem;
+  }
+
+  .mat::before, .mat::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 3px;
+    border: 2px solid var(--text-dim);
+  }
+
+  .mat::before { left: 0; border-right: none; border-radius: 3px 0 0 3px; }
+  .mat::after { right: 0; border-left: none; border-radius: 0 3px 3px 0; }
+
+  .mat-row { display: flex; justify-content: center; gap: 1.25rem; }
+  .mat-row span { min-width: 2rem; text-align: center; }
+
+  .highlight-box {
+    background: linear-gradient(135deg, rgba(99,102,241,.06), rgba(34,211,238,.06));
+    border: 1px solid rgba(99,102,241,.25);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin: 1rem 0;
+  }
+
+  /* ---- interactive bloch ---- */
+  .interactive-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  @media (max-width: 800px) {
+    .interactive-area { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .3s;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: .4;
+  }
+
+  .panel h4 {
+    font-size: .95rem;
+    margin-bottom: 1rem;
+    color: var(--cyan);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-size: .82rem;
+  }
+
+  canvas#bloch {
+    display: block;
+    margin: 0 auto;
+    border-radius: 8px;
+    cursor: grab;
+    width: 380px;
+    height: 380px;
+  }
+
+  canvas#bloch:active { cursor: grabbing; }
+
+  .drag-hint {
+    text-align: center;
+    font-size: .72rem;
+    color: var(--text-dim);
+    margin-top: .5rem;
+    opacity: .6;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+  }
+
+  .slider-group { margin-bottom: 1rem; }
+
+  .slider-group label {
+    display: flex;
+    justify-content: space-between;
+    font-size: .82rem;
+    color: var(--text-dim);
+    margin-bottom: .3rem;
+    font-weight: 500;
+  }
+
+  .slider-group label .val {
+    color: var(--green);
+    font-family: var(--font-mono);
+    font-weight: 600;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--surface2);
+    border: 1px solid rgba(42,53,80,.5);
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  .preset-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin-bottom: 1rem;
+  }
+
+  .preset-btns button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: .8rem;
+    padding: .35rem .7rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s;
+    font-weight: 500;
+  }
+
+  .preset-btns button:hover {
+    border-color: var(--accent);
+    background: rgba(99,102,241,.08);
+    transform: translateY(-1px);
+    box-shadow: none;
+  }
+
+  .preset-btns button.active {
+    background: rgba(99,102,241,.18);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 2px 12px var(--accent-glow);
+  }
+
+  /* state vector readout */
+  .state-readout {
+    font-family: var(--font-mono);
+    font-size: .85rem;
+    background: var(--surface2);
+    border: 1px solid rgba(42,53,80,.5);
+    border-radius: 10px;
+    padding: .6rem .8rem;
+    margin-bottom: 1rem;
+    color: var(--cyan);
+    text-align: center;
+    font-weight: 500;
+  }
+
+  /* measurements */
+  .meas-row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: .55rem;
+    font-family: var(--font-mono);
+    font-size: .88rem;
+  }
+
+  .meas-label { width: 2.5rem; font-weight: 600; }
+  .meas-label.x { color: var(--pink); }
+  .meas-label.y { color: var(--orange); }
+  .meas-label.z { color: var(--cyan); }
+
+  .meas-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: var(--surface2);
+    border: 1px solid rgba(42,53,80,.4);
+    border-radius: 4px;
+    overflow: visible;
+    position: relative;
+  }
+
+  .meas-bar-bg::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -2px;
+    bottom: -2px;
+    width: 1px;
+    background: rgba(255,255,255,.15);
+    z-index: 1;
+  }
+
+  .meas-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width .3s, margin-left .3s;
+    position: absolute;
+    top: 0;
+  }
+
+  .meas-bar.x { background: linear-gradient(90deg, var(--pink), #f9a8d4); }
+  .meas-bar.y { background: linear-gradient(90deg, var(--orange), #fdba74); }
+  .meas-bar.z { background: linear-gradient(90deg, var(--cyan), #67e8f9); }
+
+  .meas-val {
+    width: 3.5rem;
+    text-align: right;
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  /* true-value ghost bars for tomography comparison */
+  .meas-bar-true {
+    height: 100%;
+    border-radius: 3px;
+    position: absolute;
+    top: 0;
+    opacity: .35;
+    border: 2px dashed rgba(255,255,255,.6);
+    pointer-events: none;
+    box-sizing: border-box;
+  }
+
+  .meas-bar-true.x { background: var(--pink); }
+  .meas-bar-true.y { background: var(--orange); }
+  .meas-bar-true.z { background: var(--cyan); }
+
+  /* density matrix */
+  .density-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem;
+    font-family: var(--font-mono);
+    font-size: .85rem;
+    max-width: 360px;
+    margin: .75rem auto 0;
+  }
+
+  .density-cell {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: .45rem .5rem;
+    text-align: center;
+    border: 1px solid rgba(42,53,80,.5);
+    transition: background .3s, border-color .3s;
+    font-weight: 500;
+  }
+
+  /* tomography sim */
+  .tomo-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-bottom: 1rem;
+  }
+
+  .tomo-controls button {
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    border: none;
+    color: #fff;
+    font-weight: 600;
+    font-size: .85rem;
+    padding: .55rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: .01em;
+  }
+
+  .tomo-controls button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+
+  .tomo-controls button:active { transform: translateY(0); }
+
+  .tomo-controls button.secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .tomo-controls button.secondary:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 20px rgba(99,102,241,.1);
+    transform: translateY(-1px);
+  }
+
+  .shot-counter {
+    font-family: var(--font-mono);
+    font-size: .83rem;
+    color: var(--text-dim);
+    margin-bottom: .75rem;
+  }
+
+  .shot-counter span { color: var(--green); font-weight: 600; }
+
+  .tomo-result {
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface2);
+    border: 1px solid rgba(42,53,80,.5);
+    border-radius: 12px;
+    font-family: var(--font-mono);
+    font-size: .85rem;
+  }
+
+  .tomo-result .err { color: var(--red); }
+  .tomo-result .good { color: var(--green); font-weight: 600; }
+
+  .fidelity-bar-bg {
+    width: 100%;
+    height: 10px;
+    background: var(--surface);
+    border-radius: 5px;
+    margin-top: .5rem;
+    overflow: hidden;
+  }
+
+  .fidelity-bar {
+    height: 100%;
+    border-radius: 5px;
+    background: linear-gradient(90deg, var(--red), var(--orange), var(--green));
+    transition: width .5s;
+  }
+
+  /* convergence chart */
+  canvas#convergence-chart {
+    display: block;
+    width: 100%;
+    height: 180px;
+    margin-top: 1rem;
+    border-radius: 10px;
+  }
+
+  .convergence-note {
+    font-size: .78rem;
+    color: var(--text-dim);
+    margin-top: .4rem;
+    text-align: center;
+  }
+
+  /* tables */
+  .eigenvalue-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: var(--font-mono);
+    font-size: .85rem;
+    margin-top: .75rem;
+  }
+
+  .eigenvalue-table th {
+    text-align: left;
+    padding: .5rem .65rem;
+    background: rgba(99,102,241,.1);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    border: 1px solid var(--border);
+  }
+
+  .eigenvalue-table th:first-child { border-radius: 8px 0 0 0; }
+  .eigenvalue-table th:last-child { border-radius: 0 8px 0 0; }
+
+  .eigenvalue-table td {
+    padding: .5rem .65rem;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    transition: background .2s;
+  }
+
+  .eigenvalue-table tr:hover td {
+    background: rgba(99,102,241,.05);
+  }
+
+  .eigenvalue-table tbody tr:last-child td:first-child { border-radius: 0 0 0 8px; }
+  .eigenvalue-table tbody tr:last-child td:last-child { border-radius: 0 0 8px 0; }
+
+  /* quiz */
+  .quiz-question {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .quiz-question::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: .4;
+  }
+
+  .quiz-question p.q {
+    font-weight: 600;
+    margin-bottom: .75rem;
+    color: var(--text);
+  }
+
+  .quiz-options { display: flex; flex-direction: column; gap: .4rem; }
+
+  .quiz-options button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: .88rem;
+    padding: .6rem 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    transition: all .2s;
+    font-weight: 400;
+  }
+
+  .quiz-options button:hover {
+    border-color: var(--accent);
+    background: rgba(99,102,241,.06);
+    transform: translateX(3px);
+    box-shadow: none;
+  }
+
+  .quiz-options button.correct {
+    border-color: var(--green);
+    background: rgba(52,211,153,.1);
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .quiz-options button.wrong {
+    border-color: var(--red);
+    background: rgba(248,113,113,.08);
+    color: var(--red);
+  }
+
+  .quiz-options button:disabled {
+    cursor: default;
+    opacity: .7;
+    transform: none;
+  }
+
+  .quiz-feedback {
+    margin-top: .65rem;
+    font-size: .85rem;
+    padding: .6rem .85rem;
+    border-radius: 10px;
+    display: none;
+    line-height: 1.6;
+  }
+
+  .quiz-feedback.show { display: block; }
+
+  .quiz-feedback.correct-fb {
+    background: rgba(52,211,153,.07);
+    border: 1px solid rgba(52,211,153,.2);
+    color: var(--green);
+  }
+
+  .quiz-feedback.wrong-fb {
+    background: rgba(248,113,113,.07);
+    border: 1px solid rgba(248,113,113,.2);
+    color: var(--red);
+  }
+
+  /* section entrance animation */
+  section {
+    animation: fadeSlideIn .5s ease-out both;
+  }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  footer {
+    text-align: center;
+    padding: 2rem 0;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: .82rem;
+    font-weight: 300;
+  }
+
+  /* ---- mystery mode ---- */
+  .mystery-active #state-readout { filter: blur(8px); user-select: none; pointer-events: none; }
+  .mystery-active .slider-group { opacity: .15; pointer-events: none; }
+  .mystery-active .preset-btns { opacity: .15; pointer-events: none; }
+  .mystery-active #bar-x, .mystery-active #bar-y, .mystery-active #bar-z { opacity: 0; }
+  .mystery-active #val-x, .mystery-active #val-y, .mystery-active #val-z { filter: blur(6px); }
+  .mystery-active .density-grid { filter: blur(10px); user-select: none; }
+  .mystery-active .drag-hint { visibility: hidden; }
+
+  .mystery-banner {
+    background: linear-gradient(135deg, rgba(251,146,60,.08), rgba(244,114,182,.08));
+    border: 1px solid rgba(251,146,60,.35);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .mystery-banner::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--orange), transparent);
+    opacity: .6;
+  }
+  .mystery-banner h3 {
+    color: var(--orange);
+    margin: 0 0 .5rem;
+    font-size: 1.1rem;
+  }
+  .mystery-banner p { color: var(--text-dim); font-size: .88rem; margin-bottom: .75rem; }
+
+  .mystery-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: center;
+    margin-top: .75rem;
+  }
+  .mystery-controls button {
+    font-family: 'Inter', sans-serif;
+    font-size: .85rem;
+    font-weight: 600;
+    padding: .55rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s;
+    border: none;
+  }
+  .mystery-controls button:hover { transform: translateY(-1px); }
+  .mystery-controls button:active { transform: translateY(0); }
+  .btn-mystery {
+    background: linear-gradient(135deg, var(--orange), #f59e0b);
+    color: #000;
+  }
+  .btn-mystery:hover { box-shadow: 0 4px 20px rgba(251,146,60,.3); }
+  .btn-reveal {
+    background: linear-gradient(135deg, var(--green), #059669);
+    color: #000;
+  }
+  .btn-reveal:hover { box-shadow: 0 4px 20px rgba(52,211,153,.3); }
+  .btn-reveal:disabled { opacity: .4; cursor: default; transform: none !important; box-shadow: none !important; }
+  .btn-end-mystery {
+    background: var(--surface2);
+    border: 1px solid var(--border) !important;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .btn-end-mystery:hover { border-color: var(--accent) !important; }
+
+  .mystery-score {
+    margin-top: .75rem;
+    font-family: var(--font-mono);
+    font-size: .9rem;
+    color: var(--green);
+    display: none;
+  }
+  .mystery-score.show { display: block; }
+
+  .difficulty-select {
+    display: flex;
+    gap: .35rem;
+    justify-content: center;
+    margin-bottom: .5rem;
+  }
+  .difficulty-select button {
+    font-family: 'Inter', sans-serif;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: .78rem;
+    padding: .3rem .7rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .2s;
+    font-weight: 500;
+  }
+  .difficulty-select button:hover { border-color: var(--accent); color: var(--text); }
+  .difficulty-select button.active {
+    border-color: var(--orange);
+    color: var(--orange);
+    background: rgba(251,146,60,.1);
+  }
+
+  /* ---- measurement stream ---- */
+  .meas-stream {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    max-height: 72px;
+    overflow: hidden;
+    margin-bottom: .75rem;
+    padding: .5rem;
+    background: var(--surface2);
+    border: 1px solid rgba(42,53,80,.5);
+    border-radius: 10px;
+    position: relative;
+  }
+  .meas-stream:empty { display: none; }
+  .meas-stream::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 20px;
+    background: linear-gradient(transparent, var(--surface2));
+    pointer-events: none;
+  }
+  .outcome-chip {
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 4px;
+    animation: chipPop .15s ease-out;
+    line-height: 1.4;
+  }
+  .outcome-chip.x-plus { background: rgba(244,114,182,.2); color: var(--pink); }
+  .outcome-chip.x-minus { background: rgba(244,114,182,.1); color: rgba(244,114,182,.6); }
+  .outcome-chip.y-plus { background: rgba(251,146,60,.2); color: var(--orange); }
+  .outcome-chip.y-minus { background: rgba(251,146,60,.1); color: rgba(251,146,60,.6); }
+  .outcome-chip.z-plus { background: rgba(34,211,238,.2); color: var(--cyan); }
+  .outcome-chip.z-minus { background: rgba(34,211,238,.1); color: rgba(34,211,238,.6); }
+
+  @keyframes chipPop {
+    from { opacity: 0; transform: scale(.5); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* ---- speed controls ---- */
+  .speed-controls {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin-bottom: .75rem;
+  }
+  .speed-controls .speed-label {
+    font-size: .78rem;
+    color: var(--text-dim);
+    font-weight: 500;
+    margin-right: .25rem;
+  }
+  .speed-controls button {
+    font-family: 'Inter', sans-serif;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: .75rem;
+    padding: .25rem .6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .2s;
+    font-weight: 500;
+  }
+  .speed-controls button:hover { border-color: var(--accent); color: var(--text); }
+  .speed-controls button.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(99,102,241,.1);
+  }
+  .btn-stop {
+    background: rgba(248,113,113,.1) !important;
+    border-color: var(--red) !important;
+    color: var(--red) !important;
+    display: none;
+  }
+  .btn-stop.show { display: inline-block; }
+
+  /* ---- bloch legend ---- */
+  .bloch-legend {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: .35rem;
+    font-size: .72rem;
+    font-family: var(--font-mono);
+    color: var(--text-dim);
+  }
+  .bloch-legend span::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .bloch-legend .leg-true::before { background: #34d399; }
+  .bloch-legend .leg-est::before { background: #fb923c; }
+
+  /* ---- outcome histograms ---- */
+  .histo-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .5rem;
+    margin: .75rem 0;
+  }
+  .histo-box {
+    background: var(--surface);
+    border: 1px solid rgba(42,53,80,.5);
+    border-radius: 8px;
+    padding: .4rem .5rem;
+    text-align: center;
+  }
+  .histo-label {
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    font-weight: 600;
+    margin-bottom: .25rem;
+    letter-spacing: .03em;
+  }
+  .histo-label.x { color: var(--pink); }
+  .histo-label.y { color: var(--orange); }
+  .histo-label.z { color: var(--cyan); }
+  .histo-bars {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 6px;
+    height: 40px;
+  }
+  .histo-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 22px;
+  }
+  .histo-col .hbar {
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    min-height: 1px;
+    transition: height .3s;
+  }
+  .histo-col .hbar.plus { background: rgba(52,211,153,.55); }
+  .histo-col .hbar.minus { background: rgba(248,113,113,.45); }
+  .histo-col .hcount {
+    font-family: var(--font-mono);
+    font-size: .55rem;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  /* ---- density matrix comparison ---- */
+  .density-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+    margin: .5rem 0 .75rem;
+  }
+  .dm-col { text-align: center; }
+  .dm-label {
+    font-family: var(--font-mono);
+    font-size: .7rem;
+    font-weight: 600;
+    margin-bottom: .35rem;
+    letter-spacing: .03em;
+  }
+  .dm-label.true-label { color: var(--green); }
+  .dm-label.est-label { color: var(--orange); }
+  .dm-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+  }
+  .dm-cell {
+    background: var(--surface);
+    padding: .25rem .35rem;
+    border-radius: 5px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    border: 1px solid var(--border);
+    transition: border-color .3s, background .3s;
+  }
+  .dm-cell.diff-high { border-color: rgba(248,113,113,.35); }
+  .dm-cell.diff-low { border-color: rgba(52,211,153,.25); }
+
+  /* ---- noise control ---- */
+  .noise-control {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: .25rem 0 .5rem;
+    padding: .4rem .65rem;
+    background: rgba(248,113,113,.03);
+    border: 1px solid rgba(248,113,113,.12);
+    border-radius: 8px;
+    font-size: .78rem;
+  }
+  .noise-control label {
+    font-weight: 500;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .noise-control input[type="range"] { flex: 1; max-width: 140px; }
+  .noise-control .noise-val {
+    font-family: var(--font-mono);
+    font-size: .78rem;
+    color: var(--red);
+    min-width: 2rem;
+  }
+  .noise-control .noise-desc {
+    font-size: .7rem;
+    color: var(--text-dim);
+    opacity: .7;
+  }
+
+  /* ---- 2-qubit Pauli grid ---- */
+  .two-qubit-demo { margin-top: 1.25rem; }
+  .twoq-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-bottom: .75rem;
+  }
+  .twoq-presets button {
+    font-family: var(--font-mono);
+    font-size: .75rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: .3rem .6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .twoq-presets button:hover { border-color: var(--cyan); color: var(--text); }
+  .twoq-presets button.active { border-color: var(--cyan); color: var(--cyan); background: rgba(34,211,238,.08); }
+  canvas.pauli-heatmap {
+    width: 100%;
+    max-width: 380px;
+    height: 220px;
+    border-radius: 8px;
+    display: block;
+    margin: 0 auto;
+  }
+  .twoq-note {
+    font-size: .78rem;
+    color: var(--text-dim);
+    margin-top: .5rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<canvas id="particleBg"></canvas>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+
+<div class="container">
+
+<header>
+  <h1>Quantum State Tomography</h1>
+  <p>An interactive guide to reconstructing quantum states from Pauli measurements</p>
+</header>
+
+<nav class="section-nav" id="section-nav">
+  <a href="#pauli">Pauli Operators</a>
+  <a href="#bloch-density">Bloch Sphere</a>
+  <a href="#interactive">Explorer</a>
+  <a href="#tomography">Tomography</a>
+  <a href="#challenge">Challenge</a>
+  <a href="#multiqubit">Multi-Qubit</a>
+  <a href="#quiz">Self-Check</a>
+</nav>
+
+<!-- SECTION 1 -->
+<section id="pauli">
+  <h2><span class="num">1</span> <span class="title-text">The Pauli Operators</span></h2>
+
+  <p>
+    The <strong>Pauli matrices</strong> are a set of three 2&times;2 complex matrices
+    (plus the identity) that form the most natural language for describing single-qubit
+    quantum states and measurements. Together with the identity <em>I</em>, they form
+    a <strong>basis for all 2&times;2 Hermitian matrices</strong>&mdash;which is exactly
+    the space in which density matrices live.
+  </p>
+
+  <div class="matrix-grid">
+    <div class="matrix-card">
+      <div class="name sigma-i">&sigma;<sub>0</sub> = I</div>
+      <div class="aka">Identity</div>
+      <div class="mat">
+        <div class="mat-row"><span>1</span><span>0</span></div>
+        <div class="mat-row"><span>0</span><span>1</span></div>
+      </div>
+    </div>
+    <div class="matrix-card">
+      <div class="name sigma-x">&sigma;<sub>x</sub> = X</div>
+      <div class="aka">Bit-flip / NOT gate</div>
+      <div class="mat">
+        <div class="mat-row"><span>0</span><span>1</span></div>
+        <div class="mat-row"><span>1</span><span>0</span></div>
+      </div>
+    </div>
+    <div class="matrix-card">
+      <div class="name sigma-y">&sigma;<sub>y</sub> = Y</div>
+      <div class="aka">Bit &amp; phase flip</div>
+      <div class="mat">
+        <div class="mat-row"><span>0</span><span>-i</span></div>
+        <div class="mat-row"><span>i</span><span>0</span></div>
+      </div>
+    </div>
+    <div class="matrix-card">
+      <div class="name sigma-z">&sigma;<sub>z</sub> = Z</div>
+      <div class="aka">Phase-flip</div>
+      <div class="mat">
+        <div class="mat-row"><span>1</span><span>0</span></div>
+        <div class="mat-row"><span>0</span><span>-1</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Key Properties</h3>
+  <div class="card">
+    <ul>
+      <li><strong>Hermitian and Unitary:</strong> Each Pauli matrix equals its own conjugate-transpose (<em>P = P&dagger;</em>) and its own inverse (<em>P&sup2; = I</em>). This means they are simultaneously valid as <em>observables</em> and as <em>quantum gates</em>.</li>
+      <li><strong>Eigenvalues &plusmn;1:</strong> Every Pauli matrix has exactly two eigenvalues, +1 and &minus;1. A measurement always returns one of these two outcomes.</li>
+      <li><strong>Traceless</strong> (except <em>I</em>): Tr(&sigma;<sub>k</sub>) = 0 for k &isin; {x, y, z}. This makes them ideal for parameterizing the traceless part of a density matrix.</li>
+      <li><strong>Orthogonal basis:</strong> The set {I, X, Y, Z} satisfies Tr(&sigma;<sub>j</sub>&sigma;<sub>k</sub>) = 2&delta;<sub>jk</sub>, forming an orthogonal basis for the real vector space of 2&times;2 Hermitian matrices.</li>
+    </ul>
+  </div>
+
+  <h3>Eigenstates</h3>
+  <p>Each Pauli operator defines a measurement axis on the Bloch sphere:</p>
+  <table class="eigenvalue-table">
+    <thead>
+      <tr><th>Operator</th><th>+1 Eigenstate</th><th>&minus;1 Eigenstate</th><th>Bloch Axis</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="color:var(--cyan)">Z</td>
+        <td>|0&rang;</td>
+        <td>|1&rang;</td>
+        <td>Poles (north / south)</td>
+      </tr>
+      <tr>
+        <td style="color:var(--pink)">X</td>
+        <td>|+&rang; = (|0&rang;+|1&rang;)/&radic;2</td>
+        <td>|&minus;&rang; = (|0&rang;&minus;|1&rang;)/&radic;2</td>
+        <td>Equator (right / left)</td>
+      </tr>
+      <tr>
+        <td style="color:var(--orange)">Y</td>
+        <td>|+i&rang; = (|0&rang;+i|1&rang;)/&radic;2</td>
+        <td>|&minus;i&rang; = (|0&rang;&minus;i|1&rang;)/&radic;2</td>
+        <td>Equator (front / back)</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- SECTION 2 -->
+<section id="bloch-density">
+  <h2><span class="num">2</span> <span class="title-text">From Pauli Operators to the Bloch Sphere</span></h2>
+
+  <p>
+    Because {I, X, Y, Z} form a complete basis, <strong>any</strong> single-qubit density
+    matrix can be written as:
+  </p>
+
+  <div class="math">
+    <span class="label">&rho;</span> = &frac12;(<span class="op">I</span>
+    + r<sub>x</sub><span class="op">X</span>
+    + r<sub>y</sub><span class="op">Y</span>
+    + r<sub>z</sub><span class="op">Z</span>)
+    <br>
+    <span class="note">where <b>r</b> = (r<sub>x</sub>, r<sub>y</sub>, r<sub>z</sub>) is the Bloch vector with ||<b>r</b>|| &le; 1</span>
+  </div>
+
+  <p>
+    The three Bloch vector components are directly the <strong>expectation values</strong> of the Pauli operators:
+  </p>
+
+  <div class="math">
+    r<sub>x</sub> = &lang;<span class="op">X</span>&rang; = Tr(<span class="op">X</span>&rho;), &nbsp;&nbsp;
+    r<sub>y</sub> = &lang;<span class="op">Y</span>&rang; = Tr(<span class="op">Y</span>&rho;), &nbsp;&nbsp;
+    r<sub>z</sub> = &lang;<span class="op">Z</span>&rang; = Tr(<span class="op">Z</span>&rho;)
+  </div>
+
+  <div class="highlight-box">
+    <strong>This is the central insight of quantum state tomography:</strong>
+    if you can estimate the three expectation values &lang;X&rang;, &lang;Y&rang;, &lang;Z&rang;
+    from measurements, you can <em>reconstruct the full density matrix</em>.
+    The Pauli operators provide exactly the right "coordinate axes" for this reconstruction.
+  </div>
+</section>
+
+<!-- SECTION 3 -->
+<section id="interactive">
+  <h2><span class="num">3</span> <span class="title-text">Interactive Explorer</span></h2>
+  <p>
+    Adjust the qubit state using the &theta; and &phi; sliders (or pick a preset).
+    The Bloch sphere, expectation values, and density matrix all update in real time.
+  </p>
+
+  <div class="interactive-area">
+    <div class="panel">
+      <h4>Bloch Sphere</h4>
+      <canvas id="bloch" width="760" height="760"></canvas>
+      <div class="bloch-legend" id="bloch-legend">
+        <span class="leg-true">True state</span>
+        <span class="leg-est" style="opacity:.35">Estimate</span>
+      </div>
+      <div class="drag-hint">Drag to rotate the view</div>
+    </div>
+    <div class="panel">
+      <h4>State Controls</h4>
+      <div class="preset-btns" id="preset-btns">
+        <button data-preset="0" onclick="setPreset(0, 0, this)">|0&rang;</button>
+        <button data-preset="1" onclick="setPreset(Math.PI, 0, this)">|1&rang;</button>
+        <button data-preset="2" onclick="setPreset(Math.PI/2, 0, this)">|+&rang;</button>
+        <button data-preset="3" onclick="setPreset(Math.PI/2, Math.PI, this)">|&minus;&rang;</button>
+        <button data-preset="4" onclick="setPreset(Math.PI/2, Math.PI/2, this)">|+i&rang;</button>
+        <button data-preset="5" onclick="setPreset(Math.PI/2, -Math.PI/2, this)">|&minus;i&rang;</button>
+        <button data-preset="6" onclick="setPreset(Math.PI/3, Math.PI/4, this)">custom</button>
+        <button data-preset="7" onclick="setRandomState(this)" style="color:var(--orange)">random</button>
+      </div>
+      <div class="state-readout" id="state-readout">|&psi;&rang; = |0&rang;</div>
+      <div class="slider-group">
+        <label>&theta; (polar) <span class="val" id="theta-val">0.00</span></label>
+        <input type="range" id="theta" min="0" max="3.14159" step="0.01" value="0">
+      </div>
+      <div class="slider-group">
+        <label>&phi; (azimuthal) <span class="val" id="phi-val">0.00</span></label>
+        <input type="range" id="phi" min="-3.14159" max="3.14159" step="0.01" value="0">
+      </div>
+      <div class="slider-group">
+        <label><span>Purity ||<b>r</b>||</span> <span class="val" id="purity-val">1.00</span></label>
+        <input type="range" id="purity" min="0" max="1" step="0.01" value="1">
+      </div>
+      <h4 style="margin-top:1rem">Expectation Values</h4>
+      <div class="meas-row">
+        <div class="meas-label x">&lang;X&rang;</div>
+        <div class="meas-bar-bg"><div class="meas-bar x" id="bar-x"></div></div>
+        <div class="meas-val" id="val-x">0.00</div>
+      </div>
+      <div class="meas-row">
+        <div class="meas-label y">&lang;Y&rang;</div>
+        <div class="meas-bar-bg"><div class="meas-bar y" id="bar-y"></div></div>
+        <div class="meas-val" id="val-y">0.00</div>
+      </div>
+      <div class="meas-row">
+        <div class="meas-label z">&lang;Z&rang;</div>
+        <div class="meas-bar-bg"><div class="meas-bar z" id="bar-z"></div></div>
+        <div class="meas-val" id="val-z">1.00</div>
+      </div>
+      <h4 style="margin-top:1rem">Density Matrix &rho;</h4>
+      <div class="density-grid">
+        <div class="density-cell" id="rho-00"></div>
+        <div class="density-cell" id="rho-01"></div>
+        <div class="density-cell" id="rho-10"></div>
+        <div class="density-cell" id="rho-11"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4 -->
+<section id="tomography">
+  <h2><span class="num">4</span> <span class="title-text">Tomography Simulation</span></h2>
+  <p>
+    In a real experiment, you cannot read expectation values directly&mdash;you collect
+    <strong>individual measurement outcomes</strong> (&plusmn;1) from many copies of the
+    state and estimate the expectation values from the statistics. This is
+    <strong>quantum state tomography</strong>.
+  </p>
+  <ol style="margin-bottom:1rem;">
+    <li>Prepare many identical copies of the unknown state &rho;.</li>
+    <li>Measure a fraction in the <strong>X</strong>, <strong>Y</strong>, and <strong>Z</strong> bases.</li>
+    <li>Compute the sample average of outcomes in each basis to estimate &lang;X&rang;, &lang;Y&rang;, &lang;Z&rang;.</li>
+    <li>Reconstruct: &rho;&#770; = &frac12;(I + r&#770;<sub>x</sub>X + r&#770;<sub>y</sub>Y + r&#770;<sub>z</sub>Z).</li>
+  </ol>
+  <div class="highlight-box">
+    <strong>Try it yourself:</strong> the state from the explorer above is the "true" state.
+    The <span style="opacity:.5;border:2px dashed rgba(255,255,255,.6);padding:1px 6px;border-radius:3px;background:rgba(99,102,241,.15)">dashed ghost bars</span> show the true expectation values for comparison.
+  </div>
+
+  <div class="card">
+    <div class="tomo-controls" id="tomo-btns">
+      <button onclick="runShots(10)">+10 shots</button>
+      <button onclick="runShots(50)">+50 shots</button>
+      <button onclick="runShots(200)">+200 shots</button>
+      <button onclick="runShots(1000)">+1000 shots</button>
+      <button class="secondary" onclick="resetTomo()">Reset</button>
+      <button class="secondary btn-stop" id="btn-stop" onclick="stopAnimation()">Stop</button>
+    </div>
+    <div class="speed-controls">
+      <span class="speed-label">Speed:</span>
+      <button class="active" onclick="setSpeed('instant',this)">Instant</button>
+      <button onclick="setSpeed('fast',this)">Fast</button>
+      <button onclick="setSpeed('slow',this)">Slow</button>
+    </div>
+    <div class="noise-control">
+      <label>Noise:</label>
+      <input type="range" id="noise-slider" min="0" max="1" step="0.01" value="0" oninput="setNoise(+this.value)">
+      <span class="noise-val" id="noise-val">0%</span>
+      <span class="noise-desc">depolarization</span>
+    </div>
+    <div class="meas-stream" id="meas-stream"></div>
+    <div class="shot-counter">
+      Shots per basis: <span id="shot-count">0</span> &nbsp;|&nbsp;
+      Total measurements: <span id="total-shots">0</span>
+    </div>
+    <div class="meas-row">
+      <div class="meas-label x">X&#770;</div>
+      <div class="meas-bar-bg"><div class="meas-bar-true x" id="tbar-true-x"></div><div class="meas-bar x" id="tbar-x"></div></div>
+      <div class="meas-val" id="tval-x">&mdash;</div>
+    </div>
+    <div class="meas-row">
+      <div class="meas-label y">Y&#770;</div>
+      <div class="meas-bar-bg"><div class="meas-bar-true y" id="tbar-true-y"></div><div class="meas-bar y" id="tbar-y"></div></div>
+      <div class="meas-val" id="tval-y">&mdash;</div>
+    </div>
+    <div class="meas-row">
+      <div class="meas-label z">Z&#770;</div>
+      <div class="meas-bar-bg"><div class="meas-bar-true z" id="tbar-true-z"></div><div class="meas-bar z" id="tbar-z"></div></div>
+      <div class="meas-val" id="tval-z">&mdash;</div>
+    </div>
+    <div class="histo-container" id="histo-container" style="display:none">
+      <div class="histo-box"><div class="histo-label x">X</div><div class="histo-bars"><div class="histo-col"><div class="hbar plus" id="hbar-xp"></div><span class="hcount" id="hcount-xp">0</span></div><div class="histo-col"><div class="hbar minus" id="hbar-xm"></div><span class="hcount" id="hcount-xm">0</span></div></div></div>
+      <div class="histo-box"><div class="histo-label y">Y</div><div class="histo-bars"><div class="histo-col"><div class="hbar plus" id="hbar-yp"></div><span class="hcount" id="hcount-yp">0</span></div><div class="histo-col"><div class="hbar minus" id="hbar-ym"></div><span class="hcount" id="hcount-ym">0</span></div></div></div>
+      <div class="histo-box"><div class="histo-label z">Z</div><div class="histo-bars"><div class="histo-col"><div class="hbar plus" id="hbar-zp"></div><span class="hcount" id="hcount-zp">0</span></div><div class="histo-col"><div class="hbar minus" id="hbar-zm"></div><span class="hcount" id="hcount-zm">0</span></div></div></div>
+      <div style="grid-column:1/-1;display:flex;justify-content:center;gap:.75rem;font-size:.6rem;color:var(--text-dim);font-family:var(--font-mono)"><span style="display:inline-flex;align-items:center;gap:2px"><span style="width:8px;height:8px;background:rgba(52,211,153,.55);border-radius:2px"></span>+1</span><span style="display:inline-flex;align-items:center;gap:2px"><span style="width:8px;height:8px;background:rgba(248,113,113,.45);border-radius:2px"></span>&minus;1</span></div>
+    </div>
+    <div class="tomo-result" id="tomo-result">
+      <div>Reconstructed &rho;&#770;: <em style="color:var(--text-dim)">no data yet</em></div>
+    </div>
+    <canvas id="convergence-chart" width="800" height="180"></canvas>
+    <div class="convergence-note">Trace distance vs. shots per basis &mdash; dashed line shows 1/&radic;N scaling</div>
+  </div>
+
+  <div class="highlight-box" style="margin-top:1.25rem">
+    <strong>Why 1/&radic;N?</strong> Each Pauli expectation value is estimated by averaging
+    N independent &plusmn;1 outcomes. By the central limit theorem, the standard error
+    is &sigma;/&radic;N where &sigma; &le; 1. So doubling the accuracy requires
+    <em>four times</em> as many measurements&mdash;a fundamental statistical cost.
+  </div>
+</section>
+
+<!-- SECTION 5: MYSTERY CHALLENGE -->
+<section id="challenge">
+  <h2><span class="num">5</span> <span class="title-text">Mystery State Challenge</span></h2>
+  <p>
+    Think you understand tomography? In this challenge, a <strong>random unknown state</strong>
+    is prepared and the Bloch sphere is hidden. Use only your measurement data to reconstruct
+    the state, then reveal the answer to see how close you got!
+  </p>
+  <div class="mystery-banner" id="mystery-banner">
+    <h3 id="mystery-title">Ready to test your skills?</h3>
+    <p id="mystery-desc">Choose a difficulty and start the challenge. The true state will be hidden&mdash;you must rely on tomography alone.</p>
+    <div class="difficulty-select" id="difficulty-select">
+      <button class="active" onclick="setDifficulty('easy',this)">Easy</button>
+      <button onclick="setDifficulty('medium',this)">Medium</button>
+      <button onclick="setDifficulty('hard',this)">Hard</button>
+    </div>
+    <div class="mystery-controls" id="mystery-controls">
+      <button class="btn-mystery" onclick="startMystery()">Start Challenge</button>
+    </div>
+    <div class="mystery-score" id="mystery-score"></div>
+  </div>
+</section>
+
+<!-- SECTION 6 -->
+<section id="multiqubit">
+  <h2><span class="num">6</span> <span class="title-text">Scaling Up: Multi-Qubit Tomography</span></h2>
+  <p>
+    For an <em>n</em>-qubit system, the density matrix lives in a 2<sup>n</sup>&times;2<sup>n</sup>
+    space. The Pauli operators generalize via <strong>tensor products</strong>:
+  </p>
+  <div class="math">
+    <span class="label">Basis:</span> {&sigma;<sub>j<sub>1</sub></sub> &otimes; &sigma;<sub>j<sub>2</sub></sub> &otimes; &hellip; &otimes; &sigma;<sub>j<sub>n</sub></sub>} &nbsp; where j<sub>k</sub> &isin; {I, X, Y, Z}
+    <br><br>
+    <span class="note">This gives 4<sup>n</sup> basis elements, but the identity component is fixed by Tr(&rho;) = 1,
+    so you need to measure 4<sup>n</sup> &minus; 1 independent expectation values.</span>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--cyan); margin-bottom:.75rem; font-weight:600; text-transform:uppercase; font-size:.82rem; letter-spacing:.04em">The Exponential Cost</h4>
+    <table class="eigenvalue-table">
+      <thead>
+        <tr><th>Qubits</th><th>Parameters</th><th>Measurement Settings</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>3</td><td>3 (X, Y, Z)</td></tr>
+        <tr><td>2</td><td>15</td><td>9 (XX, XY, &hellip; ZZ)</td></tr>
+        <tr><td>3</td><td>63</td><td>27</td></tr>
+        <tr><td>n</td><td>4<sup>n</sup> &minus; 1</td><td>3<sup>n</sup></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:.75rem; color: var(--text-dim); font-size:.88rem">
+      This exponential scaling is why full state tomography is practical only for small
+      systems. For larger systems, techniques like <em>compressed sensing</em>,
+      <em>matrix product state tomography</em>, or <em>shadow tomography</em> dramatically
+      reduce the required measurements.
+    </p>
+    <div class="two-qubit-demo">
+      <h4 style="color:var(--cyan);margin:1rem 0 .5rem;font-weight:600;text-transform:uppercase;font-size:.82rem;letter-spacing:.04em">Interactive: 2-Qubit Pauli Correlations</h4>
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:.5rem">Select a 2-qubit state to see all 15 Pauli expectation values. Notice how entangled states have non-zero correlation terms that product states lack.</p>
+      <div class="twoq-presets" id="twoq-presets">
+        <button class="active" onclick="set2QState('00',this)">|00&rang;</button>
+        <button onclick="set2QState('bell_phi+',this)">&Phi;&#x207A; (Bell)</button>
+        <button onclick="set2QState('bell_psi-',this)">&Psi;&minus; (Bell)</button>
+        <button onclick="set2QState('product_plus',this)">|+&rang;&otimes;|0&rang;</button>
+      </div>
+      <canvas class="pauli-heatmap" id="pauli-heatmap"></canvas>
+      <div class="twoq-note" id="twoq-note">Product state: correlations equal products of single-qubit values.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 7 -->
+<section id="quiz">
+  <h2><span class="num">7</span> <span class="title-text">Self-Check</span></h2>
+  <p>Test your understanding of the key concepts covered above.</p>
+
+  <div class="quiz-question" id="q1">
+    <p class="q">1. How many independent real parameters are needed to fully describe a single-qubit density matrix?</p>
+    <div class="quiz-options">
+      <button onclick="checkQuiz('q1', this, false)">2 &mdash; because a qubit has two basis states</button>
+      <button onclick="checkQuiz('q1', this, true)">3 &mdash; the three Bloch vector components</button>
+      <button onclick="checkQuiz('q1', this, false)">4 &mdash; one for each Pauli matrix including I</button>
+      <button onclick="checkQuiz('q1', this, false)">1 &mdash; just the probability of |0&rang;</button>
+    </div>
+    <div class="quiz-feedback" id="q1-fb"></div>
+  </div>
+  <div class="quiz-question" id="q2">
+    <p class="q">2. Why are the Pauli matrices the natural choice for tomography measurements?</p>
+    <div class="quiz-options">
+      <button onclick="checkQuiz('q2', this, false)">They are the only Hermitian 2&times;2 matrices</button>
+      <button onclick="checkQuiz('q2', this, false)">They commute with each other</button>
+      <button onclick="checkQuiz('q2', this, true)">They form an orthogonal basis for 2&times;2 Hermitian matrices</button>
+      <button onclick="checkQuiz('q2', this, false)">They have eigenvalues 0 and 1</button>
+    </div>
+    <div class="quiz-feedback" id="q2-fb"></div>
+  </div>
+  <div class="quiz-question" id="q3">
+    <p class="q">3. If you double the number of measurement shots per basis, the statistical error approximately:</p>
+    <div class="quiz-options">
+      <button onclick="checkQuiz('q3', this, false)">Halves (error &prop; 1/N)</button>
+      <button onclick="checkQuiz('q3', this, true)">Decreases by &radic;2 (error &prop; 1/&radic;N)</button>
+      <button onclick="checkQuiz('q3', this, false)">Stays the same</button>
+      <button onclick="checkQuiz('q3', this, false)">Quarters (error &prop; 1/N&sup2;)</button>
+    </div>
+    <div class="quiz-feedback" id="q3-fb"></div>
+  </div>
+  <div class="quiz-question" id="q4">
+    <p class="q">4. For a 5-qubit system, how many independent Pauli expectation values must be measured?</p>
+    <div class="quiz-options">
+      <button onclick="checkQuiz('q4', this, false)">15 &mdash; three per qubit times five</button>
+      <button onclick="checkQuiz('q4', this, false)">243 &mdash; that is 3&sup5;</button>
+      <button onclick="checkQuiz('q4', this, true)">1023 &mdash; that is 4&sup5; &minus; 1</button>
+      <button onclick="checkQuiz('q4', this, false)">32 &mdash; that is 2&sup5;</button>
+    </div>
+    <div class="quiz-feedback" id="q4-fb"></div>
+  </div>
+</section>
+
+
+</div>
+
+<script>
+// ====== PARTICLE BACKGROUND ======
+(function() {
+  const cvs = document.getElementById('particleBg');
+  const c = cvs.getContext('2d');
+  let W, H, particles = [];
+  function resize() { W = cvs.width = window.innerWidth; H = cvs.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  for (let i = 0; i < 60; i++) {
+    particles.push({ x: Math.random()*W, y: Math.random()*H, r: Math.random()*1.5+.5, dx: (Math.random()-.5)*.3, dy: (Math.random()-.5)*.3, o: Math.random()*.3+.1 });
+  }
+  function draw() {
+    c.clearRect(0,0,W,H);
+    particles.forEach(p => {
+      p.x += p.dx; p.y += p.dy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      c.beginPath();
+      c.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      c.fillStyle = `rgba(99,102,241,${p.o})`;
+      c.fill();
+    });
+    // draw connections
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i+1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const d = Math.sqrt(dx*dx+dy*dy);
+        if (d < 120) {
+          c.beginPath();
+          c.moveTo(particles[i].x, particles[i].y);
+          c.lineTo(particles[j].x, particles[j].y);
+          c.strokeStyle = `rgba(99,102,241,${.06*(1-d/120)})`;
+          c.lineWidth = .5;
+          c.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ====== STATE ======
+let theta = 0, phi = 0, purity = 1;
+let camRotX = -0.4, camRotY = 0.5;
+let dragging = false, dragX = 0, dragY = 0;
+let tomoShots = 0, tomoSumX = 0, tomoSumY = 0, tomoSumZ = 0;
+let convergenceData = [];
+let mysteryMode = false, mysteryRevealed = false;
+let mysteryDifficulty = 'easy';
+let animSpeed = 'instant'; // 'instant', 'fast', 'slow'
+let animInterval = null;
+let animRemaining = 0;
+let noiseLevel = 0;
+
+const thetaSlider = document.getElementById('theta');
+const phiSlider = document.getElementById('phi');
+const puritySlider = document.getElementById('purity');
+const canvas = document.getElementById('bloch');
+const ctx = canvas.getContext('2d');
+const dpr = window.devicePixelRatio || 1;
+canvas.width = 380 * dpr;
+canvas.height = 380 * dpr;
+ctx.scale(dpr, dpr);
+const CW = 380;
+
+function blochVec() {
+  return [purity*Math.sin(theta)*Math.cos(phi), purity*Math.sin(theta)*Math.sin(phi), purity*Math.cos(theta)];
+}
+
+function updateStateReadout() {
+  const el = document.getElementById('state-readout');
+  if (purity < 0.99) { el.innerHTML = `Mixed state: ||<b>r</b>|| = ${purity.toFixed(2)}`; return; }
+  const c = Math.cos(theta/2), s = Math.sin(theta/2);
+  if (s < 0.001) { el.innerHTML = '|&psi;&rang; = |0&rang;'; return; }
+  if (c < 0.001) { el.innerHTML = '|&psi;&rang; = |1&rang;'; return; }
+  const bR = (s*Math.cos(phi)).toFixed(3), bI = (s*Math.sin(phi)).toFixed(3);
+  let b;
+  if (Math.abs(+bI) < .001) b = bR;
+  else if (Math.abs(+bR) < .001) b = bI+'i';
+  else b = bR + (+bI>=0?'+':'') + bI+'i';
+  el.innerHTML = `|&psi;&rang; = ${c.toFixed(3)}|0&rang; + ${b}|1&rang;`;
+}
+
+function update() {
+  const [rx,ry,rz] = blochVec();
+  document.getElementById('theta-val').textContent = theta.toFixed(2);
+  document.getElementById('phi-val').textContent = phi.toFixed(2);
+  document.getElementById('purity-val').textContent = purity.toFixed(2);
+  setBar('x',rx); setBar('y',ry); setBar('z',rz);
+  document.getElementById('rho-00').textContent = ((1+rz)/2).toFixed(3);
+  document.getElementById('rho-01').textContent = fmtComplex(rx/2, -ry/2);
+  document.getElementById('rho-10').textContent = fmtComplex(rx/2, ry/2);
+  document.getElementById('rho-11').textContent = ((1-rz)/2).toFixed(3);
+  updateStateReadout();
+  updateTrueGhostBars();
+  drawBloch();
+}
+
+function setBar(axis, val) {
+  const bar = document.getElementById('bar-'+axis), d = document.getElementById('val-'+axis);
+  const pct = Math.abs(val)*50;
+  bar.style.marginLeft = val>=0 ? '50%' : (50-pct)+'%';
+  bar.style.width = pct+'%';
+  d.textContent = val.toFixed(2);
+}
+
+function setTomoBar(axis, val) {
+  const bar = document.getElementById('tbar-'+axis), d = document.getElementById('tval-'+axis);
+  const pct = Math.abs(val)*50;
+  bar.style.marginLeft = val>=0 ? '50%' : (50-pct)+'%';
+  bar.style.width = pct+'%';
+  d.textContent = val.toFixed(3);
+}
+
+function updateTrueGhostBars() {
+  const [rx,ry,rz] = blochVec();
+  [['x',rx],['y',ry],['z',rz]].forEach(([a,v]) => {
+    const bar = document.getElementById('tbar-true-'+a);
+    const pct = Math.abs(v)*50;
+    bar.style.marginLeft = v>=0 ? '50%' : (50-pct)+'%';
+    bar.style.width = pct+'%';
+  });
+}
+
+function fmtComplex(re, im) {
+  const r = re.toFixed(3);
+  if (Math.abs(im) < .0005) return r;
+  return r + (im>=0?'+':'-') + Math.abs(im).toFixed(3)+'i';
+}
+
+// ====== BLOCH SPHERE ======
+function project(x,y,z) {
+  let x1=x*Math.cos(camRotY)+z*Math.sin(camRotY), z1=-x*Math.sin(camRotY)+z*Math.cos(camRotY), y1=y;
+  let y2=y1*Math.cos(camRotX)-z1*Math.sin(camRotX), z2=y1*Math.sin(camRotX)+z1*Math.cos(camRotX);
+  return [CW/2+x1*140, CW/2-y2*140, z2];
+}
+
+function drawBloch() {
+  ctx.clearRect(0,0,CW,CW);
+  drawCircle3D(0,0,0,1,'xy','rgba(99,102,241,0.1)');
+  drawCircle3D(0,0,0,1,'xz','rgba(99,102,241,0.06)');
+  drawCircle3D(0,0,0,1,'yz','rgba(99,102,241,0.06)');
+  drawAxisNeg(0,0,0,-1.15,0,0,'#f472b6');
+  drawAxisNeg(0,0,0,0,-1.15,0,'#fb923c');
+  drawAxisNeg(0,0,0,0,0,-1.15,'#22d3ee');
+  drawAxis(0,0,0,1.15,0,0,'#f472b6','X');
+  drawAxis(0,0,0,0,1.15,0,'#fb923c','Y');
+  drawAxis(0,0,0,0,0,1.15,'#22d3ee','Z');
+
+  const [rx,ry,rz] = blochVec();
+  const vl = Math.sqrt(rx*rx+ry*ry+rz*rz);
+  const [ox,oy]=project(0,0,0);
+  const hideTrueState = mysteryMode && !mysteryRevealed;
+
+  // --- draw estimated state vector (orange) if tomography data exists ---
+  if (tomoShots > 0) {
+    const eX=tomoSumX/tomoShots, eY=tomoSumY/tomoShots, eZ=tomoSumZ/tomoShots;
+    const evl=Math.sqrt(eX*eX+eY*eY+eZ*eZ);
+    const [epx,epy]=project(eX,eY,eZ);
+    if (evl>.02) {
+      ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(epx,epy);
+      ctx.strokeStyle='rgba(251,146,60,0.15)'; ctx.lineWidth=5; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(epx,epy);
+      ctx.strokeStyle='#fb923c'; ctx.lineWidth=2; ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(epx,epy,4.5,0,Math.PI*2);
+    ctx.fillStyle='#fb923c'; ctx.shadowColor='#fb923c'; ctx.shadowBlur=8; ctx.fill();
+    ctx.shadowBlur=0; ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=1; ctx.stroke();
+  }
+
+  // --- draw true state vector (green) unless hidden in mystery mode ---
+  if (!hideTrueState) {
+    const [px,py]=project(rx,ry,rz);
+    if (vl>.05) {
+      const [sx,sy]=project(rx,ry,0);
+      ctx.beginPath(); ctx.setLineDash([3,3]);
+      ctx.moveTo(ox,oy); ctx.lineTo(sx,sy); ctx.lineTo(px,py);
+      ctx.strokeStyle='rgba(52,211,153,0.2)'; ctx.lineWidth=1; ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(sx,sy,2.5,0,Math.PI*2); ctx.fillStyle='rgba(52,211,153,0.3)'; ctx.fill();
+    }
+    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(px,py);
+    ctx.strokeStyle='rgba(52,211,153,0.2)'; ctx.lineWidth=6; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(px,py);
+    ctx.strokeStyle='#34d399'; ctx.lineWidth=2.5; ctx.stroke();
+
+    if (vl>.08) {
+      const al=10, aa=.4, dx=px-ox, dy=py-oy, ang=Math.atan2(dy,dx);
+      ctx.beginPath(); ctx.moveTo(px,py);
+      ctx.lineTo(px-al*Math.cos(ang-aa), py-al*Math.sin(ang-aa));
+      ctx.moveTo(px,py);
+      ctx.lineTo(px-al*Math.cos(ang+aa), py-al*Math.sin(ang+aa));
+      ctx.strokeStyle='#34d399'; ctx.lineWidth=2.5; ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(px,py,5,0,Math.PI*2);
+    ctx.fillStyle='#34d399'; ctx.shadowColor='#34d399'; ctx.shadowBlur=10; ctx.fill();
+    ctx.shadowBlur=0; ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+
+    // dashed line between true and estimated
+    if (tomoShots > 0) {
+      const eX2=tomoSumX/tomoShots, eY2=tomoSumY/tomoShots, eZ2=tomoSumZ/tomoShots;
+      const [epx2,epy2]=project(eX2,eY2,eZ2);
+      ctx.beginPath(); ctx.setLineDash([3,4]);
+      ctx.moveTo(px,py); ctx.lineTo(epx2,epy2);
+      ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1; ctx.stroke(); ctx.setLineDash([]);
+    }
+  } else {
+    // mystery mode: draw a question mark at center
+    ctx.fillStyle='rgba(251,146,60,0.3)';
+    ctx.font='bold 28px Inter,sans-serif'; ctx.textAlign='center';
+    ctx.fillText('?',ox,oy+10); ctx.textAlign='start';
+  }
+
+  ctx.beginPath(); ctx.arc(ox,oy,3,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.fill();
+
+  drawLabel(0,0,1.3,'|0\u27E9','#22d3ee',-14,-14);
+  drawLabel(0,0,-1.3,'|1\u27E9','#22d3ee',-14,16);
+  drawLabel(1.3,0,0,'|+\u27E9','#f472b6',8,14);
+  drawLabel(-1.3,0,0,'|\u2013\u27E9','#f472b6',-22,-10);
+  drawLabel(0,1.3,0,'|+i\u27E9','#fb923c',8,-4);
+  drawLabel(0,-1.3,0,'|\u2013i\u27E9','#fb923c',8,-4);
+
+  // update legend visibility
+  const legEl = document.getElementById('bloch-legend');
+  if (legEl) legEl.querySelector('.leg-est').style.opacity = tomoShots > 0 ? '1' : '.35';
+}
+
+function drawCircle3D(cx,cy,cz,r,plane,color) {
+  ctx.beginPath();
+  for(let i=0;i<=80;i++){const a=i/80*Math.PI*2;let x,y,z;
+    if(plane==='xy'){x=cx+r*Math.cos(a);y=cy+r*Math.sin(a);z=cz;}
+    else if(plane==='xz'){x=cx+r*Math.cos(a);y=cy;z=cz+r*Math.sin(a);}
+    else{x=cx;y=cy+r*Math.cos(a);z=cz+r*Math.sin(a);}
+    const[px,py]=project(x,y,z);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+  ctx.strokeStyle=color;ctx.lineWidth=1;ctx.stroke();
+}
+
+function drawAxis(x0,y0,z0,x1,y1,z1,color,label) {
+  const[p0x,p0y]=project(x0,y0,z0),[p1x,p1y]=project(x1,y1,z1);
+  ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);
+  ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.globalAlpha=.5;ctx.stroke();ctx.globalAlpha=1;
+  ctx.fillStyle=color;ctx.font='bold 14px Inter,sans-serif';ctx.fillText(label,p1x+6,p1y-6);
+}
+
+function drawAxisNeg(x0,y0,z0,x1,y1,z1,color) {
+  const[p0x,p0y]=project(x0,y0,z0),[p1x,p1y]=project(x1,y1,z1);
+  ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);
+  ctx.strokeStyle=color;ctx.lineWidth=1;ctx.globalAlpha=.2;ctx.stroke();ctx.globalAlpha=1;
+}
+
+function drawLabel(x,y,z,label,color,offX,offY) {
+  const[px,py]=project(x,y,z);ctx.fillStyle=color;ctx.globalAlpha=.75;
+  ctx.font='11px "JetBrains Mono",monospace';ctx.fillText(label,px+(offX||2),py+(offY||4));ctx.globalAlpha=1;
+}
+
+// ====== INTERACTION ======
+let activePresetBtn = null;
+function setPreset(t,p,btn) {
+  theta=t;phi=p;purity=1;
+  thetaSlider.value=theta;phiSlider.value=phi;puritySlider.value=purity;
+  if(activePresetBtn) activePresetBtn.classList.remove('active');
+  if(btn){btn.classList.add('active');activePresetBtn=btn;}
+  resetTomo(); update();
+}
+function clearPresetHighlight(){if(activePresetBtn){activePresetBtn.classList.remove('active');activePresetBtn=null;}}
+
+function setRandomState(btn) {
+  theta = Math.acos(1 - 2*Math.random());
+  phi = Math.random()*2*Math.PI - Math.PI;
+  purity = 1;
+  thetaSlider.value=theta; phiSlider.value=phi; puritySlider.value=purity;
+  if(activePresetBtn) activePresetBtn.classList.remove('active');
+  if(btn){btn.classList.add('active');activePresetBtn=btn;}
+  resetTomo(); update();
+}
+
+thetaSlider.addEventListener('input',()=>{theta=+thetaSlider.value;clearPresetHighlight();update();});
+phiSlider.addEventListener('input',()=>{phi=+phiSlider.value;clearPresetHighlight();update();});
+puritySlider.addEventListener('input',()=>{purity=+puritySlider.value;clearPresetHighlight();update();});
+
+canvas.addEventListener('mousedown',e=>{dragging=true;dragX=e.clientX;dragY=e.clientY;});
+canvas.addEventListener('mousemove',e=>{if(!dragging)return;camRotY+=(e.clientX-dragX)*.01;camRotX+=(e.clientY-dragY)*.01;camRotX=Math.max(-Math.PI/2,Math.min(Math.PI/2,camRotX));dragX=e.clientX;dragY=e.clientY;drawBloch();});
+canvas.addEventListener('mouseup',()=>dragging=false);
+canvas.addEventListener('mouseleave',()=>dragging=false);
+canvas.addEventListener('touchstart',e=>{e.preventDefault();dragging=true;dragX=e.touches[0].clientX;dragY=e.touches[0].clientY;},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!dragging)return;camRotY+=(e.touches[0].clientX-dragX)*.01;camRotX+=(e.touches[0].clientY-dragY)*.01;camRotX=Math.max(-Math.PI/2,Math.min(Math.PI/2,camRotX));dragX=e.touches[0].clientX;dragY=e.touches[0].clientY;drawBloch();},{passive:false});
+canvas.addEventListener('touchend',()=>dragging=false);
+
+// ====== TOMOGRAPHY ======
+function simulateMeasurement(exp){
+  const eff = exp * (1 - noiseLevel);
+  return Math.random()<(1+eff)/2?1:-1;
+}
+
+function setSpeed(speed, btn) {
+  animSpeed = speed;
+  document.querySelectorAll('.speed-controls button:not(.btn-stop)').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+}
+
+function setNoise(val) {
+  noiseLevel = val;
+  document.getElementById('noise-val').textContent = Math.round(val*100)+'%';
+}
+
+function setTomoButtonsEnabled(enabled) {
+  document.querySelectorAll('#tomo-btns button:not(.secondary)').forEach(b=>b.disabled=!enabled);
+  document.getElementById('btn-stop').classList.toggle('show', !enabled);
+}
+
+function stopAnimation() {
+  if(animInterval){clearInterval(animInterval);animInterval=null;}
+  animRemaining=0;
+  setTomoButtonsEnabled(true);
+}
+
+function addStreamChip(axis, outcome) {
+  const stream = document.getElementById('meas-stream');
+  const chip = document.createElement('span');
+  const sign = outcome > 0 ? '+1' : '\u22121';
+  chip.className = 'outcome-chip ' + axis + (outcome>0?'-plus':'-minus');
+  chip.textContent = axis.toUpperCase()+':'+sign;
+  stream.appendChild(chip);
+  // keep max 120 chips
+  while(stream.children.length > 120) stream.removeChild(stream.firstChild);
+  stream.scrollTop = stream.scrollHeight;
+}
+
+function updateHistograms() {
+  if(tomoShots===0){document.getElementById('histo-container').style.display='none';return;}
+  document.getElementById('histo-container').style.display='';
+  const maxH=36;
+  ['x','y','z'].forEach(a=>{
+    const sum=a==='x'?tomoSumX:a==='y'?tomoSumY:tomoSumZ;
+    const cp=Math.round((tomoShots+sum)/2),cm=Math.round((tomoShots-sum)/2);
+    const mx=Math.max(cp,cm,1);
+    document.getElementById('hbar-'+a+'p').style.height=(cp/mx*maxH)+'px';
+    document.getElementById('hbar-'+a+'m').style.height=(cm/mx*maxH)+'px';
+    document.getElementById('hcount-'+a+'p').textContent=cp;
+    document.getElementById('hcount-'+a+'m').textContent=cm;
+  });
+}
+
+function updateTomoDisplay() {
+  const [rx,ry,rz]=blochVec();
+  const eX=tomoSumX/tomoShots,eY=tomoSumY/tomoShots,eZ=tomoSumZ/tomoShots;
+  document.getElementById('shot-count').textContent=tomoShots;
+  document.getElementById('total-shots').textContent=tomoShots*3;
+  setTomoBar('x',eX);setTomoBar('y',eY);setTomoBar('z',eZ);
+  updateHistograms();
+
+  const r00=((1+eZ)/2).toFixed(3),r11=((1-eZ)/2).toFixed(3);
+  const r01=fmtComplex(eX/2,-eY/2),r10=fmtComplex(eX/2,eY/2);
+  const t00=((1+rz)/2).toFixed(3),t11=((1-rz)/2).toFixed(3);
+  const t01=fmtComplex(rx/2,-ry/2),t10=fmtComplex(rx/2,ry/2);
+  const d00=Math.abs((1+rz)/2-(1+eZ)/2),d11=Math.abs((1-rz)/2-(1-eZ)/2);
+  const d01r=Math.sqrt(Math.pow(rx/2-eX/2,2)+Math.pow(ry/2-eY/2,2));
+  const dc=d=>d<0.03?'diff-low':d>0.12?'diff-high':'';
+  const hideTM=mysteryMode&&!mysteryRevealed;
+  const matrixHTML=hideTM
+    ?`<div class="density-compare" style="grid-template-columns:1fr"><div class="dm-col"><div class="dm-label est-label">Estimated &rho;&#770;</div><div class="dm-grid"><div class="dm-cell">${r00}</div><div class="dm-cell">${r01}</div><div class="dm-cell">${r10}</div><div class="dm-cell">${r11}</div></div></div></div>`
+    :`<div class="density-compare"><div class="dm-col"><div class="dm-label true-label">True &rho;</div><div class="dm-grid"><div class="dm-cell">${t00}</div><div class="dm-cell">${t01}</div><div class="dm-cell">${t10}</div><div class="dm-cell">${t11}</div></div></div><div class="dm-col"><div class="dm-label est-label">Estimated &rho;&#770;</div><div class="dm-grid"><div class="dm-cell ${dc(d00)}">${r00}</div><div class="dm-cell ${dc(d01r)}">${r01}</div><div class="dm-cell ${dc(d01r)}">${r10}</div><div class="dm-cell ${dc(d11)}">${r11}</div></div></div></div>`;
+  const dot=rx*eX+ry*eY+rz*eZ;
+  const rN=Math.sqrt(rx*rx+ry*ry+rz*rz),eN=Math.sqrt(eX*eX+eY*eY+eZ*eZ);
+  const dx=rx-eX,dy=ry-eY,dz=rz-eZ;
+  const trD=Math.sqrt(dx*dx+dy*dy+dz*dz)/2;
+  const fid=.5*(1+dot+Math.sqrt(Math.max(0,(1-rN*rN)*(1-eN*eN))));
+  const fp=Math.min(100,Math.max(0,fid*100));
+
+  document.getElementById('tomo-result').innerHTML=`
+    <div style="margin-bottom:.5rem">Reconstructed &rho;&#770; = &frac12;(I + <span style="color:var(--pink)">${eX.toFixed(3)}</span>X + <span style="color:var(--orange)">${eY.toFixed(3)}</span>Y + <span style="color:var(--cyan)">${eZ.toFixed(3)}</span>Z)</div>
+    ${matrixHTML}
+    <div>Fidelity: <span class="${fp>95?'good':fp>80?'':'err'}">${fp.toFixed(1)}%</span></div>
+    <div class="fidelity-bar-bg"><div class="fidelity-bar" style="width:${fp}%"></div></div>
+    <div style="margin-top:.4rem;color:var(--text-dim);font-size:.8rem">Trace distance: ${trD.toFixed(4)}</div>`;
+  drawBloch();
+  return {trD,fp};
+}
+
+function runShots(n) {
+  const [rx,ry,rz]=blochVec();
+
+  if (animSpeed === 'instant') {
+    for(let i=0;i<n;i++){tomoSumX+=simulateMeasurement(rx);tomoSumY+=simulateMeasurement(ry);tomoSumZ+=simulateMeasurement(rz);}
+    tomoShots+=n;
+    const r=updateTomoDisplay();
+    convergenceData.push({shots:tomoShots,traceD:r.trD});
+    drawConvergenceChart();
+    return;
+  }
+
+  // animated mode
+  stopAnimation();
+  animRemaining = n;
+  setTomoButtonsEnabled(false);
+  const delay = animSpeed === 'slow' ? 150 : 25;
+
+  animInterval = setInterval(()=>{
+    if(animRemaining <= 0){stopAnimation();return;}
+    const batch = animSpeed==='slow' ? 1 : Math.min(3, animRemaining);
+    for(let i=0;i<batch;i++){
+      const ox=simulateMeasurement(rx), oy=simulateMeasurement(ry), oz=simulateMeasurement(rz);
+      tomoSumX+=ox; tomoSumY+=oy; tomoSumZ+=oz;
+      tomoShots++;
+      animRemaining--;
+      addStreamChip('x',ox); addStreamChip('y',oy); addStreamChip('z',oz);
+    }
+    const r=updateTomoDisplay();
+    if(animRemaining<=0 || tomoShots%10===0){
+      convergenceData.push({shots:tomoShots,traceD:r.trD});
+      drawConvergenceChart();
+    }
+    if(animRemaining<=0) stopAnimation();
+  }, delay);
+}
+
+function resetTomo() {
+  stopAnimation();
+  tomoShots=0;tomoSumX=0;tomoSumY=0;tomoSumZ=0;convergenceData=[];
+  document.getElementById('shot-count').textContent='0';
+  document.getElementById('total-shots').textContent='0';
+  ['x','y','z'].forEach(a=>{document.getElementById('tbar-'+a).style.width='0%';document.getElementById('tbar-'+a).style.marginLeft='50%';document.getElementById('tval-'+a).innerHTML='&mdash;';});
+  document.getElementById('tomo-result').innerHTML='<div>Reconstructed &rho;&#770;: <em style="color:var(--text-dim)">no data yet</em></div>';
+  document.getElementById('meas-stream').innerHTML='';
+  document.getElementById('histo-container').style.display='none';
+  drawConvergenceChart();
+  drawBloch();
+}
+
+// ====== MYSTERY MODE ======
+function setDifficulty(diff, btn) {
+  mysteryDifficulty = diff;
+  document.querySelectorAll('.difficulty-select button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+}
+
+function generateMysteryState() {
+  if (mysteryDifficulty === 'easy') {
+    // axis-aligned states: |0>, |1>, |+>, |->, |+i>, |-i>
+    const states = [[0,0],[Math.PI,0],[Math.PI/2,0],[Math.PI/2,Math.PI],[Math.PI/2,Math.PI/2],[Math.PI/2,-Math.PI/2]];
+    const pick = states[Math.floor(Math.random()*states.length)];
+    return { t: pick[0], p: pick[1], pur: 1 };
+  } else if (mysteryDifficulty === 'medium') {
+    // quantized angles on sphere (multiples of pi/4)
+    const thetaOpts = [Math.PI/4, Math.PI/3, Math.PI/2, 2*Math.PI/3, 3*Math.PI/4];
+    const phiOpts = [0, Math.PI/4, Math.PI/2, 3*Math.PI/4, Math.PI, -Math.PI/4, -Math.PI/2, -3*Math.PI/4];
+    return { t: thetaOpts[Math.floor(Math.random()*thetaOpts.length)], p: phiOpts[Math.floor(Math.random()*phiOpts.length)], pur: 1 };
+  } else {
+    // hard: fully random pure state (uniform on sphere)
+    return { t: Math.acos(1-2*Math.random()), p: Math.random()*2*Math.PI-Math.PI, pur: 1 };
+  }
+}
+
+function startMystery() {
+  const state = generateMysteryState();
+  theta = state.t; phi = state.p; purity = state.pur;
+  thetaSlider.value = theta; phiSlider.value = phi; puritySlider.value = purity;
+  mysteryMode = true;
+  mysteryRevealed = false;
+  clearPresetHighlight();
+  resetTomo();
+  document.querySelector('.interactive-area').classList.add('mystery-active');
+  update();
+
+  // update mystery UI
+  document.getElementById('mystery-title').textContent = 'Challenge Active!';
+  document.getElementById('mystery-desc').textContent = 'The true state is hidden. Use the tomography controls above to take measurements and reconstruct the state.';
+  document.getElementById('difficulty-select').style.display = 'none';
+  const mc = document.getElementById('mystery-controls');
+  mc.innerHTML = '<button class="btn-reveal" id="btn-reveal" onclick="revealMystery()">Reveal State</button> <button class="btn-end-mystery" onclick="endMystery()">End Challenge</button>';
+  document.getElementById('mystery-score').className = 'mystery-score';
+  document.getElementById('mystery-score').textContent = '';
+
+  // scroll to tomography
+  document.getElementById('tomography').scrollIntoView({behavior:'smooth'});
+}
+
+function revealMystery() {
+  mysteryRevealed = true;
+  document.querySelector('.interactive-area').classList.remove('mystery-active');
+  update();
+
+  // compute score
+  if(tomoShots > 0) {
+    const [rx,ry,rz]=blochVec();
+    const eX=tomoSumX/tomoShots,eY=tomoSumY/tomoShots,eZ=tomoSumZ/tomoShots;
+    const dot=rx*eX+ry*eY+rz*eZ;
+    const rN=Math.sqrt(rx*rx+ry*ry+rz*rz),eN=Math.sqrt(eX*eX+eY*eY+eZ*eZ);
+    const fid=.5*(1+dot+Math.sqrt(Math.max(0,(1-rN*rN)*(1-eN*eN))));
+    const fp=Math.min(100,Math.max(0,fid*100));
+    const stars = fp>=99?'\u2B50\u2B50\u2B50':fp>=95?'\u2B50\u2B50':fp>=85?'\u2B50':'';
+    const scoreEl = document.getElementById('mystery-score');
+    scoreEl.className='mystery-score show';
+    scoreEl.innerHTML=`Fidelity: <strong>${fp.toFixed(1)}%</strong> with ${tomoShots} shots/basis ${stars ? ' '+stars : ''}<br><span style="color:var(--text-dim);font-size:.8rem">${fp>=99?'Perfect reconstruction!':fp>=95?'Excellent!':fp>=85?'Good result!':'Keep practicing \u2014 try more shots!'}</span>`;
+  } else {
+    const scoreEl = document.getElementById('mystery-score');
+    scoreEl.className='mystery-score show';
+    scoreEl.textContent='No measurements taken! Take some shots before revealing.';
+  }
+  document.getElementById('mystery-title').textContent = 'State Revealed!';
+  document.getElementById('mystery-desc').textContent = 'The true state (green) is now visible alongside your estimate (orange) on the Bloch sphere.';
+}
+
+function endMystery() {
+  stopAnimation();
+  mysteryMode = false;
+  mysteryRevealed = false;
+  document.querySelector('.interactive-area').classList.remove('mystery-active');
+
+  // restore mystery UI
+  document.getElementById('mystery-title').textContent = 'Ready to test your skills?';
+  document.getElementById('mystery-desc').textContent = 'Choose a difficulty and start the challenge. The true state will be hidden\u2014you must rely on tomography alone.';
+  document.getElementById('difficulty-select').style.display = '';
+  document.getElementById('mystery-controls').innerHTML = '<button class="btn-mystery" onclick="startMystery()">Start Challenge</button>';
+  document.getElementById('mystery-score').className = 'mystery-score';
+
+  resetTomo();
+  setPreset(0,0,document.querySelector('[data-preset="0"]'));
+}
+
+// ====== CONVERGENCE CHART ======
+function drawConvergenceChart() {
+  const cvs=document.getElementById('convergence-chart'),c=cvs.getContext('2d');
+  const d=window.devicePixelRatio||1,cw=cvs.clientWidth,ch=cvs.clientHeight;
+  cvs.width=cw*d;cvs.height=ch*d;c.scale(d,d);
+  const pad={top:20,right:20,bottom:28,left:50},pW=cw-pad.left-pad.right,pH=ch-pad.top-pad.bottom;
+  c.fillStyle='#111827';c.fillRect(0,0,cw,ch);
+  // rounded border
+  c.strokeStyle='rgba(42,53,80,.5)';c.lineWidth=1;
+  c.beginPath();c.roundRect(0,0,cw,ch,10);c.stroke();
+
+  if(!convergenceData.length){c.fillStyle='#8892a8';c.font='12px Inter,sans-serif';c.textAlign='center';c.fillText('Run measurements to see convergence plot',cw/2,ch/2);c.textAlign='start';return;}
+  const maxS=Math.max(...convergenceData.map(d=>d.shots));
+  const maxTD=Math.max(.5,Math.max(...convergenceData.map(d=>d.traceD))*1.2);
+  const toX=s=>pad.left+(s/maxS)*pW, toY=td=>pad.top+(1-td/maxTD)*pH;
+
+  c.strokeStyle='rgba(255,255,255,.04)';c.lineWidth=1;
+  for(let i=0;i<=4;i++){const y=pad.top+(i/4)*pH;c.beginPath();c.moveTo(pad.left,y);c.lineTo(cw-pad.right,y);c.stroke();}
+
+  if(convergenceData.length>=2){
+    const C=convergenceData[0].traceD*Math.sqrt(convergenceData[0].shots);
+    c.beginPath();c.setLineDash([4,4]);
+    for(let i=0;i<=100;i++){const s=(i/100)*maxS;if(s<1)continue;const td=C/Math.sqrt(s);const x=toX(s),y=toY(Math.min(td,maxTD));if(i===0||s<1)c.moveTo(x,y);else c.lineTo(x,y);}
+    c.strokeStyle='rgba(99,102,241,0.35)';c.lineWidth=1.5;c.stroke();c.setLineDash([]);
+  }
+
+  c.beginPath();convergenceData.forEach((d,i)=>{const x=toX(d.shots),y=toY(d.traceD);i===0?c.moveTo(x,y):c.lineTo(x,y);});
+  c.strokeStyle='#34d399';c.lineWidth=2;c.stroke();
+  convergenceData.forEach(d=>{const x=toX(d.shots),y=toY(d.traceD);c.beginPath();c.arc(x,y,3.5,0,Math.PI*2);c.fillStyle='#34d399';c.fill();c.strokeStyle='#111827';c.lineWidth=1;c.stroke();});
+
+  c.strokeStyle='rgba(255,255,255,.15)';c.lineWidth=1;c.beginPath();c.moveTo(pad.left,pad.top);c.lineTo(pad.left,pad.top+pH);c.lineTo(pad.left+pW,pad.top+pH);c.stroke();
+
+  c.fillStyle='#8892a8';c.font='10px Inter,sans-serif';c.textAlign='right';
+  for(let i=0;i<=4;i++){c.fillText((maxTD*(4-i)/4).toFixed(2),pad.left-6,pad.top+(i/4)*pH+3);}
+  c.textAlign='center';c.fillText('0',pad.left,pad.top+pH+16);c.fillText(maxS+'',pad.left+pW,pad.top+pH+16);c.fillText('shots/basis',pad.left+pW/2,pad.top+pH+16);
+  c.save();c.translate(12,pad.top+pH/2);c.rotate(-Math.PI/2);c.textAlign='center';c.fillText('Trace dist.',0,0);c.restore();c.textAlign='start';
+
+  c.fillStyle='#34d399';c.fillRect(cw-pad.right-120,pad.top+2,12,3);c.fillStyle='#8892a8';c.font='10px Inter,sans-serif';c.fillText('measured',cw-pad.right-104,pad.top+8);
+  c.setLineDash([4,4]);c.beginPath();c.moveTo(cw-pad.right-120,pad.top+18);c.lineTo(cw-pad.right-108,pad.top+18);c.strokeStyle='rgba(99,102,241,0.45)';c.lineWidth=1.5;c.stroke();c.setLineDash([]);
+  c.fillText('1/\u221AN fit',cw-pad.right-104,pad.top+22);
+}
+
+// ====== 2-QUBIT PAULI GRID ======
+const twoQStates = {
+  '00': {
+    grid: [[1,0,0,1],[0,0,0,0],[0,0,0,0],[1,0,0,1]],
+    note: 'Product state |0\u27E9\u2297|0\u27E9: correlations equal products of single-qubit values.'
+  },
+  'bell_phi+': {
+    grid: [[1,0,0,0],[0,1,0,0],[0,0,-1,0],[0,0,0,1]],
+    note: 'Bell state \u03A6\u207A: maximally entangled. XX=+1, YY=\u22121, ZZ=+1 reveal quantum correlations.'
+  },
+  'bell_psi-': {
+    grid: [[1,0,0,0],[0,-1,0,0],[0,0,-1,0],[0,0,0,-1]],
+    note: 'Singlet \u03A8\u207B: perfectly anti-correlated in all bases (XX=YY=ZZ=\u22121).'
+  },
+  'product_plus': {
+    grid: [[1,0,0,1],[1,0,0,1],[0,0,0,0],[0,0,0,0]],
+    note: 'Product state |+\u27E9\u2297|0\u27E9: XZ=1 from \u27E8X\u27E9\u2081\u00B7\u27E8Z\u27E9\u2082. No genuine quantum correlations.'
+  }
+};
+let current2QState = '00';
+
+function set2QState(key, btn) {
+  current2QState = key;
+  document.querySelectorAll('#twoq-presets button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  draw2QGrid();
+}
+
+function draw2QGrid() {
+  const cvs = document.getElementById('pauli-heatmap');
+  if(!cvs) return;
+  const c = cvs.getContext('2d');
+  const dpr = window.devicePixelRatio||1;
+  const cw = cvs.clientWidth, ch = cvs.clientHeight;
+  if(cw===0||ch===0) return;
+  cvs.width = cw*dpr; cvs.height = ch*dpr;
+  c.scale(dpr, dpr);
+
+  const state = twoQStates[current2QState];
+  const grid = state.grid;
+  const labels = ['I','X','Y','Z'];
+  const pad = {left:36,top:36,right:12,bottom:12};
+  const gridW = cw-pad.left-pad.right, gridH = ch-pad.top-pad.bottom;
+  const cellW = gridW/4, cellH = gridH/4;
+
+  c.fillStyle = '#111827';
+  c.fillRect(0,0,cw,ch);
+
+  for(let r=0;r<4;r++){
+    for(let col=0;col<4;col++){
+      const val = grid[r][col];
+      const x = pad.left+col*cellW, y = pad.top+r*cellH;
+      let fill;
+      if(r===0&&col===0) fill='rgba(99,102,241,0.12)';
+      else if(Math.abs(val)<0.001) fill='rgba(255,255,255,0.02)';
+      else if(val>0) fill='rgba(34,211,238,'+(0.08+Math.abs(val)*0.22)+')';
+      else fill='rgba(244,114,182,'+(0.08+Math.abs(val)*0.22)+')';
+      c.fillStyle=fill;
+      c.fillRect(x+1,y+1,cellW-2,cellH-2);
+
+      if(r===0&&col===0) c.fillStyle='rgba(255,255,255,0.3)';
+      else if(Math.abs(val)<0.001) c.fillStyle='rgba(255,255,255,0.15)';
+      else if(val>0) c.fillStyle='#22d3ee';
+      else c.fillStyle='#f472b6';
+      c.font='12px "JetBrains Mono",monospace';
+      c.textAlign='center'; c.textBaseline='middle';
+      let text;
+      if(r===0&&col===0) text='1';
+      else if(Math.abs(val)<0.001) text='0';
+      else if(val===1) text='+1';
+      else if(val===-1) text='\u22121';
+      else text=val.toFixed(2);
+      c.fillText(text, x+cellW/2, y+cellH/2);
+    }
+  }
+
+  c.strokeStyle='rgba(42,53,80,0.5)'; c.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    c.beginPath(); c.moveTo(pad.left,pad.top+i*cellH); c.lineTo(pad.left+gridW,pad.top+i*cellH); c.stroke();
+    c.beginPath(); c.moveTo(pad.left+i*cellW,pad.top); c.lineTo(pad.left+i*cellW,pad.top+gridH); c.stroke();
+  }
+
+  const rc=['rgba(255,255,255,.3)','#f472b6','#fb923c','#22d3ee'];
+  c.font='13px "JetBrains Mono",monospace';
+  c.textAlign='center'; c.textBaseline='middle';
+  for(let r=0;r<4;r++) { c.fillStyle=rc[r]; c.fillText(labels[r],pad.left/2,pad.top+r*cellH+cellH/2); }
+  for(let col=0;col<4;col++) { c.fillStyle=rc[col]; c.fillText(labels[col],pad.left+col*cellW+cellW/2,pad.top/2); }
+
+  c.font='10px Inter,sans-serif'; c.fillStyle='rgba(255,255,255,0.3)';
+  c.save(); c.translate(10,pad.top+gridH/2); c.rotate(-Math.PI/2);
+  c.textAlign='center'; c.fillText('Qubit 1',0,0); c.restore();
+  c.textAlign='center'; c.fillText('Qubit 2',pad.left+gridW/2,12);
+  c.textAlign='start';
+
+  document.getElementById('twoq-note').textContent = state.note;
+}
+
+// ====== QUIZ ======
+const quizFB={
+  q1:{correct:'Correct! \u03C1 = \u00BD(I + r\u2093X + r\u1D67Y + r\u1D68Z) is fully determined by three Bloch vector components. The identity coefficient is fixed by Tr(\u03C1) = 1.',wrong:'Not quite. \u03C1 = \u00BD(I + r\u2093X + r\u1D67Y + r\u1D68Z) has three free parameters (the Bloch vector components). The identity coefficient is fixed by normalization.'},
+  q2:{correct:'Correct! Tr(\u03C3\u2C7C\u03C3\u2096) = 2\u03B4\u2C7C\u2096 makes them an orthogonal basis for 2\u00D72 Hermitian matrices, so each expectation value independently determines one density matrix component.',wrong:'Not quite. The key property is orthogonality: Tr(\u03C3\u2C7C\u03C3\u2096) = 2\u03B4\u2C7C\u2096. This makes each Pauli expectation value independently determine one component of the density matrix.'},
+  q3:{correct:'Correct! By the central limit theorem, error scales as 1/\u221AN. Doubling N reduces error by \u221A2 \u2248 1.41. To halve the error, you need 4\u00D7 the shots!',wrong:'Not quite. Statistical error scales as 1/\u221AN, not 1/N. Doubling the shots improves accuracy by only \u221A2 \u2248 1.41.'},
+  q4:{correct:'Correct! For n qubits: 4\u207F \u2212 1 parameters. For n=5: 4\u2075 \u2212 1 = 1023. Multi-qubit correlations (XX, XYZ, etc.) must all be measured.',wrong:'Not quite. For n qubits you need 4\u207F \u2212 1 parameters, not simply 3\u00D7n. For n=5: 4\u2075 \u2212 1 = 1023.'}
+};
+
+document.querySelectorAll('.quiz-options button').forEach(btn=>{
+  if(btn.getAttribute('onclick')&&btn.getAttribute('onclick').includes('true')) btn.dataset.correct='true';
+});
+
+function checkQuiz(qid,btn,ok){
+  const ct=document.getElementById(qid),btns=ct.querySelectorAll('.quiz-options button'),fb=document.getElementById(qid+'-fb');
+  btns.forEach(b=>{b.disabled=true;b.classList.remove('correct','wrong');});
+  if(ok){btn.classList.add('correct');fb.className='quiz-feedback show correct-fb';fb.textContent=quizFB[qid].correct;}
+  else{btn.classList.add('wrong');btns.forEach(b=>{if(b.dataset.correct)b.classList.add('correct');});fb.className='quiz-feedback show wrong-fb';fb.textContent=quizFB[qid].wrong;}
+}
+
+// ====== NAV ======
+const navLinks=document.querySelectorAll('.section-nav a'), sections=document.querySelectorAll('section[id]');
+function updateActiveNav(){let cur='';sections.forEach(s=>{if(window.scrollY>=s.offsetTop-100)cur=s.id;});navLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+cur));}
+window.addEventListener('scroll',updateActiveNav,{passive:true});
+navLinks.forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'});}));
+
+// ====== INIT ======
+setPreset(0,0,document.querySelector('[data-preset="0"]'));
+drawConvergenceChart();
+draw2QGrid();
+updateActiveNav();
+</script>
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
+  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+</footer>
+
+<!-- Particle Background -->
+<script>
+(function initParticles() {
+  const canvas = document.getElementById('particleBg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+  let paused = false;
+  const PARTICLE_COUNT = 45;
+  const CONNECT_DIST = 120;
+  const colors = [
+    'rgba(99, 102, 241, 0.4)',
+    'rgba(34, 211, 238, 0.35)',
+    'rgba(244, 114, 182, 0.3)',
+  ];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) draw();
+  });
+
+  resize();
+  createParticles();
+  draw();
+})();
+</script>
+</body>
+</html>
