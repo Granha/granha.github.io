@@ -196,7 +196,8 @@
     border-color: var(--accent); color: var(--text); font-weight: 600;
     box-shadow: 0 0 12px var(--accent-glow);
   }
-  .param-btn.invalid { opacity: 0.3; text-decoration: line-through; cursor: not-allowed; }
+  .param-btn.invalid { opacity: 0.5; cursor: pointer; }
+  .param-btn.invalid:hover { border-color: var(--red); box-shadow: 0 2px 12px rgba(248,113,113,0.15); }
   .param-btn .gcd-tag {
     display: block; font-size: 0.7em; margin-top: 2px;
     font-family: 'Inter', sans-serif; font-style: normal;
@@ -1025,6 +1026,7 @@ function renderNav() {
   document.getElementById('kbd-hints').innerHTML = `
     <span class="kbd-hint-group"><kbd class="kbd">\u2190</kbd><kbd class="kbd">\u2192</kbd> steps</span>
     ${hasSubSteps ? '<span class="kbd-hint-group"><kbd class="kbd">\u2191</kbd><kbd class="kbd">\u2193</kbd> sub-steps</span>' : ''}
+    ${S.step === 5 ? '<span class="kbd-hint-group"><kbd class="kbd">r</kbd> re-measure</span>' : ''}
     <span class="kbd-hint-group"><kbd class="kbd">?</kbd> help</span>
   `;
 }
@@ -1116,7 +1118,6 @@ function renderOverview() {
 // ==================== STEP 1: SETUP ====================
 function renderSetup() {
   const v = viz();
-  const coprimes = getCoprimes(S.N);
   const aValues = [];
   for (let i = 2; i < S.N; i++) aValues.push(i);
 
@@ -1142,7 +1143,7 @@ function renderSetup() {
           const g = gcd(a, S.N);
           const coprime = g === 1;
           const cls = a === S.a ? 'selected' : (!coprime ? 'invalid' : '');
-          return `<button class="param-btn ${cls}" ${coprime ? `data-action="select-a" data-value="${a}"` : 'disabled'}>
+          return `<button class="param-btn ${cls}" data-action="select-a" data-value="${a}">
             ${a}
             <span class="gcd-tag" style="color:${coprime ? 'var(--green)' : 'var(--red)'}">
               gcd=${g}${!coprime ? ' \u2717' : ''}
@@ -1308,10 +1309,16 @@ function renderPeriod() {
     &mdash; the values cycle back to 1 every ${r} steps.</p>
     <p>Click the cells above to highlight matching values and see the pattern. The colored cells repeat
     in groups of ${r}. This periodic structure is exactly what the quantum computer will detect!</p>
-    ${rEven ? `<p><strong>Looking ahead:</strong> Since <span class="math">r = ${r}</span> is even, we'll be able to use the
+    ${rEven ? (() => {
+      const p = gcd(aR2 - 1, S.N), q = gcd(aR2 + 1, S.N);
+      const willWork = p > 1 && q > 1 && p !== S.N && q !== S.N;
+      return `<p><strong>Looking ahead:</strong> Since <span class="math">r = ${r}</span> is even, we can use the
     difference-of-squares trick:
-    <span class="math-block math-block-sm">(${S.a}<sup>${r2}</sup> &minus; 1)(${S.a}<sup>${r2}</sup> + 1) &equiv; 0 (mod ${S.N})</span>
-    Computing GCDs with each factor will reveal the prime factors of <span class="math">${S.N}</span>.</p>` :
+    <span class="math-block math-block-sm">(${S.a}<sup>${r2}</sup> &minus; 1)(${S.a}<sup>${r2}</sup> + 1) = (${aR2} &minus; 1)(${aR2} + 1) &equiv; 0 (mod ${S.N})</span>
+    ${willWork
+      ? `Spoiler: <span class="math">gcd(${aR2 - 1}, ${S.N}) = <span class="success">${p}</span></span> and <span class="math">gcd(${aR2 + 1}, ${S.N}) = <span class="success">${q}</span></span> &mdash; the factors!</p>`
+      : `However, <span class="math">${aR2} &equiv; &minus;1 (mod ${S.N})</span>, so this particular choice won't give non-trivial factors.</p>`}`;
+    })() :
     `<p>Note: <span class="math">r = ${r}</span> is odd, so the difference-of-squares trick won't work directly. In practice we'd retry with a different <span class="math">a</span>.</p>`}
     <details class="expandable-section">
       <summary>Why does the period help us factor?</summary>
@@ -2123,7 +2130,7 @@ function renderMeasurement() {
 
   const j = S.measured;
   const cf = continuedFraction(j, Q);
-  const rCandidates = cf.convergents.filter(c => c.q > 0 && c.q <= S.N).map(c => c.q);
+  const rCandidates = [...new Set(cf.convergents.filter(c => c.q > 0 && c.q <= S.N).map(c => c.q))];
 
   v.innerHTML = `
     ${measureBanner}
@@ -2134,6 +2141,7 @@ function renderMeasurement() {
     <div class="measure-result" aria-live="polite">
       <div class="measure-label">Measured value:</div>
       <div class="measure-value measure-pop color-pink">${j}</div>
+      ${j === 0 ? '<div class="text-dim text-sm mt-8">j = 0 is uninformative (gives no period info). In practice, we would discard this and re-measure.</div>' : ''}
       <button class="nav-btn mt-8" data-action="re-measure">Re-measure \u21BB</button>
       ${S.measureHistory.length > 1 ? `
       <div class="measure-history">
@@ -2380,13 +2388,16 @@ function renderFactors() {
         <button class="nav-btn primary mt-20" data-action="try-again">Try Different Parameters \u21BB</button>
       </div>`;
   } else {
-    const reason = !rEven ? `r = ${r} is odd` : `a^(r/2) \u2261 -1 (mod N)`;
+    const failAR2 = rEven ? modPow(S.a, r / 2, S.N) : null;
+    const reason = !rEven
+      ? `r = ${r} is <strong>odd</strong>, so we can't use the difference-of-squares trick`
+      : `${S.a}<sup>${r/2}</sup> mod ${S.N} = ${failAR2} &equiv; &minus;1 (mod ${S.N}), giving a <strong>trivial factor</strong>`;
     v.innerHTML = `
       ${factorBanner}
       <div class="factor-reveal fade-in color-orange">
         <div class="factor-fail-title">\u26A0 This attempt didn't yield factors</div>
-        <div class="factor-fail-reason">Reason: ${reason}</div>
-        <div class="factor-fail-note">
+        <div class="factor-fail-reason">${reason}</div>
+        <div class="factor-fail-note mt-12">
           In practice, we'd pick a different <span class="math">a</span> and try again.
           Shor's algorithm succeeds with probability \u2265 1/2 per attempt.
         </div>
@@ -2440,8 +2451,8 @@ function renderFactors() {
       <div class="expand-body">
         <p>Now that you've seen Shor's algorithm in action, explore these related topics:</p>
         <ul class="step-list">
-          <li><strong>Quantum Complexity Theory</strong> &mdash; understand where quantum factoring fits in the computational hierarchy (BQP vs NP).</li>
-          <li><strong>Error Correction</strong> &mdash; real quantum hardware needs error correction to run Shor's algorithm at scale. How do we protect fragile qubits?</li>
+          <li><a href="16_complexity_theory.html" style="color:var(--accent)"><strong>Complexity Theory</strong></a> &mdash; understand where quantum factoring fits in the computational hierarchy (BQP vs NP).</li>
+          <li><a href="14_quantum_error_correction.html" style="color:var(--accent)"><strong>Error Correction</strong></a> &mdash; real quantum hardware needs error correction to run Shor's algorithm at scale. How do we protect fragile qubits?</li>
           <li><strong>Post-Quantum Cryptography</strong> &mdash; lattice-based and code-based cryptosystems designed to resist quantum attacks.</li>
         </ul>
         <p class="intuition">Try factoring different numbers above to build intuition for how the period, QFT peaks, and continued fractions interact.</p>
@@ -2516,6 +2527,10 @@ function toggleHelpOverlay() {
         <span class="help-keys"><kbd class="kbd">Space</kbd></span>
       </div>
       <div class="help-row">
+        <span>Re-measure (Step 6)</span>
+        <span class="help-keys"><kbd class="kbd">r</kbd></span>
+      </div>
+      <div class="help-row">
         <span>This help</span>
         <span class="help-keys"><kbd class="kbd">?</kbd></span>
       </div>
@@ -2552,6 +2567,7 @@ document.addEventListener('keydown', (e) => {
     if (closeBtn) { e.preventDefault(); closeBtn.focus(); }
     return;
   }
+  if (e.key === 'r' && S.step === 5) { e.preventDefault(); reMeasure(); return; }
   if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextStep(); }
   if (e.key === 'ArrowLeft') { e.preventDefault(); prevStep(); }
   if (e.key === 'ArrowDown') {

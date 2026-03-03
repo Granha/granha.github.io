@@ -127,7 +127,7 @@
     border-radius: var(--radius);
     padding: 1.5rem;
     margin-bottom: 1.25rem;
-    transition: border-color 0.3s;
+    transition: border-color 0.3s, transform 0.2s ease, box-shadow 0.2s ease;
     position: relative;
     overflow: hidden;
   }
@@ -144,6 +144,8 @@
 
   .card:hover {
     border-color: rgba(99, 102, 241, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.18);
   }
 
   .card:hover::before {
@@ -214,6 +216,7 @@
   }
 
   .btn-primary:hover:not(:disabled) { background: #5a52e0; }
+  .btn-primary:active:not(:disabled) { transform: translateY(1px); }
 
   .btn-secondary {
     background: transparent;
@@ -459,7 +462,8 @@
     margin: 1rem 0;
   }
 
-  .prob-item { background: rgba(0,0,0,.2); border-radius: 6px; padding: 0.5rem; text-align: center; }
+  .prob-item { background: rgba(0,0,0,.2); border-radius: 6px; padding: 0.5rem; text-align: center; transition: background 0.3s, transform 0.2s; }
+  .prob-item.changed { transform: scale(1.06); }
   .prob-item .state { font-family: 'Courier New', monospace; font-size: 0.85rem; color: var(--muted); }
   .prob-item .prob { font-size: 1.1rem; font-weight: 700; }
   .prob-item.target-prob { border: 1px solid var(--oracle); }
@@ -563,6 +567,7 @@
   .target-grid { display: flex; flex-wrap: wrap; gap: 4px; }
   .target-grid .tg-btn { font-size: 0.72rem; padding: 0.2rem 0.45rem; min-width: 0; font-family: 'Courier New', monospace; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
   .target-grid .tg-btn:hover { border-color: var(--oracle); color: var(--text); }
+  .target-grid .tg-btn:active { transform: scale(0.95); }
   .target-grid .tg-btn.active { background: var(--oracle); color: #000; border-color: var(--oracle); font-weight: 700; }
 
   /* --- Race bars --- */
@@ -591,7 +596,7 @@
   /* --- Histogram --- */
   #histogram-canvas { width: 100%; height: 180px; background: rgba(0,0,0,.2); border-radius: var(--radius); }
   .histogram-summary { text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: var(--text); }
-  .histogram-controls { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+  .histogram-controls { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; background: rgba(0,0,0,0.08); padding: 0.5rem 0.75rem; border-radius: 6px; align-items: center; }
 
   /* --- Theme toggle --- */
   #theme-toggle {
@@ -615,26 +620,6 @@
   .bar-ghost.target { border-color: var(--oracle); background: linear-gradient(180deg, rgba(255, 159, 67, 0.1), transparent); }
   .bar-ghost.target.neg { background: linear-gradient(0deg, rgba(255, 159, 67, 0.1), transparent); }
   .bar-ghost.fade { opacity: 0; }
-
-  /* --- Onboarding hints --- */
-  .onboard-hint {
-    position: absolute; z-index: 50; background: var(--accent); color: #fff;
-    border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.85rem; max-width: 260px;
-    box-shadow: 0 4px 20px rgba(0,0,0,.4); animation: onboard-in 0.4s ease; line-height: 1.5;
-  }
-  .onboard-hint::after {
-    content: ''; position: absolute; border: 8px solid transparent;
-  }
-  .onboard-hint.arrow-top::after { bottom: 100%; left: 30px; border-bottom-color: var(--accent); }
-  .onboard-hint.arrow-left::after { right: 100%; top: 12px; border-right-color: var(--accent); }
-  @keyframes onboard-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-  .onboard-hint .hint-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; justify-content: space-between; align-items: center; }
-  .onboard-hint .hint-btn {
-    background: rgba(255,255,255,.2); border: none; color: #fff;
-    padding: 0.25rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.78rem;
-  }
-  .onboard-hint .hint-btn:hover { background: rgba(255,255,255,.35); }
-  .onboard-hint .hint-counter { font-size: 0.72rem; opacity: 0.7; }
 
   /* --- Accessibility --- */
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
@@ -1407,6 +1392,30 @@
     transition: opacity 0.3s;
   }
 
+  /* --- Scroll progress bar --- */
+  #scroll-progress {
+    position: fixed; top: 0; left: 0; height: 3px; width: 0;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    z-index: 200; transition: width 0.1s linear;
+    border-radius: 0 2px 2px 0;
+    box-shadow: 0 0 8px rgba(99,102,241,0.3);
+  }
+
+  /* --- Crossfade utility --- */
+  .crossfade { transition: opacity 0.2s ease; }
+  .crossfade.fading { opacity: 0; }
+
+  /* --- Slider value labels --- */
+  .slider-value {
+    font-size: 0.75rem; font-weight: 600; color: var(--accent2);
+    background: rgba(99,102,241,0.08); padding: 0.1rem 0.4rem;
+    border-radius: 4px; min-width: 1.8em; text-align: center;
+    display: inline-block; margin-left: 0.4rem;
+  }
+
+  /* --- Race result reveal --- */
+  .race-result-reveal { animation: fadeSlideIn 0.4s ease; }
+
   /* Particle background canvas */
   #particleBg {
     position: fixed;
@@ -1659,6 +1668,7 @@
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
+<div id="scroll-progress"></div>
 <canvas id="particleBg"></canvas>
 <a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
 
@@ -1705,11 +1715,11 @@
           <div class="target-grid" id="target-grid"></div>
         </div>
         <div class="control-group">
-          <label>Speed</label>
+          <label>Speed <span class="slider-value" id="speed-value">5</span></label>
           <input type="range" id="speed-slider" min="1" max="10" value="5">
         </div>
         <div class="control-group">
-          <label>Noise <span id="noise-badge" class="noise-badge">active</span></label>
+          <label>Noise <span class="slider-value" id="noise-value">0%</span> <span id="noise-badge" class="noise-badge">active</span></label>
           <input type="range" id="noise-slider" min="0" max="30" value="0" style="width:80px;" title="Decoherence noise level (0 = ideal)">
         </div>
         <div class="control-group">
@@ -1732,7 +1742,7 @@
         <div class="legend-item"><div class="legend-swatch" style="background:var(--negative)"></div> Negative amplitude</div>
         <div class="legend-item"><div class="legend-swatch" style="background:var(--accent2);height:3px;width:16px;align-self:center;"></div> Mean (&#956;)</div>
       </div>
-      <div class="chart-container" id="chart-view">
+      <div class="chart-container crossfade" id="chart-view">
         <div class="chart" id="chart">
           <div class="chart-zero"></div>
           <div class="mean-line" id="mean-line"></div>
@@ -1813,6 +1823,12 @@
           <div class="math-block" id="geo-math" style="font-size:0.85rem;line-height:1.7;margin:0;"></div>
         </div>
       </div>
+      <div class="legend" style="margin-top:0.5rem;">
+        <div class="legend-item"><div class="legend-swatch" style="background:#34d399;border-radius:50%;width:8px;height:8px;"></div> State vector |&#968;&#10217;</div>
+        <div class="legend-item"><div style="width:16px;height:0;border-top:2px dashed var(--oracle);align-self:center;opacity:0.7;"></div> Target axis |w&#10217;</div>
+        <div class="legend-item"><div style="width:16px;height:0;border-top:2px dashed #8888a0;align-self:center;opacity:0.5;"></div> Initial state |s&#10217;</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--accent2);border-radius:50%;width:8px;height:8px;opacity:0.6;"></div> &#952; angle arc</div>
+      </div>
     </div>
 
     </div><!-- /analysis-grid -->
@@ -1829,6 +1845,7 @@
       <div class="histogram-controls">
         <button class="btn-secondary" id="btn-hist-100">Run 100</button>
         <button class="btn-secondary" id="btn-hist-1000">Run 1000</button>
+        <button class="btn-secondary" id="btn-hist-10000">Run 10,000</button>
         <button class="btn-secondary" id="btn-hist-clear">Clear</button>
         <label class="auto-stop-label" title="Accumulate runs instead of replacing">
           <input type="checkbox" id="hist-accumulate"> Accumulate
@@ -2600,11 +2617,12 @@ qubitSelect.addEventListener('change', () => {
   targetIndices = targetIndices.filter(t => t < N);
   if (targetIndices.length === 0) targetIndices = [0];
   populateTargets();
-  init();
+  crossfade(document.getElementById('chart-view'), () => init());
 });
 
 noiseSlider.addEventListener('input', () => {
   noiseLevel = parseInt(noiseSlider.value) / 100;
+  document.getElementById('noise-value').textContent = noiseSlider.value + '%';
   noiseBadge.classList.toggle('visible', noiseLevel > 0);
 });
 
@@ -2709,11 +2727,14 @@ function doMeasure() {
     const success = isTarget(result);
     const resultBin = result.toString(2).padStart(nQubits, '0');
     const iterCount = Math.floor(currentStep / 2);
+    const targetProb = probs.filter((_, i) => isTarget(i)).reduce((a, b) => a + b, 0);
     setExplanation(`<h3>Measurement Result</h3>
       <p style="font-size:1.15rem;font-weight:700;color:${success ? 'var(--accent2)' : 'var(--negative)'}; margin:0.5rem 0;">
       |${resultBin}&#10217; (decimal ${result}) &mdash; ${success ? 'Target found!' : 'Not a target.'}</p>
       <p style="color:var(--muted);margin-bottom:0.5rem;">After ${iterCount} Grover iteration${iterCount !== 1 ? 's' : ''} on ${N} states, the quantum state collapsed to this outcome.
       ${success ? 'Grover\'s algorithm successfully identified a marked state.' : 'The search missed &mdash; this can happen with small probability. Try again or add more iterations.'}</p>
+      <p style="font-size:0.85rem;color:var(--muted);border-top:1px solid var(--border);padding-top:0.5rem;margin-top:0.5rem;">
+      <strong>Summary:</strong> ${iterCount} iteration${iterCount !== 1 ? 's' : ''} on ${N} states (${targetIndices.length} target${targetIndices.length !== 1 ? 's' : ''}). Target probability before measurement: ${(targetProb * 100).toFixed(1)}%. Optimal: ${optimalIterations()} iterations.</p>
       <p>Press <strong>Reset</strong> to start over.</p>`);
   }, 700);
 }
@@ -2808,7 +2829,10 @@ btnPrev.addEventListener('click', undoStep);
 btnNextFast.addEventListener('click', skipToNextIteration);
 btnMeasure.addEventListener('click', doMeasure);
 btnAuto.addEventListener('click', () => autoRunning ? stopAuto() : startAuto());
-speedSlider.addEventListener('input', () => { if (autoRunning) { stopAuto(); startAuto(); } });
+speedSlider.addEventListener('input', () => {
+  document.getElementById('speed-value').textContent = speedSlider.value;
+  if (autoRunning) { stopAuto(); startAuto(); }
+});
 
 // ===========================
 // KEYBOARD SHORTCUTS
@@ -2892,15 +2916,40 @@ function updateDisplay() {
   drawProbHistory();
 }
 
+var _probItemCount = 0;
 function updateProbDisplay() {
-  probDisplay.innerHTML = '';
+  // Incremental update: only rebuild DOM when qubit count changes
+  if (probDisplay.children.length !== N || _probItemCount !== N) {
+    probDisplay.innerHTML = '';
+    for (let i = 0; i < N; i++) {
+      const item = document.createElement('div');
+      const tgt = isTarget(i);
+      item.className = `prob-item${tgt ? ' target-prob' : ''}`;
+      item.setAttribute('data-idx', i);
+      item.innerHTML = `<div class="state">|${i.toString(2).padStart(nQubits, '0')}\u27E9</div><div class="prob">${(100/N).toFixed(1)}%</div>`;
+      probDisplay.appendChild(item);
+    }
+    _probItemCount = N;
+  }
+  // Update values in-place with scale pulse on significant change
   for (let i = 0; i < N; i++) {
-    const item = document.createElement('div');
+    const item = probDisplay.children[i];
+    if (!item) continue;
     const tgt = isTarget(i);
-    item.className = `prob-item${tgt ? ' target-prob' : ''}`;
     const prob = amplitudes[i] * amplitudes[i];
-    item.innerHTML = `<div class="state">|${i.toString(2).padStart(nQubits, '0')}\u27E9</div><div class="prob" style="color:${tgt ? 'var(--oracle)' : (prob > 0.5 ? 'var(--accent)' : 'var(--text)')}">${(prob * 100).toFixed(1)}%</div>`;
-    probDisplay.appendChild(item);
+    const probEl = item.querySelector('.prob');
+    const newText = (prob * 100).toFixed(1) + '%';
+    if (probEl && probEl.textContent !== newText) {
+      const oldVal = parseFloat(probEl.textContent);
+      probEl.textContent = newText;
+      probEl.style.color = tgt ? 'var(--oracle)' : (prob > 0.5 ? 'var(--accent)' : 'var(--text)');
+      // Scale pulse if change > 5%
+      if (Math.abs(prob * 100 - oldVal) > 5) {
+        item.classList.add('changed');
+        setTimeout(() => item.classList.remove('changed'), 300);
+      }
+    }
+    item.className = `prob-item${tgt ? ' target-prob' : ''}`;
   }
 }
 
@@ -3457,6 +3506,7 @@ function drawHistogram() {
 
 document.getElementById('btn-hist-100').addEventListener('click', () => runHistogram(100));
 document.getElementById('btn-hist-1000').addEventListener('click', () => runHistogram(1000));
+document.getElementById('btn-hist-10000').addEventListener('click', () => runHistogram(10000));
 document.getElementById('btn-hist-clear').addEventListener('click', () => {
   histogramData = null;
   const c = document.getElementById('histogram-canvas');
@@ -3487,6 +3537,7 @@ function runRace() {
   cLabel.textContent = '0'; cLabel.classList.remove('winner'); cLabel.style.color = '';
   qLabel.textContent = '0'; qLabel.classList.remove('winner'); qLabel.style.color = '';
   result.innerHTML = '';
+  result.classList.remove('race-result-reveal');
   function animate(now) {
     const p = Math.min((now - startTime) / duration, 1);
     // Use ease-out for more dramatic buildup
@@ -3509,9 +3560,36 @@ function runRace() {
         ? `<span style="color:var(--accent2);font-weight:700;">Quantum wins!</span>`
         : `<span style="color:var(--oracle);font-weight:700;">Classical got lucky!</span>`;
       result.innerHTML = `${winnerText} Classical: ${classicalQ} | Quantum: ${quantumQ} | Speedup: <strong>${speedup}\u00D7</strong> (theoretical \u221A${N} \u2248 ${Math.sqrt(N).toFixed(1)}\u00D7)`;
+      result.classList.add('race-result-reveal');
     }
   }
   requestAnimationFrame(animate);
+}
+
+// ===========================
+// SCROLL PROGRESS BAR
+// ===========================
+(function() {
+  const scrollProgress = document.getElementById('scroll-progress');
+  if (!scrollProgress) return;
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const percent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    scrollProgress.style.width = percent + '%';
+  }, { passive: true });
+})();
+
+// ===========================
+// CROSSFADE UTILITY
+// ===========================
+function crossfade(el, updateFn) {
+  if (!el) return updateFn();
+  el.classList.add('fading');
+  setTimeout(() => {
+    updateFn();
+    el.classList.remove('fading');
+  }, 200);
 }
 
 // ===========================
@@ -4048,60 +4126,6 @@ function buildQuiz() {
     if (resetBtn) resetBtn.addEventListener('click', function() { buildQuiz(); });
   }, 50);
 }
-
-// ===========================
-// ONBOARDING HINTS
-// ===========================
-(function() {
-  if (localStorage.getItem('grover-onboarded')) return;
-  const hints = [
-    { target: '#qubit-select', text: 'Choose how many qubits to simulate. More qubits = more states to search through.', arrow: 'top' },
-    { target: '#btn-step', text: 'Step through the algorithm one sub-step at a time. Watch Oracle and Diffusion alternate.', arrow: 'top' },
-    { target: '#geo-canvas', text: 'This 2D view shows the state vector rotating toward the target \u2014 the core geometric intuition behind Grover\u2019s algorithm.', arrow: 'left' }
-  ];
-  let current = 0;
-  let hintEl = null;
-
-  function showHint(idx) {
-    if (hintEl) hintEl.remove();
-    if (idx >= hints.length) { localStorage.setItem('grover-onboarded', '1'); return; }
-    const h = hints[idx];
-    const anchor = document.querySelector(h.target);
-    if (!anchor) { localStorage.setItem('grover-onboarded', '1'); return; }
-    hintEl = document.createElement('div');
-    hintEl.className = `onboard-hint arrow-${h.arrow}`;
-    hintEl.innerHTML = `<div>${h.text}</div>
-      <div class="hint-actions">
-        <span class="hint-counter">${idx+1}/${hints.length}</span>
-        <span>
-          <button class="hint-btn" data-action="skip">Skip all</button>
-          <button class="hint-btn" data-action="next">${idx < hints.length-1 ? 'Next' : 'Got it'}</button>
-        </span>
-      </div>`;
-    document.body.appendChild(hintEl);
-    const rect = anchor.getBoundingClientRect();
-    const scrollY = window.scrollY;
-    if (h.arrow === 'top') {
-      hintEl.style.left = Math.max(8, rect.left) + 'px';
-      hintEl.style.top = (rect.bottom + scrollY + 12) + 'px';
-    } else {
-      hintEl.style.left = (rect.right + 12) + 'px';
-      hintEl.style.top = (rect.top + scrollY - 10) + 'px';
-    }
-    hintEl.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-action]');
-      if (!btn) return;
-      if (btn.dataset.action === 'skip') {
-        hintEl.remove(); hintEl = null;
-        localStorage.setItem('grover-onboarded', '1');
-      } else {
-        current++; showHint(current);
-      }
-    });
-  }
-
-  setTimeout(() => showHint(0), 800);
-})();
 
 // ===========================
 // INTERACTIVE ITERATIONS CALCULATOR

@@ -6,7 +6,7 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8780"],
       "port": 8780,
-      "url": "http://localhost:8780/modules/17_hybrid_method.html"
+      "url": "http://localhost:8780/modules/25_quantum_game_bonus.html"
     },
     {
       "name": "toric-server",

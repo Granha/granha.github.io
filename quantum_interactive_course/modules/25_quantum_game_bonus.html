@@ -64,8 +64,9 @@ button:active{transform:scale(0.95)}
 .btn-back{background:none;color:var(--cyan);font-size:24px;padding:8px 12px;border-radius:8px}
 .btn-back:hover{background:var(--panel)}
 .world-section{margin-bottom:16px}
-.world-title{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;padding-left:4px}
+.world-title{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;padding-left:4px;display:flex;align-items:center;justify-content:space-between}
 .world-title .world-num{color:var(--cyan);font-weight:700}
+.world-star-count{font-size:11px;color:var(--gold);letter-spacing:0;text-transform:none}
 .level-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .level-btn{aspect-ratio:1;border-radius:12px;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--text);font-size:18px;font-weight:700;border:2px solid transparent;transition:all 0.2s}
 .level-btn .level-stars{font-size:10px;letter-spacing:1px;color:var(--gold);min-height:14px}
@@ -98,7 +99,8 @@ button:active{transform:scale(0.95)}
 .circuit-wire{display:flex;align-items:center;gap:0;min-height:48px;position:relative}
 .wire-label{font-size:12px;font-weight:700;color:var(--cyan);min-width:28px;text-align:center;font-family:"Courier New",monospace}
 .wire-line{flex:1;height:2px;background:var(--panel-light);position:relative;margin:0 8px}
-.wire-gates{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;gap:4px;padding:0 4px}
+.wire-gates{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;gap:4px;padding:0 4px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.wire-gates::-webkit-scrollbar{display:none}
 .wire-gate{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:white;flex-shrink:0;position:relative;transition:transform 0.2s,box-shadow 0.2s;animation:gateAppear 0.3s ease-out}
 .wire-gate.gate-X{background:linear-gradient(135deg,#ff4466,#ff6644)}
 .wire-gate.gate-H{background:linear-gradient(135deg,#6644ff,#aa44ff)}
@@ -194,7 +196,8 @@ button:active{transform:scale(0.95)}
 
 /* Actions */
 .actions{display:flex;gap:8px;padding-bottom:env(safe-area-inset-bottom,8px)}
-.btn-action{flex:1;padding:12px;border-radius:10px;font-size:13px;letter-spacing:1px;background:var(--panel);color:var(--text-dim);transition:all 0.2s}
+.btn-action{flex:1;padding:12px;border-radius:10px;font-size:13px;letter-spacing:1px;background:var(--panel);color:var(--text-dim);transition:all 0.2s;position:relative}
+.btn-action .key-hint,.btn-measure .key-hint{font-size:9px;opacity:0.4;font-weight:400;letter-spacing:0;margin-left:4px}
 .btn-action:hover{background:var(--panel-light);color:var(--text)}
 .btn-measure{flex:2;padding:14px;border-radius:10px;font-size:16px;letter-spacing:3px;background:linear-gradient(135deg,var(--cyan),var(--magenta));color:white;box-shadow:0 0 20px rgba(0,212,255,0.3);transition:all 0.2s;animation:measurePulse 2s ease-in-out infinite}
 .btn-measure:hover{box-shadow:0 0 40px rgba(0,212,255,0.5)}
@@ -259,7 +262,8 @@ button:active{transform:scale(0.95)}
 .btn-hint:hover{opacity:1;background:rgba(255,215,0,0.1)}
 .btn-hint:disabled{opacity:0.3;cursor:not-allowed;border-color:var(--text-dim);color:var(--text-dim)}
 .hint-toast{position:absolute;left:50%;transform:translateX(-50%);top:50%;background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:10px 16px;font-size:12px;color:var(--gold);z-index:55;max-width:280px;text-align:center;opacity:0;transition:opacity 0.3s;pointer-events:none;line-height:1.4}
-.hint-toast.visible{opacity:1}
+.hint-toast.visible{opacity:1;animation:hintSlideIn 0.3s ease-out}
+@keyframes hintSlideIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
 /* ========== ENTANGLEMENT LINES ========== */
 .entangle-svg{position:absolute;inset:0;pointer-events:none;z-index:1}
@@ -332,8 +336,22 @@ button:active{transform:scale(0.95)}
   .qubit{width:44px;height:44px;font-size:16px}
   .state-qubits{gap:10px}
 }
+@media(max-height:500px){
+  .qubit{width:38px;height:38px;font-size:14px;border-width:2px}
+  .target-qubit{width:30px;height:30px;font-size:12px}
+  .circuit-area{padding:6px}
+  .wire-gate{width:26px;height:26px;font-size:10px}
+  .gate-btn{padding:8px 12px;font-size:12px;min-width:44px}
+  .gate-btn .gate-hint{display:none}
+  .btn-measure{padding:10px;font-size:14px}
+  .btn-action{padding:10px;font-size:11px}
+  .prob-bar{padding:4px 10px}
+  .game-header .level-desc{display:none}
+  .state-vector{font-size:11px}
+}
 @media(max-width:400px){
   .streak-badge{display:none!important}
+  .level-name-tip{display:none!important}
 }
 
   /* Particle background canvas */
@@ -418,9 +436,9 @@ button:active{transform:scale(0.95)}
     </div>
 
     <div class="actions">
-      <button class="btn-action" id="btn-undo">UNDO</button>
-      <button class="btn-measure" id="btn-measure">MEASURE</button>
-      <button class="btn-action" id="btn-reset">RESET</button>
+      <button class="btn-action" id="btn-undo">UNDO<span class="key-hint">Z</span></button>
+      <button class="btn-measure" id="btn-measure">MEASURE<span class="key-hint">M</span></button>
+      <button class="btn-action" id="btn-reset">RESET<span class="key-hint">R</span></button>
     </div>
   </div>
 </div>
@@ -879,7 +897,10 @@ function renderLevelSelect() {
     const wLevels = LEVELS.filter(l => l.world === w);
     const worldUnlocked = wLevels.some(l => state.levelStars[l.id - 1] >= 0);
 
-    section.innerHTML = `<div class="world-title"><span class="world-num" style="color:${WORLD_COLORS[w-1]}">World ${w}:</span> ${WORLD_NAMES[w-1]}</div>`;
+    const wStars = wLevels.reduce((sum, l) => sum + (state.levelStars[l.id - 1] > 0 ? state.levelStars[l.id - 1] : 0), 0);
+    const wMax = wLevels.length * 3;
+    const starCountHtml = worldUnlocked ? `<span class="world-star-count">\u2605 ${wStars}/${wMax}</span>` : '';
+    section.innerHTML = `<div class="world-title"><span><span class="world-num" style="color:${WORLD_COLORS[w-1]}">World ${w}:</span> ${WORLD_NAMES[w-1]}</span>${starCountHtml}</div>`;
     const grid = document.createElement('div');
     grid.className = 'level-grid';
 
@@ -979,6 +1000,12 @@ function renderGame() {
 
   // Gate reference
   renderGateReference(level);
+
+  // Undo/Reset button state
+  $('btn-undo').disabled = state.moves.length === 0;
+  $('btn-undo').style.opacity = state.moves.length === 0 ? '0.3' : '';
+  $('btn-reset').disabled = state.moves.length === 0;
+  $('btn-reset').style.opacity = state.moves.length === 0 ? '0.3' : '';
 
   // Hint button
   renderHintButton();
@@ -1267,6 +1294,16 @@ function renderCircuit(level) {
     wire.appendChild(label);
     wire.appendChild(lineWrap);
     area.appendChild(wire);
+  }
+
+  // Auto-scroll circuit to show latest gates
+  if (state.moves.length > 0) {
+    requestAnimationFrame(() => {
+      const gatesContainers = area.querySelectorAll('.wire-gates');
+      gatesContainers.forEach(gc => {
+        gc.scrollLeft = gc.scrollWidth;
+      });
+    });
   }
 
   // Draw CNOT vertical lines (using overlay)
