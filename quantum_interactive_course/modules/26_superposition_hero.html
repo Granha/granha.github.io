@@ -97,6 +97,14 @@ button:active{transform:scale(0.95)}
 .speed-btn{padding:8px 20px;border-radius:20px;font-size:12px;letter-spacing:1px;background:var(--panel);color:var(--text-dim);transition:all 0.2s;border:1px solid transparent}
 .speed-btn.active{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 12px rgba(0,212,255,0.2)}
 .speed-btn:hover{background:var(--panel-light)}
+.speed-btn.speed-cat{border-color:transparent;background:linear-gradient(135deg,rgba(255,68,102,0.15),rgba(200,80,255,0.15));color:var(--text-dim);font-size:10px;padding:8px 14px}
+.speed-btn.speed-cat.active{border-color:var(--red);color:var(--red);box-shadow:0 0 12px rgba(248,113,113,0.3);background:linear-gradient(135deg,rgba(255,68,102,0.2),rgba(200,80,255,0.2));animation:catPulse 1.5s ease-in-out infinite}
+@keyframes catPulse{0%,100%{box-shadow:0 0 12px rgba(248,113,113,0.3)}50%{box-shadow:0 0 20px rgba(248,113,113,0.5),0 0 30px rgba(200,80,255,0.2)}}
+/* Schrödinger's cat superposition icon */
+.cat-icon{position:relative;display:inline-block;width:1.1em;height:1.1em;vertical-align:middle}
+.cat-icon .cat-alive,.cat-icon .cat-dead{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;animation:catSuperposition 1.2s steps(1) infinite}
+.cat-icon .cat-dead{animation-delay:0.6s;opacity:0}
+@keyframes catSuperposition{0%{opacity:1}50%{opacity:0}}
 .total-stars{font-size:13px;color:var(--gold);font-weight:700;white-space:nowrap}
 .levels-stats{font-size:12px;color:var(--text-dim);text-align:center;margin-bottom:8px}
 
@@ -358,6 +366,7 @@ button:active{transform:scale(0.95)}
     <button class="speed-btn" data-speed="slow">SLOW</button>
     <button class="speed-btn active" data-speed="normal">NORMAL</button>
     <button class="speed-btn" data-speed="fast">FAST</button>
+    <button class="speed-btn speed-cat" data-speed="cat"><span class="cat-icon"><span class="cat-alive">&#128008;</span><span class="cat-dead">&#128128;</span></span> Schrödinger's Cat</button>
   </div>
   <button class="btn-play" id="btn-play">PLAY</button>
   <div class="title-hint">Apply quantum gates in rhythm to build superpositions!</div>
@@ -377,6 +386,7 @@ button:active{transform:scale(0.95)}
     <button class="speed-btn" data-speed="slow">SLOW</button>
     <button class="speed-btn active" data-speed="normal">NORMAL</button>
     <button class="speed-btn" data-speed="fast">FAST</button>
+    <button class="speed-btn speed-cat" data-speed="cat"><span class="cat-icon"><span class="cat-alive">&#128008;</span><span class="cat-dead">&#128128;</span></span> Schrödinger's Cat</button>
   </div>
   <div id="worlds-container"></div>
 </div>
@@ -733,6 +743,7 @@ const SPEED_CONFIG = {
   slow:   { fallDuration: 4500, spawnInterval: 2000, hitWindow: 400, greatWindow: 280, perfectWindow: 140 },
   normal: { fallDuration: 3200, spawnInterval: 1500, hitWindow: 320, greatWindow: 200, perfectWindow: 100 },
   fast:   { fallDuration: 2200, spawnInterval: 1000, hitWindow: 240, greatWindow: 150, perfectWindow: 70 },
+  cat:    { fallDuration: 1400, spawnInterval: 650, hitWindow: 180, greatWindow: 110, perfectWindow: 40 },
 };
 
 const state = {
