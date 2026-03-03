@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Superposition Hero</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.25);
+    --pink: #f472b6;
+    --pink-glow: rgba(244, 114, 182, 0.25);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.25);
+    --orange: #fb923c;
+    --yellow: #facc15;
+    --red: #f87171;
+    --panel: #151a3a;
+    --panel-light: #1e2550;
+    --magenta: #c850ff;
+    --gold: #ffd700;
+}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+#app{width:100%;height:100%;display:flex;flex-direction:column;max-width:700px;margin:0 auto;position:relative;overflow:hidden}
+.screen{display:none;flex-direction:column;width:100%;height:100%;position:absolute;top:0;left:0}
+.screen.active{display:flex;animation:screenIn 0.25s ease-out}
+@keyframes screenIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+button{cursor:pointer;border:none;font-family:inherit;font-weight:600;outline:none;-webkit-tap-highlight-color:transparent}
+button:active{transform:scale(0.95)}
+
+/* ========== TITLE SCREEN ========== */
+#screen-title{align-items:center;justify-content:center;gap:16px;z-index:1}
+.title-bg{position:absolute;inset:0;overflow:hidden}
+.title-particle{position:absolute;width:6px;height:6px;border-radius:50%;opacity:0.5;animation:float linear infinite}
+@keyframes float{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:0.6}90%{opacity:0.6}100%{transform:translateY(-10vh) scale(1);opacity:0}}
+.title-h1{font-size:48px;font-weight:900;letter-spacing:3px;text-align:center;background:linear-gradient(135deg,var(--cyan),var(--magenta),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:2;line-height:1.1}
+.title-sub{font-size:14px;color:var(--text-dim);letter-spacing:6px;text-transform:uppercase;z-index:2}
+/* EPR pair animation */
+.epr-pair{position:relative;width:120px;height:80px;z-index:2}
+.epr-qubit{position:absolute;width:32px;height:32px;border-radius:50%;top:50%;left:50%;margin:-16px 0 0 -16px;font-size:14px;font-weight:900;color:white;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px currentColor}
+.epr-qubit.q0{background:var(--cyan);color:rgba(34,211,238,0.6);animation:eprOrbit 3s linear infinite}
+.epr-qubit.q1{background:var(--magenta);color:rgba(200,80,255,0.6);animation:eprOrbit 3s linear infinite reverse}
+.epr-line{position:absolute;top:50%;left:50%;width:60px;height:2px;margin:-1px 0 0 -30px;background:linear-gradient(90deg,var(--cyan),var(--magenta));opacity:0.5;animation:eprLineRotate 3s linear infinite;transform-origin:center}
+.epr-glow{position:absolute;inset:-10px;border-radius:50%;background:radial-gradient(circle,rgba(200,80,255,0.12) 0%,transparent 70%);animation:eprGlow 3s ease-in-out infinite}
+@keyframes eprOrbit{
+  0%{transform:translate(30px,0) scale(1)}
+  25%{transform:translate(0,-18px) scale(0.85)}
+  50%{transform:translate(-30px,0) scale(1)}
+  75%{transform:translate(0,18px) scale(0.85)}
+  100%{transform:translate(30px,0) scale(1)}
+}
+@keyframes eprLineRotate{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes eprGlow{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:0.7;transform:scale(1.15)}}
+.btn-play{margin-top:24px;padding:16px 64px;font-size:20px;letter-spacing:4px;background:linear-gradient(135deg,var(--cyan),var(--magenta));color:white;border-radius:50px;z-index:2;box-shadow:0 0 30px rgba(0,212,255,0.3);transition:box-shadow 0.3s}
+.btn-play:hover{box-shadow:0 0 50px rgba(0,212,255,0.5)}
+.title-hint{font-size:11px;color:var(--text-dim);z-index:2;margin-top:8px;opacity:0.6}
+.title-progress{z-index:2;text-align:center;margin-top:4px}
+.title-progress-bar{width:160px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin:6px auto 4px;overflow:hidden}
+.title-progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--cyan),var(--magenta));transition:width 1s ease}
+.title-progress-text{font-size:10px;color:var(--text-dim);opacity:0.7;letter-spacing:1px}
+
+/* ========== LEVEL SELECT ========== */
+#screen-levels{padding:20px 16px;padding-top:56px;gap:12px;overflow-y:auto}
+.levels-header{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.levels-header h2{font-size:20px;flex:1}
+.btn-back{background:none;color:var(--cyan);font-size:24px;padding:8px 12px;border-radius:8px}
+.btn-back:hover{background:var(--panel)}
+.world-section{margin-bottom:16px}
+.world-title{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;padding-left:4px;display:flex;align-items:center;justify-content:space-between}
+.world-title .world-num{color:var(--cyan);font-weight:700}
+.world-star-count{font-size:11px;color:var(--gold);letter-spacing:0;text-transform:none}
+.level-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.level-btn{aspect-ratio:1;border-radius:12px;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--text);font-size:18px;font-weight:700;border:2px solid transparent;transition:all 0.2s;position:relative}
+.level-btn .level-stars{font-size:10px;letter-spacing:1px;color:var(--gold);min-height:14px}
+.level-btn .level-best{font-size:8px;color:var(--text-dim);font-weight:400;opacity:0.7;margin-top:1px}
+.level-btn.locked{opacity:0.3;pointer-events:none}
+.level-btn.locked::after{content:"";display:block;width:16px;height:16px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%237a85b0' viewBox='0 0 24 24'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E") center/contain no-repeat;margin-top:2px}
+.level-btn.completed{border-color:var(--panel-light)}
+.level-btn.current{border-color:var(--cyan);box-shadow:0 0 12px rgba(0,212,255,0.3)}
+.level-btn:not(.locked):hover{background:var(--panel-light);border-color:var(--cyan)}
+.level-btn .level-name-tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--surface2);color:var(--text);font-size:10px;font-weight:500;padding:4px 8px;border-radius:6px;white-space:nowrap;z-index:20;border:1px solid var(--border);pointer-events:none}
+.level-btn .level-name-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--surface2)}
+.level-btn:not(.locked):hover .level-name-tip{display:block}
+.world-progress{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:6px;overflow:hidden}
+.world-progress-fill{height:100%;border-radius:2px;transition:width 0.5s ease}
+.speed-selector{display:flex;gap:8px;justify-content:center;margin-top:8px;z-index:2}
+.speed-btn{padding:8px 20px;border-radius:20px;font-size:12px;letter-spacing:1px;background:var(--panel);color:var(--text-dim);transition:all 0.2s;border:1px solid transparent}
+.speed-btn.active{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 12px rgba(0,212,255,0.2)}
+.speed-btn:hover{background:var(--panel-light)}
+.total-stars{font-size:13px;color:var(--gold);font-weight:700;white-space:nowrap}
+.levels-stats{font-size:12px;color:var(--text-dim);text-align:center;margin-bottom:8px}
+
+/* ========== GAME SCREEN ========== */
+#screen-game{padding:0;gap:0;overflow:hidden;position:relative}
+.game-hud{display:flex;align-items:center;gap:8px;padding:8px 56px 8px 12px;background:var(--panel);border-bottom:1px solid var(--border);z-index:10}
+.game-hud .level-name{flex:1;font-size:14px;font-weight:700}
+/* Hide Course Home during gameplay */
+#screen-game.active ~ .btn-sound{z-index:200}
+.game-hud .score-display{font-size:13px;font-weight:700;color:var(--gold)}
+.game-hud .combo-display{font-size:12px;font-weight:700;color:var(--orange);min-width:60px;text-align:right;transition:all 0.15s}
+.game-hud .combo-display.hidden{opacity:0}
+.game-hud .combo-display.combo-hot{color:var(--gold);text-shadow:0 0 8px rgba(255,215,0,0.6);font-size:14px}
+.game-hud .combo-display.combo-fire{color:#ff4444;text-shadow:0 0 12px rgba(255,68,68,0.7);font-size:16px}
+/* Combo streak border glow */
+.play-area.combo-streak::before{content:'';position:absolute;inset:0;z-index:50;pointer-events:none;border:2px solid transparent;border-image:linear-gradient(180deg,rgba(255,215,0,0.3),transparent 40%,transparent 60%,rgba(255,215,0,0.3)) 1;animation:comboGlow 1s ease-in-out infinite alternate}
+.play-area.combo-fire-streak::before{border-image:linear-gradient(180deg,rgba(255,68,68,0.4),transparent 40%,transparent 60%,rgba(255,68,68,0.4)) 1}
+@keyframes comboGlow{0%{opacity:0.5}100%{opacity:1}}
+
+/* Target state display */
+.target-bar{display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(21,26,58,0.8);border-bottom:1px solid var(--border);flex-wrap:nowrap;overflow:hidden}
+.target-bar .label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim)}
+.target-bar .target-state{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--cyan)}
+
+/* Play area - where wires and gates live */
+.play-area{flex:1;position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(10,14,26,0.95),rgba(21,26,58,0.4))}
+
+/* Wires - quantum circuit style vertical lines */
+.wire{position:absolute;top:0;bottom:0;width:2px;background:rgba(99,102,241,0.25);z-index:1}
+/* Dashed ticks along wire */
+.wire::before{content:'';position:absolute;top:0;bottom:60px;left:0;width:2px;background:repeating-linear-gradient(180deg,rgba(99,102,241,0.3) 0px,rgba(99,102,241,0.3) 8px,transparent 8px,transparent 20px)}
+/* Glowing dot at hit zone intersection */
+.wire::after{content:'';position:absolute;bottom:58px;left:-5px;width:12px;height:12px;border-radius:50%;background:rgba(34,211,238,0.5);box-shadow:0 0 12px rgba(34,211,238,0.4),0 0 24px rgba(34,211,238,0.15);animation:wirePulse 2s ease-in-out infinite}
+@keyframes wirePulse{0%,100%{opacity:0.5;transform:scale(0.8)}50%{opacity:1;transform:scale(1.1)}}
+/* Ket label at top of wire */
+.wire-label-top{position:absolute;top:6px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:700;color:var(--cyan);font-family:'JetBrains Mono',monospace;z-index:5;opacity:0.7;white-space:nowrap}
+/* Qubit label at bottom */
+.wire-label{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace;z-index:5}
+/* Wire input/output terminators */
+.wire-term-top,.wire-term-bot{position:absolute;left:-4px;width:10px;height:3px;background:rgba(99,102,241,0.5);border-radius:1px;z-index:2}
+.wire-term-top{top:0}
+.wire-term-bot{bottom:60px}
+
+/* Hit zone at bottom */
+.hit-zone{position:absolute;bottom:0;left:0;right:0;height:60px;z-index:3;display:flex;align-items:center;justify-content:center}
+.hit-zone-line{position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent 5%,var(--cyan) 30%,var(--magenta) 70%,transparent 95%);box-shadow:0 0 15px rgba(34,211,238,0.4),0 0 30px rgba(200,80,255,0.2);z-index:4;animation:hitLinePulse 2s ease-in-out infinite}
+.hit-zone-glow{position:absolute;top:-60px;left:0;right:0;height:80px;background:linear-gradient(180deg,transparent,rgba(34,211,238,0.04),rgba(200,80,255,0.03),rgba(34,211,238,0.06));z-index:3;pointer-events:none}
+.hit-zone-scan{position:absolute;top:-2px;width:60px;height:7px;background:linear-gradient(90deg,transparent,rgba(34,211,238,0.8),transparent);border-radius:3px;z-index:5;animation:hitScan 2.5s ease-in-out infinite}
+/* Visual hit window guide lines */
+.hit-zone-guide{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 10%,rgba(34,211,238,0.12) 30%,rgba(200,80,255,0.08) 70%,transparent 90%);z-index:2;pointer-events:none}
+.hit-zone-guide.guide-top{top:-60px}
+.hit-zone-guide.guide-mid{top:-30px;background:linear-gradient(90deg,transparent 10%,rgba(34,211,238,0.08) 30%,rgba(200,80,255,0.05) 70%,transparent 90%)}
+@keyframes hitLinePulse{0%,100%{opacity:0.8;box-shadow:0 0 15px rgba(34,211,238,0.4)}50%{opacity:1;box-shadow:0 0 25px rgba(34,211,238,0.6),0 0 40px rgba(200,80,255,0.3)}}
+@keyframes hitScan{0%{left:-60px}100%{left:calc(100% + 60px)}}
+
+/* Gate nodes falling down */
+.gate-node{position:absolute;z-index:6;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;font-size:15px;font-weight:900;color:white;transition:opacity 0.15s;pointer-events:none;box-shadow:0 4px 15px rgba(0,0,0,0.4);animation:gateFloat 0.8s ease-in-out infinite alternate}
+.gate-node::after{content:'';position:absolute;inset:-3px;border-radius:inherit;background:inherit;opacity:0.25;filter:blur(8px);z-index:-1}
+.gate-node.gate-X{background:linear-gradient(135deg,#ff4466,#ff6644);box-shadow:0 4px 20px rgba(255,68,102,0.4)}
+.gate-node.gate-H{background:linear-gradient(135deg,#6644ff,#aa44ff);box-shadow:0 4px 20px rgba(136,68,255,0.4)}
+.gate-node.gate-Z{background:linear-gradient(135deg,#00aa66,#00ddaa);box-shadow:0 4px 20px rgba(0,221,170,0.4)}
+.gate-node.gate-S{background:linear-gradient(135deg,#00aacc,#22ddee);box-shadow:0 4px 20px rgba(34,221,238,0.4)}
+.gate-node.gate-T{background:linear-gradient(135deg,#ddaa00,#ffcc22);box-shadow:0 4px 20px rgba(255,204,34,0.4)}
+.gate-node.gate-CNOT{background:linear-gradient(135deg,#a040dd,#c850ff);border-radius:50%;width:40px;height:40px;font-size:20px;box-shadow:0 4px 20px rgba(200,80,255,0.4);line-height:1}
+/* CNOT control dot: solid filled circle */
+.gate-node.cnot-control{background:var(--magenta);border-radius:50%;width:18px;height:18px;font-size:0;box-shadow:0 0 12px rgba(200,80,255,0.6),0 0 24px rgba(200,80,255,0.2);border:2px solid rgba(255,255,255,0.3)}
+@keyframes gateFloat{0%{filter:brightness(1)}100%{filter:brightness(1.15)}}
+.gate-node.hit{animation:gateHit 0.3s ease-out forwards}
+.gate-node.miss{animation:gateMiss 0.4s ease-out forwards}
+@keyframes gateHit{
+  0%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.4);opacity:0.8}
+  100%{transform:scale(0);opacity:0}
+}
+@keyframes gateMiss{
+  0%{opacity:1}
+  100%{opacity:0;transform:translateY(40px)}
+}
+
+/* CNOT connector line */
+.cnot-connector{position:absolute;z-index:5;background:var(--magenta);pointer-events:none;box-shadow:0 0 6px rgba(200,80,255,0.3)}
+
+/* Gate buttons at bottom */
+.gate-buttons{display:flex;gap:6px;padding:8px 12px;background:var(--panel);border-top:1px solid var(--border);justify-content:center;flex-wrap:wrap}
+.gate-btn{padding:10px 14px;border-radius:8px;font-size:14px;font-weight:800;color:white;letter-spacing:1px;transition:all 0.15s;background:var(--panel-light);min-width:48px;position:relative;display:flex;flex-direction:column;align-items:center;gap:2px}
+.gate-btn .gate-key{font-size:9px;color:var(--text-dim);font-weight:400;opacity:0.6}
+.gate-btn .gate-remaining{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:var(--accent);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;line-height:1;transition:all 0.2s}
+.gate-btn .gate-remaining.zero{background:var(--border);opacity:0.4}
+.gate-btn.sel{box-shadow:0 0 0 2px var(--cyan),0 0 16px rgba(0,212,255,0.3);transform:scale(1.05)}
+.gate-btn[data-gate="X"]{border-left:3px solid #ff4466}
+.gate-btn[data-gate="H"]{border-left:3px solid #8844ff}
+.gate-btn[data-gate="Z"]{border-left:3px solid #00ddaa}
+.gate-btn[data-gate="S"]{border-left:3px solid #22ddee}
+.gate-btn[data-gate="T"]{border-left:3px solid #ffcc22}
+.gate-btn[data-gate="CNOT"]{border-left:3px solid var(--magenta)}
+.gate-btn:active{transform:scale(0.88)!important}
+
+/* State display at bottom */
+.state-bar{display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--panel);border-top:1px solid var(--border);justify-content:center}
+.state-qubit{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:white;transition:all 0.3s;border:2px solid transparent;position:relative}
+.state-qubit.flash{animation:qubitFlash 0.3s ease-out}
+@keyframes qubitFlash{0%{transform:scale(1.3);filter:brightness(1.5)}100%{transform:scale(1);filter:brightness(1)}}
+.state-qubit-label{font-size:9px;color:var(--text-dim);position:absolute;top:-14px}
+.state-vector-mini{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);max-width:200px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sv-ket{color:var(--cyan);font-weight:700}
+.sv-coeff{color:var(--magenta)}
+.sv-eq{color:var(--text-dim)}
+
+/* Hit feedback */
+.hit-feedback{position:absolute;z-index:20;font-size:20px;font-weight:900;pointer-events:none;animation:hitFeedbackAnim 1s ease-out forwards;text-shadow:0 0 15px currentColor,0 0 30px currentColor}
+@keyframes hitFeedbackAnim{0%{opacity:1;transform:translateX(-50%) translateY(0) scale(1.3)}30%{transform:translateX(-50%) translateY(-20px) scale(1)}100%{opacity:0;transform:translateX(-50%) translateY(-80px) scale(0.8)}}
+.hit-feedback.perfect{color:var(--gold);font-size:24px}
+.hit-feedback.great{color:var(--green)}
+.hit-feedback.good{color:var(--cyan)}
+.hit-feedback.miss{color:var(--red)}
+/* Screen flash on perfect */
+.play-area.perfect-flash::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 80%,rgba(255,215,0,0.15),transparent 60%);z-index:15;pointer-events:none;animation:perfectFlash 0.4s ease-out forwards}
+@keyframes perfectFlash{0%{opacity:1}100%{opacity:0}}
+
+/* Score popup */
+.score-popup{position:absolute;z-index:21;font-size:13px;font-weight:800;color:var(--gold);pointer-events:none;animation:scorePopAnim 1.2s ease-out forwards;text-shadow:0 0 8px rgba(255,215,0,0.5);font-family:'JetBrains Mono',monospace}
+@keyframes scorePopAnim{0%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}40%{opacity:1;transform:translateX(-50%) translateY(-30px) scale(1.1)}100%{opacity:0;transform:translateX(-50%) translateY(-70px) scale(0.7)}}
+
+/* Progress bar for level */
+.level-progress{height:3px;background:rgba(255,255,255,0.06);position:relative}
+.level-progress-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--magenta));transition:width 0.3s}
+
+/* ========== MODALS ========== */
+.modal{display:none;position:absolute;inset:0;background:rgba(5,5,20,0.85);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal.active{display:flex}
+.modal-box{background:var(--panel);border-radius:20px;padding:28px 24px;max-width:380px;width:90%;text-align:center;animation:modalIn 0.3s ease-out;position:relative;overflow:hidden}
+@keyframes modalIn{from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1}}
+.result-title{font-size:28px;font-weight:900;margin-bottom:8px}
+.result-title.win{color:var(--green)}
+.result-title.lose{color:var(--red)}
+.result-stars{font-size:36px;margin:12px 0;display:flex;justify-content:center;gap:8px}
+.result-star{transition:all 0.3s;opacity:0.2;filter:grayscale(1);color:var(--gold)}
+.result-star.earned{opacity:1;filter:none;animation:starPop 0.4s ease-out both}
+@keyframes starPop{0%{transform:scale(0) rotate(-30deg)}60%{transform:scale(1.3) rotate(10deg)}100%{transform:scale(1) rotate(0)}}
+.result-msg{font-size:13px;color:var(--text-dim);margin-bottom:16px;line-height:1.5}
+/* Fidelity bar */
+.fidelity-section{margin:12px 0 16px;text-align:left}
+.fidelity-label{font-size:11px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.fidelity-pct{font-weight:700;color:var(--cyan);font-size:13px;letter-spacing:0}
+.fidelity-bar{height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;margin-bottom:10px}
+.fidelity-bar-fill{height:100%;border-radius:4px;transition:width 1s ease-out}
+.fidelity-bar-fill.high{background:linear-gradient(90deg,var(--cyan),var(--green))}
+.fidelity-bar-fill.mid{background:linear-gradient(90deg,var(--orange),var(--yellow))}
+.fidelity-bar-fill.low{background:linear-gradient(90deg,var(--red),var(--orange))}
+.state-comparison{display:flex;gap:8px;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;flex-wrap:wrap}
+.state-comparison .sc-label{color:var(--text-dim);font-size:9px;letter-spacing:1px;text-transform:uppercase;width:100%;text-align:center;margin-bottom:2px}
+.state-comparison .sc-yours{color:var(--cyan)}
+.state-comparison .sc-target{color:var(--green)}
+.state-comparison .sc-arrow{color:var(--text-dim);font-size:14px;opacity:0.4}
+.result-score{font-size:16px;font-weight:800;color:var(--gold);margin-bottom:8px}
+.modal-btns{display:flex;gap:8px;justify-content:center}
+.btn-modal{padding:12px 28px;border-radius:10px;font-size:14px;letter-spacing:1px;transition:all 0.2s}
+.btn-retry{background:var(--panel-light);color:var(--text)}
+.btn-retry:hover{background:rgba(255,255,255,0.1)}
+.btn-next{background:linear-gradient(135deg,var(--cyan),var(--magenta));color:white}
+.btn-levels{background:var(--panel-light);color:var(--text)}
+
+/* Tutorial modal */
+.tutorial-box{text-align:left}
+.tutorial-title{font-size:22px;font-weight:800;margin-bottom:16px;background:linear-gradient(135deg,var(--cyan),var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tutorial-body{font-size:14px;line-height:1.7;color:var(--text);margin-bottom:20px}
+.tutorial-body b{color:var(--cyan)}
+.tutorial-body .t-gate{display:inline-block;padding:2px 8px;border-radius:4px;font-weight:800;font-size:12px;color:white;vertical-align:middle;margin:0 2px}
+.tutorial-body .t-gate.t-X{background:linear-gradient(135deg,#ff4466,#ff6644)}
+.tutorial-body .t-gate.t-H{background:linear-gradient(135deg,#6644ff,#aa44ff)}
+.tutorial-body .t-gate.t-Z{background:linear-gradient(135deg,#00aa66,#00ddaa)}
+.tutorial-body .t-gate.t-CNOT{background:linear-gradient(135deg,#a040dd,#c850ff)}
+.btn-got-it{display:block;width:100%;padding:14px;border-radius:10px;font-size:15px;letter-spacing:2px;background:linear-gradient(135deg,var(--cyan),var(--magenta));color:white;margin-top:8px}
+
+/* Countdown overlay */
+.countdown-overlay{position:absolute;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;background:rgba(10,14,26,0.7);backdrop-filter:blur(2px)}
+.countdown-num{font-size:80px;font-weight:900;color:var(--cyan);animation:countPop 0.6s ease-out;text-shadow:0 0 40px rgba(34,211,238,0.5)}
+@keyframes countPop{0%{transform:scale(2);opacity:0}50%{transform:scale(1);opacity:1}90%{opacity:1}100%{opacity:0.8}}
+
+/* Pause overlay */
+.pause-overlay{position:absolute;inset:0;z-index:70;display:none;align-items:center;justify-content:center;background:rgba(10,14,26,0.8);backdrop-filter:blur(4px);flex-direction:column;gap:16px}
+.pause-overlay.active{display:flex}
+.pause-title{font-size:32px;font-weight:900;color:var(--text);letter-spacing:4px}
+.pause-btns{display:flex;gap:12px}
+
+/* Confetti */
+.confetti{position:absolute;width:8px;height:12px;border-radius:1px;animation:confettiFall linear forwards;pointer-events:none;z-index:60}
+@keyframes confettiFall{
+  0%{opacity:1;transform:translateY(0) rotate(0deg) scale(1)}
+  25%{transform:translateY(25vh) rotate(180deg) translateX(var(--drift)) scale(0.95)}
+  50%{transform:translateY(50vh) rotate(360deg) translateX(calc(var(--drift) * -0.5)) scale(0.9)}
+  100%{opacity:0;transform:translateY(100vh) rotate(720deg) translateX(var(--drift)) scale(0.7)}
+}
+
+/* Particle container */
+.particle-container{position:absolute;inset:0;pointer-events:none;z-index:50;overflow:hidden}
+.particle{position:absolute;border-radius:50%;animation:particleFly 0.8s ease-out forwards}
+@keyframes particleFly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0)}}
+
+/* Sound button */
+.btn-sound{position:fixed;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:var(--panel);color:var(--cyan);font-size:18px;display:flex;align-items:center;justify-content:center;z-index:200;border:1px solid var(--panel-light);transition:all 0.2s}
+.btn-sound:hover{background:var(--panel-light)}
+.btn-sound.muted{color:var(--text-dim);opacity:0.5}
+
+/* Responsive */
+@media(max-height:600px){
+  .gate-node{width:36px;height:36px;font-size:13px;border-radius:8px}
+  .gate-node.gate-CNOT{width:32px;height:32px;font-size:16px}
+  .gate-node.cnot-control{width:14px;height:14px}
+  .state-qubit{width:32px;height:32px;font-size:13px}
+  .gate-btn{padding:8px 10px;font-size:12px;min-width:40px}
+  .hit-zone{height:48px}
+}
+@media(max-width:400px){
+  .gate-btn .gate-key{display:none}
+  .state-vector-mini{display:none}
+}
+
+/* Next gate hint */
+.next-gate-hint{display:flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(21,26,58,0.6);border-radius:8px;font-size:11px;color:var(--text-dim);letter-spacing:1px}
+.next-gate-hint .hint-gate{display:inline-block;padding:2px 7px;border-radius:4px;font-weight:800;font-size:11px;color:white;vertical-align:middle}
+.next-gate-hint .hint-gate.hg-X{background:linear-gradient(135deg,#ff4466,#ff6644)}
+.next-gate-hint .hint-gate.hg-H{background:linear-gradient(135deg,#6644ff,#aa44ff)}
+.next-gate-hint .hint-gate.hg-Z{background:linear-gradient(135deg,#00aa66,#00ddaa)}
+.next-gate-hint .hint-gate.hg-S{background:linear-gradient(135deg,#00aacc,#22ddee)}
+.next-gate-hint .hint-gate.hg-T{background:linear-gradient(135deg,#ddaa00,#ffcc22)}
+.next-gate-hint .hint-gate.hg-CNOT{background:linear-gradient(135deg,#a040dd,#c850ff)}
+.next-gate-hint .hint-wire{color:var(--cyan);font-weight:600;font-family:'JetBrains Mono',monospace}
+
+/* Level description */
+.level-desc{font-size:11px;color:var(--text-dim);padding:0 12px 0;text-align:center;letter-spacing:0.5px;opacity:0.7}
+
+/* Wire click pulse */
+.wire-pulse{position:absolute;z-index:4;width:60px;height:60px;border-radius:50%;pointer-events:none;animation:wirePulseAnim 0.4s ease-out forwards}
+@keyframes wirePulseAnim{0%{transform:translate(-50%,-50%) scale(0.3);opacity:0.8;box-shadow:0 0 20px currentColor}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0;box-shadow:0 0 40px currentColor}}
+
+/* Particle background canvas */
+#particleBg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="particleBg"></canvas>
+<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+
+<div id="app">
+
+<!-- ===== TITLE SCREEN ===== -->
+<div id="screen-title" class="screen active">
+  <div class="title-bg" id="title-bg"></div>
+  <div class="epr-pair">
+    <div class="epr-glow"></div>
+    <div class="epr-line"></div>
+    <div class="epr-qubit q0">|0&#10217;</div>
+    <div class="epr-qubit q1">|1&#10217;</div>
+  </div>
+  <div class="title-h1">SUPERPOSITION<br>HERO</div>
+  <div class="title-sub">Ride the Quantum Wave</div>
+  <div class="speed-selector" id="speed-selector">
+    <button class="speed-btn" data-speed="slow">SLOW</button>
+    <button class="speed-btn active" data-speed="normal">NORMAL</button>
+    <button class="speed-btn" data-speed="fast">FAST</button>
+  </div>
+  <button class="btn-play" id="btn-play">PLAY</button>
+  <div class="title-hint">Apply quantum gates in rhythm to build superpositions!</div>
+  <div class="title-progress" id="title-progress" style="display:none">
+    <div class="title-progress-bar"><div class="title-progress-fill" id="title-progress-fill"></div></div>
+    <div class="title-progress-text" id="title-progress-text"></div>
+  </div>
+</div>
+
+<!-- ===== LEVEL SELECT ===== -->
+<div id="screen-levels" class="screen">
+  <div class="levels-header">
+    <button class="btn-back" id="btn-back-title">&larr;</button>
+    <h2>Select Level</h2>
+  </div>
+  <div class="speed-selector" id="speed-selector-levels" style="margin-bottom:12px">
+    <button class="speed-btn" data-speed="slow">SLOW</button>
+    <button class="speed-btn active" data-speed="normal">NORMAL</button>
+    <button class="speed-btn" data-speed="fast">FAST</button>
+  </div>
+  <div id="worlds-container"></div>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div id="screen-game" class="screen">
+  <div class="game-hud">
+    <button class="btn-back" id="btn-back-game">&larr;</button>
+    <div class="level-name" id="game-level-name">Level 1</div>
+    <div class="score-display" id="score-display">0</div>
+    <div class="combo-display hidden" id="combo-display">x1</div>
+  </div>
+  <div class="target-bar">
+    <div class="label">Target</div>
+    <div class="target-state" id="target-state">|0&#10217;</div>
+    <div style="flex:1"></div>
+    <div class="next-gate-hint" id="next-gate-hint"></div>
+  </div>
+  <div class="level-desc" id="level-desc"></div>
+  <div class="level-progress"><div class="level-progress-fill" id="level-progress-fill"></div></div>
+
+  <div class="play-area" id="play-area">
+    <!-- Wires and gates rendered dynamically -->
+    <div class="hit-zone">
+      <div class="hit-zone-guide guide-top"></div>
+      <div class="hit-zone-guide guide-mid"></div>
+      <div class="hit-zone-glow"></div>
+      <div class="hit-zone-line">
+        <div class="hit-zone-scan"></div>
+      </div>
+    </div>
+    <div class="particle-container" id="particles"></div>
+  </div>
+
+  <div class="state-bar" id="state-bar">
+    <!-- Current quantum state qubits rendered dynamically -->
+  </div>
+
+  <div class="gate-buttons" id="gate-buttons">
+    <!-- Gate buttons rendered dynamically -->
+  </div>
+
+  <!-- Countdown overlay -->
+  <div class="countdown-overlay" id="countdown-overlay" style="display:none">
+    <div class="countdown-num" id="countdown-num">3</div>
+  </div>
+
+  <!-- Pause overlay -->
+  <div class="pause-overlay" id="pause-overlay">
+    <div class="pause-title">PAUSED</div>
+    <div class="pause-btns">
+      <button class="btn-modal btn-retry" id="btn-pause-quit">QUIT</button>
+      <button class="btn-modal btn-next" id="btn-pause-resume">RESUME</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RESULT MODAL ===== -->
+<div class="modal" id="modal-result">
+  <div class="modal-box">
+    <div class="result-title" id="result-title"></div>
+    <div class="result-stars" id="result-stars"></div>
+    <div class="result-score" id="result-score"></div>
+    <div class="result-msg" id="result-msg"></div>
+    <div class="modal-btns" id="result-btns"></div>
+  </div>
+</div>
+
+<!-- ===== TUTORIAL MODAL ===== -->
+<div class="modal" id="modal-tutorial">
+  <div class="modal-box tutorial-box">
+    <div class="tutorial-title" id="tutorial-title"></div>
+    <div class="tutorial-body" id="tutorial-body"></div>
+    <button class="btn-got-it" id="btn-got-it">GOT IT!</button>
+  </div>
+</div>
+
+<button class="btn-sound" id="btn-sound">&#9834;</button>
+
+</div>
+
+<script>
+// ============================================================
+// SECTION 1: QUANTUM ENGINE (reused from Quantum Collapse)
+// ============================================================
+
+class Complex {
+  constructor(re = 0, im = 0) { this.re = re; this.im = im; }
+  add(c) { return new Complex(this.re + c.re, this.im + c.im); }
+  sub(c) { return new Complex(this.re - c.re, this.im - c.im); }
+  mul(c) { return new Complex(this.re*c.re - this.im*c.im, this.re*c.im + this.im*c.re); }
+  scale(s) { return new Complex(this.re * s, this.im * s); }
+  abs2() { return this.re * this.re + this.im * this.im; }
+  clone() { return new Complex(this.re, this.im); }
+}
+
+const SQRT2_INV = 1 / Math.sqrt(2);
+
+const GATE_MATRICES = {
+  X: [[new Complex(0), new Complex(1)], [new Complex(1), new Complex(0)]],
+  H: [[new Complex(SQRT2_INV), new Complex(SQRT2_INV)], [new Complex(SQRT2_INV), new Complex(-SQRT2_INV)]],
+  Z: [[new Complex(1), new Complex(0)], [new Complex(0), new Complex(-1)]],
+  S: [[new Complex(1), new Complex(0)], [new Complex(0), new Complex(0, 1)]],
+  T: [[new Complex(1), new Complex(0)], [new Complex(0), new Complex(Math.cos(Math.PI/4), Math.sin(Math.PI/4))]],
+};
+
+class QuantumState {
+  constructor(n) {
+    this.n = n;
+    this.dim = 1 << n;
+    this.amps = new Array(this.dim);
+    for (let i = 0; i < this.dim; i++) this.amps[i] = new Complex(0, 0);
+    this.amps[0] = new Complex(1, 0);
+  }
+  clone() {
+    const s = new QuantumState(this.n);
+    for (let i = 0; i < this.dim; i++) s.amps[i] = this.amps[i].clone();
+    return s;
+  }
+  applySingleGate(gate, qubit) {
+    const U = GATE_MATRICES[gate];
+    if (!U) return;
+    for (let i = 0; i < this.dim; i++) {
+      if ((i >> qubit) & 1) continue;
+      const j = i | (1 << qubit);
+      const a = this.amps[i].clone();
+      const b = this.amps[j].clone();
+      this.amps[i] = U[0][0].mul(a).add(U[0][1].mul(b));
+      this.amps[j] = U[1][0].mul(a).add(U[1][1].mul(b));
+    }
+  }
+  applyCNOT(control, target) {
+    for (let i = 0; i < this.dim; i++) {
+      if (!((i >> target) & 1) && ((i >> control) & 1)) {
+        const j = i | (1 << target);
+        const tmp = this.amps[i];
+        this.amps[i] = this.amps[j];
+        this.amps[j] = tmp;
+      }
+    }
+  }
+  qubitProb(q, v) {
+    let p = 0;
+    for (let i = 0; i < this.dim; i++) {
+      if (((i >> q) & 1) === v) p += this.amps[i].abs2();
+    }
+    return p;
+  }
+  targetProb(targets) {
+    let p = 0;
+    for (const t of targets) p += this.amps[t].abs2();
+    return p;
+  }
+  fidelity(other) {
+    // |<psi|phi>|^2
+    let reSum = 0, imSum = 0;
+    for (let i = 0; i < this.dim; i++) {
+      const a = this.amps[i];
+      const b = other.amps[i];
+      reSum += a.re * b.re + a.im * b.im;
+      imSum += a.re * b.im - a.im * b.re;
+    }
+    return reSum * reSum + imSum * imSum;
+  }
+}
+
+
+// ============================================================
+// SECTION 2: SOUND ENGINE
+// ============================================================
+
+class SoundEngine {
+  constructor() { this.ctx = null; this.enabled = true; }
+  init() {
+    if (this.ctx) return;
+    try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e) { this.enabled = false; }
+  }
+  play(freq, dur, type = 'sine', vol = 0.15) {
+    if (!this.enabled || !this.ctx) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+    osc.connect(gain); gain.connect(this.ctx.destination);
+    osc.start(); osc.stop(this.ctx.currentTime + dur);
+  }
+  hit(quality) {
+    if (quality === 'perfect') { this.play(880, 0.15, 'sine', 0.12); setTimeout(() => this.play(1100, 0.1, 'sine', 0.1), 60); }
+    else if (quality === 'great') this.play(660, 0.12, 'sine', 0.1);
+    else if (quality === 'good') this.play(520, 0.1, 'sine', 0.08);
+    else this.play(220, 0.2, 'sawtooth', 0.06);
+  }
+  gateX() { this.play(440, 0.1, 'square', 0.08); }
+  gateH() { this.play(660, 0.15, 'sine', 0.1); }
+  gateZ() { this.play(550, 0.12, 'triangle', 0.1); }
+  gateCNOT() { this.play(440, 0.08); setTimeout(() => this.play(660, 0.08), 80); }
+  countdown() { this.play(440, 0.15, 'sine', 0.1); }
+  countdownGo() { this.play(880, 0.3, 'sine', 0.12); }
+  success() {
+    [0, 100, 200, 350].forEach((d, i) =>
+      setTimeout(() => this.play([523, 659, 784, 1047][i], 0.3, 'sine', 0.12), d)
+    );
+  }
+  failure() {
+    this.play(330, 0.3, 'sawtooth', 0.08);
+    setTimeout(() => this.play(220, 0.4, 'sawtooth', 0.06), 200);
+  }
+  star() { this.play(1100, 0.15, 'sine', 0.1); }
+  click() { this.play(800, 0.06, 'sine', 0.06); }
+}
+
+const sound = new SoundEngine();
+
+
+// ============================================================
+// SECTION 3: LEVEL DEFINITIONS
+// ============================================================
+
+const TUTORIALS = {
+  welcome: {
+    title: 'Welcome to Superposition Hero!',
+    body: `Gates fall down the wires like notes in a rhythm game!<br><br>
+      When a gate reaches the <b>hit zone</b> at the bottom, press the matching <b>gate button</b> and click the correct <b>wire</b> to apply it.<br><br>
+      Each gate you apply changes the quantum state. Your goal is to match the <b>target state</b> shown at the top!<br><br>
+      Time your hits well for bonus points: <b style="color:var(--gold)">PERFECT</b>, <b style="color:var(--green)">GREAT</b>, or <b style="color:var(--cyan)">GOOD</b>.<br><br>
+      <span style="font-size:12px;color:var(--text-dim)">Keyboard: <b style="color:var(--text)">1&ndash;6</b> select gates, <b style="color:var(--text)">Q/W/E</b> apply to wires</span>`
+  },
+  superposition: {
+    title: 'Superposition!',
+    body: `The <span class="t-gate t-H">H</span> <b>Hadamard</b> gate puts a qubit into <b>superposition</b> &mdash; it's both 0 AND 1 simultaneously!<br><br>
+      A superposition qubit shows a <b>purple blend</b> between blue (|0&#10217;) and orange (|1&#10217;).<br><br>
+      Now you need to build specific superposition states. Pay attention to which gates to apply and when!`
+  },
+  twoWires: {
+    title: 'Two Qubits!',
+    body: `Now you have <b>two wires</b> &mdash; two qubits!<br><br>
+      Each wire corresponds to a qubit. Gates fall on specific wires. Apply the gate to the <b>correct wire</b> when it hits the zone.<br><br>
+      The <span class="t-gate t-CNOT">CNOT</span> gate links two qubits: it flips the <b>target</b> qubit only when the <b>control</b> qubit is |1&#10217;. Look for the connecting line between wires!`
+  },
+  threeWires: {
+    title: 'Three Qubits!',
+    body: `Things are getting complex with <b>three wires</b>!<br><br>
+      More qubits means more possibilities. The state space grows exponentially &mdash; 3 qubits have <b>8 possible states</b>.<br><br>
+      Stay focused and watch which wire each gate falls on. You've got this!`
+  }
+};
+
+// Each level: sequence of gates to apply, target state, available gates
+// Gates in sequence: {gate, wire, control?} where wire is qubit index
+const LEVELS = [
+  // ===== WORLD 1: SINGLE WIRE (1 qubit) =====
+  { id:1, world:1, name:'First Flip', numQubits:1, gates:['X'],
+    tutorial:'welcome',
+    desc:'Apply X to flip the qubit',
+    sequence: [{gate:'X', wire:0}, {gate:'X', wire:0}, {gate:'X', wire:0}],
+    targetDesc: '|1\u27E9'
+  },
+  { id:2, world:1, name:'Double Flip', numQubits:1, gates:['X'],
+    desc:'Two X gates cancel out!',
+    sequence: [{gate:'X', wire:0}, {gate:'X', wire:0}, {gate:'X', wire:0}, {gate:'X', wire:0}],
+    targetDesc: '|0\u27E9'
+  },
+  { id:3, world:1, name:'Into the Unknown', numQubits:1, gates:['H'],
+    tutorial:'superposition',
+    desc:'Create a superposition with H',
+    sequence: [{gate:'H', wire:0}, {gate:'H', wire:0}, {gate:'H', wire:0}],
+    targetDesc: '\u00B9/\u221A\u0032(|0\u27E9+|1\u27E9)'
+  },
+  { id:4, world:1, name:'Back to Reality', numQubits:1, gates:['H'],
+    desc:'Two H gates bring you back',
+    sequence: [{gate:'H', wire:0}, {gate:'H', wire:0}, {gate:'H', wire:0}, {gate:'H', wire:0}],
+    targetDesc: '|0\u27E9'
+  },
+  { id:5, world:1, name:'Flip & Mix', numQubits:1, gates:['X','H'],
+    desc:'X then H creates a different superposition',
+    sequence: [{gate:'X', wire:0}, {gate:'H', wire:0}, {gate:'X', wire:0}, {gate:'H', wire:0}, {gate:'X', wire:0}, {gate:'H', wire:0}],
+    targetDesc: '\u00B9/\u221A\u0032(|0\u27E9-|1\u27E9)'
+  },
+
+  // ===== WORLD 2: TWO WIRES (2 qubits) =====
+  { id:6, world:2, name:'Two Flips', numQubits:2, gates:['X'],
+    tutorial:'twoWires',
+    desc:'Flip both qubits',
+    sequence: [{gate:'X', wire:0}, {gate:'X', wire:1}, {gate:'X', wire:0}, {gate:'X', wire:1}],
+    targetDesc: '|00\u27E9'
+  },
+  { id:7, world:2, name:'Half & Half', numQubits:2, gates:['X','H'],
+    desc:'Flip one, superpose the other',
+    sequence: [{gate:'X', wire:0}, {gate:'H', wire:1}, {gate:'X', wire:0}, {gate:'H', wire:1}, {gate:'X', wire:0}, {gate:'H', wire:1}],
+    targetDesc: '\u00B9/\u221A\u0032(|01\u27E9+|11\u27E9)'
+  },
+  { id:8, world:2, name:'Bell State', numQubits:2, gates:['H','CNOT'],
+    desc:'Create quantum entanglement!',
+    sequence: [{gate:'H', wire:0}, {gate:'CNOT', wire:1, control:0}, {gate:'H', wire:0}, {gate:'CNOT', wire:1, control:0}, {gate:'H', wire:0}, {gate:'CNOT', wire:1, control:0}],
+    targetDesc: '\u00B9/\u221A\u0032(|00\u27E9+|11\u27E9)'
+  },
+  { id:9, world:2, name:'Entangled Flip', numQubits:2, gates:['X','H','CNOT'],
+    desc:'Build an anti-correlated Bell state',
+    sequence: [{gate:'X', wire:0}, {gate:'H', wire:0}, {gate:'CNOT', wire:1, control:0}, {gate:'X', wire:1}, {gate:'H', wire:1}, {gate:'CNOT', wire:0, control:1}],
+    targetDesc: 'compute'
+  },
+  { id:10, world:2, name:'Quantum Cascade', numQubits:2, gates:['H','X','CNOT'],
+    desc:'A longer sequence mixing gates',
+    sequence: [{gate:'H', wire:0}, {gate:'CNOT', wire:1, control:0}, {gate:'X', wire:1}, {gate:'H', wire:0}, {gate:'CNOT', wire:1, control:0}, {gate:'H', wire:1}, {gate:'X', wire:0}],
+    targetDesc: 'compute'
+  },
+
+  // ===== WORLD 3: THREE WIRES (3 qubits) =====
+  { id:11, world:3, name:'Triple Threat', numQubits:3, gates:['X','H'],
+    tutorial:'threeWires',
+    desc:'Set up three qubits',
+    sequence: [{gate:'X', wire:0}, {gate:'H', wire:1}, {gate:'X', wire:2}, {gate:'H', wire:0}, {gate:'X', wire:1}],
+    targetDesc: 'compute'
+  },
+  { id:12, world:3, name:'GHZ State', numQubits:3, gates:['H','CNOT'],
+    desc:'Create a 3-qubit entangled state!',
+    sequence: [{gate:'H', wire:0}, {gate:'CNOT', wire:1, control:0}, {gate:'CNOT', wire:2, control:0}, {gate:'H', wire:1}, {gate:'CNOT', wire:2, control:1}],
+    targetDesc: '\u00B9/\u221A\u0032(|000\u27E9+|111\u27E9)'
+  },
+  { id:13, world:3, name:'Quantum Wave', numQubits:3, gates:['H','X','CNOT'],
+    desc:'A wave of gates across all wires',
+    sequence: [{gate:'H', wire:0}, {gate:'H', wire:1}, {gate:'H', wire:2}, {gate:'CNOT', wire:1, control:0}, {gate:'CNOT', wire:2, control:1}, {gate:'X', wire:0}, {gate:'H', wire:2}],
+    targetDesc: 'compute'
+  },
+  { id:14, world:3, name:'Phase Dance', numQubits:3, gates:['H','Z','X'],
+    desc:'Mix phases with flips',
+    sequence: [{gate:'H', wire:0}, {gate:'Z', wire:0}, {gate:'H', wire:0}, {gate:'X', wire:1}, {gate:'H', wire:2}, {gate:'Z', wire:2}, {gate:'X', wire:0}, {gate:'H', wire:1}],
+    targetDesc: 'compute'
+  },
+  { id:15, world:3, name:'Grand Finale', numQubits:3, gates:['H','X','Z','CNOT'],
+    desc:'The ultimate 3-qubit challenge!',
+    sequence: [
+      {gate:'H', wire:0}, {gate:'H', wire:1}, {gate:'CNOT', wire:2, control:0},
+      {gate:'Z', wire:1}, {gate:'CNOT', wire:2, control:1}, {gate:'H', wire:0},
+      {gate:'X', wire:2}, {gate:'H', wire:2}, {gate:'CNOT', wire:1, control:2}, {gate:'Z', wire:0}
+    ],
+    targetDesc: 'compute'
+  },
+];
+
+const WORLD_NAMES = ['Single Wire', 'Two Wires', 'Three Wires'];
+const WORLD_COLORS = ['var(--cyan)', 'var(--magenta)', 'var(--green)'];
+
+
+// ============================================================
+// SECTION 4: GAME STATE
+// ============================================================
+
+const SPEED_CONFIG = {
+  slow:   { fallDuration: 7000, spawnInterval: 2800, hitWindow: 500, greatWindow: 350, perfectWindow: 180 },
+  normal: { fallDuration: 5000, spawnInterval: 2200, hitWindow: 400, greatWindow: 260, perfectWindow: 130 },
+  fast:   { fallDuration: 3200, spawnInterval: 1500, hitWindow: 300, greatWindow: 200, perfectWindow: 100 },
+};
+
+const state = {
+  screen: 'title',
+  speed: 'normal',
+  levelStars: new Array(LEVELS.length).fill(-1),
+  bestScores: new Array(LEVELS.length).fill(0),
+  currentLevel: 0,
+  // In-game state
+  qstate: null,
+  targetState: null,
+  score: 0,
+  combo: 0,
+  maxCombo: 0,
+  totalHits: 0,
+  perfectHits: 0,
+  greatHits: 0,
+  goodHits: 0,
+  misses: 0,
+  // Gate sequence tracking
+  gateSequence: [],
+  currentGateIndex: 0,
+  fallingGates: [],  // [{id, gate, wire, control?, y, spawned, hit}]
+  nextGateId: 0,
+  // Timing
+  gameRunning: false,
+  paused: false,
+  lastFrame: 0,
+  spawnTimer: 0,
+  animFrame: null,
+  tutorialSeen: {},
+  selectedGate: null,
+};
+
+function loadProgress() {
+  try {
+    const d = JSON.parse(localStorage.getItem('superpositionHero'));
+    if (d && d.levelStars) d.levelStars.forEach((s, i) => { if (i < state.levelStars.length) state.levelStars[i] = s; });
+    if (d && d.bestScores) d.bestScores.forEach((s, i) => { if (i < state.bestScores.length) state.bestScores[i] = s; });
+    if (d && d.tutorialSeen) state.tutorialSeen = d.tutorialSeen;
+    if (d && d.speed) state.speed = d.speed;
+  } catch(e) {}
+  if (state.levelStars[0] < 0) state.levelStars[0] = 0;
+}
+
+function saveProgress() {
+  try {
+    localStorage.setItem('superpositionHero', JSON.stringify({
+      levelStars: state.levelStars,
+      bestScores: state.bestScores,
+      tutorialSeen: state.tutorialSeen,
+      speed: state.speed,
+    }));
+  } catch(e) {}
+}
+
+
+// ============================================================
+// SECTION 5: UI HELPERS
+// ============================================================
+
+const $ = id => document.getElementById(id);
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = name === 'title' ? 'screen-title' : name === 'levels' ? 'screen-levels' : 'screen-game';
+  $(el).classList.add('active');
+  state.screen = name;
+  // Hide Course Home link during gameplay to avoid overlap
+  const homeLink = document.querySelector('a[href="../index.html"]');
+  if (homeLink) homeLink.style.display = name === 'game' ? 'none' : '';
+}
+
+function qubitHue(p1) { return (210 + 170 * p1) % 360; }
+
+function formatStateVectorMini(qs, nq) {
+  const terms = [];
+  for (let i = 0; i < qs.dim; i++) {
+    const a = qs.amps[i];
+    if (a.abs2() < 0.001) continue;
+    let bits = '';
+    for (let q = nq - 1; q >= 0; q--) bits += (i >> q) & 1;
+    terms.push({ re: a.re, im: a.im, bits });
+  }
+  if (terms.length === 0) return '';
+  let html = '<span class="sv-eq">|&#936;&#10217;=</span> ';
+  terms.forEach((t, i) => {
+    const isReal = Math.abs(t.im) < 0.001;
+    let sign, coeffStr;
+    if (isReal) {
+      sign = t.re >= 0;
+      const abs = Math.abs(t.re);
+      if (Math.abs(abs - 1) < 0.01) coeffStr = '';
+      else if (Math.abs(abs - SQRT2_INV) < 0.01) coeffStr = '<sup>1</sup>&frasl;<sub>&radic;2</sub>';
+      else if (Math.abs(abs - 0.5) < 0.01) coeffStr = '&frac12;';
+      else coeffStr = abs.toFixed(2);
+    } else {
+      sign = true;
+      const mag = Math.sqrt(t.re*t.re + t.im*t.im);
+      if (Math.abs(mag - SQRT2_INV) < 0.01) coeffStr = '<sup>1</sup>&frasl;<sub>&radic;2</sub>';
+      else if (Math.abs(mag - 1) < 0.01) coeffStr = '';
+      else coeffStr = mag.toFixed(2);
+    }
+    if (i === 0) { if (!sign) html += '&minus;'; }
+    else { html += sign ? '+' : '&minus;'; }
+    if (coeffStr) html += '<span class="sv-coeff">' + coeffStr + '</span>';
+    html += '<span class="sv-ket">|' + t.bits + '&#10217;</span>';
+  });
+  return html;
+}
+
+function starString(n) {
+  return '<span style="color:var(--gold)">' + '\u2605'.repeat(n) + '</span>' +
+         '<span style="opacity:0.2">' + '\u2605'.repeat(3 - n) + '</span>';
+}
+
+function spawnParticles(x, y, color) {
+  const container = $('particles');
+  if (!container) return;
+  const rect = $('play-area').getBoundingClientRect();
+  const px = ((x - rect.left) / rect.width * 100);
+  const py = ((y - rect.top) / rect.height * 100);
+  const colors = color ? [color] : ['var(--cyan)', 'var(--magenta)', 'var(--gold)'];
+  for (let i = 0; i < 6; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 3 + Math.random() * 5;
+    const dx = (Math.random() - 0.5) * 80;
+    const dy = (Math.random() - 0.5) * 80;
+    p.style.cssText = `width:${size}px;height:${size}px;left:${px}%;top:${py}%;background:${colors[i % colors.length]};--dx:${dx}px;--dy:${dy}px`;
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
+}
+
+function spawnConfetti() {
+  const container = $('play-area');
+  const colors = ['var(--cyan)', 'var(--magenta)', 'var(--gold)', 'var(--green)', 'var(--orange)'];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    const drift = (Math.random() - 0.5) * 60;
+    c.style.cssText = `left:${Math.random()*100}%;top:-10px;background:${colors[i%colors.length]};--drift:${drift}px;animation-duration:${2+Math.random()*2}s;animation-delay:${Math.random()*0.5}s`;
+    container.appendChild(c);
+    setTimeout(() => c.remove(), 5000);
+  }
+}
+
+
+// ============================================================
+// SECTION 6: TITLE & LEVEL SELECT RENDERING
+// ============================================================
+
+function initTitleParticles() {
+  const bg = $('title-bg');
+  const colors = ['var(--cyan)', 'var(--magenta)', 'var(--orange)', 'var(--green)'];
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'title-particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.background = colors[i % colors.length];
+    p.style.animationDuration = (4 + Math.random() * 6) + 's';
+    p.style.animationDelay = (Math.random() * 8) + 's';
+    p.style.width = p.style.height = (3 + Math.random() * 5) + 'px';
+    bg.appendChild(p);
+  }
+}
+
+function updateTitleProgress() {
+  const completedCount = state.levelStars.filter(s => s > 0).length;
+  const tp = $('title-progress');
+  if (completedCount > 0) {
+    tp.style.display = '';
+    const pct = Math.round(completedCount / LEVELS.length * 100);
+    $('title-progress-fill').style.width = pct + '%';
+    $('title-progress-text').textContent = `${completedCount}/${LEVELS.length} levels complete`;
+  } else {
+    tp.style.display = 'none';
+  }
+}
+
+function renderLevelSelect() {
+  const container = $('worlds-container');
+  container.innerHTML = '';
+
+  const totalStars = state.levelStars.reduce((sum, s) => sum + (s > 0 ? s : 0), 0);
+  const maxStars = LEVELS.length * 3;
+  document.querySelector('#screen-levels .levels-header h2').innerHTML =
+    'Select Level <span class="total-stars">\u2605 ' + totalStars + '/' + maxStars + '</span>';
+
+  const completedCount = state.levelStars.filter(s => s > 0).length;
+  const existingStats = container.parentElement.querySelector('.levels-stats');
+  if (existingStats) existingStats.remove();
+  if (completedCount > 0) {
+    const stats = document.createElement('div');
+    stats.className = 'levels-stats';
+    stats.textContent = `${completedCount}/${LEVELS.length} levels complete`;
+    container.parentElement.insertBefore(stats, container);
+  }
+
+  for (let w = 1; w <= WORLD_NAMES.length; w++) {
+    const section = document.createElement('div');
+    section.className = 'world-section';
+    const wLevels = LEVELS.filter(l => l.world === w);
+    const worldUnlocked = wLevels.some(l => state.levelStars[l.id - 1] >= 0);
+
+    const wStars = wLevels.reduce((sum, l) => sum + (state.levelStars[l.id - 1] > 0 ? state.levelStars[l.id - 1] : 0), 0);
+    const wMax = wLevels.length * 3;
+    const starCountHtml = worldUnlocked ? `<span class="world-star-count">\u2605 ${wStars}/${wMax}</span>` : '';
+    section.innerHTML = `<div class="world-title"><span><span class="world-num" style="color:${WORLD_COLORS[w-1]}">World ${w}:</span> ${WORLD_NAMES[w-1]}</span>${starCountHtml}</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'level-grid';
+
+    for (const level of wLevels) {
+      const idx = level.id - 1;
+      const stars = state.levelStars[idx];
+      const locked = stars < 0;
+      const completed = stars > 0;
+      const current = stars === 0;
+
+      const btn = document.createElement('button');
+      btn.className = 'level-btn' + (locked ? ' locked' : '') + (completed ? ' completed' : '') + (current ? ' current' : '');
+      btn.style.position = 'relative';
+      const tipText = locked ? '' : `<div class="level-name-tip">${level.name}</div>`;
+      const bestScore = state.bestScores[idx] > 0 ? `<div class="level-best">${state.bestScores[idx]}</div>` : '';
+      btn.innerHTML = `${level.id}<div class="level-stars">${locked ? '' : (stars > 0 ? starString(stars) : '')}</div>${bestScore}${tipText}`;
+      if (!locked) {
+        btn.addEventListener('click', () => startLevel(idx));
+      }
+      grid.appendChild(btn);
+    }
+    section.appendChild(grid);
+
+    const worldStars = wLevels.reduce((sum, l) => sum + (state.levelStars[l.id - 1] > 0 ? state.levelStars[l.id - 1] : 0), 0);
+    const worldMax = wLevels.length * 3;
+    const pct = Math.round(worldStars / worldMax * 100);
+    const progressBar = document.createElement('div');
+    progressBar.className = 'world-progress';
+    progressBar.innerHTML = `<div class="world-progress-fill" style="width:${pct}%;background:${WORLD_COLORS[w-1]}"></div>`;
+    section.appendChild(progressBar);
+    container.appendChild(section);
+  }
+}
+
+function updateSpeedButtons() {
+  document.querySelectorAll('.speed-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.speed === state.speed);
+  });
+}
+
+
+// ============================================================
+// SECTION 7: GAME ENGINE
+// ============================================================
+
+function startLevel(idx) {
+  sound.init();
+  state.currentLevel = idx;
+  const level = LEVELS[idx];
+
+  // Check for tutorial
+  if (level.tutorial && !state.tutorialSeen[level.tutorial]) {
+    showTutorial(level.tutorial, () => beginLevel(idx));
+    return;
+  }
+  beginLevel(idx);
+}
+
+function showTutorial(key, callback) {
+  const tut = TUTORIALS[key];
+  if (!tut) { callback(); return; }
+  $('tutorial-title').innerHTML = tut.title;
+  $('tutorial-body').innerHTML = tut.body;
+  $('modal-tutorial').classList.add('active');
+  state.tutorialSeen[key] = true;
+  saveProgress();
+  $('btn-got-it').onclick = () => {
+    $('modal-tutorial').classList.remove('active');
+    callback();
+  };
+}
+
+function beginLevel(idx) {
+  const level = LEVELS[idx];
+  state.qstate = new QuantumState(level.numQubits);
+  state.score = 0;
+  state.combo = 0;
+  state.maxCombo = 0;
+  state.totalHits = 0;
+  state.perfectHits = 0;
+  state.greatHits = 0;
+  state.goodHits = 0;
+  state.misses = 0;
+  state.gateSequence = [...level.sequence];
+  state.currentGateIndex = 0;
+  state.fallingGates = [];
+  state.nextGateId = 0;
+  state.gameRunning = false;
+  state.paused = false;
+  state.spawnTimer = 0;
+  state.selectedGate = null;
+
+  // Compute target state
+  state.targetState = new QuantumState(level.numQubits);
+  for (const step of level.sequence) {
+    if (step.gate === 'CNOT') {
+      state.targetState.applyCNOT(step.control, step.wire);
+    } else {
+      state.targetState.applySingleGate(step.gate, step.wire);
+    }
+  }
+
+  showScreen('game');
+  renderGameUI(level);
+  startCountdown();
+}
+
+function renderGameUI(level) {
+  // HUD
+  $('game-level-name').textContent = `${level.id}. ${level.name}`;
+  $('score-display').textContent = '0';
+  $('combo-display').textContent = 'x1';
+  $('combo-display').classList.add('hidden');
+
+  // Target — auto-compute if targetDesc is 'compute'
+  if (level.targetDesc === 'compute') {
+    const fullHtml = formatStateVectorMini(state.targetState, level.numQubits);
+    // Strip the |Ψ⟩= prefix label
+    $('target-state').innerHTML = fullHtml.replace(/<span class="sv-eq">[^<]*<\/span>\s*/g, '');
+  } else {
+    $('target-state').textContent = level.targetDesc;
+  }
+
+  // Level description
+  const descEl = $('level-desc');
+  if (descEl) descEl.textContent = level.desc || '';
+
+  // Next gate hint
+  updateNextGateHint();
+
+  // Progress
+  $('level-progress-fill').style.width = '0%';
+
+  // Wires
+  const playArea = $('play-area');
+  // Remove old wires
+  playArea.querySelectorAll('.wire, .wire-label, .wire-label-top, .wire-term-top, .wire-term-bot, .gate-node, .cnot-connector, .cnot-target-circle, .hit-feedback').forEach(el => el.remove());
+
+  const nq = level.numQubits;
+  for (let q = 0; q < nq; q++) {
+    const xPct = getWireX(q, nq);
+
+    // Main wire line
+    const wire = document.createElement('div');
+    wire.className = 'wire';
+    wire.style.left = xPct + '%';
+    wire.dataset.wire = q;
+    playArea.appendChild(wire);
+
+    // Top ket label  |0⟩ →
+    const topLabel = document.createElement('div');
+    topLabel.className = 'wire-label-top';
+    topLabel.style.left = xPct + '%';
+    topLabel.innerHTML = '|0\u27E9';
+    playArea.appendChild(topLabel);
+
+    // Top terminator bar
+    const termTop = document.createElement('div');
+    termTop.className = 'wire-term-top';
+    termTop.style.left = `calc(${xPct}% - 4px)`;
+    playArea.appendChild(termTop);
+
+    // Bottom terminator bar (at hit zone)
+    const termBot = document.createElement('div');
+    termBot.className = 'wire-term-bot';
+    termBot.style.left = `calc(${xPct}% - 4px)`;
+    playArea.appendChild(termBot);
+
+    // Bottom qubit label
+    const label = document.createElement('div');
+    label.className = 'wire-label';
+    label.style.left = xPct + '%';
+    label.textContent = 'q' + q;
+    playArea.appendChild(label);
+  }
+
+  // State bar
+  renderStateBar(level);
+
+  // Gate buttons
+  renderGateButtons(level);
+}
+
+function getWireX(q, nq) {
+  // Distribute wires evenly across the play area
+  if (nq === 1) return 50;
+  const margin = 20;
+  return margin + q * ((100 - 2 * margin) / (nq - 1));
+}
+
+function renderStateBar(level) {
+  const bar = $('state-bar');
+  bar.innerHTML = '';
+  const nq = level.numQubits;
+  for (let q = 0; q < nq; q++) {
+    const container = document.createElement('div');
+    container.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;position:relative';
+    const label = document.createElement('div');
+    label.className = 'state-qubit-label';
+    label.textContent = 'q' + q;
+    container.appendChild(label);
+
+    const qubit = document.createElement('div');
+    qubit.className = 'state-qubit';
+    qubit.dataset.wire = q;
+    const p1 = state.qstate.qubitProb(q, 1);
+    const hue = qubitHue(p1);
+    qubit.style.background = `hsl(${hue}, 70%, 50%)`;
+    qubit.style.boxShadow = `0 0 12px hsla(${hue}, 70%, 50%, 0.4)`;
+    if (p1 < 0.01) qubit.textContent = '0';
+    else if (p1 > 0.99) qubit.textContent = '1';
+    else qubit.textContent = '\u00B1';
+    container.appendChild(qubit);
+    bar.appendChild(container);
+  }
+  // State vector
+  const sv = document.createElement('div');
+  sv.className = 'state-vector-mini';
+  sv.id = 'state-vector-mini';
+  sv.innerHTML = formatStateVectorMini(state.qstate, nq);
+  bar.appendChild(sv);
+}
+
+function updateStateBar() {
+  const level = LEVELS[state.currentLevel];
+  const nq = level.numQubits;
+  $('state-bar').querySelectorAll('.state-qubit').forEach(el => {
+    const q = parseInt(el.dataset.wire);
+    const p1 = state.qstate.qubitProb(q, 1);
+    const hue = qubitHue(p1);
+    el.style.background = `hsl(${hue}, 70%, 50%)`;
+    el.style.boxShadow = `0 0 12px hsla(${hue}, 70%, 50%, 0.4)`;
+    if (p1 < 0.01) el.textContent = '0';
+    else if (p1 > 0.99) el.textContent = '1';
+    else el.textContent = '\u00B1';
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 300);
+  });
+  const sv = $('state-vector-mini');
+  if (sv) sv.innerHTML = formatStateVectorMini(state.qstate, nq);
+}
+
+function renderGateButtons(level) {
+  const container = $('gate-buttons');
+  container.innerHTML = '';
+  const keyMap = { 'X': '1', 'H': '2', 'Z': '3', 'S': '4', 'T': '5', 'CNOT': '6' };
+  level.gates.forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'gate-btn';
+    btn.dataset.gate = g;
+    const displayName = g === 'CNOT' ? '\u2022\u2295' : g;
+    const count = level.sequence.filter(s => s.gate === g).length;
+    btn.innerHTML = `<span>${displayName}</span><span class="gate-key">${keyMap[g] || ''}</span><span class="gate-remaining" data-gate-count="${g}">${count}</span>`;
+    btn.addEventListener('click', () => selectGate(g));
+    container.appendChild(btn);
+  });
+  // Auto-select if only one gate type available
+  if (level.gates.length === 1) {
+    selectGate(level.gates[0]);
+  }
+}
+
+function updateGateRemainingCounts() {
+  const level = LEVELS[state.currentLevel];
+  level.gates.forEach(g => {
+    const badge = document.querySelector(`.gate-remaining[data-gate-count="${g}"]`);
+    if (!badge) return;
+    const total = level.sequence.filter(s => s.gate === g).length;
+    const consumed = state.fallingGates.filter(fg => fg.gate === g && (fg.hit || fg.missed)).length;
+    const rem = total - consumed;
+    badge.textContent = rem;
+    badge.classList.toggle('zero', rem === 0);
+  });
+}
+
+function selectGate(gate) {
+  state.selectedGate = gate;
+  document.querySelectorAll('.gate-btn').forEach(b => {
+    b.classList.toggle('sel', b.dataset.gate === gate);
+  });
+}
+
+function startCountdown() {
+  const overlay = $('countdown-overlay');
+  const num = $('countdown-num');
+  overlay.style.display = 'flex';
+  let count = 3;
+  num.textContent = count;
+
+  const tick = () => {
+    if (count > 0) {
+      num.textContent = count;
+      num.style.animation = 'none';
+      void num.offsetHeight;
+      num.style.animation = 'countPop 0.6s ease-out';
+      sound.countdown();
+      count--;
+      setTimeout(tick, 700);
+    } else {
+      num.textContent = 'GO!';
+      num.style.animation = 'none';
+      void num.offsetHeight;
+      num.style.animation = 'countPop 0.6s ease-out';
+      num.style.color = 'var(--green)';
+      sound.countdownGo();
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        num.style.color = 'var(--cyan)';
+        startGameLoop();
+      }, 500);
+    }
+  };
+  tick();
+}
+
+function startGameLoop() {
+  state.gameRunning = true;
+  state.lastFrame = performance.now();
+  // Start spawn timer near the interval so first gate spawns quickly
+  const config = SPEED_CONFIG[state.speed];
+  state.spawnTimer = config.spawnInterval - 300;
+  gameLoop(state.lastFrame);
+}
+
+function gameLoop(timestamp) {
+  if (!state.gameRunning) return;
+  if (state.paused) {
+    state.animFrame = requestAnimationFrame(gameLoop);
+    return;
+  }
+
+  const dt = timestamp - state.lastFrame;
+  state.lastFrame = timestamp;
+
+  const config = SPEED_CONFIG[state.speed];
+  const playArea = $('play-area');
+  const areaHeight = playArea.offsetHeight;
+  const hitZoneY = areaHeight - 60; // top of hit zone
+
+  // Spawn gates
+  state.spawnTimer += dt;
+  if (state.currentGateIndex < state.gateSequence.length && state.spawnTimer >= config.spawnInterval) {
+    state.spawnTimer = 0;
+    spawnGate(state.gateSequence[state.currentGateIndex]);
+    state.currentGateIndex++;
+  }
+
+  // Move falling gates
+  const speed = areaHeight / config.fallDuration; // pixels per ms
+  for (const fg of state.fallingGates) {
+    if (fg.hit || fg.missed) continue;
+    fg.y += speed * dt;
+
+    // Update DOM position
+    const el = document.getElementById('gate-' + fg.id);
+    if (el) {
+      el.style.top = fg.y + 'px';
+    }
+    // Update CNOT connector/target
+    if (fg.gate === 'CNOT') {
+      updateCNOTVisuals(fg);
+    }
+
+    // Check if gate passed the hit zone (miss) - generous window
+    if (fg.y > hitZoneY + 130) {
+      missGate(fg);
+    }
+  }
+
+  // Update progress
+  const totalGates = state.gateSequence.length;
+  const processed = state.totalHits + state.misses;
+  $('level-progress-fill').style.width = (processed / totalGates * 100) + '%';
+
+  // Check if level is complete
+  if (processed >= totalGates && state.fallingGates.every(g => g.hit || g.missed)) {
+    endLevel();
+    return;
+  }
+
+  state.animFrame = requestAnimationFrame(gameLoop);
+}
+
+function spawnGate(gateInfo) {
+  const level = LEVELS[state.currentLevel];
+  const nq = level.numQubits;
+  const playArea = $('play-area');
+  const wireX = getWireX(gateInfo.wire, nq);
+
+  const fg = {
+    id: state.nextGateId++,
+    gate: gateInfo.gate,
+    wire: gateInfo.wire,
+    control: gateInfo.control,
+    y: -50,
+    hit: false,
+    missed: false,
+  };
+  state.fallingGates.push(fg);
+
+  // Create DOM element
+  const el = document.createElement('div');
+  el.className = 'gate-node gate-' + gateInfo.gate;
+  el.id = 'gate-' + fg.id;
+  el.textContent = gateInfo.gate === 'CNOT' ? '\u2295' : gateInfo.gate;
+  el.style.left = `calc(${wireX}% - 22px)`;
+  el.style.top = fg.y + 'px';
+  playArea.appendChild(el);
+
+  // For CNOT, also create control dot and connector
+  if (gateInfo.gate === 'CNOT' && gateInfo.control !== undefined) {
+    const ctrlX = getWireX(gateInfo.control, nq);
+
+    // Control dot (small filled circle)
+    const ctrl = document.createElement('div');
+    ctrl.className = 'gate-node cnot-control';
+    ctrl.id = 'gate-ctrl-' + fg.id;
+    ctrl.style.left = `calc(${ctrlX}% - 9px)`;
+    ctrl.style.top = (fg.y + 11) + 'px';
+    playArea.appendChild(ctrl);
+
+    // Connector line between control and target
+    const conn = document.createElement('div');
+    conn.className = 'cnot-connector';
+    conn.id = 'gate-conn-' + fg.id;
+    const leftPct = Math.min(wireX, ctrlX);
+    const rightPct = Math.max(wireX, ctrlX);
+    conn.style.left = leftPct + '%';
+    conn.style.width = (rightPct - leftPct) + '%';
+    conn.style.height = '3px';
+    conn.style.top = (fg.y + 20) + 'px';
+    playArea.appendChild(conn);
+  }
+}
+
+function updateCNOTVisuals(fg) {
+  const level = LEVELS[state.currentLevel];
+  const nq = level.numQubits;
+  const ctrl = document.getElementById('gate-ctrl-' + fg.id);
+  const conn = document.getElementById('gate-conn-' + fg.id);
+  if (ctrl) ctrl.style.top = (fg.y + 11) + 'px';
+  if (conn) conn.style.top = (fg.y + 20) + 'px';
+}
+
+function missGate(fg) {
+  fg.missed = true;
+  state.misses++;
+  state.combo = 0;
+  updateComboDisplay();
+
+  const el = document.getElementById('gate-' + fg.id);
+  if (el) { el.classList.add('miss'); setTimeout(() => el.remove(), 500); }
+  if (fg.gate === 'CNOT') {
+    const ctrl = document.getElementById('gate-ctrl-' + fg.id);
+    const conn = document.getElementById('gate-conn-' + fg.id);
+    if (ctrl) { ctrl.classList.add('miss'); setTimeout(() => ctrl.remove(), 500); }
+    if (conn) setTimeout(() => conn.remove(), 500);
+  }
+
+  // Show miss feedback
+  const level = LEVELS[state.currentLevel];
+  const playArea = $('play-area');
+  const areaHeight = playArea.offsetHeight;
+  showHitFeedback(getWireX(fg.wire, level.numQubits), areaHeight - 80, 'MISS', 'miss');
+  sound.hit('miss');
+  updateNextGateHint();
+  updateGateRemainingCounts();
+}
+
+function tryApplyGate(wireIndex) {
+  if (!state.gameRunning || state.paused) return;
+
+  const level = LEVELS[state.currentLevel];
+  const config = SPEED_CONFIG[state.speed];
+  const playArea = $('play-area');
+  const areaHeight = playArea.offsetHeight;
+  const hitZoneY = areaHeight - 60;
+  const speed = areaHeight / config.fallDuration;
+
+  // Find the closest gate on this wire (auto-select gate type)
+  let bestGate = null;
+  let bestDist = Infinity;
+
+  for (const fg of state.fallingGates) {
+    if (fg.hit || fg.missed) continue;
+
+    // Match by target wire, or by control wire for CNOT
+    const onWire = fg.wire === wireIndex || (fg.gate === 'CNOT' && fg.control === wireIndex);
+    if (!onWire) continue;
+
+    // If a gate is manually selected, prefer it but also allow auto-matching
+    if (state.selectedGate && fg.gate !== state.selectedGate) {
+      // Still consider this gate but with a penalty so manually selected ones are preferred
+      const dist = Math.abs(fg.y - hitZoneY) + 200;
+      if (dist < bestDist) { bestDist = dist; bestGate = fg; }
+      continue;
+    }
+
+    const dist = Math.abs(fg.y - hitZoneY);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestGate = fg;
+    }
+  }
+
+  if (!bestGate) return;
+
+  // Auto-select the gate type to match the best gate found
+  selectGate(bestGate.gate);
+
+  // Check timing quality (pixel distance from hit zone)
+  const distToHit = Math.abs(bestGate.y - hitZoneY);
+
+  let quality;
+  if (distToHit <= 35) quality = 'perfect';
+  else if (distToHit <= 70) quality = 'great';
+  else if (distToHit <= 120) quality = 'good';
+  else return; // too far
+
+  // Hit!
+  bestGate.hit = true;
+  state.totalHits++;
+  state.combo++;
+  if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+  updateComboDisplay();
+
+  // Score
+  const basePoints = quality === 'perfect' ? 300 : quality === 'great' ? 200 : 100;
+  const comboMultiplier = Math.min(state.combo, 10);
+  const points = basePoints * comboMultiplier;
+  state.score += points;
+  $('score-display').textContent = state.score;
+
+  if (quality === 'perfect') state.perfectHits++;
+  else if (quality === 'great') state.greatHits++;
+  else state.goodHits++;
+
+  // Apply gate to quantum state
+  if (bestGate.gate === 'CNOT') {
+    state.qstate.applyCNOT(bestGate.control, bestGate.wire);
+  } else {
+    state.qstate.applySingleGate(bestGate.gate, bestGate.wire);
+  }
+  updateStateBar();
+
+  // Visual feedback
+  const wireXPct = getWireX(wireIndex, level.numQubits);
+  const wireXPx = playArea.offsetWidth * wireXPct / 100;
+  spawnParticles(playArea.getBoundingClientRect().left + wireXPx, playArea.getBoundingClientRect().top + hitZoneY, null);
+
+  const qualityLabels = { perfect: 'PERFECT', great: 'GREAT', good: 'GOOD' };
+  showHitFeedback(wireXPct, hitZoneY - 20, qualityLabels[quality], quality);
+  showScorePopup(points, wireXPct, hitZoneY - 45);
+
+  // Sound & screen effects
+  sound.hit(quality);
+  if (quality === 'perfect') {
+    playArea.classList.add('perfect-flash');
+    setTimeout(() => playArea.classList.remove('perfect-flash'), 400);
+  }
+
+  updateNextGateHint();
+  updateGateRemainingCounts();
+
+  // Remove gate visuals
+  const el = document.getElementById('gate-' + bestGate.id);
+  if (el) { el.classList.add('hit'); setTimeout(() => el.remove(), 400); }
+  if (bestGate.gate === 'CNOT') {
+    const ctrl = document.getElementById('gate-ctrl-' + bestGate.id);
+    const conn = document.getElementById('gate-conn-' + bestGate.id);
+    if (ctrl) { ctrl.classList.add('hit'); setTimeout(() => ctrl.remove(), 400); }
+    if (conn) setTimeout(() => conn.remove(), 400);
+  }
+}
+
+function showHitFeedback(xPct, y, text, quality) {
+  const playArea = $('play-area');
+  const fb = document.createElement('div');
+  fb.className = 'hit-feedback ' + quality;
+  fb.textContent = text;
+  fb.style.left = xPct + '%';
+  fb.style.top = y + 'px';
+  playArea.appendChild(fb);
+  setTimeout(() => fb.remove(), 1000);
+}
+
+function showScorePopup(points, xPct, y) {
+  const playArea = $('play-area');
+  const sp = document.createElement('div');
+  sp.className = 'score-popup';
+  sp.textContent = '+' + points;
+  sp.style.left = xPct + '%';
+  sp.style.top = y + 'px';
+  playArea.appendChild(sp);
+  setTimeout(() => sp.remove(), 1200);
+}
+
+function updateComboDisplay() {
+  const el = $('combo-display');
+  const playArea = $('play-area');
+  if (state.combo >= 2) {
+    el.textContent = 'x' + state.combo;
+    el.classList.remove('hidden');
+    el.classList.toggle('combo-hot', state.combo >= 5 && state.combo < 8);
+    el.classList.toggle('combo-fire', state.combo >= 8);
+    playArea.classList.toggle('combo-streak', state.combo >= 5 && state.combo < 8);
+    playArea.classList.toggle('combo-fire-streak', state.combo >= 8);
+    el.style.animation = 'none';
+    void el.offsetHeight;
+    el.style.animation = 'countPop 0.3s ease-out';
+  } else {
+    el.classList.remove('combo-hot', 'combo-fire');
+    el.classList.add('hidden');
+    playArea.classList.remove('combo-streak', 'combo-fire-streak');
+  }
+}
+
+function updateNextGateHint() {
+  const el = $('next-gate-hint');
+  if (!el) return;
+  // Collect active (not yet hit/missed) falling gates + unspawned gates
+  const upcoming = [];
+  // First: active falling gates in order
+  for (const fg of state.fallingGates) {
+    if (fg.hit || fg.missed) continue;
+    upcoming.push(state.gateSequence[state.fallingGates.indexOf(fg)] || {gate: fg.gate, wire: fg.wire});
+    if (upcoming.length >= 3) break;
+  }
+  // Then: unspawned gates
+  if (upcoming.length < 3) {
+    for (let i = state.currentGateIndex; i < state.gateSequence.length && upcoming.length < 3; i++) {
+      upcoming.push(state.gateSequence[i]);
+    }
+  }
+  if (upcoming.length === 0) {
+    el.innerHTML = '<span style="color:var(--green);font-size:10px">Final gates!</span>';
+    return;
+  }
+  let html = '<span style="opacity:0.5;font-size:10px">NEXT</span> ';
+  upcoming.forEach((g, i) => {
+    if (i > 0) html += '<span style="opacity:0.25;margin:0 2px">\u203A</span>';
+    html += `<span class="hint-gate hg-${g.gate}">${g.gate === 'CNOT' ? '\u2295' : g.gate}</span>`;
+    html += `<span class="hint-wire">q${g.wire}</span>`;
+  });
+  el.innerHTML = html;
+}
+
+function endLevel() {
+  state.gameRunning = false;
+  if (state.animFrame) cancelAnimationFrame(state.animFrame);
+
+  const level = LEVELS[state.currentLevel];
+  const totalGates = state.gateSequence.length;
+
+  // Calculate fidelity with target state
+  const fidelity = state.qstate.fidelity(state.targetState);
+
+  // Calculate star rating
+  const hitRate = state.totalHits / totalGates;
+  const perfectRate = state.perfectHits / totalGates;
+
+  let stars = 0;
+  if (hitRate >= 0.5) stars = 1;
+  if (hitRate >= 0.75 && fidelity > 0.5) stars = 2;
+  if (hitRate >= 0.9 && fidelity > 0.8) stars = 3;
+
+  // Update records
+  const idx = state.currentLevel;
+  const prevStars = state.levelStars[idx];
+  if (stars > 0 && stars > prevStars) state.levelStars[idx] = stars;
+  if (state.score > state.bestScores[idx]) state.bestScores[idx] = state.score;
+
+  // Unlock next level
+  if (stars > 0 && idx + 1 < LEVELS.length && state.levelStars[idx + 1] < 0) {
+    state.levelStars[idx + 1] = 0;
+  }
+  saveProgress();
+
+  // Show result modal
+  setTimeout(() => showResult(stars, fidelity), 300);
+}
+
+function showResult(stars, fidelity) {
+  const modal = $('modal-result');
+  const level = LEVELS[state.currentLevel];
+
+  if (stars > 0) {
+    $('result-title').textContent = stars === 3 ? 'QUANTUM MASTER!' : stars === 2 ? 'GREAT JOB!' : 'LEVEL CLEAR!';
+    $('result-title').className = 'result-title win';
+    sound.success();
+    if (stars === 3) spawnConfetti();
+  } else {
+    $('result-title').textContent = 'NOT QUITE...';
+    $('result-title').className = 'result-title lose';
+    sound.failure();
+  }
+
+  // Stars
+  const starsEl = $('result-stars');
+  starsEl.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const s = document.createElement('span');
+    s.className = 'result-star' + (i < stars ? ' earned' : '');
+    s.textContent = '\u2605';
+    if (i < stars) s.style.animationDelay = (i * 0.2) + 's';
+    starsEl.appendChild(s);
+    if (i < stars) setTimeout(() => sound.star(), i * 200 + 200);
+  }
+
+  $('result-score').textContent = `Score: ${state.score}`;
+
+  const fPct = Math.round(fidelity * 100);
+  const nq = level.numQubits;
+
+  // Fidelity bar + state comparison
+  const fidelityClass = fPct >= 80 ? 'high' : fPct >= 40 ? 'mid' : 'low';
+  const yourState = formatStateVectorMini(state.qstate, nq).replace(/<span class="sv-eq">[^<]*<\/span>\s*/g, '');
+  const targetState = formatStateVectorMini(state.targetState, nq).replace(/<span class="sv-eq">[^<]*<\/span>\s*/g, '');
+
+  let fidelityHtml = `<div class="fidelity-section">`;
+  fidelityHtml += `<div class="fidelity-label"><span>Quantum Fidelity</span><span class="fidelity-pct">${fPct}%</span></div>`;
+  fidelityHtml += `<div class="fidelity-bar"><div class="fidelity-bar-fill ${fidelityClass}" style="width:0%"></div></div>`;
+  fidelityHtml += `<div class="state-comparison">`;
+  fidelityHtml += `<span class="sc-yours">${yourState || '|0⟩'}</span>`;
+  fidelityHtml += `<span class="sc-arrow">\u2192</span>`;
+  fidelityHtml += `<span class="sc-target">${targetState || '?'}</span>`;
+  fidelityHtml += `</div></div>`;
+
+  let msg = `Hits: ${state.totalHits}/${state.gateSequence.length}`;
+  if (state.perfectHits > 0) msg += ` | Perfect: ${state.perfectHits}`;
+  if (state.maxCombo >= 3) msg += ` | Max Combo: x${state.maxCombo}`;
+  $('result-msg').innerHTML = fidelityHtml + msg;
+
+  // Animate fidelity bar after a short delay
+  setTimeout(() => {
+    const fill = document.querySelector('.fidelity-bar-fill');
+    if (fill) fill.style.width = fPct + '%';
+  }, 200);
+
+  // Buttons
+  const btns = $('result-btns');
+  btns.innerHTML = '';
+
+  const retryBtn = document.createElement('button');
+  retryBtn.className = 'btn-modal btn-retry';
+  retryBtn.textContent = 'RETRY';
+  retryBtn.onclick = () => { modal.classList.remove('active'); startLevel(state.currentLevel); };
+  btns.appendChild(retryBtn);
+
+  if (stars > 0 && state.currentLevel + 1 < LEVELS.length) {
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn-modal btn-next';
+    nextBtn.textContent = 'NEXT LEVEL';
+    nextBtn.onclick = () => { modal.classList.remove('active'); startLevel(state.currentLevel + 1); };
+    btns.appendChild(nextBtn);
+  }
+
+  const levelsBtn = document.createElement('button');
+  levelsBtn.className = 'btn-modal btn-levels';
+  levelsBtn.textContent = 'LEVELS';
+  levelsBtn.onclick = () => { modal.classList.remove('active'); showScreen('levels'); renderLevelSelect(); };
+  btns.appendChild(levelsBtn);
+
+  modal.classList.add('active');
+}
+
+
+// ============================================================
+// SECTION 8: EVENT HANDLERS
+// ============================================================
+
+// Navigation
+$('btn-play').addEventListener('click', () => {
+  sound.init();
+  sound.click();
+  showScreen('levels');
+  renderLevelSelect();
+});
+
+$('btn-back-title').addEventListener('click', () => {
+  sound.click();
+  showScreen('title');
+  updateTitleProgress();
+});
+
+$('btn-back-game').addEventListener('click', () => {
+  if (state.gameRunning) {
+    state.paused = true;
+    $('pause-overlay').classList.add('active');
+  } else {
+    showScreen('levels');
+    renderLevelSelect();
+  }
+});
+
+$('btn-pause-resume').addEventListener('click', () => {
+  state.paused = false;
+  $('pause-overlay').classList.remove('active');
+});
+
+$('btn-pause-quit').addEventListener('click', () => {
+  state.gameRunning = false;
+  state.paused = false;
+  if (state.animFrame) cancelAnimationFrame(state.animFrame);
+  $('pause-overlay').classList.remove('active');
+  showScreen('levels');
+  renderLevelSelect();
+});
+
+// Speed selectors (both title and level screen)
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.speed = btn.dataset.speed;
+    updateSpeedButtons();
+    saveProgress();
+    sound.click();
+  });
+});
+
+// Sound toggle
+$('btn-sound').addEventListener('click', () => {
+  sound.enabled = !sound.enabled;
+  $('btn-sound').classList.toggle('muted', !sound.enabled);
+});
+
+// Wire clicking (apply gate)
+$('play-area').addEventListener('click', (e) => {
+  if (!state.gameRunning || state.paused) return;
+  const playArea = $('play-area');
+  const rect = playArea.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  const clickXPct = clickX / rect.width * 100;
+
+  // Find closest wire
+  const level = LEVELS[state.currentLevel];
+  const nq = level.numQubits;
+  let closestWire = 0;
+  let closestDist = Infinity;
+  for (let q = 0; q < nq; q++) {
+    const wireX = getWireX(q, nq);
+    const dist = Math.abs(clickXPct - wireX);
+    if (dist < closestDist) {
+      closestDist = dist;
+      closestWire = q;
+    }
+  }
+
+  // For single-qubit levels, any click works; otherwise need to be near a wire
+  if (nq === 1 || closestDist < 30) {
+    // Spawn click pulse at the wire hit zone
+    const wireXPct = getWireX(closestWire, nq);
+    const areaH = playArea.offsetHeight;
+    const pulse = document.createElement('div');
+    pulse.className = 'wire-pulse';
+    pulse.style.left = wireXPct + '%';
+    pulse.style.top = (areaH - 60) + 'px';
+    pulse.style.color = 'var(--cyan)';
+    pulse.style.background = 'radial-gradient(circle, rgba(34,211,238,0.3) 0%, transparent 70%)';
+    playArea.appendChild(pulse);
+    setTimeout(() => pulse.remove(), 400);
+
+    tryApplyGate(closestWire);
+  }
+});
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
+  if (state.screen !== 'game') return;
+  if (e.key === 'Escape') {
+    if (state.gameRunning) {
+      state.paused = !state.paused;
+      $('pause-overlay').classList.toggle('active', state.paused);
+    }
+    return;
+  }
+  if (state.paused) return;
+
+  const level = LEVELS[state.currentLevel];
+  const gateKeyMap = { '1': 'X', '2': 'H', '3': 'Z', '4': 'S', '5': 'T', '6': 'CNOT' };
+  const gate = gateKeyMap[e.key];
+  if (gate && level.gates.includes(gate)) {
+    selectGate(gate);
+  }
+
+  // Wire keys: Q, W, E for wires 0, 1, 2 (auto-selects gate type)
+  const wireKeyMap = { 'q': 0, 'w': 1, 'e': 2 };
+  const wire = wireKeyMap[e.key.toLowerCase()];
+  if (wire !== undefined && wire < level.numQubits) {
+    tryApplyGate(wire);
+  }
+});
+
+
+// ============================================================
+// SECTION 9: INITIALIZATION
+// ============================================================
+
+loadProgress();
+initTitleParticles();
+updateTitleProgress();
+updateSpeedButtons();
+
+// Particle background
+(function initParticleBg() {
+  const canvas = document.getElementById('particleBg');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let W, H;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  for (let i = 0; i < 40; i++) {
+    particles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      r: 1 + Math.random() * 1.5,
+      alpha: 0.1 + Math.random() * 0.2,
+    });
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, W, H);
+    for (const p of particles) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(99, 102, 241, ${p.alpha})`;
+      ctx.fill();
+    }
+    // Connection lines
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(99, 102, 241, ${0.05 * (1 - dist / 120)})`;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+</script>
+</body>
+</html>
