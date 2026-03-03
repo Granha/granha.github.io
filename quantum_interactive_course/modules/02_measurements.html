@@ -524,6 +524,7 @@
               <label>&phi; <span id="phi-val-2">0.00</span></label>
               <input type="range" id="phi-slider-2" min="0" max="6.28318530" step="0.01" value="0">
             </div>
+            <div class="state-display" id="stateDisplay2"></div>
             <div class="prob-bars">
               <div class="prob-row">
                 <span class="prob-label">\(|0\rangle\)</span>
@@ -667,6 +668,10 @@
             </div>
           </div>
         </div>
+        <div class="callout-challenge">
+          <div class="callout-title">Try This</div>
+          Set \(\theta = \pi/2\) and \(\varphi = 0\) (the \(|+\rangle\) state) and run the experiment in the Z-basis&mdash;you should see close to 50/50. Now switch to the X-basis without changing the state: the frequency should jump to nearly 100% for \(|+\rangle\). This confirms that \(|+\rangle\) is an eigenstate of X but not of Z.
+        </div>
       </section>
 
       <!-- ===== Section 6: Collapse ===== -->
@@ -758,6 +763,10 @@
               </tbody>
             </table>
           </div>
+        </div>
+        <div class="callout callout-math">
+          <div class="callout-title">Convergence rate</div>
+          The standard deviation of the observed frequency scales as \(\sigma \sim 1/\sqrt{N}\). With 10 shots you might be off by ~15%; with 100 shots ~5%; and with 1000 shots ~1.5%. Run the three batch sizes above and watch how the histogram bars snap toward the dashed Born rule lines as \(N\) grows.
         </div>
       </section>
 
@@ -1202,6 +1211,8 @@ async function main() {
   const bloch2 = new BlochSphere('bloch2');
   const bloch3 = new BlochSphere('bloch3');
   const bloch4 = new BlochSphere('bloch4', {theta:Math.PI/2, phi:0});
+  bloch4.setMeasurementAxis(0, 0);
+  bloch4.showMeasurementAxis(true);
 
   // Visibility observer
   const vObs = new IntersectionObserver(es => es.forEach(e => {
@@ -1253,6 +1264,7 @@ async function main() {
     $('theta-val-2').textContent = state.theta.toFixed(2);
     $('phi-val-2').textContent = state.phi.toFixed(2);
     bloch2.setStateVector(state.theta, state.phi);
+    KR.render('stateDisplay2', '|\\psi\\rangle = '+state.toKatex());
   }
   function updateSec4() {
     const {tM,pM} = basisAngles(currentBasis);
@@ -1312,6 +1324,8 @@ async function main() {
     $('z-log-summary').textContent = `${total} measurements: ${zLogCounts[0]}x|0\u27E9 (${(zLogCounts[0]/total*100).toFixed(0)}%)  ${zLogCounts[1]}x|1\u27E9 (${(zLogCounts[1]/total*100).toFixed(0)}%)`;
   }
   $('btn-measure-z').addEventListener('click', async () => {
+    if ($('btn-measure-z').disabled) return;
+    $('btn-measure-z').disabled = true;
     preZTheta = state.theta; preZPhi = state.phi;
     const r = state.measureAxis(0,0);
     const el = $('result-z'); el.className='result-display';
@@ -1324,6 +1338,7 @@ async function main() {
     allPhis.forEach(id=>$(id).value=state.phi);
     updateSec2(); updateSec3(); updateSec4();
     $('btn-reset-z').style.display='';
+    $('btn-measure-z').disabled = false;
   });
   $('btn-reset-z').addEventListener('click', () => {
     state.theta=preZTheta; state.phi=preZPhi;
@@ -1366,6 +1381,8 @@ async function main() {
     $('basis-log-summary').textContent = `${total} measurements: ${basisLogCounts[0]}x${lb2[2]} (${(basisLogCounts[0]/total*100).toFixed(0)}%)  ${basisLogCounts[1]}x${lb2[3]} (${(basisLogCounts[1]/total*100).toFixed(0)}%)`;
   }
   $('btn-measure-basis').addEventListener('click', async () => {
+    if ($('btn-measure-basis').disabled) return;
+    $('btn-measure-basis').disabled = true;
     preBasisTheta = state.theta; preBasisPhi = state.phi;
     const {tM,pM} = basisAngles(currentBasis);
     const r = state.measureAxis(tM,pM);
@@ -1380,6 +1397,7 @@ async function main() {
     allPhis.forEach(id=>$(id).value=state.phi);
     updateSec2(); updateSec3(); updateSec4();
     $('btn-reset-basis').style.display='';
+    $('btn-measure-basis').disabled = false;
   });
   $('btn-reset-basis').addEventListener('click', () => {
     state.theta=preBasisTheta; state.phi=preBasisPhi;
@@ -1457,6 +1475,8 @@ async function main() {
   }
 
   $('btn-collapse-demo').addEventListener('click', async () => {
+    if ($('btn-collapse-demo').disabled) return;
+    $('btn-collapse-demo').disabled = true;
     isCollapsed=false; $('collapse-narration').innerHTML='';
     $('btn-measure-again').style.display='none'; $('btn-reset-collapse').style.display='none';
     $('theta-slider-4').disabled=true; $('phi-slider-4').disabled=true;
@@ -1473,6 +1493,7 @@ async function main() {
     addNar(`<strong>Step 4:</strong> State collapsed to ${lbl}. The original superposition is lost.`);
     isCollapsed=true;
     $('btn-measure-again').style.display=''; $('btn-reset-collapse').style.display='';
+    $('btn-collapse-demo').disabled = false;
   });
   $('btn-measure-again').addEventListener('click', () => {
     const r=collapseState.measureAxis(0,0);
