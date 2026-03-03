@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Modular Arithmetic for the Quantum Fourier Transform</title>
+<script>if ('scrollRestoration' in history) history.scrollRestoration = 'manual';</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
@@ -642,15 +643,17 @@ section.revealed, .insight.revealed, .self-check.revealed {
 </head>
 <body>
 <script>
-if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-window.scrollTo(0,0);
-document.addEventListener('DOMContentLoaded', function() { window.scrollTo(0,0); });
+function _goToBasics() {
+  var el = document.getElementById('basics');
+  if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+}
+document.addEventListener('DOMContentLoaded', _goToBasics);
 window.addEventListener('load', function() {
-  window.scrollTo(0,0);
-  requestAnimationFrame(function() { window.scrollTo(0,0); });
+  _goToBasics();
+  requestAnimationFrame(_goToBasics);
 });
 window.addEventListener('pageshow', function(e) {
-  if (e.persisted) window.scrollTo(0,0);
+  if (e.persisted) _goToBasics();
 });
 </script>
 <div id="top"></div>

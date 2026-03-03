@@ -319,6 +319,7 @@
   .factor-reveal .big-equation {
     font-size: 2.8em; font-family: 'JetBrains Mono', 'Georgia', serif;
     font-weight: 700; margin: 20px 0;
+    animation: equationReveal 0.8s 0.3s ease-out both;
   }
   .factor-reveal .factor { color: var(--green); }
   .factor-reveal .equals { color: var(--text-dim); margin: 0 8px; }
@@ -326,9 +327,6 @@
   @keyframes factorPulse {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.04); }
-  }
-  .factor-reveal .big-equation {
-    animation: equationReveal 0.8s 0.3s ease-out both;
   }
   .factor-reveal .factor-success-msg {
     animation: fadeIn 0.5s 0.8s ease-out both;
@@ -1136,7 +1134,9 @@ function renderSetup() {
       <div class="custom-input-feedback" id="custom-n-feedback"></div>
     </div>
     <div class="param-section">
-      <span class="param-label">Choose <span class="math">a</span> (must be coprime to <span class="math">N = ${S.N}</span>):</span>
+      <span class="param-label">Choose <span class="math">a</span> (must be coprime to <span class="math">N = ${S.N}</span>):
+        <button class="nav-btn" data-action="random-a" style="margin-left:8px;padding:4px 12px;font-size:0.8em;vertical-align:middle;">\uD83C\uDFB2 Random</button>
+      </span>
       <div class="param-grid" id="a-grid">
         ${aValues.map(a => {
           const g = gcd(a, S.N);
@@ -1395,7 +1395,7 @@ function gateInfoHTML(idx) {
     { title: 'Hadamard Gates (H)', color: 'var(--blue)',
       desc: `Apply Hadamard to each of the ${N_QUBITS} counting qubits, creating an equal superposition of all ${Q} basis states. This is the starting point for quantum parallelism.`,
       math: `|0\u27E9\u2297${N_QUBITS} \u2192 (1/\u221A${Q}) \u2211|x\u27E9` },
-    { title: 'Modular Exponentiation Oracle (U\u2086)', color: 'var(--purple)',
+    { title: 'Modular Exponentiation Oracle (U<sub>f</sub>)', color: 'var(--purple)',
       desc: `Computes f(x) = ${S.a}^x mod ${S.N} into the work register, controlled by the counting register. This entangles the two registers and encodes the periodic structure.`,
       math: `|x\u27E9|0\u27E9 \u2192 |x\u27E9|${S.a}^x mod ${S.N}\u27E9` },
     { title: 'Inverse Quantum Fourier Transform (QFT\u2020)', color: 'var(--orange)',
@@ -2084,10 +2084,10 @@ function renderEvolutionExplanation(ss, dist) {
 
     `<h3>After Inverse QFT</h3>
      <p>The inverse QFT converts the periodic state into sharp
-     <span class="highlight">peaks at multiples of ${Q}/${r} = ${Q/r}</span>.</p>
+     <span class="highlight">peaks at multiples of ${Q}/${r}${Q % r === 0 ? ' = ' + (Q/r) : ' \u2248 ' + (Q/r).toFixed(1)}</span>.</p>
      <p>Through constructive and destructive interference, probability concentrates at positions
-     <span class="math">j = 0, ${Q/r}, ${2*Q/r}, ${3*Q/r}${r > 4 ? ', \u2026' : ''}</span>.
-     Each peak has probability <span class="math">1/${r} = ${(100/r).toFixed(1)}%</span>.</p>
+     <span class="math">j \u2248 0, ${Math.round(Q/r)}, ${Math.round(2*Q/r)}, ${Math.round(3*Q/r)}${r > 4 ? ', \u2026' : ''}</span>.
+     Each peak has probability <span class="math">\u2248 1/${r} = ${(100/r).toFixed(1)}%</span>.</p>
      <p>This is the heart of the quantum speedup &mdash; the QFT reveals the hidden period!</p>
      <p class="intuition"><strong>Intuition:</strong> The QFT is like pointing a prism at a wave &mdash; it decomposes the periodic signal into its frequency components. The peaks correspond to the frequency (1/r) of the hidden pattern.</p>`
   ];
@@ -2718,6 +2718,7 @@ document.getElementById('viz-area').addEventListener('click', (e) => {
     case 'try-again':       tryAgain(); break;
     case 'show-measurement': S.measured = Number(val); renderMeasurement(); break;
     case 'apply-custom-n':  applyCustomN(); break;
+    case 'random-a':        { const cs = getCoprimes(S.N); selectA(cs[Math.floor(Math.random() * cs.length)]); break; }
     case 'highlight-residue': highlightResidueCells(Number(btn.dataset.residue)); break;
   }
 });
@@ -2776,6 +2777,8 @@ render();
 (function initParticles() {
   const canvas = document.getElementById('particleBg');
   if (!canvas) return;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReducedMotion) { canvas.style.display = 'none'; return; }
   const ctx = canvas.getContext('2d');
   let particles = [];
   let animId;

@@ -41,7 +41,7 @@
     --radius: 16px;
   }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-padding-top: 20px; }
 body {
   font-family: 'Inter', sans-serif;
   background: var(--bg);
@@ -323,6 +323,7 @@ canvas {
   font-family: 'JetBrains Mono', monospace;
 }
 .oracle-box .cell:hover { transform: scale(1.15); }
+.oracle-box.marked .cell { cursor: pointer; }
 .oracle-box.null .cell { background: rgba(52, 211, 153, 0.15); color: var(--green); }
 .oracle-box.marked .cell { background: rgba(99, 102, 241, 0.15); color: var(--accent); }
 .oracle-box.marked .cell.marked-cell {
@@ -420,7 +421,7 @@ canvas {
   border: 2px solid var(--border); transition: all 0.2s; font-size: 0.93em;
   background: var(--surface2);
 }
-.quiz-options li:hover { border-color: var(--accent); box-shadow: 0 0 16px var(--accent-glow); }
+.quiz-options li:hover, .quiz-options li:focus-visible { border-color: var(--accent); box-shadow: 0 0 16px var(--accent-glow); outline: none; }
 .quiz-options li.correct {
   border-color: var(--green); background: rgba(52, 211, 153, 0.12); color: var(--green);
 }
@@ -814,9 +815,10 @@ section + section { border-top: 1px solid var(--border); margin-top: 0; }
     <div class="vs-divider">vs</div>
     <div class="oracle-box marked">
       <div class="oracle-title">Marked Oracle $O_{e_k}$</div>
-      <div>$x = e_k$, item $k$ is marked</div>
-      <div>$O_{e_k} = I - 2|k\rangle\langle k|$</div>
+      <div id="markedDesc">$x = e_k$, item $k$ is marked</div>
+      <div id="markedFormula">$O_{e_k} = I - 2|k\rangle\langle k|$</div>
       <div class="oracle-grid" id="markedGrid"></div>
+      <div style="font-size:0.75em;color:var(--text-dim);margin-top:8px;">Click a cell to change the marked position</div>
     </div>
   </div>
 
@@ -938,7 +940,7 @@ section + section { border-top: 1px solid var(--border); margin-top: 0; }
 
   <div style="margin-bottom:16px; display:flex; align-items:center;">
     <button class="btn success" id="autoAdvanceBtn" onclick="autoAdvanceProof()">Walk Through Proof</button>
-    <div id="proofProgress"></div>
+    <div id="proofProgress" aria-live="polite"></div>
   </div>
   <div class="proof-dots" id="proofDots" aria-label="Proof step progress"></div>
 
@@ -1131,7 +1133,7 @@ section + section { border-top: 1px solid var(--border); margin-top: 0; }
   <p>Test your understanding of the hybrid method with these questions.</p>
 
   <div id="quizContainer"></div>
-  <div class="quiz-score" id="quizScore" style="display:none;"></div>
+  <div class="quiz-score" id="quizScore" style="display:none;" aria-live="polite"></div>
   <div id="quizResetWrap" style="text-align:center;margin-top:12px;display:none;">
     <button class="btn secondary" onclick="resetQuiz()">Try Again</button>
   </div>
@@ -1178,7 +1180,7 @@ section + section { border-top: 1px solid var(--border); margin-top: 0; }
   <div class="bibliography">
     <div class="bib-entry">
       <span class="bib-num">[1]</span>
-      <span>C. Bennett, E. Bernstein, U. Vazirani, <em>Strengths and Weaknesses of Quantum Computing</em>, SIAM J. Comput. 26(5), 1997.</span>
+      <span>C. Bennett, E. Bernstein, G. Brassard, U. Vazirani, <em>Strengths and Weaknesses of Quantum Computing</em>, SIAM J. Comput. 26(5), 1997.</span>
     </div>
     <div class="bib-entry">
       <span class="bib-num">[2]</span>
@@ -1212,6 +1214,19 @@ section + section { border-top: 1px solid var(--border); margin-top: 0; }
 
 <!-- ════════════════════════ JAVASCRIPT ════════════════════════ -->
 <script>
+/* ── roundRect polyfill for older browsers ── */
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r);
+    this.closePath();
+  };
+}
+
 /* ── Proof step toggle & auto-advance ── */
 function updateProofProgress() {
   const steps = document.querySelectorAll('.proof-step');
@@ -1502,13 +1517,13 @@ cmpLogBox.addEventListener('change', drawComparison);
 /* ════════════════════════════════════════
    2. ORACLE GRIDS
    ════════════════════════════════════════ */
+let oracleMarkedIdx = 5;
 function buildOracleGrids() {
   const n = 16;
   const nullGrid = document.getElementById('nullGrid');
   const markedGrid = document.getElementById('markedGrid');
   nullGrid.innerHTML = '';
   markedGrid.innerHTML = '';
-  const markedIdx = 5;
   for (let i = 0; i < n; i++) {
     const c1 = document.createElement('div');
     c1.className = 'cell';
@@ -1517,12 +1532,24 @@ function buildOracleGrids() {
     nullGrid.appendChild(c1);
 
     const c2 = document.createElement('div');
-    const isMarked = i === markedIdx;
+    const isMarked = i === oracleMarkedIdx;
     c2.className = 'cell' + (isMarked ? ' marked-cell' : '');
     c2.textContent = isMarked ? '1' : '0';
+    c2.style.cursor = 'pointer';
     c2.title = isMarked
       ? `Position ${i}: MARKED! Phase flip \u2212|${i}\u27E9`
-      : `Position ${i}: x\u2099 = 0 (no phase flip)`;
+      : `Position ${i}: Click to mark this position`;
+    c2.addEventListener('click', () => {
+      oracleMarkedIdx = i;
+      buildOracleGrids();
+      // Update formula text with KaTeX delimiters
+      const desc = document.getElementById('markedDesc');
+      const formula = document.getElementById('markedFormula');
+      if (desc) { desc.innerHTML = `$x = e_{${i}}$, item ${i} is marked`; }
+      if (formula) { formula.innerHTML = `$O_{e_{${i}}} = I - 2|${i}\\rangle\\langle ${i}|$`; }
+      renderMathInElement(desc, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});
+      renderMathInElement(formula, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});
+    });
     markedGrid.appendChild(c2);
   }
 }
@@ -2114,7 +2141,7 @@ function buildQuiz() {
     html += `<div class="q-text"><span class="q-number">${i + 1}</span>${q.q}</div>`;
     html += '<ul class="quiz-options">';
     q.options.forEach((opt, j) => {
-      html += `<li onclick="checkAnswer(${i}, ${j})" id="q${i}-opt${j}">${opt}</li>`;
+      html += `<li onclick="checkAnswer(${i}, ${j})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();checkAnswer(${i}, ${j})}" tabindex="0" role="button" id="q${i}-opt${j}">${opt}</li>`;
     });
     html += '</ul>';
     html += `<div class="quiz-explanation" id="q${i}-expl">${q.explanation}</div>`;
@@ -2136,6 +2163,8 @@ function checkAnswer(qIdx, optIdx) {
   q.options.forEach((_, j) => {
     const el = document.getElementById(`q${qIdx}-opt${j}`);
     el.classList.add('disabled');
+    el.removeAttribute('tabindex');
+    el.removeAttribute('role');
     if (j === q.correct) {
       el.classList.add('correct');
       el.innerHTML = '✓ ' + el.innerHTML;
@@ -2340,9 +2369,15 @@ window.addEventListener('scroll', () => {
 })();
 </script>
 
-<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
-  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
-  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+<footer>
+  <a href="#" class="footer-back-top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">&uarr; Back to top</a>
+  <nav class="footer-nav">
+    <a href="../index.html">Course Home</a>
+    <a href="16_complexity_theory.html">&larr; Prev Module</a>
+    <a href="18_modular_arithmetic.html">Next Module &rarr;</a>
+  </nav>
+  <p style="margin-top:16px;">This is a <span style="color:var(--orange);font-weight:500;">beta version</span></p>
+  <p>By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">Fernando Granha Jeronimo</a></p>
 </footer>
 </body>
 </html>

@@ -74,6 +74,9 @@ button:active{transform:scale(0.95)}
 .level-btn.completed{border-color:var(--panel-light)}
 .level-btn.current{border-color:var(--cyan);box-shadow:0 0 12px rgba(0,212,255,0.3)}
 .level-btn:not(.locked):hover{background:var(--panel-light);border-color:var(--cyan)}
+.level-btn .level-name-tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--surface2);color:var(--text);font-size:10px;font-weight:500;padding:4px 8px;border-radius:6px;white-space:nowrap;z-index:20;border:1px solid var(--border);pointer-events:none}
+.level-btn .level-name-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--surface2)}
+.level-btn:not(.locked):hover .level-name-tip{display:block}
 
 /* ========== GAME SCREEN ========== */
 #screen-game{padding:8px 12px;gap:0;overflow:hidden}
@@ -129,6 +132,8 @@ button:active{transform:scale(0.95)}
 .qubit-tooltip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--surface2);color:var(--text);font-size:10px;font-family:'JetBrains Mono',monospace;padding:4px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.2s;z-index:10;border:1px solid var(--border)}
 .qubit-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--surface2)}
 .qubit-container:hover .qubit-tooltip{opacity:1}
+.qubit.cnot-target-hint{border-color:rgba(200,80,255,0.6)!important;animation:cnotTargetPulse 1s ease-in-out infinite!important}
+@keyframes cnotTargetPulse{0%,100%{box-shadow:0 0 10px rgba(200,80,255,0.3)}50%{box-shadow:0 0 25px rgba(200,80,255,0.7)}}
 .qubit.entangled{border-color:rgba(200,80,255,0.5)!important;box-shadow:0 0 20px rgba(200,80,255,0.4),0 0 40px rgba(200,80,255,0.2)!important}
 .qubit.has-phase{border-color:rgba(0,221,170,0.6)!important}
 .qubit.has-phase::after{content:'\u03C6';position:absolute;bottom:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:var(--green);color:var(--bg);font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;animation:phaseBadgePulse 2s ease-in-out infinite}
@@ -265,6 +270,17 @@ button:active{transform:scale(0.95)}
 .world-unlock-title{font-size:24px;font-weight:900;letter-spacing:3px;margin-bottom:4px}
 .world-unlock-name{font-size:16px;font-weight:700;margin-bottom:12px}
 .world-unlock-desc{font-size:13px;color:var(--text-dim);line-height:1.5;margin-bottom:16px}
+
+/* ========== VICTORY SCREEN ========== */
+.victory-title{font-size:32px;font-weight:900;letter-spacing:4px;margin-bottom:8px;background:linear-gradient(135deg,var(--gold),var(--orange),var(--magenta),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:victoryShimmer 3s linear infinite;background-size:200% 100%}
+@keyframes victoryShimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.victory-subtitle{font-size:14px;color:var(--text-dim);margin-bottom:16px}
+.victory-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.victory-stat{background:rgba(0,0,0,0.2);border-radius:10px;padding:10px;text-align:center}
+.victory-stat .stat-value{font-size:22px;font-weight:800;color:var(--cyan)}
+.victory-stat .stat-value.gold{color:var(--gold)}
+.victory-stat .stat-label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.victory-msg{font-size:12px;color:var(--text-dim);line-height:1.5;margin-bottom:16px;font-style:italic}
 
 /* ========== GATE ORDER NUMBERS ========== */
 .gate-order{position:absolute;top:-4px;left:-4px;width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,0.7);color:var(--text-dim);font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;z-index:2;line-height:1}
@@ -436,6 +452,20 @@ button:active{transform:scale(0.95)}
     <div class="world-unlock-name" id="world-unlock-name"></div>
     <div class="world-unlock-desc" id="world-unlock-desc"></div>
     <button class="btn-got-it" id="btn-world-ok">LET'S GO!</button>
+  </div>
+</div>
+
+<!-- ===== VICTORY MODAL ===== -->
+<div class="modal" id="modal-victory">
+  <div class="modal-box">
+    <div class="victory-title" id="victory-title">QUANTUM MASTER!</div>
+    <div class="victory-subtitle">You've conquered all 20 levels!</div>
+    <div class="victory-stats" id="victory-stats"></div>
+    <div class="victory-msg" id="victory-msg"></div>
+    <div class="modal-btns">
+      <button class="btn-modal btn-levels" id="btn-victory-levels">LEVEL SELECT</button>
+      <button class="btn-modal btn-next" id="btn-victory-replay">REPLAY</button>
+    </div>
   </div>
 </div>
 
@@ -862,8 +892,10 @@ function renderLevelSelect() {
 
       const btn = document.createElement('button');
       btn.className = 'level-btn' + (locked ? ' locked' : '') + (completed ? ' completed' : '') + (current ? ' current' : '');
+      btn.style.position = 'relative';
       const movesText = completed && state.bestMoves[idx] > 0 ? `<div class="level-moves">\u26A1${state.bestMoves[idx]}</div>` : '<div class="level-moves"></div>';
-      btn.innerHTML = `${level.id}<div class="level-stars">${locked ? '' : (stars > 0 ? starString(stars) : '')}</div>${movesText}`;
+      const tipText = locked ? '' : `<div class="level-name-tip">${level.name}</div>`;
+      btn.innerHTML = `${level.id}<div class="level-stars">${locked ? '' : (stars > 0 ? starString(stars) : '')}</div>${movesText}${tipText}`;
       if (!locked) {
         btn.addEventListener('click', () => startLevel(idx));
       }
@@ -1297,7 +1329,8 @@ function renderStateQubits(level) {
 
     const qubit = document.createElement('div');
     const hasPhase = detectPhase(state.qstate, level.numQubits, q);
-    qubit.className = 'qubit' + (state.cnotControl === q ? ' selected-control' : '') + (hasPhase ? ' has-phase' : '');
+    const isCnotTarget = state.selectedGate === 'CNOT' && state.cnotControl !== null && state.cnotControl !== q;
+    qubit.className = 'qubit' + (state.cnotControl === q ? ' selected-control' : '') + (isCnotTarget ? ' cnot-target-hint' : '') + (hasPhase ? ' has-phase' : '');
     qubit.dataset.qubit = q;
     qubit.style.background = `radial-gradient(circle, hsl(${hue},100%,65%), hsl(${hue},80%,25%))`;
     qubit.style.boxShadow = `0 0 20px hsla(${hue},100%,50%,0.5)`;
@@ -1737,11 +1770,17 @@ function showResult(outcome, level, prob) {
       });
       btns.appendChild(nextBtn);
     } else {
-      const levelsBtn = document.createElement('button');
-      levelsBtn.className = 'btn-modal btn-next';
-      levelsBtn.textContent = 'LEVELS';
-      levelsBtn.addEventListener('click', () => { hideModal('modal-result'); showScreen('levels'); renderLevelSelect(); });
-      btns.appendChild(levelsBtn);
+      // Last level - check if all levels are completed for victory screen
+      const allCompleted = state.levelStars.every(s => s > 0);
+      const victoryBtn = document.createElement('button');
+      victoryBtn.className = 'btn-modal btn-next';
+      victoryBtn.textContent = allCompleted ? 'VICTORY!' : 'LEVELS';
+      victoryBtn.addEventListener('click', () => {
+        hideModal('modal-result');
+        if (allCompleted) { showVictoryScreen(); }
+        else { showScreen('levels'); renderLevelSelect(); }
+      });
+      btns.appendChild(victoryBtn);
     }
 
   } else {
@@ -1934,6 +1973,40 @@ function showWorldUnlock(worldNum) {
   showModal('modal-world-unlock');
 }
 
+// ========== VICTORY SCREEN ==========
+function showVictoryScreen() {
+  const totalStars = state.levelStars.reduce((sum, s) => sum + (s > 0 ? s : 0), 0);
+  const maxStars = LEVELS.length * 3;
+  const perfectLevels = state.levelStars.filter(s => s === 3).length;
+  const totalGates = state.bestMoves.reduce((sum, m) => sum + m, 0);
+  const totalPar = LEVELS.reduce((sum, l) => sum + l.par, 0);
+
+  const statsEl = $('victory-stats');
+  statsEl.innerHTML = `
+    <div class="victory-stat"><div class="stat-value gold">${totalStars}/${maxStars}</div><div class="stat-label">Total Stars</div></div>
+    <div class="victory-stat"><div class="stat-value">${perfectLevels}/${LEVELS.length}</div><div class="stat-label">Perfect (3★)</div></div>
+    <div class="victory-stat"><div class="stat-value">${totalGates}</div><div class="stat-label">Total Gates</div></div>
+    <div class="victory-stat"><div class="stat-value">${totalPar}</div><div class="stat-label">Total Par</div></div>
+  `;
+
+  const msgs = [];
+  if (totalStars === maxStars) msgs.push('Absolute perfection! Every star earned. You are a true quantum master.');
+  else if (perfectLevels >= 15) msgs.push('Incredible! Almost every level perfected. The quantum realm bows to you.');
+  else if (totalStars >= 50) msgs.push('Outstanding performance! You truly understand quantum computing.');
+  else msgs.push('Congratulations! You\'ve learned the fundamentals of quantum computing through play.');
+
+  if (totalGates <= totalPar) msgs.push('And you did it all at or under par!');
+
+  $('victory-msg').textContent = msgs.join(' ');
+
+  spawnConfetti();
+  setTimeout(spawnConfetti, 800);
+  setTimeout(spawnConfetti, 1600);
+  sound.success();
+  setTimeout(() => sound.success(), 500);
+  showModal('modal-victory');
+}
+
 // ========== GATE REFERENCE ==========
 const GATE_REFERENCE = {
   X: { name: 'X \u2014 Bit Flip', desc: 'Swaps |0\u27E9 and |1\u27E9. The quantum NOT gate.' },
@@ -1987,6 +2060,19 @@ $('btn-hint').addEventListener('click', useHint);
 
 $('btn-gate-ref').addEventListener('click', () => {
   $('gate-ref-panel').classList.toggle('open');
+});
+
+$('btn-victory-levels').addEventListener('click', () => {
+  sound.click();
+  hideModal('modal-victory');
+  renderLevelSelect();
+  showScreen('levels');
+});
+
+$('btn-victory-replay').addEventListener('click', () => {
+  sound.click();
+  hideModal('modal-victory');
+  startLevel(0);
 });
 
 $('btn-world-ok').addEventListener('click', () => {
