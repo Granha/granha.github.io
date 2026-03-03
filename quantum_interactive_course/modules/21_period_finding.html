@@ -428,6 +428,7 @@ tr:hover td { background: rgba(99, 102, 241, 0.05); }
   stroke-width: 2;
   rx: 6;
   transition: all 0.3s;
+  cursor: help;
 }
 .gate-rect.active {
   fill: rgba(251, 146, 60, 0.15);
@@ -869,6 +870,111 @@ footer .footer-line { opacity: 0.6; }
   font-size: 0.68rem;
   margin: 0 0.1rem;
 }
+
+/* === MODULE NAVIGATION === */
+.module-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 0;
+  max-width: 920px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.module-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--accent);
+  text-decoration: none;
+  transition: all 0.2s;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 8px;
+}
+.module-nav a:hover {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: var(--accent);
+}
+.module-nav .mn-label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.module-nav .mn-title { font-size: 0.9rem; }
+
+/* === SELF-CHECK QUIZ === */
+.quiz-section { margin-top: 2.5rem; }
+.quiz-question {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.quiz-question p { margin-bottom: 0.75rem; font-weight: 500; }
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.7rem 1rem;
+  margin: 0.35rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.quiz-option:hover { border-color: var(--accent); background: rgba(99, 102, 241, 0.06); }
+.quiz-option.correct {
+  border-color: var(--green);
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--green);
+}
+.quiz-option.wrong {
+  border-color: var(--red);
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--red);
+  opacity: 0.7;
+}
+.quiz-option:disabled { cursor: default; }
+.quiz-option:disabled:hover { border-color: var(--border); background: var(--surface2); }
+.quiz-option.correct:hover { border-color: var(--green); background: rgba(52, 211, 153, 0.1); }
+.quiz-option.wrong:hover { border-color: var(--red); background: rgba(248, 113, 113, 0.08); }
+.quiz-explanation {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  display: none;
+}
+.quiz-explanation.visible { display: block; }
+.quiz-explanation.correct-exp { background: rgba(52, 211, 153, 0.08); border-left: 3px solid var(--green); }
+.quiz-explanation.wrong-exp { background: rgba(248, 113, 113, 0.06); border-left: 3px solid var(--red); }
+.quiz-score {
+  text-align: center;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-top: 1rem;
+}
+.quiz-score .score-value {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+@media (max-width: 700px) {
+  .module-nav { flex-direction: column; gap: 0.5rem; }
+  .module-nav a { width: 100%; justify-content: center; }
+}
 </style>
 </head>
 <body>
@@ -887,6 +993,7 @@ footer .footer-line { opacity: 0.6; }
     <li><a href="#explorer">Explorer</a></li>
     <li><a href="#postprocessing">Post-Processing</a></li>
     <li><a href="#summary">Summary</a></li>
+    <li><a href="#quiz">Quiz</a></li>
   </ul>
 </nav>
 
@@ -894,7 +1001,7 @@ footer .footer-line { opacity: 0.6; }
 <section id="hero" class="hero">
   <div class="tag">Shor's Algorithm Core</div>
   <h1>Quantum Period Finding</h1>
-  <p class="subtitle">An interactive exploration of the quantum algorithm that breaks RSA encryption</p>
+  <p class="subtitle">How superposition and interference reveal hidden periodicity in modular arithmetic</p>
 </section>
 
 <!-- === SECTION 1: PROBLEM === -->
@@ -940,6 +1047,10 @@ footer .footer-line { opacity: 0.6; }
     </div>
     <div id="prob-info" class="alert-banner alert-info" style="display:none"></div>
     <div id="prob-table-wrap" style="overflow-x:auto; margin-top:1rem;"></div>
+    <div id="prob-chart-wrap" style="display:none; margin-top:1rem;">
+      <div class="chart-container"><canvas id="prob-fx-canvas"></canvas></div>
+      <div class="chart-legend" id="prob-fx-legend" style="margin-top:0.5rem;"></div>
+    </div>
   </div>
 </section>
 
@@ -947,7 +1058,7 @@ footer .footer-line { opacity: 0.6; }
 <section id="motivation">
   <h2 data-section="2">2. Why Quantum?</h2>
 
-  <p>Classically, finding the period $r$ of $a^x \bmod N$ requires evaluating the function until the pattern repeats. The best classical algorithms for the underlying factoring problem are sub-exponential but super-polynomial:</p>
+  <p>Classically, finding the period $r$ of $a^x \bmod N$ by brute force requires up to $r$ evaluations &mdash; and $r$ can be nearly as large as $N$ itself. The best classical algorithms for the underlying factoring problem are sub-exponential but still super-polynomial in the number of digits:</p>
 
   <table class="comparison-table">
     <thead>
@@ -1032,6 +1143,12 @@ footer .footer-line { opacity: 0.6; }
 
     <div class="state-display fade-content" id="step-description"></div>
 
+    <div id="measure-action" style="display:none; text-align:center; margin:1rem 0;">
+      <button class="btn btn-accent" id="measure-collapse-btn">&#127922; Measure!</button>
+      <span id="measure-outcome" style="display:none; margin-left:1rem; font-family:'JetBrains Mono',monospace; font-weight:600;"></span>
+      <button class="btn btn-success" id="measure-send-cf" style="display:none; margin-left:0.75rem;">Send to Continued Fractions &rarr;</button>
+    </div>
+
     <h3 style="margin-top:1.5rem;">Measurement Probabilities</h3>
     <div class="chart-container">
       <canvas id="amplitude-canvas"></canvas>
@@ -1050,6 +1167,30 @@ footer .footer-line { opacity: 0.6; }
       <span><span class="legend-swatch" style="background: hsla(200, 80%, 60%, 0.6);"></span> Other</span>
     </div>
   </div>
+
+  <h3>From Entanglement to Periodicity</h3>
+
+  <p>After all the controlled operations, the full state is $\frac{1}{4}\sum_{x=0}^{15}|x\rangle|7^x \bmod 15\rangle$. Each counting register value $|x\rangle$ is paired with a specific work register value $|f(x)\rangle$. If we group the terms by their work register value, something remarkable appears &mdash; <strong>each group forms a periodic pattern</strong> in $x$ with the same period $r = 4$:</p>
+
+  <div class="interactive-panel">
+    <div class="panel-title">
+      <span class="icon" style="background: rgba(52,211,153,0.15); color: var(--green);">&#8859;</span>
+      Entangled State Decomposition
+    </div>
+    <p style="margin-bottom:0.75rem;">Each bar is one term $|x\rangle|f(x)\rangle$ in the superposition, colored by the work register value $f(x) = 7^x \bmod 15$:</p>
+    <div class="chart-container"><canvas id="entangle-canvas"></canvas></div>
+    <div id="entangle-legend" class="chart-legend" style="margin-top:0.5rem;"></div>
+
+    <p style="margin-top:1rem;">Now imagine <strong>measuring the work register</strong>. The state collapses to only those $|x\rangle$ values that share the same $f(x)$ &mdash; a periodic subset with period $r$. Click a button to see what happens:</p>
+    <div class="preset-group" style="justify-content:center;">
+      <button class="preset-btn active" data-entangle="all">Show All</button>
+      <button class="preset-btn" data-entangle="1" style="--ent-color:#22d3ee;">Measure f(x) = 1</button>
+      <button class="preset-btn" data-entangle="7" style="--ent-color:#f472b6;">Measure f(x) = 7</button>
+      <button class="preset-btn" data-entangle="4" style="--ent-color:#34d399;">Measure f(x) = 4</button>
+      <button class="preset-btn" data-entangle="13" style="--ent-color:#fb923c;">Measure f(x) = 13</button>
+    </div>
+    <div id="entangle-result" class="alert-banner alert-info" style="display:none; margin-top:0.75rem;"></div>
+  </div>
 </section>
 
 <!-- === SECTION 4: QFT === -->
@@ -1062,7 +1203,83 @@ footer .footer-line { opacity: 0.6; }
     $$\text{QFT}|j\rangle = \frac{1}{\sqrt{Q}} \sum_{k=0}^{Q-1} \omega^{jk} |k\rangle, \qquad \omega = e^{2\pi i / Q}$$
   </div>
 
-  <p>The key insight: if the input state is periodic with period $r$ (nonzero amplitudes at $x_0, x_0+r, x_0+2r, \ldots$), then the QFT output has amplitudes concentrated at multiples of $Q/r$. This is quantum interference &mdash; the phase contributions add constructively only at these special frequencies.</p>
+  <p>The key insight: if the input state is periodic with period $r$, then the QFT output has amplitudes concentrated at multiples of $Q/r$ &mdash; and nearly zero everywhere else. Let's see exactly why this happens.</p>
+
+  <h3>Why Cancellation Happens</h3>
+
+  <p>After the modular exponentiation, the counting register holds a <strong>periodic superposition</strong> &mdash; equal amplitudes at evenly-spaced positions $x_0,\; x_0 + r,\; x_0 + 2r,\; \ldots$:</p>
+
+  <div class="math-callout">
+    $$|\psi\rangle = \frac{1}{\sqrt{m}} \sum_{j=0}^{m-1} |x_0 + jr\rangle$$
+  </div>
+
+  <p>where $m \approx Q/r$ is the number of terms. Applying the QFT, the amplitude at output $|k\rangle$ is:</p>
+
+  <div class="math-callout">
+    $$\alpha_k = \frac{1}{\sqrt{Qm}} \sum_{j=0}^{m-1} \omega^{(x_0 + jr)k} = \frac{\omega^{x_0 k}}{\sqrt{Qm}} \underbrace{\sum_{j=0}^{m-1} e^{2\pi i \cdot jrk/Q}}_{\large S(k)}$$
+  </div>
+
+  <p>Since $|\omega^{x_0 k}| = 1$, the probability $|\alpha_k|^2 = |S(k)|^2 / (Qm)$ depends only on the sum $S(k)$. Each term in this sum is a <strong>unit-length phasor</strong> (a complex number on the unit circle) with angle $\varphi_j = 2\pi j \cdot rk/Q$. Consecutive phasors differ by a fixed phase step:</p>
+
+  <div class="math-callout">
+    $$\Delta\varphi = \frac{2\pi r k}{Q}$$
+  </div>
+
+  <div class="definition-box">
+    <h3>Constructive Interference</h3>
+    <p>When $k$ is a multiple of $Q/r$, the phase step $\Delta\varphi$ is a multiple of $2\pi$. Every phasor points in the <strong>same direction</strong>. They add up: $|S(k)| = m$, giving probability $\approx 1/r$.</p>
+  </div>
+
+  <div class="warning-box">
+    <h3>Destructive Interference</h3>
+    <p>When $k$ is NOT a multiple of $Q/r$, the phasors spread around the unit circle and <strong>cancel each other out</strong>. The geometric series gives $|S(k)| \approx 0$. The more terms (larger $m$), the more complete the cancellation.</p>
+  </div>
+
+  <p>Explore this visually &mdash; drag the slider to change $k$ and watch the phasors align or cancel:</p>
+
+  <div class="interactive-panel">
+    <div class="panel-title">
+      <span class="icon" style="background: rgba(244,114,182,0.15); color: var(--pink);">&#10227;</span>
+      Phasor Cancellation Explorer
+    </div>
+    <div class="control-group">
+      <div class="control-item">
+        <label>Period r</label>
+        <select id="phasor-r">
+          <option value="2">r = 2</option>
+          <option value="4" selected>r = 4</option>
+          <option value="8">r = 8</option>
+        </select>
+      </div>
+      <div class="control-item">
+        <label>Output frequency k = <span id="phasor-k-label" style="font-family:'JetBrains Mono',monospace; color:var(--cyan);">0</span></label>
+        <input type="range" id="phasor-k" min="0" max="15" value="0">
+      </div>
+      <div class="control-item">
+        <button class="btn btn-primary" id="phasor-sweep">&#9654; Sweep k</button>
+      </div>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; gap:1.5rem; align-items:flex-start; margin-top:1rem;">
+      <div style="flex:1; min-width:260px;">
+        <h3 style="margin-top:0;">Phasor Diagram (tip-to-tail sum)</h3>
+        <div style="text-align:center;">
+          <canvas id="phasor-canvas" width="360" height="360" style="max-width:100%; border-radius:12px;"></canvas>
+        </div>
+      </div>
+      <div style="flex:1; min-width:260px;">
+        <h3 style="margin-top:0;">$|S(k)|^2$ for all k</h3>
+        <div class="chart-container"><canvas id="phasor-bar-canvas"></canvas></div>
+        <div id="phasor-result" class="alert-banner alert-info" style="margin-top:0.75rem;"></div>
+      </div>
+    </div>
+    <div class="chart-legend" style="margin-top:0.75rem;">
+      <span>Each <span style="color:var(--cyan);">colored arrow</span> is one phasor $e^{2\pi i \cdot jrk/Q}$</span>
+      <span>&nbsp;|&nbsp;</span>
+      <span>The <span style="color:var(--pink); font-weight:600;">thick arrow</span> is the resultant sum $S(k)$</span>
+      <span>&nbsp;|&nbsp;</span>
+      <span>Click a bar to jump to that $k$</span>
+    </div>
+  </div>
 
   <h3>QFT Matrix Visualization</h3>
   <p>Each entry $(\text{QFT})_{jk} = \frac{1}{\sqrt{Q}}\,\omega^{jk}$. The color encodes the phase of $\omega^{jk}$:</p>
@@ -1102,6 +1319,8 @@ footer .footer-line { opacity: 0.6; }
       <button class="preset-btn active" data-preset="uniform">Uniform</button>
       <button class="preset-btn" data-preset="period2">Period r=2</button>
       <button class="preset-btn" data-preset="period4">Period r=4</button>
+      <button class="preset-btn" data-preset="period4s1">r=4, x&#x2080;=1</button>
+      <button class="preset-btn" data-preset="period4s2">r=4, x&#x2080;=2</button>
       <button class="preset-btn" data-preset="delta">Single state |3&rang;</button>
     </div>
     <div style="display:flex; flex-wrap:wrap; gap:1.5rem; margin-top:1rem;">
@@ -1114,6 +1333,7 @@ footer .footer-line { opacity: 0.6; }
         <div class="chart-container"><canvas id="qft-output-canvas"></canvas></div>
       </div>
     </div>
+    <div id="qft-demo-note" class="alert-banner alert-info" style="display:none; margin-top:0.75rem;"></div>
   </div>
 </section>
 
@@ -1217,6 +1437,13 @@ footer .footer-line { opacity: 0.6; }
       </div>
     </div>
     <div id="cf-steps-container"></div>
+    <div id="cf-numberline-wrap" style="display:none; margin-top:1.25rem;">
+      <h3 style="margin-top:0;">Convergents on the Number Line</h3>
+      <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:0.5rem;">Each convergent $p_k/q_k$ (triangle) approaches the true value $y/Q$ (dashed line). Hover to see details.</p>
+      <div style="text-align:center; overflow-x:auto;">
+        <canvas id="cf-numberline-canvas" height="120" style="width:100%; max-width:800px; border-radius:8px;"></canvas>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1224,7 +1451,7 @@ footer .footer-line { opacity: 0.6; }
 <section id="summary">
   <h2 data-section="7">7. Putting It All Together</h2>
 
-  <p>The quantum period-finding algorithm works in these stages:</p>
+  <p>The quantum period-finding algorithm combines quantum parallelism, entanglement, and Fourier analysis into a single coherent pipeline:</p>
 
   <div class="interactive-panel">
     <div class="panel-title">
@@ -1246,6 +1473,37 @@ footer .footer-line { opacity: 0.6; }
     </table>
   </div>
 
+  <h3>Try It: Factor a Number</h3>
+  <p>Run the complete Shor's algorithm pipeline end-to-end. Pick a number $N$ to factor, and watch each stage unfold &mdash; from choosing a random base $a$ through quantum period finding to extracting the factors:</p>
+
+  <div class="interactive-panel">
+    <div class="panel-title">
+      <span class="icon" style="background: rgba(250,204,21,0.15); color: var(--yellow);">&#9881;</span>
+      End-to-End Factoring Simulator
+    </div>
+    <div class="control-group">
+      <div class="control-item">
+        <label>N (to factor)</label>
+        <select id="e2e-N">
+          <option value="15" selected>15</option>
+          <option value="21">21</option>
+          <option value="33">33</option>
+          <option value="35">35</option>
+          <option value="55">55</option>
+          <option value="77">77</option>
+        </select>
+      </div>
+      <div class="control-item">
+        <button class="btn btn-accent" id="e2e-run">&#9654; Factor N</button>
+      </div>
+      <div class="control-item">
+        <button class="btn btn-secondary" id="e2e-trials">&#127922; Run 50 Trials</button>
+      </div>
+    </div>
+    <div id="e2e-pipeline" style="margin-top:1rem;"></div>
+    <div id="e2e-trials-result" style="display:none; margin-top:1rem;"></div>
+  </div>
+
   <div class="warning-box">
     <strong>Success probability.</strong> The algorithm succeeds with probability $\geq 1 - 1/2^k$ after $O(k)$ repetitions. Even a single run succeeds with probability $\Omega(1/\!\log\log N)$.
   </div>
@@ -1257,6 +1515,25 @@ footer .footer-line { opacity: 0.6; }
       <li>Shor, P. (1994). <em>Algorithms for quantum computation: discrete logarithms and factoring.</em></li>
       <li>Mermin, N. D. <em>Quantum Computer Science</em>, Chapter 3</li>
     </ul>
+  </div>
+
+  <div class="definition-box" style="margin-top: 2rem; border-color: rgba(99,102,241,0.3); background: rgba(99,102,241,0.04);">
+    <h3 style="margin-top:0;">What's Next?</h3>
+    <p>You now understand how quantum period finding works &mdash; from superposition and modular exponentiation through QFT interference and continued fractions. In the next module, we put all the pieces together into <strong>Shor's complete factoring algorithm</strong>, including error handling, success probability analysis, and what it means for real-world cryptography.</p>
+    <a href="22_shors_algorithm.html" style="display:inline-flex; align-items:center; gap:0.4rem; color:var(--accent); font-weight:600; text-decoration:none; margin-top:0.5rem;">
+      Continue to Shor's Algorithm <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- === SECTION 8: QUIZ === -->
+<section id="quiz" class="quiz-section">
+  <h2 data-section="8">8. Self-Check</h2>
+  <p>Test your understanding of quantum period finding. Select the best answer for each question.</p>
+  <div id="quiz-container"></div>
+  <div id="quiz-score" class="quiz-score" style="display:none;">
+    <div class="score-value" id="quiz-score-value"></div>
+    <div style="color:var(--text-dim); margin-top:0.25rem;" id="quiz-score-label"></div>
   </div>
 </section>
 
@@ -1359,9 +1636,14 @@ function computePeriodFindingProbabilities(a, N, numCountingQubits) {
       sumRe += Math.cos(angle);
       sumIm += Math.sin(angle);
     }
-    probs[y] = (sumRe * sumRe + sumIm * sumIm) / Q;
+    probs[y] = (sumRe * sumRe + sumIm * sumIm);
     phases[y] = Math.atan2(sumIm, sumRe);
   }
+
+  // Normalize to a proper probability distribution
+  let total = 0;
+  for (let y = 0; y < Q; y++) total += probs[y];
+  if (total > 0) for (let y = 0; y < Q; y++) probs[y] /= total;
 
   return { probs, r, Q, phases };
 }
@@ -1866,6 +2148,10 @@ function renderCircuitSVG(svgEl, activeStep) {
   // Visual col 0: H gates
   for (let w = 0; w < 4; w++) {
     const cls = gateClass(1);
+    const g = document.createElementNS(ns, 'g');
+    const title = document.createElementNS(ns, 'title');
+    title.textContent = `Hadamard gate on q${w}: creates (|0⟩+|1⟩)/√2 superposition`;
+    g.appendChild(title);
     const rect = document.createElementNS(ns, 'rect');
     const x = colPositions[0] - gateW / 2;
     const y = wireY(w) - gateH / 2;
@@ -1874,21 +2160,35 @@ function renderCircuitSVG(svgEl, activeStep) {
     rect.setAttribute('width', gateW * 0.65);
     rect.setAttribute('height', gateH);
     rect.setAttribute('class', `gate-rect ${cls}`);
-    svgEl.appendChild(rect);
+    g.appendChild(rect);
     const t = document.createElementNS(ns, 'text');
     t.setAttribute('x', x + gateW * 0.325);
     t.setAttribute('y', y + gateH / 2 + 5);
     t.setAttribute('text-anchor', 'middle');
     t.setAttribute('class', `gate-text ${cls === 'pending' ? 'pending' : ''}`);
     t.textContent = 'H';
-    svgEl.appendChild(t);
+    g.appendChild(t);
+    svgEl.appendChild(g);
   }
 
   // Visual cols 1-4: Controlled-U gates
   const cuLabels = ['U', 'U²', 'U⁴', 'U⁸'];
+  const cuPowers = [1, 2, 4, 8];
+  const cuMods = [7, 4, 1, 1]; // 7^(2^k) mod 15
+  const cuTooltips = [
+    'Controlled-U: if q₀=|1⟩, multiply work by 7¹≡7 (mod 15)',
+    'Controlled-U²: if q₁=|1⟩, multiply work by 7²≡4 (mod 15)',
+    'Controlled-U⁴: if q₂=|1⟩, multiply work by 7⁴≡1 (mod 15) — identity!',
+    'Controlled-U⁸: if q₃=|1⟩, multiply work by 7⁸≡1 (mod 15) — identity!'
+  ];
   for (let k = 0; k < 4; k++) {
     const cls = gateClass(2 + k);
     const colX = colPositions[1 + k];
+
+    const g = document.createElementNS(ns, 'g');
+    const title = document.createElementNS(ns, 'title');
+    title.textContent = cuTooltips[k];
+    g.appendChild(title);
 
     // Control dot
     const dot = document.createElementNS(ns, 'circle');
@@ -1897,7 +2197,7 @@ function renderCircuitSVG(svgEl, activeStep) {
     dot.setAttribute('r', 5);
     dot.setAttribute('class', cls === 'active' ? 'control-dot' : '');
     dot.setAttribute('fill', cls === 'pending' ? '#2a3550' : cls === 'completed' ? '#4a5568' : '#6366f1');
-    svgEl.appendChild(dot);
+    g.appendChild(dot);
 
     // Vertical line
     const vline = document.createElementNS(ns, 'line');
@@ -1907,7 +2207,7 @@ function renderCircuitSVG(svgEl, activeStep) {
     vline.setAttribute('y2', wireY(4));
     vline.setAttribute('stroke', cls === 'pending' ? '#2a3550' : cls === 'completed' ? '#4a5568' : '#6366f1');
     vline.setAttribute('stroke-width', cls === 'active' ? 2 : 1.5);
-    svgEl.appendChild(vline);
+    g.appendChild(vline);
 
     // Target gate box
     const rect = document.createElementNS(ns, 'rect');
@@ -1916,14 +2216,15 @@ function renderCircuitSVG(svgEl, activeStep) {
     rect.setAttribute('width', gateW);
     rect.setAttribute('height', gateH);
     rect.setAttribute('class', `gate-rect ${cls}`);
-    svgEl.appendChild(rect);
+    g.appendChild(rect);
     const t = document.createElementNS(ns, 'text');
     t.setAttribute('x', colX);
     t.setAttribute('y', wireY(4) + 5);
     t.setAttribute('text-anchor', 'middle');
     t.setAttribute('class', `gate-text ${cls === 'pending' ? 'pending' : ''}`);
     t.textContent = cuLabels[k];
-    svgEl.appendChild(t);
+    g.appendChild(t);
+    svgEl.appendChild(g);
   }
 
   // Visual col 5: QFT^-1
@@ -1932,20 +2233,25 @@ function renderCircuitSVG(svgEl, activeStep) {
     const colX = colPositions[5];
     const topY = wireY(0) - gateH / 2;
     const botY = wireY(3) + gateH / 2;
+    const g = document.createElementNS(ns, 'g');
+    const title = document.createElementNS(ns, 'title');
+    title.textContent = 'Inverse QFT on counting register: converts periodicity in amplitudes to peaks at multiples of Q/r';
+    g.appendChild(title);
     const rect = document.createElementNS(ns, 'rect');
     rect.setAttribute('x', colX - gateW * 0.65);
     rect.setAttribute('y', topY);
     rect.setAttribute('width', gateW * 1.3);
     rect.setAttribute('height', botY - topY);
     rect.setAttribute('class', `gate-rect ${cls}`);
-    svgEl.appendChild(rect);
+    g.appendChild(rect);
     const t = document.createElementNS(ns, 'text');
     t.setAttribute('x', colX);
     t.setAttribute('y', (topY + botY) / 2 + 5);
     t.setAttribute('text-anchor', 'middle');
     t.setAttribute('class', `gate-text ${cls === 'pending' ? 'pending' : ''}`);
     t.textContent = 'QFT⁻¹';
-    svgEl.appendChild(t);
+    g.appendChild(t);
+    svgEl.appendChild(g);
   }
 
   // Visual col 6: Measurement
@@ -1954,13 +2260,18 @@ function renderCircuitSVG(svgEl, activeStep) {
     for (let w = 0; w < 4; w++) {
       const colX = colPositions[6];
       const cy = wireY(w);
+      const g = document.createElementNS(ns, 'g');
+      g.style.cursor = 'help';
+      const title = document.createElementNS(ns, 'title');
+      title.textContent = `Measure q${w} in computational basis → classical bit. Outcome y is near a multiple of Q/r.`;
+      g.appendChild(title);
       // Meter symbol: arc + arrow
       const arc = document.createElementNS(ns, 'path');
       const r = 10;
       arc.setAttribute('d', `M ${colX-r} ${cy+3} A ${r} ${r} 0 0 1 ${colX+r} ${cy+3}`);
       arc.setAttribute('class', 'meter-path');
       arc.setAttribute('stroke', cls === 'pending' ? '#2a3550' : cls === 'completed' ? '#4a5568' : '#f87171');
-      svgEl.appendChild(arc);
+      g.appendChild(arc);
       // Arrow
       const arrow = document.createElementNS(ns, 'line');
       arrow.setAttribute('x1', colX);
@@ -1969,7 +2280,8 @@ function renderCircuitSVG(svgEl, activeStep) {
       arrow.setAttribute('y2', cy - 8);
       arrow.setAttribute('stroke', cls === 'pending' ? '#2a3550' : cls === 'completed' ? '#4a5568' : '#f87171');
       arrow.setAttribute('stroke-width', 2);
-      svgEl.appendChild(arrow);
+      g.appendChild(arrow);
+      svgEl.appendChild(g);
     }
   }
 }
@@ -2035,6 +2347,12 @@ function getPresetState(preset, Q) {
     case 'period4':
       for (let i = 0; i < Q; i += 4) state[i] = QMath.complex(1 / Math.sqrt(Q / 4), 0);
       break;
+    case 'period4s1':
+      for (let i = 1; i < Q; i += 4) state[i] = QMath.complex(1 / Math.sqrt(Q / 4), 0);
+      break;
+    case 'period4s2':
+      for (let i = 2; i < Q; i += 4) state[i] = QMath.complex(1 / Math.sqrt(Q / 4), 0);
+      break;
     case 'delta':
       state[3] = QMath.complex(1, 0);
       break;
@@ -2048,12 +2366,15 @@ function getPresetState(preset, Q) {
 function runContinuedFractions(y, Q, N, a, container) {
   container.innerHTML = '';
 
+  const nlWrap = document.getElementById('cf-numberline-wrap');
+
   if (y === 0) {
     const div = document.createElement('div');
     div.className = 'cf-step visible';
     div.innerHTML = `<span class="cf-step-num">—</span> Measured $y = 0$. This gives $y/Q = 0$, which provides no information about $r$. We would need to re-run the algorithm.`;
     container.appendChild(div);
     renderMathIn(container);
+    if (nlWrap) nlWrap.style.display = 'none';
     return;
   }
 
@@ -2112,6 +2433,141 @@ function runContinuedFractions(y, Q, N, a, container) {
   if (solBox) {
     setTimeout(() => { solBox.style.opacity = '1'; }, cfSteps.length * 350);
   }
+
+  // Draw convergent number line (only for the standalone CF section, not inline calls)
+  const isStandaloneCF = container.id === 'cf-steps-container';
+  if (nlWrap && convergents.length > 0 && isStandaloneCF) {
+    nlWrap.style.display = 'block';
+    const totalDelay = cfSteps.length * 350 + 200;
+    setTimeout(() => drawConvergentNumberLine(fraction, convergents, foundR), totalDelay);
+  }
+}
+
+function drawConvergentNumberLine(target, convergents, foundR) {
+  const canvas = document.getElementById('cf-numberline-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = 120 * dpr;
+  canvas.style.height = '120px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const w = rect.width, h = 120;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Determine visible range: center on target, widen enough for all convergents
+  const convValues = convergents.filter(c => c.q > 0).map(c => c.p / c.q);
+  let rangeMin = target, rangeMax = target;
+  for (const v of convValues) {
+    rangeMin = Math.min(rangeMin, v);
+    rangeMax = Math.max(rangeMax, v);
+  }
+  const margin = Math.max(0.02, (rangeMax - rangeMin) * 0.25);
+  rangeMin = Math.max(0, rangeMin - margin);
+  rangeMax = Math.min(1, rangeMax + margin);
+  if (rangeMax - rangeMin < 0.05) {
+    const mid = (rangeMin + rangeMax) / 2;
+    rangeMin = Math.max(0, mid - 0.025);
+    rangeMax = Math.min(1, mid + 0.025);
+  }
+
+  const pad = { left: 40, right: 40 };
+  const plotW = w - pad.left - pad.right;
+  const lineY = 50;
+
+  function xPos(val) {
+    return pad.left + ((val - rangeMin) / (rangeMax - rangeMin)) * plotW;
+  }
+
+  // Draw axis
+  ctx.strokeStyle = '#2a3550';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(pad.left - 5, lineY);
+  ctx.lineTo(w - pad.right + 5, lineY);
+  ctx.stroke();
+
+  // Tick marks at nice intervals
+  const range = rangeMax - rangeMin;
+  const tickStep = range < 0.05 ? 0.01 : range < 0.2 ? 0.05 : 0.1;
+  const firstTick = Math.ceil(rangeMin / tickStep) * tickStep;
+  ctx.fillStyle = '#8892a8';
+  ctx.font = '10px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  for (let t = firstTick; t <= rangeMax + 1e-9; t += tickStep) {
+    const tx = xPos(t);
+    ctx.strokeStyle = 'rgba(42, 53, 80, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tx, lineY - 4);
+    ctx.lineTo(tx, lineY + 4);
+    ctx.stroke();
+    ctx.fillText(t.toFixed(t < 0.1 ? 3 : 2), tx, lineY + 16);
+  }
+
+  // Draw target y/Q as a dashed vertical line
+  const targetX = xPos(target);
+  ctx.strokeStyle = '#f87171';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  ctx.moveTo(targetX, lineY - 30);
+  ctx.lineTo(targetX, lineY + 30);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = '#f87171';
+  ctx.font = 'bold 11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('y/Q', targetX, lineY - 34);
+
+  // Draw convergent triangles
+  const convColors = ['#22d3ee', '#f472b6', '#34d399', '#fb923c', '#6366f1', '#facc15'];
+  const validConvs = convergents.filter(c => c.q > 0);
+
+  for (let i = 0; i < validConvs.length; i++) {
+    const c = validConvs[i];
+    const val = c.p / c.q;
+    const cx = xPos(val);
+    const color = convColors[i % convColors.length];
+    const isMatch = foundR > 0 && c.q === foundR;
+
+    // Triangle marker pointing up at the line
+    const triSize = isMatch ? 8 : 6;
+    const triY = lineY + 22 + (i % 2) * 18;
+
+    // Line from triangle to axis
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, lineY + 4);
+    ctx.lineTo(cx, triY - triSize);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Triangle
+    ctx.fillStyle = color;
+    if (isMatch) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 8;
+    }
+    ctx.beginPath();
+    ctx.moveTo(cx, triY - triSize);
+    ctx.lineTo(cx - triSize * 0.7, triY + triSize * 0.4);
+    ctx.lineTo(cx + triSize * 0.7, triY + triSize * 0.4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Label
+    ctx.fillStyle = color;
+    ctx.font = (isMatch ? 'bold ' : '') + '10px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${c.p}/${c.q}`, cx, triY + triSize + 12);
+  }
 }
 
 function addCFStep(container, num, html, extraClass = '') {
@@ -2147,6 +2603,470 @@ function drawPhaseLegend(canvas) {
     ctx.fillStyle = `hsl(${hue}, 72%, 55%)`;
     ctx.fillRect(x, 0, 1, h);
   }
+}
+
+// ============================================================
+//  ENTANGLED STATE DECOMPOSITION
+// ============================================================
+function setupEntanglementViz() {
+  const N = 15, a = 7, Q = 16;
+  const r = QMath.findPeriod(a, N); // 4
+
+  // Compute f(x) and group by output value
+  const fValues = [];
+  const groups = new Map();
+  for (let x = 0; x < Q; x++) {
+    const fx = QMath.modPow(a, x, N);
+    fValues.push(fx);
+    if (!groups.has(fx)) groups.set(fx, []);
+    groups.get(fx).push(x);
+  }
+
+  const groupColorMap = { 1: '#22d3ee', 7: '#f472b6', 4: '#34d399', 13: '#fb923c' };
+
+  const canvas = document.getElementById('entangle-canvas');
+  const ctx = canvas.getContext('2d');
+  const legendEl = document.getElementById('entangle-legend');
+  const resultEl = document.getElementById('entangle-result');
+
+  // HiDPI setup
+  function setupCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w: rect.width, h: rect.height };
+  }
+
+  // Build legend
+  const legendParts = [];
+  for (const [fv, color] of Object.entries(groupColorMap)) {
+    const xs = groups.get(parseInt(fv));
+    legendParts.push(`<span><span class="legend-swatch" style="background:${color};"></span> $f(x) = ${fv}$: $x \\in \\{${xs.join(', ')}\\}$</span>`);
+  }
+  legendEl.innerHTML = legendParts.join('&ensp;');
+  renderMathIn(legendEl);
+
+  let activeFilter = 'all';
+
+  function draw() {
+    const { w, h } = setupCanvas();
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(17, 24, 39, 0.6)';
+    ctx.fillRect(0, 0, w, h);
+
+    const pad = { left: 45, right: 15, top: 38, bottom: 42 };
+    const plotW = w - pad.left - pad.right;
+    const plotH = h - pad.top - pad.bottom;
+    const barW = plotW / Q;
+    const gap = Math.max(1, barW * 0.12);
+    const barH = plotH * 0.82; // all bars same height (equal amplitudes)
+
+    // Axes
+    ctx.strokeStyle = '#2a3550';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top);
+    ctx.lineTo(pad.left, h - pad.bottom);
+    ctx.lineTo(w - pad.right, h - pad.bottom);
+    ctx.stroke();
+
+    // Y-axis label
+    ctx.save();
+    ctx.translate(12, h / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#8892a8';
+    ctx.font = '11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Amplitude', 0, 0);
+    ctx.restore();
+
+    // Draw bars
+    for (let x = 0; x < Q; x++) {
+      const fx = fValues[x];
+      const color = groupColorMap[fx] || '#6366f1';
+      const bx = pad.left + x * barW + gap / 2;
+      const bw = barW - gap;
+      const by = h - pad.bottom - barH;
+
+      const show = activeFilter === 'all' || parseInt(activeFilter) === fx;
+
+      if (show) {
+        // Glow for filtered mode
+        if (activeFilter !== 'all') {
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 8;
+        }
+        ctx.fillStyle = color;
+        ctx.fillRect(bx, by, bw, barH);
+        ctx.shadowBlur = 0;
+      } else {
+        ctx.fillStyle = 'rgba(42, 53, 80, 0.3)';
+        ctx.fillRect(bx, by, bw, barH);
+      }
+
+      // X-axis labels
+      ctx.fillStyle = show ? '#e2e8f0' : '#4a5568';
+      ctx.font = show ? 'bold 11px Inter, sans-serif' : '10px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(x, pad.left + x * barW + barW / 2, h - pad.bottom + 14);
+
+      // f(x) label below x
+      ctx.fillStyle = show ? color : '#3a4560';
+      ctx.font = '9px "JetBrains Mono", monospace';
+      ctx.fillText(fx, pad.left + x * barW + barW / 2, h - pad.bottom + 27);
+    }
+
+    // Row labels
+    ctx.fillStyle = '#8892a8';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('x:', pad.left - 18, h - pad.bottom + 14);
+    ctx.fillText('f(x):', pad.left - 18, h - pad.bottom + 27);
+
+    // Draw period bracket when filtered
+    if (activeFilter !== 'all') {
+      const fv = parseInt(activeFilter);
+      const xs = groups.get(fv);
+      if (xs && xs.length >= 2) {
+        const x0center = pad.left + xs[0] * barW + barW / 2;
+        const x1center = pad.left + xs[1] * barW + barW / 2;
+        const bracketY = pad.top + 2;
+        const color = groupColorMap[fv];
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x0center, bracketY + 8);
+        ctx.lineTo(x0center, bracketY);
+        ctx.lineTo(x1center, bracketY);
+        ctx.lineTo(x1center, bracketY + 8);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Label "r = 4"
+        ctx.fillStyle = color;
+        ctx.font = 'bold 11px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('r = ' + r, (x0center + x1center) / 2, bracketY - 3);
+      }
+    }
+  }
+
+  // Button handlers
+  const btns = document.querySelectorAll('[data-entangle]');
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeFilter = btn.dataset.entangle;
+      btns.forEach(b => b.classList.toggle('active', b.dataset.entangle === activeFilter));
+      draw();
+
+      if (activeFilter === 'all') {
+        resultEl.style.display = 'none';
+      } else {
+        const fv = parseInt(activeFilter);
+        const xs = groups.get(fv);
+        resultEl.style.display = 'block';
+        resultEl.className = 'alert-banner alert-success';
+        resultEl.innerHTML = `Measuring $f(x) = ${fv}$ collapses the counting register to $|\\psi\\rangle = \\frac{1}{2}(|${xs.join('\\rangle + |')}\\rangle)$ &mdash; a <strong>periodic state</strong> with period $r = ${r}$, starting at $x_0 = ${xs[0]}$. This is exactly the input the QFT needs!`;
+        renderMathIn(resultEl);
+      }
+    });
+  });
+
+  draw();
+
+  // Expose for resize
+  window._entangleDraw = draw;
+}
+
+// ============================================================
+//  PHASOR CANCELLATION EXPLORER
+// ============================================================
+function setupCancellationExplorer() {
+  const Q = 16;
+  const phasorCanvas = document.getElementById('phasor-canvas');
+  const barCanvas = document.getElementById('phasor-bar-canvas');
+  const rSelect = document.getElementById('phasor-r');
+  const kSlider = document.getElementById('phasor-k');
+  const kLabel = document.getElementById('phasor-k-label');
+  const resultEl = document.getElementById('phasor-result');
+
+  const pCtx = phasorCanvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const phasorSize = 360;
+  phasorCanvas.width = phasorSize * dpr;
+  phasorCanvas.height = phasorSize * dpr;
+  phasorCanvas.style.width = phasorSize + 'px';
+  phasorCanvas.style.height = phasorSize + 'px';
+  pCtx.scale(dpr, dpr);
+
+  const barChart = new AmplitudeChart(barCanvas, {
+    onClick: (idx) => {
+      kSlider.value = idx;
+      kLabel.textContent = idx;
+      update();
+    }
+  });
+  window._phasorBarChart = barChart;
+
+  function computePhasors(r, k) {
+    const m = Math.floor((Q - 1) / r) + 1;
+    const phasors = [];
+    for (let j = 0; j < m; j++) {
+      const angle = 2 * Math.PI * j * r * k / Q;
+      phasors.push({ re: Math.cos(angle), im: Math.sin(angle) });
+    }
+    return phasors;
+  }
+
+  function computeAllAmplitudes(r) {
+    const m = Math.floor((Q - 1) / r) + 1;
+    const probs = new Float64Array(Q);
+    const phases = new Float64Array(Q);
+    for (let k = 0; k < Q; k++) {
+      let sumRe = 0, sumIm = 0;
+      for (let j = 0; j < m; j++) {
+        const angle = 2 * Math.PI * j * r * k / Q;
+        sumRe += Math.cos(angle);
+        sumIm += Math.sin(angle);
+      }
+      // |S(k)|^2 normalized so the bar chart shows measurement probability
+      probs[k] = (sumRe * sumRe + sumIm * sumIm) / (Q * m);
+      phases[k] = Math.atan2(sumIm, sumRe);
+    }
+    return { probs, phases };
+  }
+
+  function drawArrowhead(ctx, x, y, angle, len, fillStyle) {
+    ctx.fillStyle = fillStyle;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - len * Math.cos(angle - 0.38), y - len * Math.sin(angle - 0.38));
+    ctx.lineTo(x - len * Math.cos(angle + 0.38), y - len * Math.sin(angle + 0.38));
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawPhasorDiagram(phasors, k, r) {
+    const ctx = pCtx;
+    const size = phasorSize;
+    const cx = size / 2, cy = size / 2;
+    const radius = size * 0.35;
+    const m = phasors.length;
+
+    ctx.clearRect(0, 0, size, size);
+
+    // Reference circle
+    ctx.strokeStyle = 'rgba(42, 53, 80, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Axes
+    ctx.strokeStyle = 'rgba(42, 53, 80, 0.3)';
+    ctx.beginPath();
+    ctx.moveTo(cx - radius - 15, cy);
+    ctx.lineTo(cx + radius + 15, cy);
+    ctx.moveTo(cx, cy - radius - 15);
+    ctx.lineTo(cx, cy + radius + 15);
+    ctx.stroke();
+
+    ctx.fillStyle = '#8892a8';
+    ctx.font = '11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Re', cx + radius + 22, cy + 4);
+    ctx.fillText('Im', cx, cy - radius - 10);
+
+    if (m === 0) return;
+
+    const arrowLen = radius / m;
+
+    // Generate phasor colors (cyan-to-indigo range)
+    const colors = [];
+    for (let j = 0; j < m; j++) {
+      const t = m === 1 ? 0 : j / (m - 1);
+      const hue = 180 + t * 120; // cyan(180) to indigo(300)
+      colors.push(`hsl(${hue}, 80%, 65%)`);
+    }
+
+    // Ghost lines: show each phasor direction from origin
+    ctx.globalAlpha = 0.2;
+    for (let j = 0; j < m; j++) {
+      const px = cx + phasors[j].re * radius * 0.92;
+      const py = cy - phasors[j].im * radius * 0.92;
+      ctx.strokeStyle = colors[j];
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(px, py);
+      ctx.stroke();
+      ctx.fillStyle = colors[j];
+      ctx.beginPath();
+      ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Tip-to-tail phasor sum
+    let tipX = cx, tipY = cy;
+    for (let j = 0; j < m; j++) {
+      const dx = phasors[j].re * arrowLen;
+      const dy = -phasors[j].im * arrowLen;
+      const endX = tipX + dx, endY = tipY + dy;
+
+      ctx.strokeStyle = colors[j];
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+
+      const angle = Math.atan2(dy, dx);
+      const headLen = Math.min(8, arrowLen * 0.3);
+      drawArrowhead(ctx, endX, endY, angle, headLen, colors[j]);
+
+      // Label phasor index
+      if (m <= 8) {
+        ctx.fillStyle = colors[j];
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        const offX = -dy * 0.15, offY = dx * 0.15;
+        ctx.fillText('j=' + j, (tipX + endX) / 2 + offX, (tipY + endY) / 2 + offY);
+      }
+
+      tipX = endX;
+      tipY = endY;
+    }
+
+    // Resultant vector S(k)
+    const sumRe = phasors.reduce((s, p) => s + p.re, 0);
+    const sumIm = phasors.reduce((s, p) => s + p.im, 0);
+    const sumMag = Math.sqrt(sumRe * sumRe + sumIm * sumIm);
+
+    const rEndX = cx + sumRe * arrowLen;
+    const rEndY = cy - sumIm * arrowLen;
+
+    ctx.strokeStyle = '#f472b6';
+    ctx.lineWidth = 3.5;
+    ctx.shadowColor = 'rgba(244, 114, 182, 0.6)';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(rEndX, rEndY);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    if (sumMag > 0.05) {
+      const rAngle = Math.atan2(rEndY - cy, rEndX - cx);
+      drawArrowhead(ctx, rEndX, rEndY, rAngle, 10, '#f472b6');
+    }
+
+    // |S| label
+    ctx.fillStyle = '#f472b6';
+    ctx.font = 'bold 13px "JetBrains Mono", monospace';
+    ctx.textAlign = 'left';
+    const lx = Math.max(10, Math.min(size - 90, rEndX + 10));
+    const ly = Math.max(25, Math.min(size - 10, rEndY - 8));
+    ctx.fillText('|S| = ' + sumMag.toFixed(2), lx, ly);
+
+    // Status text at top
+    const isConstructive = Math.abs(sumMag - m) < 0.01;
+    ctx.font = '12px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    if (isConstructive) {
+      ctx.fillStyle = '#34d399';
+      ctx.fillText('\u2714 k = ' + k + ': All ' + m + ' phasors aligned \u2192 constructive!', cx, 18);
+    } else {
+      const stepDeg = ((360 * r * k / Q) % 360).toFixed(1);
+      ctx.fillStyle = '#f87171';
+      ctx.fillText('\u2718 k = ' + k + ': Step \u0394\u03c6 = ' + stepDeg + '\u00b0 \u2192 cancellation', cx, 18);
+    }
+  }
+
+  function update() {
+    const r = parseInt(rSelect.value);
+    const k = parseInt(kSlider.value);
+    kLabel.textContent = k;
+
+    const phasors = computePhasors(r, k);
+    const { probs, phases } = computeAllAmplitudes(r);
+    const m = phasors.length;
+
+    drawPhasorDiagram(phasors, k, r);
+
+    barChart.highlightBars = [k];
+    barChart.setData(probs, phases, true);
+
+    // Result text
+    const sumRe = phasors.reduce((s, p) => s + p.re, 0);
+    const sumIm = phasors.reduce((s, p) => s + p.im, 0);
+    const sumMag = Math.sqrt(sumRe * sumRe + sumIm * sumIm);
+    const prob = (sumRe * sumRe + sumIm * sumIm) / (Q * m);
+    const isConstructive = Math.abs(sumMag - m) < 0.01;
+
+    if (isConstructive) {
+      resultEl.className = 'alert-banner alert-success';
+      resultEl.innerHTML = '<strong>Constructive!</strong> $k = ' + k + '$ is a multiple of $Q/r = ' + Q + '/' + r + ' = ' + (Q / r) + '$. All $' + m + '$ phasors align: $|S| = ' + m + '$, probability $\\approx 1/r = ' + (1 / r).toFixed(4) + '$.';
+    } else {
+      resultEl.className = 'alert-banner alert-info';
+      resultEl.innerHTML = '<strong>Destructive.</strong> $k = ' + k + '$ is not a multiple of $' + (Q / r) + '$. The $' + m + '$ phasors cancel: $|S| = ' + sumMag.toFixed(2) + '$, probability $= ' + prob.toFixed(4) + '$.';
+    }
+    renderMathIn(resultEl);
+  }
+
+  rSelect.addEventListener('change', update);
+  kSlider.addEventListener('input', update);
+
+  // Sweep animation
+  const sweepBtn = document.getElementById('phasor-sweep');
+  let sweeping = false;
+  let sweepTimer = null;
+
+  function startSweep() {
+    sweeping = true;
+    sweepBtn.innerHTML = '&#9646;&#9646; Stop';
+    sweepBtn.classList.remove('btn-primary');
+    sweepBtn.classList.add('btn-accent');
+    kSlider.value = 0;
+    kLabel.textContent = '0';
+    update();
+    advanceSweep();
+  }
+
+  function stopSweep() {
+    sweeping = false;
+    clearTimeout(sweepTimer);
+    sweepTimer = null;
+    sweepBtn.innerHTML = '&#9654; Sweep k';
+    sweepBtn.classList.remove('btn-accent');
+    sweepBtn.classList.add('btn-primary');
+  }
+
+  function advanceSweep() {
+    if (!sweeping) return;
+    const k = parseInt(kSlider.value);
+    if (k < parseInt(kSlider.max)) {
+      sweepTimer = setTimeout(() => {
+        kSlider.value = k + 1;
+        kLabel.textContent = k + 1;
+        update();
+        advanceSweep();
+      }, 600);
+    } else {
+      stopSweep();
+    }
+  }
+
+  sweepBtn.addEventListener('click', () => {
+    if (sweeping) stopSweep();
+    else startSweep();
+  });
+
+  update();
 }
 
 // ============================================================
@@ -2204,7 +3124,11 @@ function initApp() {
   // ---- Section 3: Circuit Walkthrough ----
   setupCircuitWalkthrough();
 
-  // ---- Section 4: QFT Visualizer ----
+  // ---- Section 3: Entanglement Decomposition ----
+  setupEntanglementViz();
+
+  // ---- Section 4: Cancellation Explorer + QFT Visualizer ----
+  setupCancellationExplorer();
   setupQFTVisualizer();
 
   // ---- Section 5: Parameter Explorer ----
@@ -2212,6 +3136,12 @@ function initApp() {
 
   // ---- Section 6: Continued Fractions ----
   setupContinuedFractions();
+
+  // ---- Section 7: End-to-End Factoring ----
+  setupE2EFactoring();
+
+  // ---- Section 8: Self-Check Quiz ----
+  setupQuiz();
 
   // ---- Window resize ----
   let resizeTimeout;
@@ -2222,6 +3152,9 @@ function initApp() {
       if (window._qftInputChart) window._qftInputChart.resize();
       if (window._qftOutputChart) window._qftOutputChart.resize();
       if (window._expProbChart) window._expProbChart.resize();
+      if (window._phasorBarChart) window._phasorBarChart.resize();
+      if (window._entangleDraw) window._entangleDraw();
+      if (window._probFxRedraw) window._probFxRedraw();
     }, 150);
   });
 
@@ -2256,6 +3189,127 @@ function setupProblemExplorer() {
   const inputA = document.getElementById('prob-a');
   const infoEl = document.getElementById('prob-info');
   const tableWrap = document.getElementById('prob-table-wrap');
+  const chartWrap = document.getElementById('prob-chart-wrap');
+  const fxCanvas = document.getElementById('prob-fx-canvas');
+  const fxLegend = document.getElementById('prob-fx-legend');
+
+  // Distinct colors for f(x) values
+  const fxPalette = ['#22d3ee','#f472b6','#34d399','#fb923c','#6366f1','#facc15','#f87171','#a78bfa','#38bdf8','#e879f9','#4ade80','#fbbf24'];
+
+  function drawFxChart(a, N, r, numValues) {
+    const canvas = fxCanvas;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const w = rect.width, h = rect.height;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(17, 24, 39, 0.6)';
+    ctx.fillRect(0, 0, w, h);
+
+    // Build f(x) data and assign colors to distinct values
+    const fValues = [];
+    const uniqueVals = new Set();
+    for (let x = 0; x < numValues; x++) {
+      const fx = QMath.modPow(a, x, N);
+      fValues.push(fx);
+      uniqueVals.add(fx);
+    }
+    const valArr = [...uniqueVals].sort((a,b) => a-b);
+    const colorMap = {};
+    valArr.forEach((v, i) => colorMap[v] = fxPalette[i % fxPalette.length]);
+
+    const pad = { left: 45, right: 15, top: 20, bottom: 42 };
+    const plotW = w - pad.left - pad.right;
+    const plotH = h - pad.top - pad.bottom;
+    const barW = plotW / numValues;
+    const gap = Math.max(1, barW * 0.12);
+    const maxVal = Math.max(...fValues);
+    const scale = plotH / (maxVal * 1.15);
+
+    // Axes
+    ctx.strokeStyle = '#2a3550';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top);
+    ctx.lineTo(pad.left, h - pad.bottom);
+    ctx.lineTo(w - pad.right, h - pad.bottom);
+    ctx.stroke();
+
+    // Y-axis label
+    ctx.save();
+    ctx.translate(12, h / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#8892a8';
+    ctx.font = '11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('f(x)', 0, 0);
+    ctx.restore();
+
+    // Draw bars
+    for (let x = 0; x < numValues; x++) {
+      const fx = fValues[x];
+      const color = colorMap[fx];
+      const bx = pad.left + x * barW + gap / 2;
+      const bw = barW - gap;
+      const barH = fx * scale;
+      const by = h - pad.bottom - barH;
+
+      // Period bracket markers
+      if (x % r === 0) {
+        ctx.fillStyle = 'rgba(99, 102, 241, 0.08)';
+        ctx.fillRect(pad.left + x * barW, pad.top, barW, plotH);
+      }
+
+      ctx.fillStyle = color;
+      ctx.fillRect(bx, by, bw, barH);
+
+      // Value label on top of bar
+      if (barW > 18) {
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(fx, pad.left + x * barW + barW / 2, by - 4);
+      }
+
+      // X-axis labels
+      ctx.fillStyle = '#8892a8';
+      ctx.font = (numValues <= 32 || x % Math.ceil(numValues / 32) === 0) ? '10px Inter, sans-serif' : '0px';
+      ctx.textAlign = 'center';
+      if (numValues <= 32 || x % Math.ceil(numValues / 32) === 0) {
+        ctx.fillText(x, pad.left + x * barW + barW / 2, h - pad.bottom + 14);
+      }
+    }
+
+    // Draw period bracket
+    if (numValues >= r * 2) {
+      const x0center = pad.left + barW / 2;
+      const x1center = pad.left + r * barW + barW / 2;
+      const bracketY = h - pad.bottom + 26;
+      ctx.strokeStyle = 'var(--accent)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x0center, bracketY - 6);
+      ctx.lineTo(x0center, bracketY);
+      ctx.lineTo(x1center, bracketY);
+      ctx.lineTo(x1center, bracketY - 6);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#6366f1';
+      ctx.font = 'bold 11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('r = ' + r, (x0center + x1center) / 2, bracketY + 12);
+    }
+
+    // Build legend
+    const parts = valArr.map(v => `<span><span class="legend-swatch" style="background:${colorMap[v]};"></span>$f(x) = ${v}$</span>`);
+    fxLegend.innerHTML = parts.join('&ensp;');
+    renderMathIn(fxLegend);
+  }
 
   function compute() {
     const N = parseInt(inputN.value);
@@ -2265,6 +3319,7 @@ function setupProblemExplorer() {
       infoEl.className = 'alert-banner alert-warning';
       infoEl.textContent = 'Please enter valid values: N ≥ 2, 2 ≤ a < N.';
       tableWrap.innerHTML = '';
+      chartWrap.style.display = 'none';
       return;
     }
 
@@ -2275,6 +3330,7 @@ function setupProblemExplorer() {
       infoEl.innerHTML = `Lucky! $\\gcd(${a}, ${N}) = ${g}$, so ${g} is already a factor of ${N}. No quantum computation needed!`;
       renderMathIn(infoEl);
       tableWrap.innerHTML = '';
+      chartWrap.style.display = 'none';
       return;
     }
 
@@ -2303,10 +3359,26 @@ function setupProblemExplorer() {
     infoEl.innerHTML = `Period: $r = ${r}$ (the pattern $${a}^x \\bmod ${N}$ repeats every ${r} steps). Highlighted columns mark $x$ that are multiples of $r$.`;
     renderMathIn(infoEl);
     renderMathIn(tableWrap);
+
+    // Draw f(x) bar chart
+    chartWrap.style.display = 'block';
+    drawFxChart(a, N, r, numValues);
   }
 
   btnCompute.addEventListener('click', compute);
   compute(); // initial
+
+  // Expose for resize
+  window._probFxRedraw = () => {
+    if (chartWrap.style.display !== 'none') {
+      const N = parseInt(inputN.value);
+      const a = parseInt(inputA.value);
+      if (N >= 2 && a >= 2 && a < N && QMath.gcd(a, N) === 1) {
+        const r = QMath.findPeriod(a, N);
+        drawFxChart(a, N, r, Math.max(r * 2, 16));
+      }
+    }
+  };
 }
 
 // ---- Circuit Walkthrough ----
@@ -2495,6 +3567,82 @@ function setupCircuitWalkthrough() {
     if (e.key === ' ') { e.preventDefault(); playBtn.click(); }
   });
 
+  // Interactive measurement collapse
+  const measureAction = document.getElementById('measure-action');
+  const measureBtn = document.getElementById('measure-collapse-btn');
+  const measureOutcome = document.getElementById('measure-outcome');
+  const measureSendCF = document.getElementById('measure-send-cf');
+  let collapsed = false;
+
+  measureBtn.addEventListener('click', () => {
+    if (collapsed) return;
+    collapsed = true;
+    measureBtn.disabled = true;
+    const step = steps[currentStep];
+    const probs = step.probs;
+    const Q = probs.length;
+
+    // Sample from the probability distribution
+    const rand = Math.random();
+    let cumulative = 0, measured = 0;
+    for (let y = 0; y < Q; y++) {
+      cumulative += probs[y];
+      if (rand < cumulative) { measured = y; break; }
+    }
+
+    // Animate collapse: shrink all bars except the measured one
+    const collapsedProbs = new Float64Array(Q);
+    const collapsedPhases = new Float64Array(Q);
+    collapsedProbs[measured] = 1;
+    collapsedPhases[measured] = step.phases[measured];
+    chart.interferenceMode = false;
+    chart.peakIndices = null;
+    chart.setData(collapsedProbs, collapsedPhases, true);
+
+    // Show outcome
+    measureOutcome.style.display = 'inline';
+    measureOutcome.innerHTML = `Measured: $y = ${measured}$`;
+    renderMathIn(measureOutcome);
+
+    // Show "Send to CF" button (only if y > 0)
+    if (measured > 0) {
+      measureSendCF.style.display = 'inline-flex';
+      measureSendCF.onclick = () => {
+        // Auto-fill the continued fractions inputs
+        document.getElementById('cf-y').value = measured;
+        document.getElementById('cf-Q').value = Q;
+        document.getElementById('cf-N').value = 15;
+        document.getElementById('cf-a').value = 7;
+        // Scroll to the CF section and trigger extraction
+        document.getElementById('postprocessing').scrollIntoView({ behavior: 'smooth' });
+        setTimeout(() => document.getElementById('cf-run').click(), 600);
+      };
+    }
+  });
+
+  // Show/hide measure action panel based on step
+  const origUpdateStep = updateStep;
+  updateStep = function() {
+    origUpdateStep();
+    if (currentStep === numSteps - 1) {
+      measureAction.style.display = '';
+      if (!collapsed) {
+        measureBtn.disabled = false;
+        measureOutcome.style.display = 'none';
+        measureSendCF.style.display = 'none';
+      }
+    } else {
+      measureAction.style.display = 'none';
+      // Reset collapse state when navigating away
+      if (collapsed) {
+        collapsed = false;
+        measureBtn.disabled = false;
+        measureOutcome.style.display = 'none';
+        measureSendCF.style.display = 'none';
+      }
+    }
+  };
+
   updateStep();
 }
 
@@ -2539,6 +3687,21 @@ function setupQFTVisualizer() {
 
     inputChart.setData(inProbs, inPhases, true);
     outputChart.setData(outProbs, outPhases, true);
+
+    // Phase annotation for shifted presets
+    const noteEl = document.getElementById('qft-demo-note');
+    if (preset === 'period4s1' || preset === 'period4s2') {
+      const x0 = preset === 'period4s1' ? 1 : 2;
+      noteEl.style.display = 'block';
+      noteEl.innerHTML = `<strong>Same peaks, different colors!</strong> The probabilities at $k \\in \\{0, 4, 8, 12\\}$ are identical to the unshifted case &mdash; but the bar <em>colors</em> (phases) differ. The shift $x_0 = ${x0}$ introduces a global phase factor $\\omega^{x_0 k}$ that changes the complex phase without affecting the measurement probabilities $|\\alpha_k|^2$. This is why the QFT reveals $r$ regardless of which $f(x)$ value was measured.`;
+      renderMathIn(noteEl);
+    } else if (preset === 'period4') {
+      noteEl.style.display = 'block';
+      noteEl.innerHTML = `<strong>Baseline: $x_0 = 0$.</strong> The output peaks at $k \\in \\{0, 4, 8, 12\\}$ with spacing $Q/r = 16/4 = 4$. Try the shifted presets to see that $x_0$ only changes the phase (bar color), not the probabilities.`;
+      renderMathIn(noteEl);
+    } else {
+      noteEl.style.display = 'none';
+    }
   }
 
   presetBtns.forEach(btn => {
@@ -2674,6 +3837,23 @@ function setupParameterExplorer() {
     panel.appendChild(cfContainer);
     runContinuedFractions(measured, Q, N, a, cfContainer);
     renderMathIn(panel);
+
+    // Add "Send to CF Extractor" button for deeper exploration
+    if (measured > 0) {
+      const sendBtn = document.createElement('button');
+      sendBtn.className = 'btn btn-success';
+      sendBtn.style.marginTop = '0.75rem';
+      sendBtn.innerHTML = 'Open in CF Extractor &rarr;';
+      sendBtn.addEventListener('click', () => {
+        document.getElementById('cf-y').value = measured;
+        document.getElementById('cf-Q').value = Q;
+        document.getElementById('cf-N').value = N;
+        document.getElementById('cf-a').value = a;
+        document.getElementById('postprocessing').scrollIntoView({ behavior: 'smooth' });
+        setTimeout(() => document.getElementById('cf-run').click(), 600);
+      });
+      panel.appendChild(sendBtn);
+    }
   });
 }
 
@@ -2755,6 +3935,239 @@ function setupParameterExplorer() {
   draw();
 })();
 
+// ---- End-to-End Factoring Simulator ----
+function setupE2EFactoring() {
+  const selN = document.getElementById('e2e-N');
+  const btnRun = document.getElementById('e2e-run');
+  const pipeline = document.getElementById('e2e-pipeline');
+
+  btnRun.addEventListener('click', () => {
+    const N = parseInt(selN.value);
+    pipeline.innerHTML = '';
+    btnRun.disabled = true;
+
+    // Stage helper: appends a styled stage block with staggered reveal
+    let stageIdx = 0;
+    function addStage(stageNum, color, title, contentHTML, delay) {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          const div = document.createElement('div');
+          div.style.cssText = 'opacity:0; transform:translateY(10px); transition:all 0.4s ease;';
+          div.innerHTML = `<div style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.75rem 1rem; margin:0.4rem 0; background:var(--surface2); border-radius:8px; border-left:3px solid ${color};">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${color};color:#fff;font-family:'JetBrains Mono',monospace;font-size:0.7rem;font-weight:700;flex-shrink:0;box-shadow:0 0 8px ${color}44;">${stageNum}</span>
+            <div style="flex:1;"><strong style="color:${color}">${title}</strong><br>${contentHTML}</div>
+          </div>`;
+          pipeline.appendChild(div);
+          renderMathIn(div);
+          // Trigger animation
+          requestAnimationFrame(() => {
+            div.style.opacity = '1';
+            div.style.transform = 'translateY(0)';
+          });
+          resolve();
+        }, delay);
+      });
+    }
+
+    // Run the algorithm
+    (async function() {
+      // Stage 1: Pick random a
+      const candidates = [];
+      for (let a = 2; a < N; a++) {
+        if (QMath.gcd(a, N) === 1) candidates.push(a);
+      }
+      const a = candidates[Math.floor(Math.random() * candidates.length)];
+      const g = QMath.gcd(a, N);
+
+      await addStage(1, 'var(--accent)', 'Choose random base',
+        `Picked $a = ${a}$. Check: $\\gcd(${a}, ${N}) = ${g}` + (g > 1 ? `$ &mdash; that's a factor!` : `= 1 \\; \\checkmark$ &mdash; proceed to quantum step.`), 0);
+
+      if (g > 1) {
+        await addStage('✓', 'var(--green)', 'Lucky factor found!',
+          `$\\gcd(${a}, ${N}) = ${g}$, so $${N} = ${g} \\times ${N/g}$.`, 500);
+        btnRun.disabled = false;
+        return;
+      }
+
+      // Stage 2: Quantum period finding
+      const nQubits = Math.max(8, Math.ceil(Math.log2(N)) * 2);
+      const Q = 1 << nQubits;
+      const r = QMath.findPeriod(a, N);
+      const result = computePeriodFindingProbabilities(a, N, nQubits);
+
+      await addStage(2, 'var(--cyan)', 'Quantum period finding',
+        `Run with $n = ${nQubits}$ counting qubits ($Q = ${Q}$). The circuit creates a superposition, entangles via modular exponentiation $${a}^x \\bmod ${N}$, and applies $\\text{QFT}^{-1}$.`, 600);
+
+      // Stage 3: Measurement — sample from the probability distribution
+      const rand = Math.random();
+      let cumulative = 0, measured = 0;
+      for (let y = 0; y < Q; y++) {
+        cumulative += result.probs[y];
+        if (rand < cumulative) { measured = y; break; }
+      }
+
+      await addStage(3, 'var(--pink)', 'Measure counting register',
+        `Obtained $y = ${measured}$ (from $Q = ${Q}$). Compute $y/Q = ${measured}/${Q} = ${(measured/Q).toFixed(6)}\\ldots$`, 600);
+
+      // Stage 4: Continued fractions
+      if (measured === 0) {
+        await addStage(4, 'var(--orange)', 'Continued fractions',
+          `$y = 0$ gives no information. Need to re-run the algorithm.`, 600);
+        await addStage('↻', 'var(--red)', 'Re-run needed',
+          `Try again with the same or different $a$. Click <strong>Factor N</strong> to retry.`, 500);
+        btnRun.disabled = false;
+        return;
+      }
+
+      const { convergents } = QMath.continuedFractionConvergents(measured, Q, Q);
+      let foundR = -1;
+      let convergentStr = '';
+      for (const c of convergents) {
+        if (c.q > 0 && QMath.modPow(a, c.q, N) === 1) {
+          foundR = c.q;
+          convergentStr = `${c.p}/${c.q}`;
+          break;
+        }
+      }
+
+      if (foundR < 0) {
+        await addStage(4, 'var(--orange)', 'Continued fractions',
+          `No convergent of $${measured}/${Q}$ gives a valid period. Need to re-run.`, 600);
+        await addStage('↻', 'var(--red)', 'Re-run needed',
+          `The measurement didn't yield a useful period. Click <strong>Factor N</strong> to retry.`, 500);
+        btnRun.disabled = false;
+        return;
+      }
+
+      await addStage(4, 'var(--orange)', 'Continued fractions',
+        `Best convergent: $${convergentStr}$ &rarr; candidate period $r = ${foundR}$. Verify: $${a}^{${foundR}} \\bmod ${N} = ${QMath.modPow(a, foundR, N)}$ &#10003;`, 600);
+
+      // Stage 5: Extract factors
+      if (foundR % 2 !== 0) {
+        await addStage(5, 'var(--yellow)', 'Extract factors',
+          `$r = ${foundR}$ is odd &mdash; cannot directly extract factors. Need to re-run with a different $a$.`, 600);
+        await addStage('↻', 'var(--red)', 'Re-run needed',
+          `Odd period. Click <strong>Factor N</strong> to retry.`, 500);
+        btnRun.disabled = false;
+        return;
+      }
+
+      const halfPow = QMath.modPow(a, foundR / 2, N);
+      if (halfPow === N - 1) {
+        await addStage(5, 'var(--yellow)', 'Extract factors',
+          `$${a}^{${foundR}/2} \\equiv -1 \\pmod{${N}}$ &mdash; trivial case. Need to re-run with a different $a$.`, 600);
+        await addStage('↻', 'var(--red)', 'Re-run needed',
+          `Trivial square root. Click <strong>Factor N</strong> to retry.`, 500);
+        btnRun.disabled = false;
+        return;
+      }
+
+      const f1 = QMath.gcd(halfPow - 1, N);
+      const f2 = QMath.gcd(halfPow + 1, N);
+      const factors = [];
+      if (f1 > 1 && f1 < N) factors.push(f1);
+      if (f2 > 1 && f2 < N) factors.push(f2);
+
+      await addStage(5, 'var(--yellow)', 'Extract factors',
+        `$${a}^{${foundR/2}} \\bmod ${N} = ${halfPow}$. Compute $\\gcd(${halfPow} - 1,\\; ${N}) = ${f1}$ and $\\gcd(${halfPow} + 1,\\; ${N}) = ${f2}$.`, 600);
+
+      if (factors.length > 0) {
+        const factorPair = factors.length === 2 ? `${factors[0]} \\times ${factors[1]}` : `${factors[0]} \\times ${N / factors[0]}`;
+        await addStage('✓', 'var(--green)', 'Factored!',
+          `<span style="font-family:'JetBrains Mono',monospace; font-size:1.2rem; font-weight:700;">$${N} = ${factorPair}$</span>`, 500);
+      } else {
+        await addStage('↻', 'var(--red)', 'Trivial factors',
+          `Only found trivial factors (1 or $N$). Click <strong>Factor N</strong> to retry.`, 500);
+      }
+
+      btnRun.disabled = false;
+    })();
+  });
+
+  // Multi-trial statistics
+  const btnTrials = document.getElementById('e2e-trials');
+  const trialsResult = document.getElementById('e2e-trials-result');
+
+  btnTrials.addEventListener('click', () => {
+    const N = parseInt(selN.value);
+    const numTrials = 50;
+    btnTrials.disabled = true;
+    pipeline.innerHTML = '';
+
+    let successes = 0, failures = 0;
+    const failReasons = { lucky: 0, y0: 0, noPeriod: 0, oddR: 0, trivial: 0, success: 0 };
+
+    for (let t = 0; t < numTrials; t++) {
+      // Pick random a
+      const candidates = [];
+      for (let a = 2; a < N; a++) if (QMath.gcd(a, N) === 1) candidates.push(a);
+      const a = candidates[Math.floor(Math.random() * candidates.length)];
+      const g = QMath.gcd(a, N);
+      if (g > 1) { successes++; failReasons.lucky++; continue; }
+
+      const nQubits = Math.max(8, Math.ceil(Math.log2(N)) * 2);
+      const Q = 1 << nQubits;
+      const result = computePeriodFindingProbabilities(a, N, nQubits);
+
+      // Sample measurement
+      const rand = Math.random();
+      let cum = 0, measured = 0;
+      for (let y = 0; y < Q; y++) { cum += result.probs[y]; if (rand < cum) { measured = y; break; } }
+
+      if (measured === 0) { failures++; failReasons.y0++; continue; }
+
+      const { convergents } = QMath.continuedFractionConvergents(measured, Q, Q);
+      let foundR = -1;
+      for (const c of convergents) {
+        if (c.q > 0 && QMath.modPow(a, c.q, N) === 1) { foundR = c.q; break; }
+      }
+      if (foundR < 0) { failures++; failReasons.noPeriod++; continue; }
+      if (foundR % 2 !== 0) { failures++; failReasons.oddR++; continue; }
+
+      const halfPow = QMath.modPow(a, foundR / 2, N);
+      if (halfPow === N - 1) { failures++; failReasons.trivial++; continue; }
+
+      const f1 = QMath.gcd(halfPow - 1, N);
+      const f2 = QMath.gcd(halfPow + 1, N);
+      if ((f1 > 1 && f1 < N) || (f2 > 1 && f2 < N)) {
+        successes++;
+        failReasons.success++;
+      } else {
+        failures++;
+        failReasons.trivial++;
+      }
+    }
+
+    const pct = ((successes / numTrials) * 100).toFixed(0);
+    const barWidth = Math.max(2, successes / numTrials * 100);
+
+    trialsResult.style.display = 'block';
+    trialsResult.innerHTML = `
+      <div style="background:var(--surface2); border-radius:12px; padding:1.25rem; border:1px solid var(--border);">
+        <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
+          <span style="font-family:'JetBrains Mono',monospace; font-size:1.8rem; font-weight:700; color:var(--green);">${pct}%</span>
+          <div style="flex:1;">
+            <div style="font-weight:600; color:var(--text);">Success rate over ${numTrials} trials for $N = ${N}$</div>
+            <div style="font-size:0.85rem; color:var(--text-dim);">${successes} succeeded, ${failures} failed</div>
+          </div>
+        </div>
+        <div style="background:var(--surface); border-radius:6px; height:24px; overflow:hidden; border:1px solid var(--border);">
+          <div style="height:100%; width:${barWidth}%; background:linear-gradient(90deg, var(--green), var(--cyan)); border-radius:5px; transition:width 0.8s ease;"></div>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.75rem; font-size:0.82rem; color:var(--text-dim);">
+          ${failReasons.success > 0 ? `<span style="color:var(--green);">&#10003; Quantum success: ${failReasons.success}</span>` : ''}
+          ${failReasons.lucky > 0 ? `<span style="color:var(--cyan);">&#9733; Lucky GCD: ${failReasons.lucky}</span>` : ''}
+          ${failReasons.y0 > 0 ? `<span>y=0: ${failReasons.y0}</span>` : ''}
+          ${failReasons.noPeriod > 0 ? `<span>No period: ${failReasons.noPeriod}</span>` : ''}
+          ${failReasons.oddR > 0 ? `<span>Odd r: ${failReasons.oddR}</span>` : ''}
+          ${failReasons.trivial > 0 ? `<span>Trivial: ${failReasons.trivial}</span>` : ''}
+        </div>
+      </div>`;
+    renderMathIn(trialsResult);
+    btnTrials.disabled = false;
+  });
+}
+
 // ---- Continued Fractions ----
 function setupContinuedFractions() {
   const btnRun = document.getElementById('cf-run');
@@ -2768,6 +4181,123 @@ function setupContinuedFractions() {
     runContinuedFractions(y, Q, N, a, container);
   });
 }
+
+// ============================================================
+//  SELF-CHECK QUIZ
+// ============================================================
+const QUIZ_DATA = [
+  {
+    q: "What does the quantum period-finding algorithm find?",
+    options: [
+      "The prime factors of N directly",
+      "The smallest r such that a^r ≡ 1 (mod N)",
+      "The greatest common divisor of two numbers",
+      "The discrete logarithm of a modulo N"
+    ],
+    correct: 1,
+    explanation: "The period-finding algorithm finds the order r — the smallest positive integer such that a<sup>r</sup> ≡ 1 (mod N). This period is then used classically to extract factors of N."
+  },
+  {
+    q: "Why does the inverse QFT concentrate amplitudes at specific values?",
+    options: [
+      "It randomly selects one amplitude to amplify",
+      "It measures the work register and collapses the state",
+      "Phasors from the periodic input align (constructive interference) at multiples of Q/r and cancel elsewhere",
+      "It computes the prime factorization inside the quantum circuit"
+    ],
+    correct: 2,
+    explanation: "When the input state is periodic with period r, the QFT output phasors all point in the same direction at multiples of Q/r (constructive interference), giving large amplitudes. At other values, the phasors spread around the unit circle and cancel (destructive interference)."
+  },
+  {
+    q: "What is the role of continued fractions in the algorithm?",
+    options: [
+      "They generate the quantum superposition",
+      "They extract the period r from the measured value y by finding the best rational approximation to y/Q",
+      "They perform the modular exponentiation efficiently",
+      "They compute the QFT matrix entries"
+    ],
+    correct: 1,
+    explanation: "After measurement yields y ≈ sQ/r, the continued fractions algorithm finds the best rational approximation to y/Q with a small denominator. The denominator of this fraction is a candidate for the period r."
+  },
+  {
+    q: "Why must the counting register have at least 2 log₂(N) qubits?",
+    options: [
+      "To store the binary representation of N",
+      "To ensure the QFT has enough resolution to distinguish multiples of Q/r, since r can be as large as N",
+      "To match the size of the work register",
+      "To guarantee the algorithm runs in polynomial time regardless of r"
+    ],
+    correct: 1,
+    explanation: "With Q = 2<sup>n</sup> where n ≥ 2 log₂(N), the spacing Q/r between peaks is at least Q/N ≥ N, which is large enough for the continued fractions algorithm to reliably recover r. Fewer qubits would mean the peaks blur together."
+  },
+  {
+    q: "If the measurement yields y = 0, what happens?",
+    options: [
+      "The algorithm succeeds — r must be 1",
+      "The algorithm fails for this run — y = 0 gives no information about r, so we must re-run",
+      "The continued fractions algorithm outputs r = Q",
+      "We immediately know that N is prime"
+    ],
+    correct: 1,
+    explanation: "The value y = 0 corresponds to s = 0, giving the fraction 0/Q = 0, which carries no information about r. This is one of the failure modes of a single run. The algorithm simply re-runs with a new random choice."
+  }
+];
+
+function setupQuiz() {
+  const container = document.getElementById('quiz-container');
+  if (!container) return;
+  let answered = 0;
+  let correct = 0;
+
+  QUIZ_DATA.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'quiz-question';
+    div.innerHTML = `<p><strong>Q${idx + 1}.</strong> ${item.q}</p>`;
+
+    const expDiv = document.createElement('div');
+    expDiv.className = 'quiz-explanation';
+
+    item.options.forEach((opt, oi) => {
+      const btn = document.createElement('button');
+      btn.className = 'quiz-option';
+      btn.textContent = opt;
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        div.querySelectorAll('.quiz-option').forEach(b => { b.disabled = true; });
+        answered++;
+        if (oi === item.correct) {
+          correct++;
+          btn.classList.add('correct');
+          expDiv.classList.add('correct-exp');
+        } else {
+          btn.classList.add('wrong');
+          div.querySelectorAll('.quiz-option')[item.correct].classList.add('correct');
+          expDiv.classList.add('wrong-exp');
+        }
+        expDiv.innerHTML = item.explanation;
+        expDiv.classList.add('visible');
+        if (typeof renderMathIn === 'function') renderMathIn(expDiv);
+
+        if (answered === QUIZ_DATA.length) {
+          const scoreEl = document.getElementById('quiz-score');
+          const valueEl = document.getElementById('quiz-score-value');
+          const labelEl = document.getElementById('quiz-score-label');
+          scoreEl.style.display = 'block';
+          const pct = Math.round((correct / QUIZ_DATA.length) * 100);
+          valueEl.textContent = `${correct} / ${QUIZ_DATA.length}`;
+          valueEl.style.color = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--orange)' : 'var(--red)';
+          labelEl.textContent = pct === 100 ? 'Perfect score!' : pct >= 80 ? 'Great job!' : pct >= 50 ? 'Good effort — review the sections above.' : 'Consider re-reading the module.';
+        }
+      });
+      div.appendChild(btn);
+    });
+
+    div.appendChild(expDiv);
+    container.appendChild(div);
+  });
+}
+
+// setupQuiz is called from initApp
 </script>
 
 <div class="kbd-hint">
@@ -2776,6 +4306,21 @@ function setupContinuedFractions() {
 </div>
 
 
+
+<div class="module-nav">
+  <a href="20_factoring_to_period_finding.html">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    <div><div class="mn-label">Previous</div><div class="mn-title">Factoring &rarr; Period Finding</div></div>
+  </a>
+  <a href="../index.html" style="border-style:dashed;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <div><div class="mn-label">Course</div><div class="mn-title">All Modules</div></div>
+  </a>
+  <a href="22_shors_algorithm.html">
+    <div><div class="mn-label">Next</div><div class="mn-title">Shor's Algorithm</div></div>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  </a>
+</div>
 
 <footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
   <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>

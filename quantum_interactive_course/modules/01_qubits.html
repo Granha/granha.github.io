@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Understanding Qubits — Interactive Quantum Computing Guide</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
@@ -174,6 +175,10 @@
     border: 1px solid rgba(34,211,238,0.12);
     font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif;
   }
+  .math-block .katex { font-size: 1.3rem; color: var(--cyan); }
+  .katex { color: var(--cyan); }
+  .katex .mord, .katex .mbin, .katex .mrel, .katex .mopen, .katex .mclose,
+  .katex .mpunct, .katex .minner, .katex .mop { color: inherit; }
 
   /* Bloch Sphere */
   .bloch-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
@@ -247,15 +252,6 @@
     font-family: 'JetBrains Mono', monospace; pointer-events: none;
     opacity: 0; transition: opacity 0.3s;
   }
-  .hist-bar[style*="height: 2"]  .hist-pct,
-  .hist-bar[style*="height: 3"]  .hist-pct,
-  .hist-bar[style*="height: 4"]  .hist-pct,
-  .hist-bar[style*="height: 5"]  .hist-pct,
-  .hist-bar[style*="height: 6"]  .hist-pct,
-  .hist-bar[style*="height: 7"]  .hist-pct,
-  .hist-bar[style*="height: 8"]  .hist-pct,
-  .hist-bar[style*="height: 9"]  .hist-pct,
-  .hist-bar[style*="height: 100"] .hist-pct { opacity: 1; }
   .hist-label { font-family: 'JetBrains Mono', 'Cambria Math', Georgia, serif; font-size: 1.1rem; font-weight: 600; }
   .hist-count { font-size: 0.9rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
 
@@ -866,12 +862,16 @@
       <div class="highlight" style="border-color:var(--accent);">
         <strong>Entanglement:</strong> Two qubits can be correlated in ways impossible classically. Measuring one <em>instantly</em> determines the other, regardless of distance. This is the key resource for quantum algorithms and quantum teleportation.
       </div>
-      <p style="margin-top:0.8rem;">With <span class="math">n</span> qubits, the state space has <span class="math">2<sup>n</sup></span> dimensions &mdash; exponential growth that gives quantum computers their power for certain problems.</p>
-      <a href="06_multi_qubit_systems.html" style="display:inline-flex;align-items:center;gap:0.5rem;margin-top:1rem;padding:0.6rem 1.2rem;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:10px;color:var(--accent);font-weight:600;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='rgba(99,102,241,0.2)';this.style.borderColor='var(--accent)'" onmouseout="this.style.background='rgba(99,102,241,0.12)';this.style.borderColor='rgba(99,102,241,0.3)'">Explore Multi-Qubit Systems &rarr;</a>
+      <p style="margin-top:0.8rem;">With $n$ qubits, the state space has $2^n$ dimensions &mdash; exponential growth that gives quantum computers their power for certain problems.</p>
+      <p style="margin-top:0.8rem;font-size:0.92rem;color:var(--text-dim);">But first, let's master single-qubit measurements &mdash; the topic of the next module.</p>
+      <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-top:1rem;">
+        <a href="02_measurements.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.2rem;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:10px;color:var(--accent);font-weight:600;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='rgba(99,102,241,0.2)';this.style.borderColor='var(--accent)'" onmouseout="this.style.background='rgba(99,102,241,0.12)';this.style.borderColor='rgba(99,102,241,0.3)'">Next: Measurements &rarr;</a>
+        <a href="06_multi_qubit_systems.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.2rem;background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);border-radius:10px;color:var(--cyan);font-weight:500;text-decoration:none;font-size:0.9rem;transition:all 0.2s;" onmouseover="this.style.background='rgba(34,211,238,0.15)';this.style.borderColor='var(--cyan)'" onmouseout="this.style.background='rgba(34,211,238,0.08)';this.style.borderColor='rgba(34,211,238,0.2)'">Skip ahead: Multi-Qubit Systems</a>
+      </div>
     </div>
 
     <div class="nav-row">
-      <span></span>
+      <a class="nav-btn" href="00_linear_algebra.html" style="text-decoration:none;"><span class="arrow">&larr;</span> Linear Algebra</a>
       <button class="nav-btn" onclick="goTab('superposition')">Superposition <span class="arrow">&rarr;</span></button>
     </div>
   </div>
@@ -882,9 +882,9 @@
       <h2><span class="icon" style="background:rgba(34,211,238,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg></span> Superposition: The Heart of Quantum</h2>
       <p>A classical bit is like a light switch &mdash; it's either on or off. A qubit is more like a dial that can point anywhere between "off" and "on". The magic is that until you look at it (measure), the qubit genuinely holds <em>both possibilities at once</em>, weighted by numbers called <strong>amplitudes</strong>.</p>
       <p>Mathematically, we write this as:</p>
-      <div class="math-block">|&psi;&#10217; = &alpha;|0&#10217; + &beta;|1&#10217;</div>
+      <div class="math-block">$$|\psi\rangle = \alpha|0\rangle + \beta|1\rangle$$</div>
       <p>The numbers <span class="math">&alpha;</span> and <span class="math">&beta;</span> are <strong>complex-valued amplitudes</strong>. Their squared magnitudes give probabilities, and they must add up to&nbsp;1:</p>
-      <div class="math-block">|&alpha;|&sup2; + |&beta;|&sup2; = 1</div>
+      <div class="math-block">$$|\alpha|^2 + |\beta|^2 = 1$$</div>
 
       <div class="highlight">
         <strong>What do the amplitudes mean?</strong><br>
@@ -957,7 +957,7 @@
     <div class="card">
       <h2><span class="icon" style="background:rgba(251,146,60,0.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/><line x1="7" x2="17" y1="12" y2="12"/></svg></span> Bloch Sphere Parameterization</h2>
       <p>Any pure qubit state can be written using two angles:</p>
-      <div class="math-block">|&psi;&#10217; = cos(&theta;/2)|0&#10217; + e<sup>i&phi;</sup> sin(&theta;/2)|1&#10217;</div>
+      <div class="math-block">$$|\psi\rangle = \cos\!\left(\tfrac{\theta}{2}\right)|0\rangle \;+\; e^{i\phi}\sin\!\left(\tfrac{\theta}{2}\right)|1\rangle$$</div>
       <p>where:</p>
       <ul style="margin-left:1.5rem;margin-top:0.5rem;">
         <li><span class="math">&theta;</span> (theta) is the <strong>polar angle</strong> &mdash; controls the probability balance (0 to &pi;)</li>
@@ -1073,9 +1073,9 @@
       <p>When we measure a qubit, its superposition <strong>collapses</strong> to either |0&#10217; or |1&#10217;. Which one we get is governed by probability:</p>
 
       <div class="highlight">
-        <strong>Born Rule:</strong> For a state |&psi;&#10217; = &alpha;|0&#10217; + &beta;|1&#10217;,<br>
-        &bull; P(|0&#10217;) = |&alpha;|&sup2;<br>
-        &bull; P(|1&#10217;) = |&beta;|&sup2;<br>
+        <strong>Born Rule:</strong> For a state $|\psi\rangle = \alpha|0\rangle + \beta|1\rangle$,<br>
+        &bull; $P(|0\rangle) = |\alpha|^2$<br>
+        &bull; $P(|1\rangle) = |\beta|^2$<br>
         After measurement, the qubit <strong>stays</strong> in whichever state was measured. The superposition is destroyed.
       </div>
     </div>
@@ -1139,7 +1139,7 @@
           </div>
         </div>
         <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--text-dim);">
-          <span style="display:inline-block;width:20px;height:2px;background:#fdcb6e;vertical-align:middle;margin-right:4px;"></span> = theoretical probability
+          <span style="display:inline-block;width:20px;height:2px;background:var(--orange);vertical-align:middle;margin-right:4px;"></span> = theoretical probability
         </p>
         <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-dim);" id="totalMeas">Total: 0 measurements</p>
         <p style="margin-top:0.3rem;font-size:0.82rem;min-height:1.2em;" id="convergenceNote"></p>
@@ -1180,7 +1180,7 @@
 
       <div class="bloch-container">
         <div>
-          <canvas id="gateCanvas" class="bloch-canvas" width="400" height="400"></canvas>
+          <canvas id="gateCanvas" class="bloch-canvas" width="450" height="450"></canvas>
         </div>
         <div>
           <p style="font-size:0.9rem;color:var(--text-dim);margin-bottom:0.5rem;">Click a gate to apply it:</p>
@@ -2306,6 +2306,7 @@ const quizData = [
 ];
 
 let quizAnswered = [];
+let quizCorrect = [];
 let quizOrder = quizData.map((_, i) => i);
 
 function shuffleArray(arr) {
@@ -2331,6 +2332,7 @@ function buildQuiz() {
     </div>
   `; }).join('');
   quizAnswered = new Array(quizData.length).fill(false);
+  quizCorrect = new Array(quizData.length).fill(false);
   document.getElementById('quizScore').textContent = '';
 
   container.querySelectorAll('.quiz-opt').forEach(btn => {
@@ -2350,16 +2352,15 @@ function buildQuiz() {
       });
 
       const fb = document.getElementById('qf' + qi);
-      fb.innerHTML = oi === q.correct
+      const isCorrect = oi === q.correct;
+      quizCorrect[qi] = isCorrect;
+      fb.innerHTML = isCorrect
         ? `<span style="color:#55efc4">&#x2714; Correct!</span> ${q.explanation}`
         : `<span style="color:#ff7675">&#x2718; Not quite.</span> ${q.explanation}`;
 
       // Update running score
       const answered = quizAnswered.filter(Boolean).length;
-      let score = 0;
-      quizData.forEach((q, i) => {
-        if (quizAnswered[i] && document.getElementById('qf' + i).innerHTML.includes('Correct!')) score++;
-      });
+      const score = quizCorrect.filter(Boolean).length;
       const scoreEl = document.getElementById('quizScore');
       if (answered < quizData.length) {
         scoreEl.textContent = `${score} / ${answered} correct so far (${quizData.length - answered} remaining)`;
@@ -2391,9 +2392,15 @@ drawBloch();
   <div class="footer-author">By <a href="https://granha.github.io" target="_blank" rel="noopener">Fernando Granha Jeronimo</a></div>
   <nav class="footer-nav">
     <a href="../index.html">Course Home</a>
-    <a href="06_multi_qubit_systems.html">Next Module</a>
+    <a href="00_linear_algebra.html">Prev Module</a>
+    <a href="02_measurements.html">Next Module</a>
   </nav>
 </footer>
+
+<!-- KaTeX Auto-Render -->
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
 
 <!-- Particle Background -->
 <script>

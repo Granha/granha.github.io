@@ -389,6 +389,18 @@
   @keyframes dotPop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
   .log-summary { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); padding: 0.25rem 0; }
 
+  /* Scroll progress bar */
+  #scroll-progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px; width: 0;
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
+    z-index: 200;
+    transition: width 0.1s linear;
+    border-radius: 0 2px 2px 0;
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
   /* Particle background canvas */
   #particleBg {
     position: fixed;
@@ -400,6 +412,7 @@
 </style>
 </head>
 <body>
+<div id="scroll-progress"></div>
 <canvas id="particleBg"></canvas>
 <a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
   <button class="hamburger" id="hamburger" aria-label="Toggle navigation">&#9776;</button>
@@ -591,8 +604,13 @@
                 <span class="prob-val" id="prob-minus-val">15%</span>
               </div>
             </div>
-            <button class="btn btn-primary" id="btn-measure-basis" style="width:100%">Measure</button>
+            <div class="btn-group" style="width:100%">
+              <button class="btn btn-primary" id="btn-measure-basis" style="flex:1">Measure</button>
+              <button class="btn btn-secondary" id="btn-reset-basis" style="display:none">Reset</button>
+            </div>
             <div class="result-display" id="result-basis">Click to measure</div>
+            <div class="measure-log" id="basis-log" style="display:none"></div>
+            <div class="log-summary" id="basis-log-summary"></div>
           </div>
         </div>
         <div class="callout-challenge">
@@ -987,6 +1005,8 @@ class BlochSphere {
     mkSmall('|1\u27E9',[0,-1.25,0],'#e2e8f0');
     mkSmall('|+\u27E9',[1.2,0,0],'#94a3b8');
     mkSmall('|-\u27E9',[-1.2,0,0],'#94a3b8');
+    mkSmall('|+i\u27E9',[0,0,1.2],'#94a3b8');
+    mkSmall('|-i\u27E9',[0,0,-1.2],'#94a3b8');
 
     // State vector arrow
     this.stateArrow = new THREE.ArrowHelper(
@@ -1330,18 +1350,46 @@ async function main() {
   $('phim-slider').addEventListener('input', e => { measPhiM=parseFloat(e.target.value); $('phim-val').textContent=measPhiM.toFixed(2); updateSec4(); });
 
   // Measure in basis
+  let preBasisTheta = state.theta, preBasisPhi = state.phi;
+  let basisLogCounts = [0, 0];
+  function updateBasisLog(outcome) {
+    const log = $('basis-log'); log.style.display='';
+    const lb = basisLabels(currentBasis);
+    const dot = document.createElement('span');
+    dot.className = 'measure-dot ' + (outcome==='+' ? 'z0' : 'z1');
+    dot.textContent = outcome==='+' ? lb[2][1] : lb[3][1]; // first char after |
+    log.appendChild(dot);
+    log.scrollTop = log.scrollHeight;
+    if (outcome==='+') basisLogCounts[0]++; else basisLogCounts[1]++;
+    const total = basisLogCounts[0]+basisLogCounts[1];
+    const lb2 = basisLabels(currentBasis);
+    $('basis-log-summary').textContent = `${total} measurements: ${basisLogCounts[0]}x${lb2[2]} (${(basisLogCounts[0]/total*100).toFixed(0)}%)  ${basisLogCounts[1]}x${lb2[3]} (${(basisLogCounts[1]/total*100).toFixed(0)}%)`;
+  }
   $('btn-measure-basis').addEventListener('click', async () => {
+    preBasisTheta = state.theta; preBasisPhi = state.phi;
     const {tM,pM} = basisAngles(currentBasis);
     const r = state.measureAxis(tM,pM);
     const lb = basisLabels(currentBasis);
     const el=$('result-basis'); el.className='result-display';
     if (r.outcome==='+') { el.classList.add('outcome-0'); el.innerHTML=`Outcome: ${lb[2]} &nbsp;(prob ${(r.prob*100).toFixed(1)}%)`; }
     else { el.classList.add('outcome-1'); el.innerHTML=`Outcome: ${lb[3]} &nbsp;(prob ${(r.prob*100).toFixed(1)}%)`; }
+    updateBasisLog(r.outcome);
     await bloch3.animateCollapse(r.newState.theta, r.newState.phi);
     state.theta=r.newState.theta; state.phi=r.newState.phi;
     allThetas.forEach(id=>$(id).value=state.theta);
     allPhis.forEach(id=>$(id).value=state.phi);
     updateSec2(); updateSec3(); updateSec4();
+    $('btn-reset-basis').style.display='';
+  });
+  $('btn-reset-basis').addEventListener('click', () => {
+    state.theta=preBasisTheta; state.phi=preBasisPhi;
+    allThetas.forEach(id=>$(id).value=state.theta);
+    allPhis.forEach(id=>$(id).value=state.phi);
+    bloch3.setStateVector(state.theta, state.phi);
+    updateSec2(); updateSec3(); updateSec4();
+    $('result-basis').className='result-display'; $('result-basis').textContent='Click to measure';
+    $('btn-reset-basis').style.display='none';
+    $('basis-log').innerHTML=''; $('basis-log').style.display='none'; $('basis-log-summary').textContent=''; basisLogCounts=[0,0];
   });
 
   // Born rule
@@ -1357,17 +1405,36 @@ async function main() {
       $('born-formula').innerHTML = formulas[bornBasis];
     });
   });
+  let bornRunning = false;
   $('btn-born-verify').addEventListener('click', () => {
+    if (bornRunning) return;
+    bornRunning = true;
+    $('btn-born-verify').disabled = true;
+    $('btn-born-verify').textContent = 'Running...';
     const q = new QubitState(parseFloat($('theta-slider-born').value), parseFloat($('phi-slider-born').value));
-    let theory, label;
-    if (bornBasis==='Z') { theory=q.probZ().p0; label='|0\u27E9'; }
-    else if (bornBasis==='X') { theory=q.probAxis(Math.PI/2,0).pPlus; label='|+\u27E9'; }
-    else { theory=q.probAxis(Math.PI/2,Math.PI/2).pPlus; label='|+i\u27E9'; }
-    let c0=0; for(let i=0;i<1000;i++) if(Math.random()<theory) c0++;
-    const freq=c0/1000;
+    let theory;
+    if (bornBasis==='Z') theory=q.probZ().p0;
+    else if (bornBasis==='X') theory=q.probAxis(Math.PI/2,0).pPlus;
+    else theory=q.probAxis(Math.PI/2,Math.PI/2).pPlus;
+    // Pre-generate all 1000 results
+    const results = []; for(let i=0;i<1000;i++) results.push(Math.random()<theory ? 1 : 0);
     $('born-theory').textContent=theory.toFixed(4);
-    $('born-experiment').textContent=freq.toFixed(4);
-    $('born-counts').innerHTML=`${c0} / 1000 = ${(freq*100).toFixed(1)}%`;
+    let shown=0; const total=1000;
+    const BATCH=20, INTERVAL=25;
+    const ticker = setInterval(()=>{
+      const end = Math.min(shown+BATCH, total);
+      let c0=0; for(let i=0;i<end;i++) c0+=results[i];
+      shown=end;
+      const freq=c0/shown;
+      $('born-experiment').textContent=freq.toFixed(4);
+      $('born-counts').innerHTML=`${c0} / ${shown} = ${(freq*100).toFixed(1)}%`;
+      if(shown>=total){
+        clearInterval(ticker);
+        bornRunning=false;
+        $('btn-born-verify').disabled=false;
+        $('btn-born-verify').textContent='Run 1000 Measurements';
+      }
+    }, INTERVAL);
   });
 
   // Collapse demo
@@ -1445,12 +1512,49 @@ async function main() {
   $('theta-slider-stats').addEventListener('input', e => { $('theta-val-stats').textContent=parseFloat(e.target.value).toFixed(2); sCounts=[0,0]; sTotal=0; updateStatsDisplay(); });
   $('phi-slider-stats').addEventListener('input', e => { $('phi-val-stats').textContent=parseFloat(e.target.value).toFixed(2); sCounts=[0,0]; sTotal=0; updateStatsDisplay(); });
   $('stats-basis').addEventListener('change', () => { sCounts=[0,0]; sTotal=0; updateStatsDisplay(); });
+  let statsRunning = false;
   document.querySelectorAll('[data-n]').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (statsRunning) return;
       const n=parseInt(btn.dataset.n);
       const {pPlus} = getStatsTheory();
-      for(let i=0;i<n;i++){ if(Math.random()<pPlus) sCounts[0]++; else sCounts[1]++; sTotal++; }
-      updateStatsDisplay();
+      // Pre-generate results
+      const results = []; for(let i=0;i<n;i++) results.push(Math.random()<pPlus ? 0 : 1);
+      if (n<=10) {
+        // Small batch: animate one by one
+        statsRunning=true;
+        document.querySelectorAll('[data-n]').forEach(b=>b.disabled=true);
+        let idx=0;
+        const tick = setInterval(()=>{
+          sCounts[results[idx]]++; sTotal++; idx++;
+          updateStatsDisplay();
+          if(idx>=n){ clearInterval(tick); statsRunning=false; document.querySelectorAll('[data-n]').forEach(b=>b.disabled=false); }
+        }, 120);
+      } else if (n<=100) {
+        // Medium batch: animate in groups of 5
+        statsRunning=true;
+        document.querySelectorAll('[data-n]').forEach(b=>b.disabled=true);
+        let idx=0; const BATCH=5;
+        const tick = setInterval(()=>{
+          const end=Math.min(idx+BATCH,n);
+          for(let i=idx;i<end;i++){ sCounts[results[i]]++; sTotal++; }
+          idx=end;
+          updateStatsDisplay();
+          if(idx>=n){ clearInterval(tick); statsRunning=false; document.querySelectorAll('[data-n]').forEach(b=>b.disabled=false); }
+        }, 40);
+      } else {
+        // Large batch: animate in groups of 25
+        statsRunning=true;
+        document.querySelectorAll('[data-n]').forEach(b=>b.disabled=true);
+        let idx=0; const BATCH=25;
+        const tick = setInterval(()=>{
+          const end=Math.min(idx+BATCH,n);
+          for(let i=idx;i<end;i++){ sCounts[results[i]]++; sTotal++; }
+          idx=end;
+          updateStatsDisplay();
+          if(idx>=n){ clearInterval(tick); statsRunning=false; document.querySelectorAll('[data-n]').forEach(b=>b.disabled=false); }
+        }, 20);
+      }
     });
   });
   $('btn-reset-stats').addEventListener('click', () => { sCounts=[0,0]; sTotal=0; updateStatsDisplay(); });
@@ -1574,6 +1678,13 @@ main();
   createParticles();
   draw();
 })();
+
+// Scroll progress bar
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = h.scrollTop / (h.scrollHeight - h.clientHeight) * 100;
+  document.getElementById('scroll-progress').style.width = pct + '%';
+});
 </script>
 </body>
 </html>

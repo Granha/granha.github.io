@@ -636,33 +636,6 @@ canvas.circuit-canvas {
   padding:2px 0 4px; letter-spacing:0.04em;
 }
 
-/* ── Onboarding hints ── */
-@keyframes onboard-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-.onboard-overlay { position:fixed; inset:0; z-index:9998; background:rgba(0,0,0,0.4); }
-.onboard-hint {
-  position:fixed; z-index:9999; background:var(--surface);
-  border:1px solid var(--accent); border-radius:var(--radius-sm);
-  padding:1rem 1.25rem; max-width:340px; box-shadow:0 8px 32px rgba(0,0,0,0.5);
-  animation:onboard-in 0.35s ease;
-}
-.onboard-hint::before {
-  content:''; position:absolute; width:10px; height:10px;
-  background:var(--surface); border-left:1px solid var(--accent); border-top:1px solid var(--accent);
-  transform:rotate(45deg); top:-6px; left:24px;
-}
-.onboard-hint.arrow-bottom::before { top:auto; bottom:-6px; transform:rotate(225deg); }
-.onboard-hint .ob-step { font-size:0.72rem; color:var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px; }
-.onboard-hint .ob-text { font-size:0.9rem; line-height:1.6; color:var(--text-dim); margin-bottom:10px; }
-.onboard-hint .ob-actions { display:flex; justify-content:flex-end; gap:8px; }
-.onboard-hint .ob-btn {
-  padding:0.35rem 1rem; border:1px solid var(--accent); border-radius:var(--radius-sm);
-  background:linear-gradient(135deg,var(--accent),#818cf8); color:#fff;
-  font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:500; cursor:pointer;
-  transition:all 0.2s;
-}
-.onboard-hint .ob-btn:hover { transform:translateY(-1px); box-shadow:0 4px 16px var(--accent-glow); }
-.onboard-hint .ob-skip { background:none; color:var(--text-dim); border-color:var(--border); }
-
 /* ── Worked examples ── */
 .worked-example {
   background:linear-gradient(135deg,rgba(34,211,238,0.04),rgba(99,102,241,0.04));
@@ -870,13 +843,88 @@ canvas.circuit-canvas {
   50% { filter: drop-shadow(0 0 12px var(--entangled)); opacity: 1; }
 }
 .ent-glow-pulse { animation: entGlow 2s ease-in-out infinite; }
+
+/* ── Home link ── */
+.home-link {
+  position:fixed; top:1.2rem; left:1.5rem; z-index:1000;
+  display:inline-flex; align-items:center; gap:0.4rem;
+  color:var(--text-dim); text-decoration:none;
+  font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:500;
+  padding:0.4rem 0.8rem; border-radius:8px;
+  background:rgba(17,24,39,0.7); border:1px solid rgba(42,53,80,0.5);
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  transition:all 0.2s;
+}
+.home-link:hover { color:var(--text); border-color:var(--accent); }
+:root[data-theme="light"] .home-link { background:rgba(255,255,255,0.85); }
+
+/* ── Module navigation box ── */
+.module-nav-box {
+  margin-top:2rem; padding:1.5rem;
+  background:linear-gradient(135deg,var(--surface2),var(--surface));
+  border:1px solid var(--border); border-radius:var(--radius); text-align:center;
+}
+.module-nav-box p { color:var(--text-dim); margin-bottom:1rem; font-size:.95rem; }
+.module-nav-links { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; }
+.module-nav-link {
+  padding:0.6rem 1.5rem; border:1px solid var(--border);
+  background:var(--surface2); color:var(--text-dim);
+  border-radius:var(--radius-sm); text-decoration:none;
+  font-family:'Inter',sans-serif; font-size:0.88rem; font-weight:500;
+  transition:all 0.2s; display:flex; align-items:center; gap:8px;
+}
+.module-nav-link:hover { border-color:var(--accent); color:var(--text); }
+.module-nav-link.primary {
+  border-color:var(--accent); color:#fff;
+  background:linear-gradient(135deg,var(--accent),#818cf8);
+  box-shadow:0 4px 20px var(--accent-glow);
+}
+.module-nav-link.primary:hover { transform:translateY(-2px); }
+
+/* ── Polished footer ── */
+.site-footer {
+  text-align:center; padding:2.5rem 1.5rem; margin-top:3rem;
+  border-top:1px solid var(--border);
+  background:linear-gradient(180deg, transparent, rgba(17,24,39,0.5));
+}
+.site-footer .footer-divider {
+  width:60px; height:2px; margin:0 auto 1rem;
+  background:linear-gradient(90deg, transparent, var(--accent), transparent);
+  border-radius:1px;
+}
+.site-footer .footer-label {
+  font-family:'Inter',sans-serif; font-size:0.72rem; font-weight:600;
+  text-transform:uppercase; letter-spacing:0.1em; color:var(--orange); margin-bottom:0.4rem;
+}
+.site-footer .footer-author { font-family:'Inter',sans-serif; font-size:0.82rem; color:var(--text-dim); }
+.site-footer .footer-author a { color:var(--accent); text-decoration:none; transition:color 0.2s; }
+.site-footer .footer-author a:hover { color:var(--cyan); }
+.site-footer .footer-nav {
+  display:flex; justify-content:center; gap:1.5rem;
+  margin-top:1rem; flex-wrap:wrap;
+}
+.site-footer .footer-nav a {
+  font-family:'Inter',sans-serif; font-size:0.78rem; color:var(--text-dim);
+  text-decoration:none; transition:color 0.2s; font-weight:500;
+}
+.site-footer .footer-nav a:hover { color:var(--accent); }
+:root[data-theme="light"] .site-footer { background:linear-gradient(180deg, transparent, rgba(240,242,247,0.5)); }
+
+/* ── Canvas responsive ── */
+canvas.circuit-canvas { max-width:100%; height:auto; }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+  #particleBg { display:none; }
+}
 </style>
 </head>
 <body>
 
 <canvas id="particleBg"></canvas>
 <button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">🌙</button>
-<a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+<a href="../index.html" class="home-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
 
 <!-- ════════════════════════════ HEADER ════════════════════════════ -->
 <div class="app-header">
@@ -1661,11 +1709,11 @@ canvas.circuit-canvas {
     <div></div>
   </div>
 
-  <div style="margin-top:2rem;padding:1.5rem;background:linear-gradient(135deg,var(--surface2),var(--surface));border:1px solid var(--border);border-radius:var(--radius);text-align:center">
-    <p style="color:var(--text-dim);margin-bottom:1rem;font-size:.95rem">Continue your quantum journey</p>
-    <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
-      <a href="03_bomb_tester.html" style="padding:0.6rem 1.5rem;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);border-radius:var(--radius-sm);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:8px" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">← Previous: Bomb Tester</a>
-      <a href="07_reversible_computation.html" style="padding:0.6rem 1.5rem;border:1px solid var(--accent);background:linear-gradient(135deg,var(--accent),#818cf8);color:#fff;border-radius:var(--radius-sm);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px var(--accent-glow)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Next: Reversible Computation →</a>
+  <div class="module-nav-box">
+    <p>Continue your quantum journey</p>
+    <div class="module-nav-links">
+      <a href="03_bomb_tester.html" class="module-nav-link">← Previous: Bomb Tester</a>
+      <a href="07_reversible_computation.html" class="module-nav-link primary">Next: Reversible Computation →</a>
     </div>
   </div>
 </div>
@@ -1678,7 +1726,10 @@ canvas.circuit-canvas {
 const tabBtns = document.querySelectorAll('.tab-btn');
 const tabPanes = document.querySelectorAll('.tab-content');
 const tabPips = document.querySelectorAll('.tab-pip');
-const visitedTabs = new Set([0]);
+const visitedTabs = (function() {
+  try { const s = JSON.parse(localStorage.getItem('module06-visited')); if (Array.isArray(s)) return new Set(s); } catch(e) {}
+  return new Set([0]);
+})();
 const liveStatus = document.getElementById('live-status');
 
 function announce(msg) { if (liveStatus) liveStatus.textContent = msg; }
@@ -1699,6 +1750,7 @@ function goTab(idx) {
   tabBtns[idx].setAttribute('aria-selected', 'true');
   tabPanes[idx].classList.add('active');
   visitedTabs.add(idx);
+  try { localStorage.setItem('module06-visited', JSON.stringify([...visitedTabs])); } catch(e) {}
   updateProgress();
   announce(tabBtns[idx].textContent.replace(/[①-⑦]\s*/, '') + ' section');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2624,7 +2676,7 @@ function drawHistogram() {
   ctx.fillText('50%', cx00 - barW / 2 - 14, refY);
 
   if (t === 0) {
-    ctx.fillStyle = '#4a5278'; ctx.font = '13px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = COL.dim; ctx.font = '13px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('Make measurements to see the histogram', W / 2, H / 2 - 8);
     return;
   }
@@ -2634,24 +2686,24 @@ function drawHistogram() {
 
   // |00> bar
   const grad00 = ctx.createLinearGradient(0, baseY - h00, 0, baseY);
-  grad00.addColorStop(0, '#22d3ee'); grad00.addColorStop(1, 'rgba(34,211,238,0.3)');
+  grad00.addColorStop(0, COL.ctrl); grad00.addColorStop(1, COL.ctrl + '4d');
   ctx.fillStyle = grad00;
-  ctx.beginPath(); ctx.roundRect(cx00 - barW / 2, baseY - h00, barW, h00, [6, 6, 0, 0]); ctx.fill();
+  roundRect(ctx, cx00 - barW / 2, baseY - h00, barW, h00, 6); ctx.fill();
 
   // |11> bar
   const grad11 = ctx.createLinearGradient(0, baseY - h11, 0, baseY);
-  grad11.addColorStop(0, '#f472b6'); grad11.addColorStop(1, 'rgba(244,114,182,0.3)');
+  grad11.addColorStop(0, COL.tgt); grad11.addColorStop(1, COL.tgt + '4d');
   ctx.fillStyle = grad11;
-  ctx.beginPath(); ctx.roundRect(cx11 - barW / 2, baseY - h11, barW, h11, [6, 6, 0, 0]); ctx.fill();
+  roundRect(ctx, cx11 - barW / 2, baseY - h11, barW, h11, 6); ctx.fill();
 
   // Labels
-  ctx.fillStyle = '#22d3ee'; ctx.font = '600 12px "JetBrains Mono"'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillStyle = COL.ctrl; ctx.font = '600 12px "JetBrains Mono"'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
   ctx.fillText('|00\u27E9', cx00, baseY + 4);
-  ctx.fillStyle = '#f472b6';
+  ctx.fillStyle = COL.tgt;
   ctx.fillText('|11\u27E9', cx11, baseY + 4);
 
   // Percentages
-  ctx.fillStyle = '#e2e8f0'; ctx.font = '600 13px "JetBrains Mono"'; ctx.textBaseline = 'bottom';
+  ctx.fillStyle = COL.text; ctx.font = '600 13px "JetBrains Mono"'; ctx.textBaseline = 'bottom';
   ctx.fillText((p00 * 100).toFixed(1) + '%', cx00, baseY - h00 - 4);
   ctx.fillText((p11 * 100).toFixed(1) + '%', cx11, baseY - h11 - 4);
 }
@@ -2744,69 +2796,6 @@ document.getElementById('ch-reset-score').addEventListener('click', () => {
   document.getElementById('ch-prompt').innerHTML = 'Click "New Round" to start!';
   document.getElementById('ch-choices').style.display = 'none';
 });
-
-// ═══════════════════ ONBOARDING HINTS ═════════════════════════════════
-const OB_KEY = 'module06-onboarded';
-const OB_HINTS = [
-  { target: '#tp-btns-a', text: 'Select different qubit states and watch the tensor product update in real time. Try <strong>Custom</strong> for your own amplitudes!', arrow: 'top' },
-  { target: '#epr-timeline', text: 'Step through the EPR circuit to see how entanglement is created from scratch. Use <strong>Auto-play</strong> to animate it.', arrow: 'top', tab: 3 },
-  { target: '#chk-ent', text: 'Enter any amplitudes and test whether the state is entangled using the determinant criterion.', arrow: 'top', tab: 4 },
-  { target: '#meas-q1', text: 'Click to measure a qubit and watch the other collapse instantly. Run <strong>50 measurements</strong> to see the statistics!', arrow: 'top', tab: 3 }
-];
-
-let obStep = 0;
-function showOnboardHint(step) {
-  // Remove existing
-  document.querySelectorAll('.onboard-overlay, .onboard-hint').forEach(el => el.remove());
-  if (step >= OB_HINTS.length) {
-    try { localStorage.setItem(OB_KEY, '1'); } catch(e) {}
-    return;
-  }
-  const hint = OB_HINTS[step];
-  if (hint.tab !== undefined) goTab(hint.tab);
-
-  // Wait a moment for tab switch
-  setTimeout(() => {
-    const targetEl = document.querySelector(hint.target);
-    if (!targetEl) { showOnboardHint(step + 1); return; }
-
-    const rect = targetEl.getBoundingClientRect();
-    const overlay = document.createElement('div');
-    overlay.className = 'onboard-overlay';
-    document.body.appendChild(overlay);
-
-    const box = document.createElement('div');
-    box.className = 'onboard-hint' + (hint.arrow === 'bottom' ? ' arrow-bottom' : '');
-
-    const top = hint.arrow === 'bottom' ? rect.top - 120 : rect.bottom + 12;
-    box.style.top = Math.max(8, Math.min(top, window.innerHeight - 200)) + 'px';
-    box.style.left = Math.max(12, Math.min(rect.left, window.innerWidth - 360)) + 'px';
-
-    box.innerHTML = `
-      <div class="ob-step">Tip ${step + 1} / ${OB_HINTS.length}</div>
-      <div class="ob-text">${hint.text}</div>
-      <div class="ob-actions">
-        <button class="ob-btn ob-skip">Skip all</button>
-        <button class="ob-btn">${step < OB_HINTS.length - 1 ? 'Next' : 'Got it!'}</button>
-      </div>
-    `;
-    document.body.appendChild(box);
-
-    box.querySelector('.ob-skip').addEventListener('click', () => {
-      document.querySelectorAll('.onboard-overlay, .onboard-hint').forEach(el => el.remove());
-      try { localStorage.setItem(OB_KEY, '1'); } catch(e) {}
-      goTab(0);
-    });
-    box.querySelector('.ob-btn:not(.ob-skip)').addEventListener('click', () => {
-      obStep = step + 1;
-      showOnboardHint(obStep);
-    });
-    overlay.addEventListener('click', () => {
-      obStep = step + 1;
-      showOnboardHint(obStep);
-    });
-  }, hint.tab !== undefined ? 400 : 50);
-}
 
 // ═══════════════════ THEME TOGGLE (Pass 4) ═══════════════════════════
 const themeBtn = document.getElementById('theme-toggle');
@@ -2958,19 +2947,19 @@ function init() {
   initParticles();
   updateProgress();
 
-  // Show onboarding hints for first-time visitors
-  try {
-    if (!localStorage.getItem(OB_KEY)) {
-      setTimeout(() => showOnboardHint(0), 1200);
-    }
-  } catch(e) {}
 }
 if (document.readyState === 'complete') init();
 else window.addEventListener('load', init);
 </script>
-<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
-  <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
-  <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
+<footer class="site-footer">
+  <div class="footer-divider"></div>
+  <div class="footer-label">Beta Version</div>
+  <div class="footer-author">By <a href="https://granha.github.io" target="_blank" rel="noopener">Fernando Granha Jeronimo</a></div>
+  <nav class="footer-nav">
+    <a href="../index.html">Course Home</a>
+    <a href="03_bomb_tester.html">Prev Module</a>
+    <a href="07_reversible_computation.html">Next Module</a>
+  </nav>
 </footer>
 </body>
 </html>

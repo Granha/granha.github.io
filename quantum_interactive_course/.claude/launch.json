@@ -6,7 +6,14 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8780"],
       "port": 8780,
-      "url": "http://localhost:8780/modules/15_grovers_algorithm.html"
+      "url": "http://localhost:8780/modules/19_quantum_fourier_transform.html"
+    },
+    {
+      "name": "toric-server",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8781", "-d", ".."],
+      "port": 8781,
+      "url": "http://localhost:8781/quantum/toric_code.html"
     }
   ]
 }

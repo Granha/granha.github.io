@@ -824,33 +824,6 @@ $$|+\rangle = \frac{1}{\sqrt{2}}\begin{pmatrix}1\\1\end{pmatrix}, \qquad |-\rang
   <p>The <strong>normalization constraint</strong> $\langle\psi|\psi\rangle = 1$ reflects the fact that measurement probabilities must sum to 1. The probability of measuring outcome $|k\rangle$ is $|\langle k|\psi\rangle|^2$.</p>
 </div>
 
-<!-- Bloch Sphere Visualizer -->
-<div class="widget reveal">
-  <div class="widget-title">&#127912; Visualize: The Bloch Sphere</div>
-  <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:.8rem;">Drag on the sphere to rotate the view. Use the buttons to jump to common qubit states and see their position on the Bloch sphere.</p>
-  <canvas class="viz" id="blochSphere" width="400" height="400" style="max-width:400px;margin:0 auto;display:block;"></canvas>
-  <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.8rem;justify-content:center;" id="blochBtns">
-    <button class="compute-btn" onclick="setBlochState(0,0)" style="font-size:.75rem;padding:.35rem .7rem;">|0&#10217;</button>
-    <button class="compute-btn" onclick="setBlochState(Math.PI,0)" style="font-size:.75rem;padding:.35rem .7rem;">|1&#10217;</button>
-    <button class="compute-btn" onclick="setBlochState(Math.PI/2,0)" style="font-size:.75rem;padding:.35rem .7rem;">|+&#10217;</button>
-    <button class="compute-btn" onclick="setBlochState(Math.PI/2,Math.PI)" style="font-size:.75rem;padding:.35rem .7rem;">|-&#10217;</button>
-    <button class="compute-btn" onclick="setBlochState(Math.PI/2,Math.PI/2)" style="font-size:.75rem;padding:.35rem .7rem;">|+i&#10217;</button>
-    <button class="compute-btn" onclick="setBlochState(Math.PI/2,-Math.PI/2)" style="font-size:.75rem;padding:.35rem .7rem;">|-i&#10217;</button>
-  </div>
-  <p style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-top:.8rem;text-align:center;">Apply a Gate</p>
-  <div class="gate-btns">
-    <button onclick="applyBlochGate('H')">H</button>
-    <button onclick="applyBlochGate('X')">X</button>
-    <button onclick="applyBlochGate('Y')">Y</button>
-    <button onclick="applyBlochGate('Z')">Z</button>
-    <button onclick="applyBlochGate('S')">S</button>
-    <button onclick="applyBlochGate('T')">T</button>
-  </div>
-  <div class="widget-result" id="blochResult" style="margin-top:.6rem;text-align:center;">
-    State: |0&#10217; &nbsp;&mdash;&nbsp; &#952; = 0, &#966; = 0
-  </div>
-</div>
-
 <!-- Quiz 2 -->
 <div class="quiz reveal" data-quiz="q2">
   <div class="quiz-header">&#10004; Check Your Understanding</div>
@@ -863,6 +836,18 @@ $$|+\rangle = \frac{1}{\sqrt{2}}\begin{pmatrix}1\\1\end{pmatrix}, \qquad |-\rang
   </div>
   <button class="quiz-btn" onclick="checkQuiz('q2','c')">Check Answer</button>
   <div class="quiz-feedback" id="fb-q2"></div>
+</div>
+
+<!-- Fill-in-blank: Normalization -->
+<div class="fill-blank reveal" data-section="sec-vectors">
+  <div class="fb-header">&#9998; Practice: Compute It Yourself</div>
+  <div class="fb-prompt math-content">A state $|\psi\rangle = \alpha|0\rangle + \beta|1\rangle$ with $\alpha = \frac{1}{\sqrt{2}}$ must satisfy $|\alpha|^2 + |\beta|^2 = 1$. What is $|\beta|^2$?</div>
+  <div class="fb-row">
+    <span>$|\beta|^2$ =</span>
+    <input type="text" id="fib6_val" placeholder="value" style="width:80px;">
+    <button class="compute-btn" style="font-size:.78rem;padding:.3rem .8rem;" onclick="checkNormFib()">Check</button>
+  </div>
+  <div class="fb-feedback" id="fib6_fb"></div>
 </div>
 
 <div class="quiz reveal" data-quiz="q2b">
@@ -921,12 +906,7 @@ $$\langle u | v \rangle = \sum_{k=1}^{n} \bar{u}_k v_k$$
 
 <div class="concept-box reveal quantum">
   <div class="box-label">Quantum Connection</div>
-  <p>Every measurement in quantum mechanics corresponds to choosing an <strong>orthonormal basis</strong>. The standard Z-measurement uses $\{|0\rangle, |1\rangle\}$; the X-measurement uses $\{|+\rangle, |-\rangle\}$. Changing your measurement basis is equivalent to changing which question you ask the qubit!</p>
-</div>
-
-<div class="concept-box reveal quantum">
-  <div class="box-label">Quantum Connection</div>
-  <p>Orthonormal bases correspond to possible <strong>measurement outcomes</strong>. The computational basis $\{|0\rangle, |1\rangle\}$ is orthonormal: $\langle 0|1\rangle = 0$ and $\langle 0|0\rangle = \langle 1|1\rangle = 1$. The transition amplitude from state $|\psi\rangle$ to $|\phi\rangle$ is $\langle\phi|\psi\rangle$.</p>
+  <p>Every measurement corresponds to choosing an <strong>orthonormal basis</strong>. The computational basis $\{|0\rangle, |1\rangle\}$ is orthonormal ($\langle 0|1\rangle = 0$, $\langle 0|0\rangle = \langle 1|1\rangle = 1$), and the X-basis $\{|+\rangle, |-\rangle\}$ is another. Changing your measurement basis is equivalent to changing which question you ask the qubit! The inner product $\langle\phi|\psi\rangle$ gives the <strong>transition amplitude</strong> from $|\psi\rangle$ to $|\phi\rangle$, and $|\langle\phi|\psi\rangle|^2$ is the probability of finding the system in state $|\phi\rangle$.</p>
 </div>
 
 <details>
@@ -1142,7 +1122,7 @@ $$A|v\rangle = \lambda|v\rangle$$
 <!-- Eigenvalue Calculator -->
 <div class="widget reveal">
   <div class="widget-title">&#9881; Interactive: 2&times;2 Eigenvalue Calculator</div>
-  <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:.8rem;">Enter a real 2&times;2 matrix to find its eigenvalues.</p>
+  <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:.8rem;">Enter a real 2&times;2 matrix to find its eigenvalues and eigenvectors.</p>
   <div class="widget-col">
     <label class="widget-label">Matrix A</label>
     <div class="matrix-input" style="grid-template-columns:60px 60px;">
@@ -1150,7 +1130,16 @@ $$A|v\rangle = \lambda|v\rangle$$
       <input type="number" id="e_c" value="0" step="0.1"><input type="number" id="e_d" value="-1" step="0.1">
     </div>
   </div>
-  <button class="compute-btn" onclick="computeEigen()">Find Eigenvalues</button>
+  <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+    <button class="compute-btn" onclick="computeEigen()">Find Eigenvalues</button>
+    <span style="font-size:.72rem;color:var(--text-dim);margin-left:.3rem;">Presets:</span>
+    <div class="gate-btns" style="margin-top:0;">
+      <button onclick="setEigenPreset(0,1,1,0,'X')">X</button>
+      <button onclick="setEigenPreset(0,-1,1,0,'Y (real)')">Y</button>
+      <button onclick="setEigenPreset(1,0,0,-1,'Z')">Z</button>
+      <button onclick="setEigenPreset(0.707,0.707,0.707,-0.707,'H')">H</button>
+    </div>
+  </div>
   <div class="widget-result" id="eigenResult">Click "Find Eigenvalues" to compute.</div>
 </div>
 
@@ -1243,6 +1232,25 @@ $$|\Phi^+\rangle = \frac{1}{\sqrt{2}}(|00\rangle + |11\rangle)$$
   <div class="widget-result" id="tensorResult">Click "Compute" to see the tensor product.</div>
 </div>
 
+<!-- Fill-in-blank: Tensor Product -->
+<div class="fill-blank reveal" data-section="sec-tensor">
+  <div class="fb-header">&#9998; Practice: Compute It Yourself</div>
+  <div class="fb-prompt math-content">Compute $|0\rangle \otimes |1\rangle = \begin{pmatrix}1\\0\end{pmatrix} \otimes \begin{pmatrix}0\\1\end{pmatrix}$. Enter the four components of the result vector:</div>
+  <div class="fb-row">
+    <span>Result: (</span>
+    <input type="text" id="fib4_a" placeholder="1st" style="width:50px;">
+    <span>,</span>
+    <input type="text" id="fib4_b" placeholder="2nd" style="width:50px;">
+    <span>,</span>
+    <input type="text" id="fib4_c" placeholder="3rd" style="width:50px;">
+    <span>,</span>
+    <input type="text" id="fib4_d" placeholder="4th" style="width:50px;">
+    <span>)&#7488;</span>
+    <button class="compute-btn" style="font-size:.78rem;padding:.3rem .8rem;" onclick="checkTensorFib()">Check</button>
+  </div>
+  <div class="fb-feedback" id="fib4_fb"></div>
+</div>
+
 <div class="quiz reveal" data-quiz="q6">
   <div class="quiz-header">&#10004; Check Your Understanding</div>
   <div class="quiz-question math-content">What is the dimension of the state space for a 3-qubit system?</div>
@@ -1311,8 +1319,8 @@ $$|\Phi^+\rangle = \frac{1}{\sqrt{2}}(|00\rangle + |11\rangle)$$
 
 <!-- Unitarity checker widget -->
 <div class="widget reveal">
-  <div class="widget-title">&#9881; Interactive: Is This Matrix Unitary?</div>
-  <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:.8rem;">Enter a real 2&times;2 matrix to check if it is (approximately) unitary.</p>
+  <div class="widget-title">&#9881; Interactive: Matrix Property Checker</div>
+  <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:.8rem;">Enter a real 2&times;2 matrix to check if it is unitary and/or Hermitian (symmetric for real matrices).</p>
   <div class="widget-col">
     <label class="widget-label">Matrix U</label>
     <div class="matrix-input" style="grid-template-columns:60px 60px;">
@@ -1322,6 +1330,20 @@ $$|\Phi^+\rangle = \frac{1}{\sqrt{2}}(|00\rangle + |11\rangle)$$
   </div>
   <button class="compute-btn" onclick="checkUnitary()">Check Unitarity</button>
   <div class="widget-result" id="unitaryResult">Click "Check" to verify.</div>
+</div>
+
+<!-- Fill-in-blank: Spectral decomposition -->
+<div class="fill-blank reveal" data-section="sec-special">
+  <div class="fb-header">&#9998; Practice: Compute It Yourself</div>
+  <div class="fb-prompt math-content">The Pauli $Z$ matrix has spectral decomposition $Z = (+1)|0\rangle\langle 0| + (-1)|1\rangle\langle 1|$. What are the eigenvalues of $-Z$?</div>
+  <div class="fb-row">
+    <span>$\lambda_1$ =</span>
+    <input type="text" id="fib5_l1" placeholder="&lambda;&#8321;" style="width:70px;">
+    <span>$\lambda_2$ =</span>
+    <input type="text" id="fib5_l2" placeholder="&lambda;&#8322;" style="width:70px;">
+    <button class="compute-btn" style="font-size:.78rem;padding:.3rem .8rem;" onclick="checkSpectralFib()">Check</button>
+  </div>
+  <div class="fb-feedback" id="fib5_fb"></div>
 </div>
 
 <div class="quiz reveal" data-quiz="q7">
@@ -1392,7 +1414,7 @@ $$|\Phi^+\rangle = \frac{1}{\sqrt{2}}(|00\rangle + |11\rangle)$$
 
 <!-- Final Challenge Quizzes -->
 <div class="quiz reveal" data-quiz="q8">
-  <div class="quiz-header">&#127942; Challenge Question</div>
+  <div class="quiz-header">&#10004; Check Your Understanding</div>
   <div class="quiz-question math-content">Apply the circuit $Z \cdot H$ to $|0\rangle$. What state do you get?</div>
   <div class="quiz-options">
     <div class="quiz-option" data-val="a"><span class="radio"></span> $|+\rangle$</div>
@@ -1405,7 +1427,7 @@ $$|\Phi^+\rangle = \frac{1}{\sqrt{2}}(|00\rangle + |11\rangle)$$
 </div>
 
 <div class="quiz reveal" data-quiz="q8b">
-  <div class="quiz-header">&#127942; Challenge Question</div>
+  <div class="quiz-header">&#10004; Check Your Understanding</div>
   <div class="quiz-question math-content">Which of these 2-qubit states is entangled?</div>
   <div class="quiz-options">
     <div class="quiz-option" data-val="a"><span class="radio"></span> $|00\rangle$</div>
@@ -1418,7 +1440,7 @@ $$|\Phi^+\rangle = \frac{1}{\sqrt{2}}(|00\rangle + |11\rangle)$$
 </div>
 
 <div class="quiz reveal" data-quiz="q8c">
-  <div class="quiz-header">&#127942; Challenge Question</div>
+  <div class="quiz-header">&#10004; Check Your Understanding</div>
   <div class="quiz-question math-content">If $U$ is unitary and $|\psi\rangle$ is a valid quantum state, is $U|\psi\rangle$ always a valid quantum state?</div>
   <div class="quiz-options">
     <div class="quiz-option" data-val="a"><span class="radio"></span> Yes &mdash; unitary matrices preserve norms</div>
@@ -1514,10 +1536,22 @@ function computeComplex() {
   const sumR = a1+a2, sumI = b1+b2;
   const prodR = a1*a2 - b1*b2, prodI = a1*b2 + b1*a2;
   const mod1 = Math.sqrt(a1*a1 + b1*b1), mod2 = Math.sqrt(a2*a2 + b2*b2);
+  const denom = a2*a2 + b2*b2;
+  let divHtml = '';
+  if (denom > 1e-14) {
+    const divR = (a1*a2 + b1*b2)/denom, divI = (b1*a2 - a1*b2)/denom;
+    divHtml = `<b>z₁ / z₂</b> = ${fmt(divR,divI)}<br>`;
+  } else {
+    divHtml = `<b>z₁ / z₂</b> = undefined (z₂ = 0)<br>`;
+  }
+  const arg1 = Math.atan2(b1, a1) * 180 / Math.PI;
+  const arg2 = Math.atan2(b2, a2) * 180 / Math.PI;
   document.getElementById('complexResult').innerHTML =
     `<b>z₁ + z₂</b> = ${fmt(sumR,sumI)}<br>` +
     `<b>z₁ × z₂</b> = ${fmt(prodR,prodI)}<br>` +
-    `<b>|z₁|</b> = ${mod1.toFixed(4)}, <b>|z₂|</b> = ${mod2.toFixed(4)}<br>` +
+    divHtml +
+    `<b>|z₁|</b> = ${mod1.toFixed(4)}, <b>arg(z₁)</b> = ${arg1.toFixed(1)}° &nbsp;|&nbsp; ` +
+    `<b>|z₂|</b> = ${mod2.toFixed(4)}, <b>arg(z₂)</b> = ${arg2.toFixed(1)}°<br>` +
     `<b>z₁*</b> = ${fmt(a1,-b1)}, <b>z₂*</b> = ${fmt(a2,-b2)}`;
   flashResult('complexResult');
 }
@@ -1544,6 +1578,7 @@ function computeInnerProduct() {
     `<b>⟨u|v⟩</b> = ${fmt(rr,ri)}<br>` +
     `<b>‖u‖</b> = ${norm_u.toFixed(4)}, <b>‖v‖</b> = ${norm_v.toFixed(4)}<br>` +
     `<b>Orthogonal?</b> ${orth ? 'Yes ✓' : 'No'}`;
+  flashResult('ipResult');
 }
 
 // ─── Matrix × Vector ───
@@ -1556,25 +1591,50 @@ function computeMatVec() {
   document.getElementById('matvecResult').innerHTML =
     `<b>A|v⟩</b> = (${r1.toFixed(4)}, ${r2.toFixed(4)})ᵀ<br>` +
     `<b>‖A|v⟩‖</b> = ${norm.toFixed(4)}`;
+  flashResult('matvecResult');
 }
 
 // ─── Eigenvalue Calculator ───
+function setEigenPreset(a,b,c,d,name) {
+  document.getElementById('e_a').value=a;
+  document.getElementById('e_b').value=b;
+  document.getElementById('e_c').value=c;
+  document.getElementById('e_d').value=d;
+  computeEigen();
+}
+
 function computeEigen() {
   const a=+document.getElementById('e_a').value, b=+document.getElementById('e_b').value;
   const c=+document.getElementById('e_c').value, d=+document.getElementById('e_d').value;
   const tr = a+d, det = a*d - b*c;
   const disc = tr*tr - 4*det;
   let html = `<b>Trace</b> = ${tr.toFixed(4)}, <b>Det</b> = ${det.toFixed(4)}<br>`;
-  html += `<b>Characteristic eq:</b> λ² - ${tr.toFixed(2)}λ + ${det.toFixed(2)} = 0<br>`;
+  const trSign = tr >= 0 ? '- ' + tr.toFixed(2) : '+ ' + Math.abs(tr).toFixed(2);
+  const detSign = det >= 0 ? '+ ' + det.toFixed(2) : '- ' + Math.abs(det).toFixed(2);
+  html += `<b>Characteristic eq:</b> λ² ${trSign}λ ${detSign} = 0<br>`;
+  function eigenvec(a,b,c,d,lam) {
+    const ea = a-lam, ed = d-lam;
+    let vx, vy;
+    if (Math.abs(b) > 1e-10) { vx = b; vy = lam - a; }
+    else if (Math.abs(c) > 1e-10) { vx = lam - d; vy = c; }
+    else if (Math.abs(ea) < 1e-10) { vx = 1; vy = 0; }
+    else { vx = 0; vy = 1; }
+    const len = Math.sqrt(vx*vx + vy*vy);
+    return len > 1e-10 ? [vx/len, vy/len] : [vx, vy];
+  }
   if (disc >= 0) {
     const l1 = (tr + Math.sqrt(disc))/2, l2 = (tr - Math.sqrt(disc))/2;
-    html += `<b>λ₁</b> = ${l1.toFixed(4)}, <b>λ₂</b> = ${l2.toFixed(4)}`;
+    const v1 = eigenvec(a,b,c,d,l1), v2 = eigenvec(a,b,c,d,l2);
+    html += `<b>λ₁</b> = ${l1.toFixed(4)} &nbsp; <b>v₁</b> = (${v1[0].toFixed(4)}, ${v1[1].toFixed(4)})ᵀ<br>`;
+    html += `<b>λ₂</b> = ${l2.toFixed(4)} &nbsp; <b>v₂</b> = (${v2[0].toFixed(4)}, ${v2[1].toFixed(4)})ᵀ`;
   } else {
     const re = tr/2, im = Math.sqrt(-disc)/2;
     html += `<b>λ₁</b> = ${re.toFixed(4)} + ${im.toFixed(4)}i<br>`;
-    html += `<b>λ₂</b> = ${re.toFixed(4)} - ${im.toFixed(4)}i`;
+    html += `<b>λ₂</b> = ${re.toFixed(4)} - ${im.toFixed(4)}i<br>`;
+    html += `<span style="color:var(--text-dim);font-size:.82rem;">Eigenvectors are complex-valued (not shown for real-only mode).</span>`;
   }
   document.getElementById('eigenResult').innerHTML = html;
+  flashResult('eigenResult');
 }
 
 // ─── Tensor Product ───
@@ -1583,12 +1643,24 @@ function computeTensor() {
   const v1=+document.getElementById('t_v1').value, v2=+document.getElementById('t_v2').value;
   const r = [u1*v1, u1*v2, u2*v1, u2*v2];
   const norm = Math.sqrt(r.reduce((s,x)=>s+x*x,0));
+  // Build Dirac notation
+  const labels = ['|00⟩','|01⟩','|10⟩','|11⟩'];
+  const terms = [];
+  r.forEach((c,i) => {
+    if (Math.abs(c) > 1e-6) {
+      const coeff = Math.abs(c - 1) < 1e-4 ? '' : Math.abs(c + 1) < 1e-4 ? '-' : c.toFixed(4);
+      terms.push((terms.length > 0 && c > 0 ? '+ ' : '') + coeff + labels[i]);
+    }
+  });
+  const dirac = terms.length > 0 ? terms.join(' ') : '0';
   document.getElementById('tensorResult').innerHTML =
     `<b>|u⟩ ⊗ |v⟩</b> = (${r.map(x=>x.toFixed(4)).join(', ')})ᵀ<br>` +
+    `<b>Dirac:</b> ${dirac}<br>` +
     `<b>Norm</b> = ${norm.toFixed(4)}`;
+  flashResult('tensorResult');
 }
 
-// ─── Unitarity Check ───
+// ─── Unitarity & Hermitian Check ───
 function checkUnitary() {
   const a=+document.getElementById('u_a').value, b=+document.getElementById('u_b').value;
   const c=+document.getElementById('u_c').value, d=+document.getElementById('u_d').value;
@@ -1596,10 +1668,14 @@ function checkUnitary() {
   const r00=a*a+b*b, r01=a*c+b*d, r10=c*a+d*b, r11=c*c+d*d;
   const isU = Math.abs(r00-1)<0.01 && Math.abs(r11-1)<0.01 && Math.abs(r01)<0.01 && Math.abs(r10)<0.01;
   const det = a*d - b*c;
+  // Hermitian check: for real matrices, Hermitian = symmetric (A = Aᵀ)
+  const isH = Math.abs(b - c) < 0.01;
   document.getElementById('unitaryResult').innerHTML =
     `<b>UUᵀ</b> = ((${r00.toFixed(3)}, ${r01.toFixed(3)}), (${r10.toFixed(3)}, ${r11.toFixed(3)}))<br>` +
     `<b>det(U)</b> = ${det.toFixed(4)}<br>` +
-    `<b>Unitary?</b> ${isU ? '✓ Yes (UUᵀ ≈ I)' : '✗ No (UUᵀ ≠ I)'}`;
+    `<b>Unitary?</b> ${isU ? '✓ Yes (UUᵀ ≈ I)' : '✗ No (UUᵀ ≠ I)'} &nbsp;|&nbsp; ` +
+    `<b>Hermitian?</b> ${isH ? '✓ Yes (A = Aᵀ)' : '✗ No (A ≠ Aᵀ)'}`;
+  flashResult('unitaryResult');
 }
 
 // ─── Scroll Progress + Active Nav ───
@@ -1733,8 +1809,9 @@ document.querySelectorAll('nav a').forEach(a => {
   canvas.addEventListener('click', (e) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = W / rect.width;
+    const scaleY = H / rect.height;
     const mx = (e.clientX - rect.left) * scaleX;
-    const my = (e.clientY - rect.top) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
     const re = (mx - cx) / scale;
     const im = -(my - cy) / scale;
     points.push({ re, im });
@@ -1751,158 +1828,6 @@ document.querySelectorAll('nav a').forEach(a => {
   });
 
   window.drawComplexPlane = draw;
-})();
-
-// ─── Bloch Sphere Canvas ───
-(function() {
-  const canvas = document.getElementById('blochSphere');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const cx = W/2, cy = H/2, R = 150;
-
-  let theta = 0, phi = 0; // state angles
-  let camTheta = 0.4, camPhi = -0.3; // camera angles
-  let dragging = false, lastX, lastY;
-
-  function project(x, y, z) {
-    // Rotate by camera
-    const ct = Math.cos(camTheta), st = Math.sin(camTheta);
-    const cp = Math.cos(camPhi), sp = Math.sin(camPhi);
-    const x1 = x * ct + z * st;
-    const z1 = -x * st + z * ct;
-    const y1 = y * cp - z1 * sp;
-    const z2 = y * sp + z1 * cp;
-    return { x: cx + x1 * R, y: cy - y1 * R, z: z2 };
-  }
-
-  function drawCircle(axis, color, dash) {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    if (dash) ctx.setLineDash(dash);
-    ctx.beginPath();
-    for (let i = 0; i <= 64; i++) {
-      const t = (i / 64) * Math.PI * 2;
-      let x, y, z;
-      if (axis === 'xy') { x = Math.cos(t); y = Math.sin(t); z = 0; }
-      else if (axis === 'xz') { x = Math.cos(t); y = 0; z = Math.sin(t); }
-      else { x = 0; y = Math.cos(t); z = Math.sin(t); }
-      const p = project(x, y, z);
-      i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
-    }
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  function drawAxis(x1,y1,z1, x2,y2,z2, color, label) {
-    const a = project(x1,y1,z1), b = project(x2,y2,z2);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-    ctx.fillStyle = color;
-    ctx.font = 'bold 14px system-ui';
-    ctx.fillText(label, b.x + 5, b.y - 5);
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-
-    // Great circles
-    drawCircle('xy', 'rgba(124,106,239,0.2)', [3,3]);
-    drawCircle('xz', 'rgba(96,165,250,0.2)', [3,3]);
-    drawCircle('yz', 'rgba(52,211,153,0.15)', [3,3]);
-
-    // Axes
-    drawAxis(-1.2,0,0, 1.2,0,0, '#60a5fa', 'X');
-    drawAxis(0,-1.2,0, 0,1.2,0, '#34d399', 'Y');
-    drawAxis(0,0,-1.2, 0,0,1.2, '#f87171', 'Z');
-
-    // Axis labels at poles
-    const p0 = project(0, 0, 1.3), p1 = project(0, 0, -1.3);
-    ctx.fillStyle = document.body.classList.contains('light') ? '#2d3154' : '#e2e4f0';
-    ctx.font = 'bold 13px system-ui';
-    ctx.fillText('|0\u27E9', p0.x - 10, p0.y - 5);
-    ctx.fillText('|1\u27E9', p1.x - 10, p1.y + 15);
-
-    // State vector (Bloch coordinates)
-    const sx = Math.sin(theta) * Math.cos(phi);
-    const sy = Math.sin(theta) * Math.sin(phi);
-    const sz = Math.cos(theta);
-    const sp = project(sx, sy, sz);
-    const o = project(0, 0, 0);
-
-    // Arrow line
-    ctx.strokeStyle = '#fbbf24';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(sp.x, sp.y); ctx.stroke();
-
-    // Arrowhead
-    ctx.fillStyle = '#fbbf24';
-    ctx.beginPath(); ctx.arc(sp.x, sp.y, 6, 0, Math.PI * 2); ctx.fill();
-
-    // Shadow on equator
-    const eqp = project(sx, sy, 0);
-    ctx.strokeStyle = 'rgba(251,191,36,0.3)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3,3]);
-    ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(eqp.x, eqp.y); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(eqp.x, eqp.y); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(251,191,36,0.5)';
-    ctx.beginPath(); ctx.arc(eqp.x, eqp.y, 3, 0, Math.PI * 2); ctx.fill();
-  }
-
-  draw();
-
-  canvas.addEventListener('mousedown', (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
-  canvas.addEventListener('mousemove', (e) => {
-    if (!dragging) return;
-    camTheta += (e.clientX - lastX) * 0.01;
-    camPhi += (e.clientY - lastY) * 0.01;
-    camPhi = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, camPhi));
-    lastX = e.clientX; lastY = e.clientY;
-    draw();
-  });
-  canvas.addEventListener('mouseup', () => dragging = false);
-  canvas.addEventListener('mouseleave', () => dragging = false);
-
-  // Touch support
-  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); dragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; }, { passive: false });
-  canvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    if (!dragging) return;
-    camTheta += (e.touches[0].clientX - lastX) * 0.01;
-    camPhi += (e.touches[0].clientY - lastY) * 0.01;
-    camPhi = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, camPhi));
-    lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
-    draw();
-  }, { passive: false });
-  canvas.addEventListener('touchend', () => dragging = false);
-
-  window.setBlochState = function(t, p) {
-    theta = t; phi = p;
-    draw();
-    // Compute state label
-    const sx = Math.sin(theta)*Math.cos(phi), sy = Math.sin(theta)*Math.sin(phi), sz = Math.cos(theta);
-    let label = '';
-    if (Math.abs(theta) < 0.01) label = '|0\u27E9';
-    else if (Math.abs(theta - Math.PI) < 0.01) label = '|1\u27E9';
-    else if (Math.abs(theta - Math.PI/2) < 0.01 && Math.abs(phi) < 0.01) label = '|+\u27E9';
-    else if (Math.abs(theta - Math.PI/2) < 0.01 && Math.abs(phi - Math.PI) < 0.01) label = '|-\u27E9';
-    else if (Math.abs(theta - Math.PI/2) < 0.01 && Math.abs(phi - Math.PI/2) < 0.01) label = '|+i\u27E9';
-    else if (Math.abs(theta - Math.PI/2) < 0.01 && Math.abs(phi + Math.PI/2) < 0.01) label = '|-i\u27E9';
-    else label = `cos(${(theta/Math.PI*180).toFixed(0)}\u00B0/2)|0\u27E9 + e^{i${(phi/Math.PI*180).toFixed(0)}\u00B0}sin(${(theta/Math.PI*180).toFixed(0)}\u00B0/2)|1\u27E9`;
-    document.getElementById('blochResult').innerHTML =
-      `<b>State:</b> ${label} &nbsp;&mdash;&nbsp; <b>\u03B8</b> = ${(theta/Math.PI*180).toFixed(0)}\u00B0, <b>\u03C6</b> = ${(phi/Math.PI*180).toFixed(0)}\u00B0<br>` +
-      `<span style="font-size:.8rem;color:var(--text-dim);">Bloch coords: (${sx.toFixed(3)}, ${sy.toFixed(3)}, ${sz.toFixed(3)})</span>`;
-  };
-
-  // Expose for theme toggle and gate application
-  window.drawBloch = draw;
-  window.getBlochTheta = function() { return theta; };
-  window.getBlochPhi = function() { return phi; };
-  window.setBlochTheta = function(v) { theta = v; };
-  window.setBlochPhi = function(v) { phi = v; };
 })();
 
 // ─── Circuit Simulator ───
@@ -1986,7 +1911,6 @@ function toggleTheme() {
   localStorage.setItem('theme', isLight ? 'light' : 'dark');
   // Redraw canvases
   if (typeof drawComplexPlane === 'function') drawComplexPlane();
-  if (typeof drawBloch === 'function') drawBloch();
   if (typeof drawMatViz === 'function') drawMatViz();
 }
 // Restore saved theme
@@ -2032,6 +1956,74 @@ function checkEigenFib() {
     fb.innerHTML = '<span style="color:var(--red)">Not quite. For a diagonal matrix, the eigenvalues are simply the diagonal entries!</span>';
   }
 }
+
+function checkNormFib() {
+  const val = parseFloat(document.getElementById('fib6_val').value);
+  const fb = document.getElementById('fib6_fb');
+  if (isNaN(val)) {
+    fb.innerHTML = '<span style="color:var(--yellow)">Please enter a number.</span>';
+    return;
+  }
+  // |alpha|^2 = 1/2, so |beta|^2 = 1/2 = 0.5
+  const correct = Math.abs(val - 0.5) < 0.05 || document.getElementById('fib6_val').value.trim() === '1/2';
+  document.getElementById('fib6_val').className = correct ? 'correct-input' : 'incorrect-input';
+  if (correct) {
+    fb.innerHTML = '<span style="color:var(--green)">&#10003; Correct! |1/&radic;2|&sup2; = 1/2, so |&beta;|&sup2; = 1 - 1/2 = 1/2.</span>';
+    updateSectionCompletion();
+  } else {
+    fb.innerHTML = '<span style="color:var(--red)">Not quite. |&alpha;|&sup2; = |1/&radic;2|&sup2; = 1/2. The normalization constraint gives |&beta;|&sup2; = 1 - |&alpha;|&sup2;.</span>';
+  }
+}
+
+function checkSpectralFib() {
+  const l1 = parseFloat(document.getElementById('fib5_l1').value);
+  const l2 = parseFloat(document.getElementById('fib5_l2').value);
+  const fb = document.getElementById('fib5_fb');
+  if (isNaN(l1) || isNaN(l2)) {
+    fb.innerHTML = '<span style="color:var(--yellow)">Please enter both eigenvalues.</span>';
+    return;
+  }
+  const correct = (Math.abs(l1-(-1))<0.1 && Math.abs(l2-1)<0.1) || (Math.abs(l1-1)<0.1 && Math.abs(l2-(-1))<0.1);
+  document.getElementById('fib5_l1').className = correct ? 'correct-input' : 'incorrect-input';
+  document.getElementById('fib5_l2').className = correct ? 'correct-input' : 'incorrect-input';
+  if (correct) {
+    fb.innerHTML = '<span style="color:var(--green)">&#10003; Correct! Negating a matrix negates all its eigenvalues: -Z has eigenvalues -1 and +1 (eigenvectors unchanged).</span>';
+    updateSectionCompletion();
+  } else {
+    fb.innerHTML = '<span style="color:var(--red)">Not quite. If Z|v&#10217; = &lambda;|v&#10217;, then (-Z)|v&#10217; = -&lambda;|v&#10217;.</span>';
+  }
+}
+
+function checkTensorFib() {
+  const ids = ['fib4_a','fib4_b','fib4_c','fib4_d'];
+  const expected = [0, 1, 0, 0]; // |0⟩⊗|1⟩ = (0,1,0,0)
+  const fb = document.getElementById('fib4_fb');
+  const vals = ids.map(id => parseFloat(document.getElementById(id).value));
+  if (vals.some(v => isNaN(v))) {
+    fb.innerHTML = '<span style="color:var(--yellow)">Please enter all four values.</span>';
+    return;
+  }
+  const allCorrect = vals.every((v, i) => Math.abs(v - expected[i]) < 0.1);
+  ids.forEach((id, i) => {
+    document.getElementById(id).className = Math.abs(vals[i] - expected[i]) < 0.1 ? 'correct-input' : 'incorrect-input';
+  });
+  if (allCorrect) {
+    fb.innerHTML = '<span style="color:var(--green)">&#10003; Correct! |0&#10217;&#8855;|1&#10217; = |01&#10217; = (0, 1, 0, 0)&#7488; &mdash; the second basis vector of the 4D space.</span>';
+    updateSectionCompletion();
+  } else {
+    fb.innerHTML = '<span style="color:var(--red)">Not quite. Remember: each entry of the first vector multiplies the entire second vector.</span>';
+  }
+}
+
+// ─── Enter key for fill-in-blanks ───
+document.querySelectorAll('.fill-blank input[type="text"]').forEach(input => {
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const btn = input.closest('.fill-blank').querySelector('.compute-btn');
+      if (btn) btn.click();
+    }
+  });
+});
 
 // ─── Section Completion Tracking ───
 const sectionQuizMap = {
@@ -2141,7 +2133,8 @@ checkQuiz = function(qid, correct) {
   canvas.addEventListener('click', (e) => {
     const rect = canvas.getBoundingClientRect();
     const sx = W / rect.width;
-    inputVec = [(e.clientX-rect.left)*sx - cx, cy - (e.clientY-rect.top)*sx].map(v => v/scale);
+    const sy = H / rect.height;
+    inputVec = [(e.clientX-rect.left)*sx - cx, cy - (e.clientY-rect.top)*sy].map(v => v/scale);
     // Normalize to reasonable length
     const len = Math.sqrt(inputVec[0]**2 + inputVec[1]**2);
     if (len > 2) { inputVec[0] *= 2/len; inputVec[1] *= 2/len; }
@@ -2167,92 +2160,6 @@ checkQuiz = function(qid, correct) {
   }
 })();
 
-// ─── Bloch Sphere Gate Application ───
-window.applyBlochGate = function(gate) {
-  // Read current state from Bloch IIFE via accessors
-  const curTheta = window.getBlochTheta();
-  const curPhi = window.getBlochPhi();
-
-  // Current state in terms of alpha, beta
-  const ct = Math.cos(curTheta/2), st = Math.sin(curTheta/2);
-  let a_re = ct, a_im = 0; // alpha
-  let b_re = st * Math.cos(curPhi), b_im = st * Math.sin(curPhi); // beta
-
-  let na_re, na_im, nb_re, nb_im;
-  const s2 = 1/Math.sqrt(2);
-
-  switch(gate) {
-    case 'X': // swap alpha and beta
-      na_re = b_re; na_im = b_im; nb_re = a_re; nb_im = a_im; break;
-    case 'Y': // Y = [[0,-i],[i,0]]
-      na_re = b_im; na_im = -b_re; nb_re = -a_im; nb_im = a_re; break;
-    case 'Z': // Z = [[1,0],[0,-1]]
-      na_re = a_re; na_im = a_im; nb_re = -b_re; nb_im = -b_im; break;
-    case 'H': // H = (1/sqrt(2))[[1,1],[1,-1]]
-      na_re = s2*(a_re+b_re); na_im = s2*(a_im+b_im);
-      nb_re = s2*(a_re-b_re); nb_im = s2*(a_im-b_im); break;
-    case 'S': // S = [[1,0],[0,i]]
-      na_re = a_re; na_im = a_im; nb_re = -b_im; nb_im = b_re; break;
-    case 'T': { // T = [[1,0],[0,e^(iπ/4)]]
-      na_re = a_re; na_im = a_im;
-      const tAngle = Math.PI/4;
-      nb_re = b_re*Math.cos(tAngle) - b_im*Math.sin(tAngle);
-      nb_im = b_re*Math.sin(tAngle) + b_im*Math.cos(tAngle); break;
-    }
-    default: return;
-  }
-
-  // Convert back to theta, phi (with global phase removal)
-  const norm_a = Math.sqrt(na_re**2 + na_im**2);
-  const norm_b = Math.sqrt(nb_re**2 + nb_im**2);
-
-  // New theta
-  const newTheta = 2 * Math.acos(Math.min(1, norm_a));
-
-  // New phi: phase of beta relative to alpha
-  let newPhi = 0;
-  if (norm_b > 1e-10) {
-    // Remove global phase (make alpha real and positive)
-    if (norm_a > 1e-10) {
-      const phase_a = Math.atan2(na_im, na_re);
-      // Rotate beta by -phase_a
-      const rb_re = nb_re*Math.cos(-phase_a) - nb_im*Math.sin(-phase_a);
-      const rb_im = nb_re*Math.sin(-phase_a) + nb_im*Math.cos(-phase_a);
-      newPhi = Math.atan2(rb_im, rb_re);
-    } else {
-      newPhi = Math.atan2(nb_im, nb_re);
-    }
-  }
-
-  // Animate transition
-  const startTheta = curTheta, startPhi = curPhi;
-  const dTheta = newTheta - startTheta;
-  // Handle phi wrapping
-  let dPhi = newPhi - startPhi;
-  if (dPhi > Math.PI) dPhi -= 2*Math.PI;
-  if (dPhi < -Math.PI) dPhi += 2*Math.PI;
-  const duration = 400;
-  const frames = 24;
-  let frame = 0;
-
-  function animateStep() {
-    frame++;
-    const progress = Math.min(1, frame / frames);
-    const ease = progress < 0.5 ? 2*progress*progress : -1+(4-2*progress)*progress; // ease in-out
-    window.setBlochTheta(startTheta + dTheta * ease);
-    window.setBlochPhi(startPhi + dPhi * ease);
-    window.drawBloch();
-    if (progress < 1) {
-      setTimeout(animateStep, duration / frames);
-    } else {
-      window.setBlochTheta(newTheta);
-      window.setBlochPhi(newPhi);
-      window.drawBloch();
-      window.setBlochState(newTheta, newPhi);
-    }
-  }
-  animateStep();
-};
 </script>
 
 <footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">

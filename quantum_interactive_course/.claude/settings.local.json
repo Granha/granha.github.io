@@ -32,7 +32,30 @@
       "Bash(lsof -ti:9999)",
       "Bash(node _check.js)",
       "Bash(curl -s http://localhost:8780/modules/15_grovers_algorithm.html)",
-      "Bash(node _verify.js)"
+      "Bash(node _verify.js)",
+      "Bash(wc -l /Users/fegranha/repo/granha.github.io/quantum_interactive_course/modules/*.html)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8780/modules/21_period_finding.html)",
+      "Bash(curl -s http://localhost:8780/modules/21_period_finding.html)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8780/modules/14_quantum_key_distribution.html)",
+      "Bash(curl -s http://localhost:8780/quantum_interactive_course/modules/14_quantum_key_distribution.html)",
+      "Bash(for file in /Users/fegranha/repo/granha.github.io/quantum_interactive_course/modules/*.html)",
+      "Bash(do)",
+      "Bash(if grep -q \"site-footer\\\\|footer-nav\" \"$file\")",
+      "Bash(then)",
+      "Bash(else)",
+      "Bash(fi)",
+      "Bash(lsof -i :8780 -t)",
+      "Bash(kill 9133)",
+      "Bash(grep -l \"link.*href\\\\|script.*src\" /Users/fegranha/repo/granha.github.io/quantum_interactive_course/modules/*.html)",
+      "Bash(curl -s http://localhost:8780/modules/05_hadamard_transform.html)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8780/modules/22_shors_algorithm.html)",
+      "Bash(curl -sI http://localhost:8780/modules/22_shors_algorithm.html)",
+      "Bash(curl -s http://localhost:8780/modules/22_shors_algorithm.html)",
+      "Bash(lsof -i :8781)",
+      "Bash(lsof -i :8782)",
+      "Bash(kill 8179)",
+      "Bash(lsof -i :8780)",
+      "Bash(kill 15226)"
     ]
   }
 }

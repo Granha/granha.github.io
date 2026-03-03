@@ -142,7 +142,7 @@
   header {
     text-align: center;
     margin-bottom: 3rem;
-    padding-bottom: 2rem;
+    padding: 4.5rem 1rem 2rem;
   }
 
   header h1 {
@@ -544,6 +544,33 @@
   }
   .skip-link:focus { top: 0; }
 
+  /* --- Home link --- */
+  .home-link {
+    position: fixed;
+    top: 1.2rem;
+    left: 1.5rem;
+    z-index: 1000;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+    transition: all 0.2s;
+    opacity: 0.85;
+  }
+  .home-link:hover {
+    color: var(--text);
+    border-color: var(--accent);
+    opacity: 1;
+  }
+
   /* --- Print --- */
   @media print {
     #particleBg, .theme-toggle, .home-link, .skip-link,
@@ -734,7 +761,7 @@
 <a href="#puzzle" class="skip-link">Skip to content</a>
 <div id="reading-progress"></div>
 <canvas id="particleBg"></canvas>
-<a href="../index.html" class="home-link" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:var(--surface);border:1px solid var(--border);backdrop-filter:blur(8px);transition:all 0.2s;opacity:0.85;" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--accent)';this.style.opacity='1'" onmouseout="this.style.color='var(--text-dim)';this.style.borderColor='var(--border)';this.style.opacity='0.85'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
+<a href="../index.html" class="home-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
 <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">&#9790;</button>
 <main class="container">
 
@@ -851,8 +878,9 @@
         <button id="btn-live" onclick="setScenario('live')">Live Bomb<span class="kbd">3</span></button>
         <button id="btn-random" onclick="setScenario('random')">Random<span class="kbd">4</span></button>
         <span style="color:var(--border);">|</span>
-        <button class="primary" id="btn-fire" onclick="fireSingle()">⚡ Fire Photon<span class="kbd">Space</span></button>
-        <button onclick="fireMany(50)">Fire 50</button>
+        <button class="primary" id="btn-fire" onclick="fireSingle()">Fire Photon<span class="kbd">Space</span></button>
+        <button onclick="fireMany(getBatchSize())">Batch<span class="kbd">B</span></button>
+        <input type="number" id="batch-size" min="1" max="10000" value="50" style="width:52px; text-align:center; font-family:'JetBrains Mono',monospace; font-size:0.8rem; padding:0.35rem 0.3rem; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text);">
         <button onclick="resetStats()">Reset<span class="kbd">R</span></button>
       </div>
     </div>
@@ -1219,6 +1247,8 @@ let stats = { total: 0, d0: 0, d1: 0, boom: 0 };
 let currentBombType = 'none';
 let exploded = false;
 let activeDetector = null;
+let explosionT = 0; // 0..1 animation progress
+let explosionAnimId = null;
 
 function setScenario(s) {
   scenario = s;
@@ -1242,6 +1272,7 @@ function hasBomb() {
 }
 
 function getSpeed() { return parseInt(document.getElementById('speed-slider').value); }
+function getBatchSize() { return Math.max(1, Math.min(10000, parseInt(document.getElementById('batch-size').value) || 50)); }
 document.getElementById('speed-slider').addEventListener('input', function() {
   document.getElementById('speed-label').textContent = this.value + 'x';
 });
@@ -1378,6 +1409,21 @@ function drawBombZone(x, y) {
   ctx.fillText('bomb?', x, y + 32);
 }
 
+// Seeded random for consistent spark positions per explosion
+let sparkAngles = [];
+function seedSparks() {
+  sparkAngles = [];
+  for (let i = 0; i < 14; i++) {
+    sparkAngles.push({
+      a: (Math.PI * 2 * i) / 14 + (Math.random() - 0.5) * 0.4,
+      len: 18 + Math.random() * 22,
+      hue: 10 + Math.random() * 35,
+      lum: 50 + Math.random() * 25,
+      w: 1.5 + Math.random() * 2,
+    });
+  }
+}
+
 function drawBomb(x, y, type, isExploded) {
   if (type === 'none') {
     drawBombZone(x, y);
@@ -1385,31 +1431,70 @@ function drawBomb(x, y, type, isExploded) {
   }
   const r = 18;
   if (isExploded) {
-    // Multi-ring explosion
+    const t = explosionT; // 0..1
+    const ease = 1 - Math.pow(1 - Math.min(t * 1.5, 1), 3); // fast ease-out
+    const fade = t > 0.6 ? 1 - (t - 0.6) / 0.4 : 1; // fade out in last 40%
+
+    // Shockwave ring
+    ctx.save();
+    ctx.globalAlpha = (1 - ease) * 0.3 * fade;
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 3 * (1 - ease);
+    ctx.beginPath();
+    ctx.arc(x, y, r + ease * 50, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Multi-ring explosion (expanding)
     for (let ring = 0; ring < 4; ring++) {
       ctx.save();
-      ctx.globalAlpha = 0.3 - ring * 0.06;
-      ctx.fillStyle = `hsl(${15 + ring * 10}, 100%, ${55 + ring * 5}%)`;
+      ctx.globalAlpha = (0.35 - ring * 0.07) * fade;
+      ctx.fillStyle = `hsl(${15 + ring * 12}, 100%, ${55 + ring * 5}%)`;
       ctx.beginPath();
-      ctx.arc(x, y, r + ring * 10, 0, Math.PI * 2);
+      ctx.arc(x, y, (r + ring * 10) * ease, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
-    // Sparks
-    for (let i = 0; i < 12; i++) {
-      const a = (Math.PI * 2 * i) / 12 + Math.random() * 0.3;
-      const len = 16 + Math.random() * 18;
-      ctx.strokeStyle = `hsl(${15 + Math.random()*30}, 100%, ${55 + Math.random()*20}%)`;
-      ctx.lineWidth = 1.5 + Math.random() * 2;
+
+    // Inner flash (bright core)
+    if (t < 0.4) {
+      const flashAlpha = (1 - t / 0.4) * 0.6;
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, r * ease * 1.5);
+      grad.addColorStop(0, `rgba(255, 255, 200, ${flashAlpha})`);
+      grad.addColorStop(1, `rgba(255, 180, 50, 0)`);
+      ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.moveTo(x + Math.cos(a) * 8, y + Math.sin(a) * 8);
-      ctx.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
-      ctx.stroke();
+      ctx.arc(x, y, r * 2 * ease, 0, Math.PI * 2);
+      ctx.fill();
     }
+
+    // Sparks (fly outward)
+    for (const spark of sparkAngles) {
+      const sparkT = Math.min(t * 1.8, 1);
+      const dist = spark.len * sparkT;
+      const sparkFade = sparkT > 0.5 ? 1 - (sparkT - 0.5) / 0.5 : 1;
+      ctx.save();
+      ctx.globalAlpha = sparkFade * fade * 0.9;
+      ctx.strokeStyle = `hsl(${spark.hue}, 100%, ${spark.lum}%)`;
+      ctx.lineWidth = spark.w * (1 - sparkT * 0.5);
+      ctx.beginPath();
+      const innerR = 6 + dist * 0.3;
+      ctx.moveTo(x + Math.cos(spark.a) * innerR, y + Math.sin(spark.a) * innerR);
+      ctx.lineTo(x + Math.cos(spark.a) * (innerR + dist * 0.7), y + Math.sin(spark.a) * (innerR + dist * 0.7));
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // BOOM label (rises and fades in)
+    const labelAlpha = Math.min(t * 3, 1) * fade;
+    const labelY = y - 32 - t * 8;
+    ctx.save();
+    ctx.globalAlpha = labelAlpha;
     ctx.fillStyle = '#ef4444';
     ctx.font = 'bold 16px Inter, system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('💥 BOOM!', x, y - 32);
+    ctx.fillText('BOOM!', x, labelY);
+    ctx.restore();
     return;
   }
   // Draw bomb body
@@ -1715,6 +1800,20 @@ async function animateDualPaths(pathA, pathB, duration = 500) {
   }
 }
 
+// Animate explosion over ~600ms
+async function animateExplosion() {
+  const speed = getSpeed();
+  const totalMs = 700 / speed;
+  const steps = Math.max(20, Math.round(totalMs / 16));
+  for (let i = 0; i <= steps; i++) {
+    explosionT = i / steps;
+    drawStaticScene();
+    await new Promise(r => requestAnimationFrame(r));
+  }
+  explosionT = 1;
+  drawStaticScene();
+}
+
 // ============================================================
 //  Main simulation logic
 // ============================================================
@@ -1761,11 +1860,11 @@ async function runSinglePhoton(bombType) {
     // Bomb measures: collapse!
     const outcome = Math.random();
     if (outcome < 0.5) {
-      // BOOM
-      setState('<span class="label">Bomb measures:</span> <span class="ket-lower">|lower⟩</span> <span style="color:var(--danger)">— BOOM! 💥</span>');
+      // BOOM — animated explosion
+      setState('<span class="label">Bomb measures:</span> <span class="ket-lower">|lower⟩</span> <span style="color:var(--danger)">— BOOM!</span>');
       exploded = true;
-      drawStaticScene();
-      await sleep(700);
+      seedSparks();
+      await animateExplosion();
       stats.boom++;
       stats.total++;
       updateStats();
@@ -1997,6 +2096,7 @@ resetStats();
 
   drawCircuitDiagram();
   window.addEventListener('resize', drawCircuitDiagram);
+  window.drawCircuitDiagram = drawCircuitDiagram;
 })();
 
 // ============================================================
@@ -2100,6 +2200,9 @@ function updateZenoTheory() {
   const verdict = pDetect > 0.95 ? 'Excellent' : pDetect > 0.8 ? 'Good' : pDetect > 0.5 ? 'Fair' : 'Poor';
   document.getElementById('compare-verdict').textContent = verdict;
   document.getElementById('compare-verdict').style.color = pDetect > 0.8 ? 'var(--success)' : pDetect > 0.5 ? 'var(--photon)' : 'var(--muted)';
+  // Dynamic border color on Zeno column
+  const zenoCol = document.getElementById('zeno-comparison-col');
+  if (zenoCol) zenoCol.style.borderColor = pDetect > 0.9 ? 'var(--success)' : pDetect > 0.5 ? 'var(--accent)' : 'var(--border)';
 }
 
 function simulateZeno(N) {
@@ -2221,6 +2324,23 @@ function drawZenoViz() {
   zenoCtx.rotate(-Math.PI / 2);
   zenoCtx.textAlign = 'center';
   zenoCtx.fillText('P(detection)', 0, 0);
+  zenoCtx.restore();
+
+  // 90% threshold line
+  const y90 = chartBot - 0.9 * chartH;
+  zenoCtx.save();
+  zenoCtx.strokeStyle = 'rgba(251, 191, 36, 0.35)';
+  zenoCtx.lineWidth = 1;
+  zenoCtx.setLineDash([4, 4]);
+  zenoCtx.beginPath();
+  zenoCtx.moveTo(chartLeft, y90);
+  zenoCtx.lineTo(chartRight, y90);
+  zenoCtx.stroke();
+  zenoCtx.setLineDash([]);
+  zenoCtx.fillStyle = 'rgba(251, 191, 36, 0.5)';
+  zenoCtx.font = '10px Inter, system-ui, sans-serif';
+  zenoCtx.textAlign = 'right';
+  zenoCtx.fillText('90% goal', chartRight, y90 - 4);
   zenoCtx.restore();
 
   // Detection probability curve (green)
@@ -2603,6 +2723,7 @@ updateZenoTheory();
 
   draw();
   window.addEventListener('resize', draw);
+  window.drawProbTree = draw;
 })();
 
 // ============================================================
@@ -2646,10 +2767,12 @@ updateZenoTheory();
     }
     btn.textContent = next === 'light' ? '\u2600' : '\u263E';
     localStorage.setItem('bomb-tester-theme', next);
-    // Rebuild canvas colors and redraw
+    // Rebuild canvas colors and redraw all canvases
     COL = buildCOL();
     if (typeof drawStaticScene === 'function') drawStaticScene();
     if (typeof drawZenoViz === 'function') drawZenoViz();
+    if (typeof drawCircuitDiagram === 'function') drawCircuitDiagram();
+    if (typeof drawProbTree === 'function') drawProbTree();
   });
 })();
 
@@ -2692,6 +2815,9 @@ updateZenoTheory();
         break;
       case '4':
         setScenario('random');
+        break;
+      case 'b': case 'B':
+        if (!animating) fireMany(getBatchSize());
         break;
     }
   });

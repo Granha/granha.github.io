@@ -649,7 +649,7 @@
     margin-top: 1rem;
   }
   .prob-tree canvas {
-    display: block; margin: 0 auto;
+    display: block; margin: 0 auto; max-width: 100%;
   }
 
   /* ---- Quiz ---- */
@@ -719,6 +719,18 @@
     .grid-2 { grid-template-columns: 1fr; }
     h1 { font-size: 1.8rem; }
     .container { padding: 3.5rem 1rem 2rem; }
+    .module-nav { flex-direction: column; gap: 0.5rem; }
+    .module-nav a { width: 100%; justify-content: center; }
+    .prob-tree canvas, .mc-canvas-wrap canvas, .detect-canvas-wrap canvas {
+      max-width: 100%;
+      height: auto !important;
+    }
+    .basis-demo { flex-direction: column; align-items: center; }
+    .bob-basis-btns { gap: 0.75rem; }
+    .bob-basis-btn { width: 75px; height: 75px; }
+    .eve-scenario { gap: 0.3rem; }
+    .eve-actor-icon { width: 32px; height: 32px; font-size: 0.85rem; }
+    .detect-viz { flex-direction: column; }
   }
 
   /* ---- Footer ---- */
@@ -885,7 +897,7 @@
     border: 1px solid var(--border); border-radius: 12px;
     padding: 1rem;
   }
-  .mc-canvas-wrap canvas { display: block; width: 100%; }
+  .mc-canvas-wrap canvas { display: block; width: 100%; max-width: 100%; }
   .mc-legend {
     display: flex; gap: 1.5rem; justify-content: center;
     margin-top: 0.75rem; font-size: 0.82rem;
@@ -1302,6 +1314,41 @@
     font-family: 'JetBrains Mono', monospace; font-size: 0.88rem;
   }
 
+  /* ---- Module Navigation ---- */
+  .module-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 0;
+    margin-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+  .module-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  .module-nav a:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: var(--accent);
+  }
+  .module-nav .nav-label {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .module-nav .nav-title { font-size: 0.9rem; }
+
   /* ---- Utility ---- */
   .hidden { display: none !important; }
 
@@ -1591,6 +1638,11 @@
       <div style="text-align:center;">
         <button id="btnOtpEncrypt" disabled>Encrypt (XOR)</button>
       </div>
+      <div id="otpKeyShortWarn" style="display:none; padding:0.6rem 1rem; border-radius:8px; background:rgba(251,146,60,0.08); border:1px solid rgba(251,146,60,0.25); font-size:0.82rem; color:var(--orange); line-height:1.5; text-align:center;">
+        <strong>Key too short!</strong> Your message needs <span id="otpNeedBits"></span> bits but the sifted key is only <span id="otpHaveBits"></span> bits.
+        The key will be cycled for this demo, but a real one-time pad requires the key to be <strong>at least as long as the message</strong>.
+        Run the simulation with more qubits to get a longer key.
+      </div>
       <div class="otp-result-box" id="otpResultBox" style="display:none;">
         <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-dim); margin-bottom:0.4rem;">Ciphertext</div>
         <div class="otp-ciphertext" id="otpCiphertext"></div>
@@ -1649,7 +1701,7 @@
           <div class="bob-photon-label" id="bobPhotonLabel">Photon 1 incoming&hellip;</div>
           <div class="bob-photon-orb" id="bobPhotonOrb">?</div>
         </div>
-        <p style="font-size:0.88rem; color: var(--text-dim); text-align:center;">Choose your measurement basis:</p>
+        <p style="font-size:0.88rem; color: var(--text-dim); text-align:center;">Choose your measurement basis: <span style="font-size:0.75rem; opacity:0.6;">(or press <kbd style="display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:0.05rem 0.35rem;font-family:'JetBrains Mono',monospace;font-size:0.68rem;">R</kbd> / <kbd style="display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:0.05rem 0.35rem;font-family:'JetBrains Mono',monospace;font-size:0.68rem;">D</kbd>)</span></p>
         <div class="bob-basis-btns">
           <button class="bob-basis-btn rect" id="bobBtnRect" disabled>
             <span class="sym-big">+</span>
@@ -2118,6 +2170,22 @@
     </div>
   </div>
 
+  <!-- Module Navigation -->
+  <div class="module-nav">
+    <a href="09_state_tomography.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <div><div class="nav-label">Previous</div><div class="nav-title">Quantum State Tomography</div></div>
+    </a>
+    <a href="../index.html" style="border-style:dashed;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <div><div class="nav-label">Course</div><div class="nav-title">All Modules</div></div>
+    </a>
+    <a href="15_grovers_algorithm.html">
+      <div><div class="nav-label">Next</div><div class="nav-title">Grover's Search</div></div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+  </div>
+
 </div>
 
 
@@ -2561,10 +2629,16 @@ function setPhase(phase) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+function setSimButtons(enabled) {
+  document.getElementById('btnRun').disabled = !enabled;
+  document.getElementById('btnStep').disabled = !enabled;
+}
+
 document.getElementById('btnRun').addEventListener('click', async function() {
   if (animating) return;
   animating = true;
   stepping = false;
+  setSimButtons(false);
   const n = parseInt(document.getElementById('selBits').value);
   const withEve = document.getElementById('chkEve').checked;
   simData = runBB84(n, withEve);
@@ -2652,6 +2726,7 @@ document.getElementById('btnRun').addEventListener('click', async function() {
   setPhase('key');
   showStats(simData);
   animating = false;
+  setSimButtons(true);
 });
 
 document.getElementById('btnStep').addEventListener('click', async function() {
@@ -2668,12 +2743,14 @@ document.getElementById('btnStep').addEventListener('click', async function() {
 
   if (stepIndex < simData.length) {
     animating = true;
+    setSimButtons(false);
     const withEve = document.getElementById('chkEve').checked;
     await animatePhoton(withEve, simData[stepIndex]);
     stepIndex++;
     renderTable(simData, stepIndex, false);
     if (stepIndex === simData.length) { showStats(simData); stepping = false; }
     animating = false;
+    setSimButtons(true);
   }
 });
 
@@ -2845,6 +2922,13 @@ document.getElementById('btnReset').addEventListener('click', function() {
 
   document.getElementById('bobBtnRect').addEventListener('click', () => bobMeasure('+'));
   document.getElementById('bobBtnDiag').addEventListener('click', () => bobMeasure('\u00d7'));
+
+  // Keyboard shortcuts: R for rectilinear, D for diagonal
+  document.addEventListener('keydown', function(e) {
+    if (!bobActive || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'r' || e.key === 'R') bobMeasure('+');
+    if (e.key === 'd' || e.key === 'D') bobMeasure('\u00d7');
+  });
 })();
 
 // ========== MONTE CARLO HISTOGRAM ==========
@@ -3063,6 +3147,16 @@ document.getElementById('btnReset').addEventListener('click', function() {
     const text = input.value;
     if (!text || currentKey.length === 0) return;
     const msgBits = textToBits(text);
+
+    // Show warning if key is too short
+    const warnEl = document.getElementById('otpKeyShortWarn');
+    if (msgBits.length > currentKey.length) {
+      document.getElementById('otpNeedBits').textContent = msgBits.length;
+      document.getElementById('otpHaveBits').textContent = currentKey.length;
+      warnEl.style.display = 'block';
+    } else {
+      warnEl.style.display = 'none';
+    }
 
     // Extend key by repeating (for demo; real OTP would need key >= message)
     const keyStream = [];
@@ -3577,25 +3671,26 @@ document.getElementById('btnQuiz').addEventListener('click', function() {
     }
 
     const val = selected.value;
+    const expl = {
+      q1: "When bases don't match, quantum mechanics gives a completely random result \u2014 50% chance of 0 or 1.",
+      q2: "Eve's random basis is wrong 50% of the time. When wrong, Bob gets it wrong 50% of those times \u2192 1/2 \u00d7 1/2 = 25%.",
+      q3: 'The no-cloning theorem prevents making perfect copies of unknown quantum states.',
+      q4: 'Only bases are shared publicly. Bit values remain secret \u2014 essential for security.',
+      q5: 'Both pick from 2 bases independently, so P(match) = 1/2, meaning ~50% survive.',
+      q6: 'With key reuse, C\u2081 \u2295 C\u2082 = (P\u2081\u2295K) \u2295 (P\u2082\u2295K) = P\u2081 \u2295 P\u2082. The key cancels, leaking plaintext information.',
+      q7: 'P(detect) = 1 \u2212 (3/4)\u00B2\u2070 = 1 \u2212 0.00317 \u2248 99.68%. Each additional check bit exponentially reduces Eve\'s chances.',
+      q8: 'H(e) quantifies the information Eve may have gained. Privacy amplification removes that many bits to guarantee Eve has negligible information about the final key.'
+    };
+
     if (val === ans) {
       selected.parentElement.classList.add('correct');
       fb.className = 'quiz-feedback show correct-fb';
-      fbText.textContent = 'Correct!';
+      fbText.textContent = 'Correct! ' + (expl[name] || '');
       correct++;
     } else {
       selected.parentElement.classList.add('wrong');
       q.querySelector(`input[value="${ans}"]`).parentElement.classList.add('correct');
       fb.className = 'quiz-feedback show wrong-fb';
-      const expl = {
-        q1: "When bases don't match, quantum mechanics gives a completely random result \u2014 50% chance of 0 or 1.",
-        q2: "Eve's random basis is wrong 50% of the time. When wrong, Bob gets it wrong 50% of those times \u2192 1/2 \u00d7 1/2 = 25%.",
-        q3: 'The no-cloning theorem prevents making perfect copies of unknown quantum states.',
-        q4: 'Only bases are shared publicly. Bit values remain secret \u2014 essential for security.',
-        q5: 'Both pick from 2 bases independently, so P(match) = 1/2, meaning ~50% survive.',
-        q6: 'With key reuse, C\u2081 \u2295 C\u2082 = (P\u2081\u2295K) \u2295 (P\u2082\u2295K) = P\u2081 \u2295 P\u2082. The key cancels, leaking plaintext information.',
-        q7: 'P(detect) = 1 \u2212 (3/4)\u00B2\u2070 = 1 \u2212 0.00317 \u2248 99.68%. Each additional check bit exponentially reduces Eve\'s chances.',
-        q8: 'H(e) quantifies the information Eve may have gained. Privacy amplification removes that many bits to guarantee Eve has negligible information about the final key.'
-      };
       fbText.textContent = 'Not quite. ' + (expl[name] || '');
     }
   });

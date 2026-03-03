@@ -238,6 +238,45 @@
     }
     .chart-wrapper { position:relative; padding-bottom:24px; }
 
+    .bar-label.compact { font-size:0.5rem; letter-spacing:-0.5px; }
+    .bar-group[title]:hover .bar { filter:brightness(1.3); }
+
+    /* Three-col layout for self-inverse demo */
+    .three-col { display:grid; grid-template-columns:1fr auto 1fr auto 1fr; gap:8px; align-items:start; margin:1rem 0; }
+    .three-col > .chart-col { min-width:0; }
+    .three-col .arrow-col {
+        display:flex; align-items:center; justify-content:center;
+        font-size:1.4rem; color:var(--accent); font-weight:700; padding-top:60px;
+    }
+    .three-col .chart-label {
+        text-align:center; font-size:0.78rem; font-weight:600; color:var(--text-dim);
+        text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;
+    }
+    @media (max-width:700px) {
+        .three-col { grid-template-columns:1fr; }
+        .three-col .arrow-col { padding:4px 0; font-size:1rem; }
+    }
+
+    /* Exercises */
+    .exercise { margin:1.2rem 0; }
+    .exercise-prompt { font-weight:600; margin-bottom:10px; font-size:0.97rem; }
+    .exercise-choices { display:flex; flex-direction:column; gap:6px; }
+    .exercise-choice {
+        padding:10px 16px; border:1px solid var(--border); border-radius:10px;
+        cursor:pointer; transition:all 0.2s; font-size:0.92rem;
+        background:var(--surface2); color:var(--text-dim);
+    }
+    .exercise-choice:hover { border-color:var(--accent); color:var(--text); }
+    .exercise-choice.correct { border-color:var(--green); background:rgba(52,211,153,0.1); color:var(--green); }
+    .exercise-choice.wrong { border-color:var(--red); background:rgba(248,113,113,0.08); color:var(--red); }
+    .exercise-feedback {
+        margin-top:8px; padding:8px 14px; border-radius:8px; font-size:0.88rem;
+        display:none; font-weight:500;
+    }
+    .exercise-feedback.show { display:block; }
+    .exercise-feedback.correct { background:rgba(52,211,153,0.08); color:var(--green); }
+    .exercise-feedback.wrong { background:rgba(248,113,113,0.06); color:var(--red); }
+
     /* GF(2) computation display */
     .gf2-computation {
         font-family:'JetBrains Mono','Courier New',monospace; font-size:0.95rem;
@@ -313,13 +352,9 @@
     pointer-events: none;
   }
 </style>
-    <script>
-    MathJax = {
-      tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] },
-      startup: { ready() { MathJax.startup.defaultReady(); } }
-    };
-    </script>
-    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
 <canvas id="particleBg"></canvas>
@@ -336,6 +371,7 @@
         <a href="#sec-nqubit">n-Qubit Formula</a>
         <a href="#sec-super">Superpositions</a>
         <a href="#sec-subspace">Subspaces &amp; Cosets</a>
+        <a href="#sec-exercises">Exercises</a>
     </nav>
 
     <main>
@@ -553,6 +589,39 @@
                 <strong>Hermitian</strong> (\(H = H^\dagger\)), so \(H^{-1} = H^\dagger = H\).
             </p>
 
+            <div class="interactive-panel" id="selfinverse-interactive">
+                <div class="panel-title">Interactive: Verify H<sup>&otimes;n</sup> &middot; H<sup>&otimes;n</sup> = I</div>
+                <div class="controls">
+                    <label>Qubits (n):</label>
+                    <div class="btn-group" id="si-n-btns"></div>
+                </div>
+                <div class="controls">
+                    <label>Input |x&rang;:</label>
+                    <div id="si-x-bits" style="display:flex; gap:4px;"></div>
+                </div>
+                <div id="si-label" style="text-align:center; margin:12px 0; font-size:1rem;"></div>
+                <div class="three-col">
+                    <div class="chart-col">
+                        <div class="chart-label">Input |x&rang;</div>
+                        <div class="chart-wrapper"><div class="amplitude-chart" id="si-chart-input" style="height:140px;"></div></div>
+                    </div>
+                    <div class="arrow-col">&xrarr;<br><span style="font-size:0.65rem; font-weight:400;">H<sup>&otimes;n</sup></span></div>
+                    <div class="chart-col">
+                        <div class="chart-label">After first H<sup>&otimes;n</sup></div>
+                        <div class="chart-wrapper"><div class="amplitude-chart" id="si-chart-middle" style="height:140px;"></div></div>
+                    </div>
+                    <div class="arrow-col">&xrarr;<br><span style="font-size:0.65rem; font-weight:400;">H<sup>&otimes;n</sup></span></div>
+                    <div class="chart-col">
+                        <div class="chart-label">After second H<sup>&otimes;n</sup></div>
+                        <div class="chart-wrapper"><div class="amplitude-chart" id="si-chart-output" style="height:140px;"></div></div>
+                    </div>
+                </div>
+                <p style="font-size:0.85rem; color:var(--text-dim); margin-top:4px;">
+                    No matter what input you choose, applying the Hadamard twice always returns to the original state.
+                    The middle chart shows the superposition created by the first application.
+                </p>
+            </div>
+
             <div class="key-insight">
                 <strong>Crucial observation:</strong> The Hadamard transform converts between the
                 <strong>computational basis</strong> and the <strong>Hadamard basis</strong>.
@@ -673,6 +742,79 @@
                 </p>
             </div>
         </section>
+
+        <!-- ============ EXERCISES ============ -->
+        <section id="sec-exercises">
+            <h2>Check Your Understanding</h2>
+
+            <div class="exercise">
+                <div class="exercise-prompt">1. What is \(H|0\rangle\)?</div>
+                <div class="exercise-choices">
+                    <div class="exercise-choice" data-correct="false" data-explanation="That's |0⟩ itself — H creates a superposition.">
+                        \(|0\rangle\)
+                    </div>
+                    <div class="exercise-choice" data-correct="true" data-explanation="Correct! H|0⟩ = (|0⟩ + |1⟩)/√2, the equal superposition with all positive signs.">
+                        \(\frac{1}{\sqrt{2}}(|0\rangle + |1\rangle)\)
+                    </div>
+                    <div class="exercise-choice" data-correct="false" data-explanation="That's H|1⟩, not H|0⟩ — the minus sign comes from (-1)^(1·1).">
+                        \(\frac{1}{\sqrt{2}}(|0\rangle - |1\rangle)\)
+                    </div>
+                </div>
+                <div class="exercise-feedback"></div>
+            </div>
+
+            <div class="exercise">
+                <div class="exercise-prompt">2. How many terms appear in the superposition \(H^{\otimes 3}|000\rangle\)?</div>
+                <div class="exercise-choices">
+                    <div class="exercise-choice" data-correct="false" data-explanation="3 is the number of qubits, not the number of basis states.">3</div>
+                    <div class="exercise-choice" data-correct="false" data-explanation="That would be for 2 qubits. With 3 qubits we get 2³ terms.">4</div>
+                    <div class="exercise-choice" data-correct="true" data-explanation="Correct! H⊗3|000⟩ produces a uniform superposition over all 2³ = 8 basis states, each with amplitude 1/√8.">8</div>
+                    <div class="exercise-choice" data-correct="false" data-explanation="16 = 2⁴ would be for 4 qubits.">16</div>
+                </div>
+                <div class="exercise-feedback"></div>
+            </div>
+
+            <div class="exercise">
+                <div class="exercise-prompt">3. What is the GF(2) dot product \(101 \cdot 110\)?</div>
+                <div class="exercise-choices">
+                    <div class="exercise-choice" data-correct="true" data-explanation="Correct! (1·1) ⊕ (0·1) ⊕ (1·0) = 1 ⊕ 0 ⊕ 0 = 1.">1</div>
+                    <div class="exercise-choice" data-correct="false" data-explanation="Compute bitwise: (1·1) ⊕ (0·1) ⊕ (1·0) = 1 ⊕ 0 ⊕ 0 = 1, not 0.">0</div>
+                </div>
+                <div class="exercise-feedback"></div>
+            </div>
+
+            <div class="exercise">
+                <div class="exercise-prompt">4. If \(S = \text{span}\{01, 10\}\) in \(\text{GF}(2)^2\), what is \(S^\perp\)?</div>
+                <div class="exercise-choices">
+                    <div class="exercise-choice" data-correct="false" data-explanation="S spans all of GF(2)², so S⊥ has dimension 2−2 = 0. It can't be all of GF(2)².">
+                        \(\{00, 01, 10, 11\}\)
+                    </div>
+                    <div class="exercise-choice" data-correct="true" data-explanation="Correct! Since S = GF(2)², the only vector orthogonal to everything is 00. dim(S⊥) = 2 − 2 = 0.">
+                        \(\{00\}\)
+                    </div>
+                    <div class="exercise-choice" data-correct="false" data-explanation="Check: 11·01 = 1 ≠ 0, so 11 is not in S⊥.">
+                        \(\{00, 11\}\)
+                    </div>
+                </div>
+                <div class="exercise-feedback"></div>
+            </div>
+
+            <div class="exercise">
+                <div class="exercise-prompt">5. What happens when you apply \(H^{\otimes n}\) twice to any state \(|\psi\rangle\)?</div>
+                <div class="exercise-choices">
+                    <div class="exercise-choice" data-correct="false" data-explanation="Applying H twice doesn't produce the zero state — H is unitary, so it preserves the state's norm.">
+                        You get the zero state
+                    </div>
+                    <div class="exercise-choice" data-correct="true" data-explanation="Correct! H is its own inverse (H² = I), so applying it twice returns the original state unchanged.">
+                        You get back \(|\psi\rangle\)
+                    </div>
+                    <div class="exercise-choice" data-correct="false" data-explanation="H²|ψ⟩ = |ψ⟩ exactly, not a uniform superposition. Try the self-inverse demo above!">
+                        You get the uniform superposition over all basis states
+                    </div>
+                </div>
+                <div class="exercise-feedback"></div>
+            </div>
+        </section>
     </main>
 
     <div class="tooltip" id="tooltip"></div>
@@ -733,11 +875,14 @@
     function renderAmplitudeChart(container, amplitudes, n) {
         const size = 1 << n;
         const maxAmp = Math.max(...amplitudes.map(Math.abs), 0.001);
+        const compact = n >= 4;
         let html = '<div class="zero-line"></div>';
         for (let i = 0; i < size; i++) {
             const amp = amplitudes[i];
             const pct = Math.abs(amp) / maxAmp * 46;
-            html += `<div class="bar-group">`;
+            const ampStr = amp === 0 ? '0' : (amp > 0 ? '+' : '\u2212') + Math.abs(amp).toFixed(4);
+            const label = compact ? toBin(i, n) : '|' + toBin(i, n) + '\u27E9';
+            html += `<div class="bar-group" title="${ampStr}">`;
             if (amp >= 0) {
                 html += `<div class="bar-top"><div class="bar positive" style="height:${pct}%"></div></div>`;
                 html += `<div class="bar-bottom"></div>`;
@@ -745,7 +890,7 @@
                 html += `<div class="bar-top"></div>`;
                 html += `<div class="bar-bottom"><div class="bar negative" style="height:${pct}%"></div></div>`;
             }
-            html += `<div class="bar-label">|${toBin(i, n)}\u27E9</div></div>`;
+            html += `<div class="bar-label${compact ? ' compact' : ''}">${label}</div></div>`;
         }
         container.innerHTML = html;
     }
@@ -807,7 +952,13 @@
     function hideTooltip() { tooltip.style.display = 'none'; }
 
     function retypeset(el) {
-        if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]).catch(() => {});
+        if (window.renderMathInElement) renderMathInElement(el, {
+            delimiters: [
+                {left: '\\[', right: '\\]', display: true},
+                {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+        });
     }
 
     // ================================================================
@@ -1028,18 +1179,20 @@
 
             const xStr = toBin(x, n);
             let terms = [];
-            let count = 0;
-            for (let y = 0; y < size; y++) {
-                const sign = gf2Dot(x, y, n) === 0 ? '+' : '\u2212';
-                if (count < 8) {
-                    terms.push(`${count === 0 ? '' : sign === '+' ? ' + ' : ' \u2212 '}|${toBin(y, n)}\u27E9`);
-                } else if (count === 8) {
-                    terms.push(' + \u22EF');
+            const maxTerms = n <= 3 ? size : 8;
+            for (let y = 0; y < size && terms.length < maxTerms; y++) {
+                const sign = gf2Dot(x, y, n) === 0 ? '+' : '-';
+                const ket = '|' + toBin(y, n) + '\\rangle';
+                if (terms.length === 0) {
+                    terms.push((sign === '-' ? '-' : '') + ket);
+                } else {
+                    terms.push(sign + ket);
                 }
-                count++;
             }
+            const ellipsis = size > maxTerms ? '+ \\cdots' : '';
+            const normStr = size === 2 ? '\\sqrt{2}' : '\\sqrt{' + size + '}';
             const formula = document.getElementById('state-formula');
-            formula.innerHTML = `\\(H^{\\otimes ${n}}|${xStr}\\rangle = \\frac{1}{${size === 2 ? '\\sqrt{2}' : '\\sqrt{' + size + '}'}}\\big(\\)${terms.join('')}\\(\\big)\\)`;
+            formula.innerHTML = `\\[H^{\\otimes ${n}}|${xStr}\\rangle = \\frac{1}{${normStr}}\\bigl(${terms.join('')}${ellipsis}\\bigr)\\]`;
             retypeset(formula);
 
             renderAmplitudeChart(document.getElementById('state-chart'), output, n);
@@ -1137,15 +1290,89 @@
     })();
 
     // ================================================================
+    //  SECTION: SELF-INVERSE DEMO (H² = I)
+    // ================================================================
+    function initSelfInverse() {
+        const container = document.getElementById('selfinverse-interactive');
+        if (!container) return;
+        let siN = 2;
+        const nBtns = document.getElementById('si-n-btns');
+        makeNButtons(nBtns, [1, 2, 3], siN, n => { siN = n; buildSI(); });
+        buildSI();
+
+        function buildSI() {
+            makeBitToggles(document.getElementById('si-x-bits'), siN, updateSI);
+            updateSI();
+        }
+
+        function updateSI() {
+            const n = siN;
+            const x = readBits(document.getElementById('si-x-bits'));
+            const size = 1 << n;
+            const xStr = toBin(x, n);
+
+            // |x⟩ → H⊗n → superposition → H⊗n → |x⟩
+            const inputState = new Array(size).fill(0);
+            inputState[x] = 1;
+            const afterFirst = applyHadamard(inputState, n);
+            const afterSecond = applyHadamard(afterFirst, n);
+
+            renderAmplitudeChart(document.getElementById('si-chart-input'), inputState, n);
+            renderAmplitudeChart(document.getElementById('si-chart-middle'), afterFirst, n);
+            renderAmplitudeChart(document.getElementById('si-chart-output'), afterSecond, n);
+
+            const label = document.getElementById('si-label');
+            label.innerHTML = `\\(|${xStr}\\rangle \\xrightarrow{H^{\\otimes ${n}}} \\text{superposition} \\xrightarrow{H^{\\otimes ${n}}} |${xStr}\\rangle\\)`;
+            retypeset(label);
+        }
+    }
+
+    // ================================================================
+    //  SECTION: EXERCISES
+    // ================================================================
+    function initExercises() {
+        document.querySelectorAll('.exercise').forEach(ex => {
+            const choices = ex.querySelectorAll('.exercise-choice');
+            const feedback = ex.querySelector('.exercise-feedback');
+            choices.forEach(ch => {
+                ch.addEventListener('click', () => {
+                    choices.forEach(c => c.classList.remove('selected', 'correct', 'wrong'));
+                    ch.classList.add('selected');
+                    if (ch.dataset.correct === 'true') {
+                        ch.classList.add('correct');
+                        feedback.textContent = ch.dataset.explanation || 'Correct!';
+                        feedback.className = 'exercise-feedback show correct';
+                    } else {
+                        ch.classList.add('wrong');
+                        feedback.textContent = ch.dataset.explanation || 'Not quite — try again!';
+                        feedback.className = 'exercise-feedback show wrong';
+                    }
+                });
+            });
+        });
+    }
+
+    // ================================================================
     //  INITIALIZATION
     // ================================================================
     document.addEventListener('DOMContentLoaded', () => {
+        if (window.renderMathInElement) {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                ],
+                throwOnError: false
+            });
+        }
         initSingleQubit();
         initTensorProduct();
         initGF2();
         initMatrixExplorer();
         initStateTransformer();
         initSubspaceExplorer();
+        initSelfInverse();
+        initExercises();
     });
     </script>
 

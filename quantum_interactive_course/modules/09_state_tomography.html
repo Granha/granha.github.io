@@ -1499,9 +1499,11 @@
       <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:.5rem">Select a 2-qubit state to see all 15 Pauli expectation values. Notice how entangled states have non-zero correlation terms that product states lack.</p>
       <div class="twoq-presets" id="twoq-presets">
         <button class="active" onclick="set2QState('00',this)">|00&rang;</button>
+        <button onclick="set2QState('01',this)">|01&rang;</button>
         <button onclick="set2QState('bell_phi+',this)">&Phi;&#x207A; (Bell)</button>
         <button onclick="set2QState('bell_psi-',this)">&Psi;&minus; (Bell)</button>
         <button onclick="set2QState('product_plus',this)">|+&rang;&otimes;|0&rang;</button>
+        <button onclick="set2QState('werner',this)">Werner (p=0.7)</button>
       </div>
       <canvas class="pauli-heatmap" id="pauli-heatmap"></canvas>
       <div class="twoq-note" id="twoq-note">Product state: correlations equal products of single-qubit values.</div>
@@ -1554,55 +1556,22 @@
     </div>
     <div class="quiz-feedback" id="q4-fb"></div>
   </div>
+  <div class="quiz-question" id="q5">
+    <p class="q">5. In a 2-qubit tomography experiment, you measure &lang;ZZ&rang; = &minus;1. Can you conclude the qubits are entangled?</p>
+    <div class="quiz-options">
+      <button onclick="checkQuiz('q5', this, false)">Yes &mdash; perfect anti-correlation always implies entanglement</button>
+      <button onclick="checkQuiz('q5', this, true)">No &mdash; the product state |01&rang; also gives &lang;ZZ&rang; = &minus;1</button>
+      <button onclick="checkQuiz('q5', this, false)">No &mdash; because ZZ is not a valid observable</button>
+      <button onclick="checkQuiz('q5', this, false)">Yes &mdash; because local measurements cannot produce &minus;1</button>
+    </div>
+    <div class="quiz-feedback" id="q5-fb"></div>
+  </div>
 </section>
 
 
 </div>
 
 <script>
-// ====== PARTICLE BACKGROUND ======
-(function() {
-  const cvs = document.getElementById('particleBg');
-  const c = cvs.getContext('2d');
-  let W, H, particles = [];
-  function resize() { W = cvs.width = window.innerWidth; H = cvs.height = window.innerHeight; }
-  resize();
-  window.addEventListener('resize', resize);
-  for (let i = 0; i < 60; i++) {
-    particles.push({ x: Math.random()*W, y: Math.random()*H, r: Math.random()*1.5+.5, dx: (Math.random()-.5)*.3, dy: (Math.random()-.5)*.3, o: Math.random()*.3+.1 });
-  }
-  function draw() {
-    c.clearRect(0,0,W,H);
-    particles.forEach(p => {
-      p.x += p.dx; p.y += p.dy;
-      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
-      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
-      c.beginPath();
-      c.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      c.fillStyle = `rgba(99,102,241,${p.o})`;
-      c.fill();
-    });
-    // draw connections
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i+1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const d = Math.sqrt(dx*dx+dy*dy);
-        if (d < 120) {
-          c.beginPath();
-          c.moveTo(particles[i].x, particles[i].y);
-          c.lineTo(particles[j].x, particles[j].y);
-          c.strokeStyle = `rgba(99,102,241,${.06*(1-d/120)})`;
-          c.lineWidth = .5;
-          c.stroke();
-        }
-      }
-    }
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
-
 // ====== STATE ======
 let theta = 0, phi = 0, purity = 1;
 let camRotX = -0.4, camRotY = 0.5;
@@ -1633,16 +1602,18 @@ function blochVec() {
 
 function updateStateReadout() {
   const el = document.getElementById('state-readout');
-  if (purity < 0.99) { el.innerHTML = `Mixed state: ||<b>r</b>|| = ${purity.toFixed(2)}`; return; }
+  const [rx,ry,rz] = blochVec();
+  const blochStr = `<span style="color:var(--text-dim);font-size:.78em;display:block;margin-top:2px"><b>r</b> = (<span style="color:var(--pink)">${rx.toFixed(3)}</span>, <span style="color:var(--orange)">${ry.toFixed(3)}</span>, <span style="color:var(--cyan)">${rz.toFixed(3)}</span>)</span>`;
+  if (purity < 0.99) { el.innerHTML = `Mixed state: ||<b>r</b>|| = ${purity.toFixed(2)}` + blochStr; return; }
   const c = Math.cos(theta/2), s = Math.sin(theta/2);
-  if (s < 0.001) { el.innerHTML = '|&psi;&rang; = |0&rang;'; return; }
-  if (c < 0.001) { el.innerHTML = '|&psi;&rang; = |1&rang;'; return; }
+  if (s < 0.001) { el.innerHTML = '|&psi;&rang; = |0&rang;' + blochStr; return; }
+  if (c < 0.001) { el.innerHTML = '|&psi;&rang; = |1&rang;' + blochStr; return; }
   const bR = (s*Math.cos(phi)).toFixed(3), bI = (s*Math.sin(phi)).toFixed(3);
   let b;
   if (Math.abs(+bI) < .001) b = bR;
   else if (Math.abs(+bR) < .001) b = bI+'i';
   else b = bR + (+bI>=0?'+':'') + bI+'i';
-  el.innerHTML = `|&psi;&rang; = ${c.toFixed(3)}|0&rang; + ${b}|1&rang;`;
+  el.innerHTML = `|&psi;&rang; = ${c.toFixed(3)}|0&rang; + ${b}|1&rang;` + blochStr;
 }
 
 function update() {
@@ -2009,8 +1980,9 @@ function generateMysteryState() {
     const phiOpts = [0, Math.PI/4, Math.PI/2, 3*Math.PI/4, Math.PI, -Math.PI/4, -Math.PI/2, -3*Math.PI/4];
     return { t: thetaOpts[Math.floor(Math.random()*thetaOpts.length)], p: phiOpts[Math.floor(Math.random()*phiOpts.length)], pur: 1 };
   } else {
-    // hard: fully random pure state (uniform on sphere)
-    return { t: Math.acos(1-2*Math.random()), p: Math.random()*2*Math.PI-Math.PI, pur: 1 };
+    // hard: fully random state, possibly mixed (purity between 0.3 and 1)
+    const pur = 0.3 + Math.random()*0.7;
+    return { t: Math.acos(1-2*Math.random()), p: Math.random()*2*Math.PI-Math.PI, pur: pur };
   }
 }
 
@@ -2129,6 +2101,10 @@ const twoQStates = {
     grid: [[1,0,0,1],[0,0,0,0],[0,0,0,0],[1,0,0,1]],
     note: 'Product state |0\u27E9\u2297|0\u27E9: correlations equal products of single-qubit values.'
   },
+  '01': {
+    grid: [[1,0,0,-1],[0,0,0,0],[0,0,0,0],[-1,0,0,1]],
+    note: 'Product state |0\u27E9\u2297|1\u27E9: note ZI=+1, IZ=\u22121 but ZZ=\u22121 is just the product of local values.'
+  },
   'bell_phi+': {
     grid: [[1,0,0,0],[0,1,0,0],[0,0,-1,0],[0,0,0,1]],
     note: 'Bell state \u03A6\u207A: maximally entangled. XX=+1, YY=\u22121, ZZ=+1 reveal quantum correlations.'
@@ -2140,6 +2116,10 @@ const twoQStates = {
   'product_plus': {
     grid: [[1,0,0,1],[1,0,0,1],[0,0,0,0],[0,0,0,0]],
     note: 'Product state |+\u27E9\u2297|0\u27E9: XZ=1 from \u27E8X\u27E9\u2081\u00B7\u27E8Z\u27E9\u2082. No genuine quantum correlations.'
+  },
+  'werner': {
+    grid: [[1,0,0,0],[0,-0.7,0,0],[0,0,-0.7,0],[0,0,0,-0.7]],
+    note: 'Werner state \u03C1 = 0.7|\u03A8\u207B\u27E9\u27E8\u03A8\u207B| + 0.3\u00B7I/4: a noisy entangled state. Correlations are damped but still non-classical (|XX|, |YY|, |ZZ| > \u2153).'
   }
 };
 let current2QState = '00';
@@ -2225,7 +2205,8 @@ const quizFB={
   q1:{correct:'Correct! \u03C1 = \u00BD(I + r\u2093X + r\u1D67Y + r\u1D68Z) is fully determined by three Bloch vector components. The identity coefficient is fixed by Tr(\u03C1) = 1.',wrong:'Not quite. \u03C1 = \u00BD(I + r\u2093X + r\u1D67Y + r\u1D68Z) has three free parameters (the Bloch vector components). The identity coefficient is fixed by normalization.'},
   q2:{correct:'Correct! Tr(\u03C3\u2C7C\u03C3\u2096) = 2\u03B4\u2C7C\u2096 makes them an orthogonal basis for 2\u00D72 Hermitian matrices, so each expectation value independently determines one density matrix component.',wrong:'Not quite. The key property is orthogonality: Tr(\u03C3\u2C7C\u03C3\u2096) = 2\u03B4\u2C7C\u2096. This makes each Pauli expectation value independently determine one component of the density matrix.'},
   q3:{correct:'Correct! By the central limit theorem, error scales as 1/\u221AN. Doubling N reduces error by \u221A2 \u2248 1.41. To halve the error, you need 4\u00D7 the shots!',wrong:'Not quite. Statistical error scales as 1/\u221AN, not 1/N. Doubling the shots improves accuracy by only \u221A2 \u2248 1.41.'},
-  q4:{correct:'Correct! For n qubits: 4\u207F \u2212 1 parameters. For n=5: 4\u2075 \u2212 1 = 1023. Multi-qubit correlations (XX, XYZ, etc.) must all be measured.',wrong:'Not quite. For n qubits you need 4\u207F \u2212 1 parameters, not simply 3\u00D7n. For n=5: 4\u2075 \u2212 1 = 1023.'}
+  q4:{correct:'Correct! For n qubits: 4\u207F \u2212 1 parameters. For n=5: 4\u2075 \u2212 1 = 1023. Multi-qubit correlations (XX, XYZ, etc.) must all be measured.',wrong:'Not quite. For n qubits you need 4\u207F \u2212 1 parameters, not simply 3\u00D7n. For n=5: 4\u2075 \u2212 1 = 1023.'},
+  q5:{correct:'Correct! The product state |01\u27E9 gives \u27E8ZZ\u27E9 = (+1)\u00D7(\u22121) = \u22121 with no entanglement at all. A single correlation value is never enough\u2014you need the full set of Pauli correlations to detect entanglement.',wrong:'Not quite. The product state |0\u27E9\u2297|1\u27E9 gives \u27E8Z\u27E9\u2081 = +1 and \u27E8Z\u27E9\u2082 = \u22121, so \u27E8ZZ\u27E9 = \u22121 with no entanglement. One correlation is not enough to certify entanglement.'}
 };
 
 document.querySelectorAll('.quiz-options button').forEach(btn=>{

@@ -1240,6 +1240,46 @@
     font-size: 0.85rem;
     padding: 8px 12px;
   }
+
+  /* ── Module Navigation ─────────────────────── */
+  .module-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 0;
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .module-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--accent);
+    text-decoration: none;
+    transition: all 0.2s;
+    padding: 0.5rem 1rem;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 8px;
+  }
+  .module-nav a:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: var(--accent);
+  }
+  .module-nav .mn-label {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .module-nav .mn-title { font-size: 0.9rem; }
+  @media (max-width: 700px) {
+    .module-nav { flex-direction: column; gap: 0.5rem; }
+    .module-nav a { width: 100%; justify-content: center; }
+  }
 </style>
 </head>
 <body>
@@ -1274,7 +1314,7 @@
 <!-- ════════════════════════════════════════════════════════ -->
 <header class="hero">
   <h1>Factoring &rarr; Period Finding</h1>
-  <p>The classical reduction at the heart of Shor's algorithm — why finding the period of modular exponentiation lets us factor integers.</p>
+  <p>The classical number theory at the heart of Shor's algorithm — how finding the period of modular exponentiation lets us factor integers.</p>
 </header>
 
 <!-- ════════════════ §0  Big Picture ═══════════════════════ -->
@@ -1295,8 +1335,8 @@
   </div>
   <p>
     This page focuses entirely on <strong>stage 1</strong>: the purely classical, number-theoretic argument that
-    transforms a factoring problem into a period-finding problem. No quantum mechanics needed here —
-    just modular arithmetic and one key insight about the multiplicative group mod <span class="math">N</span>.
+    transforms a factoring problem into a period-finding problem. No quantum mechanics here —
+    just modular arithmetic and one elegant algebraic trick (the difference of squares).
   </p>
 </div>
 </section>
@@ -1344,7 +1384,7 @@
   </div>
 
   <p>This means <span class="math">N</span> divides the product (a<sup>r/2</sup> &minus; 1)(a<sup>r/2</sup> + 1).
-     If neither factor is itself divisible by <span class="math">N</span>, then <span class="math">N</span> must share a non-trivial factor with each one. We extract those factors with the <span class="glossary" tabindex="0" aria-describedby="glossary-euclidean">Euclidean algorithm<span class="glossary-tip" id="glossary-euclidean" role="tooltip">An efficient method for computing the greatest common divisor of two integers, running in O(log N) time &mdash; very fast even for large numbers.</span></span>:</p>
+     If neither factor is itself a multiple of <span class="math">N</span>, then <span class="math">N</span> must share a non-trivial common factor with at least one of them. We can extract those factors efficiently with the <span class="glossary" tabindex="0" aria-describedby="glossary-euclidean">Euclidean algorithm<span class="glossary-tip" id="glossary-euclidean" role="tooltip">An efficient method for computing the greatest common divisor of two integers, running in O(log N) time &mdash; very fast even for large numbers.</span></span>:</p>
 
   <div class="math-block">
     gcd(a<sup> r/2</sup> &minus; 1, N) &ensp; and &ensp; gcd(a<sup> r/2</sup> + 1, N)
@@ -1357,7 +1397,7 @@
       <li><span class="math">r</span> is <strong>odd</strong> — we cannot form the difference of squares.</li>
       <li><span class="math">a<sup>r/2</sup> &equiv; &minus;1</span> (mod <span class="math">N</span>) — then (a<sup>r/2</sup> + 1) is divisible by <span class="math">N</span>, giving the trivial factor.</li>
     </ul>
-    <p style="margin:10px 0 0">In these cases we simply <strong>pick a new random</strong> <span class="math">a</span> and try again.</p>
+    <p style="margin:10px 0 0">In either case we simply <strong>pick a new random</strong> <span class="math">a</span> and try again. This succeeds after a few attempts with high probability.</p>
   </div>
 
   <div class="failure-compare">
@@ -1582,17 +1622,17 @@
   <div class="playground-grid">
     <div class="card">
       <span class="tag tag-warn">Classical</span>
-      <p>Classically, finding the order of <span class="math">a</span> mod <span class="math">N</span> requires computing a<sup>1</sup>, a<sup>2</sup>, &hellip;, a<sup>r</sup> mod <span class="math">N</span>. Since <span class="math">r</span> can be as large as <span class="math">N</span>, this takes <strong>exponential time</strong> in the number of digits of <span class="math">N</span>.</p>
+      <p>Classically, finding the order of <span class="math">a</span> mod <span class="math">N</span> requires computing a<sup>1</sup>, a<sup>2</sup>, &hellip;, a<sup>r</sup> mod <span class="math">N</span> and checking each one for equality with 1. The period <span class="math">r</span> can be as large as <span class="math">N</span> itself, so this brute-force search takes up to <strong>O(N) = O(2<sup>n</sup>)</strong> steps for an n-bit number &mdash; exponential in the input size.</p>
     </div>
     <div class="card">
       <span class="tag tag-ok">Quantum</span>
-      <p>The quantum phase estimation algorithm creates a superposition of all x values simultaneously, applies modular exponentiation as a unitary, and reads off the period via the Quantum Fourier Transform — all in <strong>polynomial time</strong> (O(n<sup>3</sup>) for n-bit N).</p>
+      <p>Quantum phase estimation creates a superposition over all exponents <span class="math">x</span>, applies modular exponentiation as a single unitary operation, then extracts the period via the Quantum Fourier Transform. The full circuit uses <strong>O(n<sup>3</sup>)</strong> gates for an n-bit <span class="math">N</span> &mdash; polynomial, not exponential.</p>
     </div>
   </div>
 
   <div class="card" style="margin-top:24px">
     <span class="tag tag-info">Key Insight</span>
-    <p style="margin:0">The quantum speedup is not about factoring directly — it is about solving the <span class="glossary" tabindex="0" aria-describedby="glossary-hidden-subgroup"><em>hidden subgroup problem</em><span class="glossary-tip" id="glossary-hidden-subgroup" role="tooltip">Given a function on a group that is constant on cosets of an unknown subgroup, find that subgroup. Period finding is a special case over the integers.</span></span> over the integers modulo <span class="math">r</span>. The classical reduction reframes factoring as exactly this kind of structured period-finding problem, which quantum computers handle efficiently.</p>
+    <p style="margin:0">The quantum speedup is not about factoring directly — it is about efficiently detecting <em>hidden periodicity</em>. The function f(x) = a<sup>x</sup> mod N is periodic, but extracting that period from its outputs is classically hard. Quantum phase estimation can detect this periodicity in polynomial time because interference amplifies the periodic signal. The classical reduction on this page is what makes that quantum capability useful for factoring.</p>
   </div>
 
   <div class="card" style="margin-top:24px">
@@ -1613,8 +1653,8 @@
       </table>
     </div>
     <p style="font-size:0.82rem; color:var(--text-dim); margin:10px 0 0">
-      Classical: O(N) = O(2<sup>n</sup>) steps to scan all possible periods.<br>
-      Quantum: O(n<sup>3</sup>) gates where n = number of bits. Estimates are order-of-magnitude illustrations.
+      Classical brute force: O(N) = O(2<sup>n</sup>) modular multiplications to scan all possible periods.<br>
+      Quantum (Shor): O(n<sup>3</sup>) gates where n = number of bits. Times are rough order-of-magnitude estimates.
     </p>
   </div>
 </div>
@@ -1696,6 +1736,11 @@
     </ol>
   </div>
   <p>Success probability per attempt: at least 50% for <span class="math">N = pq</span>. A handful of random attempts suffice.</p>
+
+  <div class="card" style="margin-top:20px">
+    <span class="tag tag-info">What's Next</span>
+    <p style="margin:0">This page showed the classical reduction &mdash; the "outer loop" of Shor's algorithm. The next module, <a href="21_period_finding.html" style="color:var(--accent); text-decoration:none; border-bottom:1px dashed var(--accent)">Period Finding</a>, tackles the quantum inner loop: how phase estimation and the QFT efficiently extract the period <span class="math">r</span> that we need here.</p>
+  </div>
 </div>
 </section>
 
@@ -2851,6 +2896,17 @@ const QUIZ_DATA = [
     ],
     correct: 1,
     explanation: "By the Chinese Remainder Theorem argument, the probability is at least 1 \u2212 1/2^(k\u22121), where k is the number of distinct prime factors. For k = 2 (N = pq), this gives 1 \u2212 1/2 = 50%."
+  },
+  {
+    q: "Which part of Shor's algorithm is classical and which requires a quantum computer?",
+    options: [
+      "Everything is quantum \u2014 the entire algorithm runs on a quantum computer",
+      "The reduction from factoring to period finding is classical; the period-finding step uses a quantum computer",
+      "The GCD computation requires a quantum computer; the rest is classical",
+      "Picking a random base a requires quantum randomness; the period finding is classical"
+    ],
+    correct: 1,
+    explanation: "Shor's algorithm has two stages: a classical reduction (picking a random base, checking GCD, using the period to extract factors) and a quantum subroutine (finding the period via phase estimation and QFT). Only the period-finding step requires a quantum computer."
   }
 ];
 
@@ -3235,6 +3291,22 @@ btnSkipAll.addEventListener('click', function() { startAutoPlay(); });
   draw();
 })();
 </script>
+
+<!-- Module Navigation -->
+<div class="module-nav">
+  <a href="19_quantum_fourier_transform.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    <div><div class="mn-label">Previous</div><div class="mn-title">Quantum Fourier Transform</div></div>
+  </a>
+  <a href="../index.html" style="border-style:dashed;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <div><div class="mn-label">Course</div><div class="mn-title">All Modules</div></div>
+  </a>
+  <a href="21_period_finding.html">
+    <div><div class="mn-label">Next</div><div class="mn-title">Period Finding</div></div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  </a>
+</div>
 
 <footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
   <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>

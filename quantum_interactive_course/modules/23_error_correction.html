@@ -338,8 +338,8 @@
   .error-selector.active-hint { animation: hintPulse 1.5s ease-in-out 3; }
 
   /* ---- Clickable qubit ---- */
-  .qubit-box.clickable { cursor: pointer; }
-  .qubit-box.clickable:hover { border-style: dashed; border-color: var(--red); }
+  .qubit-box.clickable, .qubit-box[role="button"] { cursor: pointer; }
+  .qubit-box.clickable:hover, .qubit-box[role="button"]:hover { border-style: dashed; border-color: var(--red); }
 
   /* ---- Self-test questions ---- */
   .self-test {
@@ -401,6 +401,17 @@
     .math-block { padding: 0.75rem; font-size: 0.85rem; }
     table { font-size: 0.8rem; }
     th, td { padding: 8px 10px; }
+  }
+
+  /* ---- Reduced motion ---- */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    html { scroll-behavior: auto; }
+    #particleBg { display: none; }
   }
 
   /* ---- Utility classes ---- */
@@ -681,7 +692,6 @@
     </table>
     <p><strong>Key insight:</strong> We detect errors by comparing bits (computing the <em>syndrome</em>), not by looking at the value of any individual bit. This same principle extends to quantum codes.</p>
   </div>
-</section>
 
   <details class="self-test">
     <summary>Self-test: Why can the 3-bit code correct 1 error but not 2?</summary>
@@ -692,6 +702,7 @@
     <summary>Self-test: What does the syndrome (1,0) tell us?</summary>
     <div class="answer">The syndrome is computed from parity checks: bit 1 XOR bit 2, and bit 2 XOR bit 3. Syndrome (1,0) means bits 1 and 2 disagree, but bits 2 and 3 agree. Since bit 2 and bit 3 agree with each other, bit 1 must be the one that flipped. The syndrome localizes the error without revealing the actual bit value.</div>
   </details>
+</section>
 
 <!-- ===================== QUANTUM BIT-FLIP ===================== -->
 <section id="quantum-bitflip">
@@ -857,12 +868,12 @@
   <div class="callout warn">
     <p><strong>Limitation:</strong> This code only corrects bit-flip (X) errors. But qubits also suffer <strong>phase-flip (Z) errors</strong>, where |1&#10217; picks up a minus sign: |1&#10217; &rarr; &minus;|1&#10217;. The bit-flip code is completely blind to these!</p>
   </div>
-</section>
 
   <details class="self-test">
     <summary>Self-test: Why can't we just measure the qubits to check for errors?</summary>
     <div class="answer">Measuring a qubit in the computational basis would collapse the superposition $\alpha|0\rangle + \beta|1\rangle$ to either $|0\rangle$ or $|1\rangle$, destroying the quantum information we're trying to protect. Syndrome measurements are cleverly designed to extract <em>only</em> parity information (which qubit differs from its neighbors) without learning anything about $\alpha$ or $\beta$. This is the key difference from classical error correction.</div>
   </details>
+</section>
 
 <!-- ===================== HADAMARD ===================== -->
 <section id="hadamard">
@@ -954,7 +965,6 @@
   <div class="callout success">
     <p><strong>Why this matters for error correction:</strong> If we encode in the Hadamard basis (using |+&#10217; and |&minus;&#10217; instead of |0&#10217; and |1&#10217;), then a phase-flip error <em>looks like</em> a bit-flip error. So we can reuse the same repetition code structure to detect phase-flips! This is the key idea behind Shor's code.</p>
   </div>
-</section>
 
   <details class="self-test">
     <summary>Self-test: If HXH = Z and HZH = X, what is HYH?</summary>
@@ -965,6 +975,7 @@
     <summary>Self-test: Why is the Hadamard gate its own inverse?</summary>
     <div class="answer">You can verify directly: $H^2 = \frac{1}{2}\begin{pmatrix}1&1\\1&-1\end{pmatrix}\begin{pmatrix}1&1\\1&-1\end{pmatrix} = \frac{1}{2}\begin{pmatrix}2&0\\0&2\end{pmatrix} = I$. Geometrically, H is a reflection on the Bloch sphere (a 180-degree rotation about the axis halfway between X and Z). Any reflection applied twice is the identity.</div>
   </details>
+</section>
 
 <!-- ===================== PHASE-FLIP CODE ===================== -->
 <section id="phase-flip">
@@ -1098,12 +1109,12 @@
   <div class="callout">
     <p><strong>Shor's idea:</strong> What if we use <em>both</em> codes together? Encode each qubit of the phase-flip code using the bit-flip code. This gives a 9-qubit code that corrects both X and Z errors — and therefore <em>any</em> single-qubit error!</p>
   </div>
-</section>
 
   <details class="self-test">
     <summary>Self-test: Why does the phase-flip code use X-basis syndrome measurements?</summary>
     <div class="answer">The phase-flip code encodes in the Hadamard basis: $|0\rangle_L = |{+}{+}{+}\rangle$, $|1\rangle_L = |{-}{-}{-}\rangle$. A Z error flips $|+\rangle \leftrightarrow |-\rangle$, which looks like a bit-flip <em>in the Hadamard basis</em>. To detect this, we need parity checks in the X-basis (measuring $X_iX_j$), which check whether adjacent qubits agree in the $\{|+\rangle,|-\rangle\}$ basis. Using Z-basis measurements would tell us about the computational basis, where the encoded state looks like a complicated superposition — we'd learn nothing useful and would collapse the state.</div>
   </details>
+</section>
 
 <!-- ===================== SHOR'S CODE ===================== -->
 <section id="shor">
@@ -1387,7 +1398,6 @@
     </table>
     <p>The measurement <em>projects</em> the error into one of these discrete cases, and then we apply the appropriate correction. This is the <strong>digitization of errors</strong> — continuous errors become discrete through measurement.</p>
   </div>
-</section>
 
   <details class="self-test">
     <summary>Self-test: Why does Shor's code need 9 qubits, not 6?</summary>
@@ -1398,6 +1408,7 @@
     <summary>Self-test: What happens to both syndromes when a Y error occurs?</summary>
     <div class="answer">A Y error equals $iXZ$: it's simultaneously a bit-flip and a phase-flip. The bit-flip syndrome detects the X component (identifying the specific qubit within its block), and the phase-flip syndrome detects the Z component (identifying which block). Both syndromes are nonzero, and together they uniquely identify the affected qubit. The correction is to apply $Y = iXZ$ to that qubit (or equivalently, apply X then Z). Try it in the interactive demo above!</div>
   </details>
+</section>
 
 <!-- ===================== LIMITATIONS ===================== -->
 <section id="limitations" class="animate-in">
@@ -1850,11 +1861,7 @@ function hadApply(err) {
       afterFinalH = '|1&#10217;'; // H|-> = |1>
       msg = '<strong>Z on |+&#10217; = |&minus;&#10217;</strong> (a bit-flip in the Hadamard basis!). The phase-flip swapped |+&#10217; and |&minus;&#10217;. After the final H: H|&minus;&#10217; = |1&#10217;. So H Z H = X : the Z error became an X error!';
     } else {
-      afterErr = '|+&#10217;'; // Z|-> = -|+> ... actually Z|-> = |+> wait
-      // Z|-> = Z(|0>-|1>)/sqrt2 = (|0>+|1>)/sqrt2 = |+> ... hmm
-      // Actually: Z|-> = Z(|0>-|1>)/sqrt2 = (Z|0>-Z|1>)/sqrt2 = (|0>-(-|1>))/sqrt2 = (|0>+|1>)/sqrt2 = |+>
-      // Hmm wait. Z|0>=|0>, Z|1>=-|1>. So Z(|0>-|1>)/sqrt2 = (|0>+|1>)/sqrt2 = |+>. Yes.
-      afterErr = '|+&#10217;';
+      afterErr = '|+&#10217;'; // Z|-> = |+>
       afterFinalH = '|0&#10217;'; // H|+> = |0>
       msg = '<strong>Z on |&minus;&#10217; = |+&#10217;</strong> (a bit-flip in the Hadamard basis!). The phase-flip swapped |&minus;&#10217; to |+&#10217;. After H: H|+&#10217; = |0&#10217;. Started with |1&#10217;, got |0&#10217; — the Z error acted like an X error through the conjugation.';
     }
@@ -2008,6 +2015,7 @@ function shorBuildErrorSel() {
     }
   }
   html += `<button class="no-error-btn" onclick="shorSelectError(-1)" id="shor-en" aria-pressed="false">No error</button>`;
+  html += `<button class="no-error-btn btn-orange" onclick="shorSelectError(Math.floor(Math.random()*9))">Random</button>`;
   sel.innerHTML = html;
 }
 shorBuildErrorSel();
@@ -2210,6 +2218,15 @@ function limToggle(i) {
   limErrors[i] = !limErrors[i];
   limRender();
 }
+
+// Keyboard support for limitation demo qubits
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('#lim-q0, #lim-q1, #lim-q2').forEach((el, i) => {
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); limToggle(i); }
+    });
+  });
+});
 
 function limRender() {
   const count = limErrors.filter(Boolean).length;

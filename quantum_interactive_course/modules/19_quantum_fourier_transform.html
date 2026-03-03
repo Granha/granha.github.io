@@ -41,6 +41,20 @@
     --canvas-text: #cbd5e1;
     --canvas-dim: #4b5563;
   }
+  /* Scroll progress bar */
+  #scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 0;
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
+    z-index: 200;
+    transition: width 0.1s linear;
+    border-radius: 0 2px 2px 0;
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Inter', sans-serif;
@@ -150,12 +164,27 @@
   .progress-bar .seg { flex: 1; transition: background 0.3s; border-right: 1px solid var(--bg); position: relative; }
   .progress-bar .seg:last-child { border-right: none; }
   .progress-bar .seg.done { background: linear-gradient(135deg, var(--accent), #818cf8); }
+  .progress-bar .seg.done.seg-h { background: linear-gradient(135deg, var(--accent), #818cf8); }
+  .progress-bar .seg.done.seg-cr { background: linear-gradient(135deg, #059669, var(--green)); }
+  .progress-bar .seg.done.seg-swap { background: linear-gradient(135deg, var(--accent3), #e879a8); }
   .progress-bar .seg.current { background: linear-gradient(135deg, var(--accent2), var(--highlight)); }
   .progress-bar .seg:hover { background: rgba(99,102,241,0.45); }
   .progress-bar .seg .seg-tip { display: none; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: var(--panel2); color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border); white-space: nowrap; pointer-events: none; z-index: 10; }
   .progress-bar .seg:hover .seg-tip { display: block; }
 
   .step-indicator { font-size: 0.83rem; color: var(--accent2); min-width: 90px; text-align: center; font-weight: 600; display: inline-block; font-family: 'JetBrains Mono', monospace; }
+
+  /* Gate sequence summary */
+  .gate-summary {
+    font-size: 0.68rem; color: var(--dim); text-align: center; padding: 5px 12px 2px;
+    background: var(--panel); position: relative; z-index: 1;
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 0.02em;
+  }
+  .gate-summary .gs-block { display: inline-block; padding: 1px 6px; border-radius: 4px; margin: 0 2px; transition: all 0.3s; }
+  .gate-summary .gs-block.gs-active { color: var(--text); font-weight: 600; }
+  .gate-summary .gs-block.gs-done { color: var(--green); text-decoration: line-through; text-decoration-color: rgba(52,211,153,0.4); }
+  .gate-summary .gs-block.gs-pending { opacity: 0.4; }
+  .gate-summary .gs-sep { color: var(--border); margin: 0 2px; }
 
   /* Keyboard hint */
   .kb-hint { font-size: 0.68rem; color: var(--dim); text-align: center; padding: 4px; background: var(--panel); opacity: 0.6; position: relative; z-index: 1; }
@@ -191,7 +220,7 @@
   .panel.collapsed .panel-body { max-height: 0 !important; opacity: 0; overflow: hidden; }
 
   .circuit-panel { grid-column: 1 / -1; position: relative; overflow: visible; }
-  #circuitCanvas { width: 100%; height: 220px; display: block; border-radius: 12px; }
+  #circuitCanvas { width: 100%; height: 220px; display: block; border-radius: 12px; transition: height 0.3s ease; }
 
   /* Gate tooltip overlay */
   .gate-tooltip {
@@ -246,7 +275,7 @@
   .binfrac-table th { text-align: left; padding: 6px 12px; color: var(--accent); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); background: rgba(99,102,241,0.06); }
   .binfrac-table td { padding: 7px 12px; border-bottom: 1px solid rgba(42,53,80,0.5); vertical-align: middle; transition: background 0.2s; }
   .binfrac-table tr:hover td { background: rgba(99,102,241,0.05); }
-  .binfrac-table .bit-box { display: inline-block; width: 24px; height: 24px; text-align: center; line-height: 24px; border-radius: 6px; margin: 0 2px; font-weight: 700; font-size: 0.82rem; }
+  .binfrac-table .bit-box { display: inline-block; width: 24px; height: 24px; text-align: center; line-height: 24px; border-radius: 6px; margin: 0 2px; font-weight: 700; font-size: 0.82rem; transition: background 0.3s, border-color 0.3s; cursor: default; }
   .binfrac-table .bit-encoded { background: rgba(99,102,241,0.2); color: var(--accent); border: 1px solid rgba(99,102,241,0.4); }
   .binfrac-table .bit-pending { background: rgba(100,116,139,0.12); color: var(--dim); border: 1px solid rgba(100,116,139,0.25); }
   .binfrac-table .bit-na { background: transparent; color: var(--canvas-dim); }
@@ -274,7 +303,7 @@
   .tensor-factor.in-progress { border-color: rgba(250,204,21,0.4); background: rgba(250,204,21,0.06); box-shadow: 0 0 12px rgba(250,204,21,0.15); }
   .tensor-factor.waiting { border-color: var(--border); opacity: 0.5; }
   .tensor-factor .tf-label { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--dim); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-  .tensor-factor .tf-expr { font-family: 'Cambria Math', serif; font-size: 0.92rem; text-align: center; line-height: 1.6; }
+  .tensor-factor .tf-expr { font-family: 'Cambria Math', serif; font-size: 0.95rem; text-align: center; line-height: 1.7; }
   .tensor-factor .tf-expr .math { color: var(--highlight); }
   .tensor-factor canvas { margin-top: 8px; }
   .tensor-symbol { font-size: 1.3rem; color: var(--dim); font-weight: 300; padding: 0 2px; align-self: center; }
@@ -292,8 +321,8 @@
   .explain-panel { grid-column: 1 / -1; min-height: 80px; }
   .explain-panel .explain-text { font-size: 0.9rem; line-height: 1.7; color: var(--text); }
   .explain-panel .explain-text .math { font-family: 'Cambria Math', serif; color: var(--highlight); font-style: italic; }
-  .explain-panel .explain-text .gate-label { display: inline-block; background: linear-gradient(135deg, var(--accent), #818cf8); color: #fff; padding: 2px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 600; vertical-align: middle; }
-  .explain-panel .explain-text .gate-label.cr { background: linear-gradient(135deg, #059669, var(--green)); }
+  .explain-panel .explain-text .gate-label { display: inline-block; background: linear-gradient(135deg, var(--accent), #818cf8); color: #fff; padding: 2px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 600; vertical-align: middle; box-shadow: 0 2px 8px var(--accent-glow); }
+  .explain-panel .explain-text .gate-label.cr { background: linear-gradient(135deg, #059669, var(--green)); box-shadow: 0 2px 8px var(--green-glow); }
   .explain-panel .explain-text .gate-label.swap { background: linear-gradient(135deg, var(--accent3), #e879a8); }
   .explain-panel .explain-text .applied { color: var(--green); font-weight: 600; }
   .explain-panel .explain-text .not-applied { color: var(--canvas-dim); }
@@ -350,9 +379,9 @@
     color: var(--dim);
     line-height: 1.7;
     margin-top: 10px;
-    padding: 10px 14px;
+    padding: 12px 16px;
     background: var(--panel2);
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid rgba(42,53,80,0.5);
   }
   .freq-formula .math { color: var(--highlight); }
@@ -360,6 +389,44 @@
 
   /* Symbolic matrix styles */
   .matrix-table td.symbolic { font-family: 'Cambria Math', serif; font-size: 0.82rem; }
+
+  /* R gate reference section at bottom */
+  .rgate-ref {
+    max-width: 1400px; margin: 2rem auto 0; padding: 0 12px; position: relative; z-index: 1;
+  }
+  .rgate-ref .rgate-card {
+    border: 1px solid rgba(34,211,238,0.2); background: var(--panel); border-radius: 16px;
+    padding: 28px 32px; position: relative; overflow: hidden;
+  }
+  .rgate-ref .rgate-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent2), var(--green), transparent); opacity: 0.5;
+  }
+  .rgate-ref h2 {
+    font-family: 'Inter', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 18px;
+    background: linear-gradient(135deg, var(--accent2), var(--green)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .rgate-ref .rgate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .rgate-ref .rgate-section { line-height: 1.8; }
+  .rgate-ref .rgate-section h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dim); margin-bottom: 8px; font-weight: 600; }
+  .rgate-ref .rgate-matrix {
+    display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 16px; margin: 6px 0; line-height: 1.7; color: var(--accent2);
+  }
+  .rgate-ref .rgate-table { border-collapse: separate; border-spacing: 0; width: 100%; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; margin: 8px 0; }
+  .rgate-ref .rgate-table th { text-align: left; padding: 6px 12px; color: var(--accent2); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+  .rgate-ref .rgate-table td { padding: 7px 12px; border-bottom: 1px solid rgba(42,53,80,0.4); }
+  .rgate-ref .rgate-table tr:hover td { background: rgba(34,211,238,0.04); }
+  .rgate-ref .rgate-insight {
+    margin-top: 16px; padding: 14px 18px; background: rgba(52,211,153,0.05); border: 1px solid rgba(52,211,153,0.15);
+    border-radius: 12px; font-size: 0.88rem; line-height: 1.7; color: var(--text);
+  }
+  .rgate-ref .rgate-insight b { color: var(--green); }
+  @media (max-width: 800px) {
+    .rgate-ref .rgate-grid { grid-template-columns: 1fr; }
+    .rgate-ref .rgate-card { padding: 20px; }
+  }
 
   /* Panel header toggles and bar readout */
   .panel h2 .toggle-btn { float: right; font-size: 0.7rem; padding: 2px 8px; margin-top: -2px; }
@@ -400,6 +467,7 @@
 </head>
 <body>
 
+<div id="scroll-progress"></div>
 <canvas id="particleBg"></canvas>
 <a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
 
@@ -434,12 +502,14 @@
 </div>
 
 <div class="progress-bar" id="progressBar"></div>
+<div class="gate-summary" id="gateSummary"></div>
 
 <div class="kb-hint">
   <kbd>&#8592;</kbd> <kbd>&#8594;</kbd> step &nbsp;
   <kbd>Space</kbd> play/pause &nbsp;
   <kbd>R</kbd> reset &nbsp;
-  <kbd>E</kbd> end
+  <kbd>E</kbd> end &nbsp;
+  <kbd>D</kbd> details
 </div>
 
 <div class="main">
@@ -866,6 +936,11 @@ function drawCircuit(sim, currentStep) {
       ctx.shadowBlur = 0;
       ctx.fillStyle = isCurrent ? '#fff' : (isActive ? tc.text : tc.dimText);
       ctx.font = 'bold 11px monospace'; ctx.textAlign = 'center'; ctx.fillText(`R${gate.m}`, x, yT+4);
+      // Show rotation angle below CR gate box
+      const crAngle = (360 / (1 << gate.m));
+      ctx.fillStyle = isCurrent ? 'rgba(34,211,238,0.8)' : (isActive ? 'rgba(34,211,238,0.5)' : tc.dimText2);
+      ctx.font = '8px monospace';
+      ctx.fillText(`${crAngle < 1 ? crAngle.toFixed(1) : Math.round(crAngle)}°`, x, yT + sz/2 + 10);
       gateHitAreas.push({x: x-sz/2, y: yT-sz/2, w: sz, h: sz, gateIdx: g});
     }
 
@@ -884,11 +959,50 @@ function drawCircuit(sim, currentStep) {
     }
   }
 
-  // Step marker line
+  // Section divider between qubit blocks and SWAPs
+  if (swapStart >= 0 && swapStart > 0) {
+    const divX = (gateX(swapStart - 1) + gateX(swapStart)) / 2;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(244,114,182,0.18)'; ctx.lineWidth = 1; ctx.setLineDash([3, 5]);
+    ctx.beginPath(); ctx.moveTo(divX, padT - 8); ctx.lineTo(divX, h - padB + 5); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // Step marker line with floating gate label
   if (currentStep > 0 && currentStep <= totalGates) {
     const x = gateX(currentStep-1);
     ctx.strokeStyle = 'rgba(250,204,21,0.35)'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
     ctx.beginPath(); ctx.moveTo(x, padT-5); ctx.lineTo(x, h-padB+5); ctx.stroke(); ctx.setLineDash([]);
+
+    // Floating label below circuit showing current step
+    const gate = gates[currentStep - 1];
+    let label = '';
+    if (gate.type === 'H') label = `H(q${gate.target})`;
+    else if (gate.type === 'CR') label = `R${gate.m}(q${gate.control}→q${gate.target})`;
+    else if (gate.type === 'SWAP') label = `SWAP(q${gate.q1}↔q${gate.q2})`;
+    if (label) {
+      ctx.fillStyle = 'rgba(250,204,21,0.55)'; ctx.font = '8px monospace'; ctx.textAlign = 'center';
+      ctx.fillText(label, x, h - padB + 16);
+      // Step number
+      ctx.fillStyle = 'rgba(250,204,21,0.35)'; ctx.font = '7px monospace';
+      ctx.fillText(`step ${currentStep}`, x, h - padB + 25);
+    }
+  }
+
+  // Output wire labels (right side)
+  const isFinal = currentStep >= totalGates;
+  ctx.textAlign = 'left';
+  for (let i = 0; i < n; i++) {
+    const y = wireY(i);
+    if (isFinal) {
+      // Show superposition indicator for completed QFT
+      ctx.fillStyle = '#34d399'; ctx.font = 'bold 10px monospace';
+      ctx.fillText('⟨+⟩', w - padR + 14, y + 4);
+    } else {
+      ctx.fillStyle = tc.dimText; ctx.font = '10px monospace';
+      ctx.fillText('…', w - padR + 14, y + 4);
+    }
   }
 }
 
@@ -910,14 +1024,21 @@ function drawCircuit(sim, currentStep) {
       const gate = sim.steps[hit.gateIdx];
       let html = '';
       if (gate.type === 'H') {
+        const targetBit = (inputX >> (sim.n-1-gate.target)) & 1;
+        const halfN = sim.N / 2;
         html = `<div class="gt-title">Hadamard Gate (H)</div>
           <div class="gt-matrix">    1   [ 1   1 ]\n──── │         │\n√2   [ 1  -1 ]</div>
-          <div class="gt-info">Target: q${gate.target}<br>Creates equal superposition with ±1 phases</div>`;
+          <div class="gt-info">Target: q${gate.target} (= |${targetBit}⟩)<br>
+          |${targetBit}⟩ → (|0⟩ + ω<sup>${targetBit===1?halfN:0}</sup>|1⟩)/√2<br>
+          Encodes bit x<sub>${gate.target}</sub> = ${targetBit} into phase</div>`;
       } else if (gate.type === 'CR') {
-        const deg = (360 / (1 << gate.m)).toFixed(1);
+        const omegaPow = sim.N / (1 << gate.m);
+        const controlBit = (inputX >> (sim.n-1-gate.control)) & 1;
         html = `<div class="gt-title">Controlled-R<sub>${gate.m}</sub></div>
-          <div class="gt-matrix">[ 1  0          ]\n[ 0  e^(2πi/${1<<gate.m}) ]</div>
-          <div class="gt-info">Control: q${gate.control} → Target: q${gate.target}<br>Phase: 2π/${1<<gate.m} = ${deg}°<br>Applied when both qubits are |1⟩</div>`;
+          <div class="gt-matrix">[ 1  0     ]\n[ 0  ω<sup>${omegaPow}</sup>  ]</div>
+          <div class="gt-info">Control: q${gate.control} (= |${controlBit}⟩) → Target: q${gate.target}<br>
+          Phase: ω<sup>${omegaPow}</sup> = e<sup>2πi/${1<<gate.m}</sup> = ${(360/(1<<gate.m)).toFixed(1)}°<br>
+          ${controlBit===1 ? '<b style="color:var(--green)">Applied</b> — adds bit x<sub>' + gate.control + '</sub> to phase' : '<span style="color:var(--dim)">No effect</span> — control is |0⟩'}</div>`;
       } else if (gate.type === 'SWAP') {
         html = `<div class="gt-title">SWAP Gate</div>
           <div class="gt-matrix">[ 1 0 0 0 ]\n[ 0 0 1 0 ]\n[ 0 1 0 0 ]\n[ 0 0 0 1 ]</div>
@@ -993,6 +1114,19 @@ function drawStateVector(state, n) {
     ctx.fillText((maxMag*i/4).toFixed(2), padL-4, padT+plotH-(i/4)*(plotH-10)+3);
   }
 
+  // 1/√N reference line — shows the uniform amplitude target of the QFT
+  const invSqrtN = 1 / Math.sqrt(N);
+  if (invSqrtN <= maxMag) {
+    const refY = padT + plotH - (invSqrtN / maxMag) * (plotH - 10);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(52,211,153,0.45)'; ctx.lineWidth = 1; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(padL, refY); ctx.lineTo(w - padR, refY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(52,211,153,0.7)'; ctx.font = '9px monospace'; ctx.textAlign = 'left';
+    ctx.fillText(`1/√${N}`, padL + 4, refY - 4);
+    ctx.restore();
+  }
+
   // Phase color wheel legend (bottom-right corner) — enhanced
   const cwR = 26, cwX = w - 40, cwY = padT + 12 + cwR;
   // Gradient ring
@@ -1021,6 +1155,20 @@ function drawStateVector(state, n) {
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = tc.dimText; ctx.font = '8px sans-serif';
   ctx.fillText('Phase', cwX, cwY + cwR + 22);
+  // Show ω label and N-th root ticks inside the color wheel
+  if (N <= 16) {
+    ctx.fillStyle = 'rgba(99,102,241,0.7)'; ctx.font = 'bold 10px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('ω', cwX, cwY);
+    ctx.textBaseline = 'alphabetic';
+    for (let k = 0; k < N; k++) {
+      const ang = k * 2 * Math.PI / N;
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(cwX + (cwR - 6) * Math.cos(ang), cwY - (cwR - 6) * Math.sin(ang));
+      ctx.lineTo(cwX + (cwR - 1) * Math.cos(ang), cwY - (cwR - 1) * Math.sin(ang));
+      ctx.stroke();
+    }
+  }
 
   // Check if all non-zero magnitudes are uniform (for omega-primary display)
   let nonZeroMags = [];
@@ -1180,6 +1328,19 @@ function drawPhaseWheels(state, n) {
     ctx.strokeStyle = tc.crosshair; ctx.beginPath();
     ctx.moveTo(cx-radius, cy); ctx.lineTo(cx+radius, cy);
     ctx.moveTo(cx, cy-radius); ctx.lineTo(cx, cy+radius); ctx.stroke();
+    // N-th root of unity tick marks around the circle
+    if (N <= 16) {
+      for (let k = 0; k < N; k++) {
+        const ang = k * 2 * Math.PI / N;
+        const inner = radius - 3, outer = radius + 2;
+        ctx.strokeStyle = k === 0 ? tc.labelText : 'rgba(99,102,241,0.25)';
+        ctx.lineWidth = k === 0 ? 1.2 : 0.6;
+        ctx.beginPath();
+        ctx.moveTo(cx + inner * Math.cos(ang), cy - inner * Math.sin(ang));
+        ctx.lineTo(cx + outer * Math.cos(ang), cy - outer * Math.sin(ang));
+        ctx.stroke();
+      }
+    }
 
     if (mag > 0.01) {
       const ampR = Math.min(radius * mag * Math.sqrt(N), radius);
@@ -1193,9 +1354,16 @@ function drawPhaseWheels(state, n) {
       ctx.lineWidth=2; ctx.beginPath();
       ctx.moveTo(ax,ay); ctx.lineTo(ax-tipLen*Math.cos(ang-tipA),ay-tipLen*Math.sin(ang-tipA));
       ctx.moveTo(ax,ay); ctx.lineTo(ax-tipLen*Math.cos(ang+tipA),ay-tipLen*Math.sin(ang+tipA)); ctx.stroke();
-      const deg = ((phase*180/Math.PI)+360)%360;
-      ctx.fillStyle = tc.phaseText; ctx.font = '9px monospace'; ctx.textAlign = 'center';
-      ctx.fillText(`${deg.toFixed(0)}°`, cx, cy+radius+12);
+      // Show omega power if clean, otherwise degrees
+      const omP = phaseToOmegaPower(phase, N);
+      if (omP !== null && N > 2) {
+        ctx.fillStyle = `hsl(${hue},70%,65%)`; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center';
+        ctx.fillText(omegaPowerLabel(omP), cx, cy+radius+12);
+      } else {
+        const deg = ((phase*180/Math.PI)+360)%360;
+        ctx.fillStyle = tc.phaseText; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+        ctx.fillText(`${deg.toFixed(0)}°`, cx, cy+radius+12);
+      }
     } else {
       ctx.fillStyle = tc.dimText2; ctx.font = '9px monospace'; ctx.textAlign = 'center';
       ctx.fillText('0', cx, cy+radius+12);
@@ -1228,6 +1396,31 @@ function drawPhasorDiagram(state, n) {
   ctx.fillStyle = tc.dimText; ctx.font = '9px monospace'; ctx.textAlign = 'center';
   ctx.fillText('0', cx+radius+12, cy+3); ctx.fillText('π/2', cx, cy-radius-6);
   ctx.fillText('π', cx-radius-12, cy+3); ctx.fillText('3π/2', cx, cy+radius+14);
+  // N-th root of unity tick marks on outer ring with ω power labels
+  if (N <= 16) {
+    for (let k = 0; k < N; k++) {
+      const ang = k * 2 * Math.PI / N;
+      const inner = radius - 2, outer = radius + 3;
+      ctx.strokeStyle = k === 0 ? tc.labelText : 'rgba(99,102,241,0.2)';
+      ctx.lineWidth = k === 0 ? 1.5 : 0.7;
+      ctx.beginPath();
+      ctx.moveTo(cx + inner * Math.cos(ang), cy - inner * Math.sin(ang));
+      ctx.lineTo(cx + outer * Math.cos(ang), cy - outer * Math.sin(ang));
+      ctx.stroke();
+    }
+    // Show ω power labels at select tick positions (avoid clutter)
+    if (N <= 8) {
+      ctx.font = '8px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (let k = 0; k < N; k++) {
+        const ang = k * 2 * Math.PI / N;
+        const lr = radius + 14;
+        const lx = cx + lr * Math.cos(ang), ly = cy - lr * Math.sin(ang);
+        ctx.fillStyle = k === 0 ? 'rgba(99,102,241,0.65)' : 'rgba(99,102,241,0.35)';
+        ctx.fillText(k === 0 ? '1' : k === 1 ? 'ω' : `ω${String(k).split('').map(d=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]).join('')}`, lx, ly);
+      }
+      ctx.textBaseline = 'alphabetic';
+    }
+  }
 
   let maxMag = 0;
   state.forEach(c => { maxMag = Math.max(maxMag, C.mag(c)); });
@@ -1347,7 +1540,16 @@ function drawNotation(state, n) {
   html += ' ]';
   // When all terms use clean omega powers, add a summary showing the pattern
   if (allOmega && allEqual && terms.length > 1 && terms.length === N) {
-    html += `<div style="font-size:0.82rem;color:var(--dim);margin-top:6px;font-family:'Inter',sans-serif">= (1/√${N}) Σ<sub>k</sub> <span style="color:var(--highlight)">ω<sup>${inputX}·k</sup></span> |k⟩ &nbsp; where ω = e<sup>2πi/${N}</sup></div>`;
+    html += `<div style="font-size:0.82rem;color:var(--dim);margin-top:6px;font-family:'Inter',sans-serif">` +
+      `= (1/√${N}) Σ<sub>k</sub> <span style="color:var(--highlight)">ω<sup>${inputX}·k</sup></span> |k⟩ &nbsp; where ω = e<sup>2πi/${N}</sup></div>`;
+    // Phase pattern: show the sequence of omega powers to highlight the winding
+    const omPowers = terms.map(t => t.omegaP);
+    const stride = omPowers.length > 1 ? ((omPowers[1] - omPowers[0]) + N) % N : 0;
+    if (stride > 0) {
+      html += `<div style="font-size:0.78rem;color:var(--dim);margin-top:4px;font-family:'Inter',sans-serif">` +
+        `Phase pattern: stride <span style="color:var(--highlight)">+${stride}</span> per basis state ` +
+        `(${(stride * 360 / N).toFixed(0)}° winding) — input x=${inputX} encodes frequency ${inputX}/${N}</div>`;
+    }
   }
   container.innerHTML = html;
 }
@@ -1418,8 +1620,9 @@ function drawFrequencySpectrum(state, n, stepIdx) {
       ctx.fillText(`k=${k}`, x + barW / 2, padT + plotH + 14);
       // Show the omega power for this bin's phase
       const omP = phaseToOmegaPower(phases[k], N);
-      if (omP !== null && isFinal) {
-        ctx.fillStyle = `hsl(${hue}, 60%, 55%)`; ctx.font = '9px monospace';
+      if (omP !== null) {
+        ctx.fillStyle = isFinal ? `hsl(${hue}, 60%, 55%)` : tc.dimText;
+        ctx.font = '9px monospace';
         ctx.fillText(omegaPowerLabel(omP), x + barW / 2, padT + plotH + 28);
       } else {
         ctx.fillStyle = tc.dimText; ctx.font = '9px serif';
@@ -1453,8 +1656,18 @@ function drawFrequencySpectrum(state, n, stepIdx) {
       `The coefficients are ${omegaList.join(', ')}, … — ` +
       `the input x=${xVal} determines how fast the phases wind around the circle.`;
   } else {
-    formulaEl.innerHTML = `<span class="muted">The frequency spectrum shows |⟨k|state⟩|² for each frequency bin k. ` +
-      `At the final step, all bins will have equal probability 1/${N}, with phases encoding the input.</span>`;
+    // Count how many qubit blocks are complete
+    const nonSwapSteps = sim.steps.filter(s => s.type !== 'SWAP').length;
+    const completedBlocks = [];
+    for (let q = 0; q < n; q++) {
+      if (sim.qubitBlockComplete(q, stepIdx)) completedBlocks.push(q);
+    }
+    const blocksText = completedBlocks.length > 0
+      ? `${completedBlocks.length}/${n} qubit blocks complete (${completedBlocks.map(q => 'q' + q).join(', ')}).`
+      : 'No qubit blocks complete yet.';
+    formulaEl.innerHTML = `<span class="muted">Frequency spectrum evolving — ${blocksText} ` +
+      `At the final step, all ${N} bins will have equal probability 1/${N} = ${(1/N).toFixed(4)}, ` +
+      `with phases encoding the input x=${inputX}.</span>`;
   }
 }
 
@@ -1471,27 +1684,31 @@ function drawBinaryFractions(sim, stepIdx, x) {
   // qubit q has phase 2π × 0.j_{q+1}j_{q+2}...j_n
   // The H encodes j_{q+1} (=x[q]), and CR_m encodes j_{q+m}
 
-  let html = '<table class="binfrac-table"><tr><th>Qubit</th><th>Binary Fraction</th><th>Bits Encoded</th><th>Phase</th><th>Status</th></tr>';
+  let html = '<table class="binfrac-table"><tr><th>Qubit</th><th>Binary Fraction</th><th>Gate → Bit</th><th>Accumulated Phase</th><th>ω Power</th><th>Status</th></tr>';
 
   for (let q = 0; q < n; q++) {
     const prog = sim.qubitBlockProgress(q, stepIdx);
     const complete = sim.qubitBlockComplete(q, stepIdx);
 
     // Which bits are encoded? The H encodes bit x[q], CR_m encodes bit x[q+m-1]
-    // In order: H -> bit at position q, then CR2 -> bit q+1, CR3 -> bit q+2, etc.
     const bitsForQubit = [];
     for (let k = 0; k < n - q; k++) {
-      bitsForQubit.push({ pos: q + k, val: xBin[q + k], encoded: prog.done > k });
+      bitsForQubit.push({ pos: q + k, val: xBin[q + k], encoded: prog.done > k, gate: k === 0 ? 'H' : `R${k+1}` });
     }
 
-    // Build the binary fraction string: 0.j_{q+1}j_{q+2}...
-    // After bit-reversal, qubit q maps to qubit n-1-q in the output
-    // But we show the circuit-level view: qubit q accumulates these bits
-
+    // Build the binary fraction with gate labels
     let bitsHtml = '';
     bitsForQubit.forEach(b => {
-      const cls = b.encoded ? 'bit-encoded' : (prog.started ? 'bit-pending' : 'bit-pending');
-      bitsHtml += `<span class="bit-box ${cls}">${b.val}</span>`;
+      const cls = b.encoded ? 'bit-encoded' : 'bit-pending';
+      bitsHtml += `<span class="bit-box ${cls}" title="${b.gate} encodes x${b.pos}">${b.val}</span>`;
+    });
+
+    // Gate→bit mapping column
+    let gateBitsHtml = '';
+    bitsForQubit.forEach(b => {
+      const gateColor = b.gate === 'H' ? 'var(--accent)' : 'var(--accent2)';
+      const opacity = b.encoded ? '1' : '0.35';
+      gateBitsHtml += `<span style="color:${gateColor};opacity:${opacity};font-size:0.75rem;font-family:'JetBrains Mono',monospace;margin-right:3px">${b.gate}→x<sub>${b.pos}</sub></span> `;
     });
 
     // Compute accumulated phase so far
@@ -1536,6 +1753,7 @@ function drawBinaryFractions(sim, stepIdx, x) {
     html += `<tr${rowBg}>
       <td><span class="qubit-label">q${q}</span></td>
       <td>0 . ${bitsHtml}</td>
+      <td>${gateBitsHtml}</td>
       <td><span class="phase-val">${phaseStr}</span> ${degStr ? `<span style="color:var(--dim);font-size:0.78rem">(${degStr})</span>` : ''}</td>
       <td style="font-family:'Cambria Math',serif;font-size:0.9rem">
         ${phaseExpr}
@@ -1546,7 +1764,7 @@ function drawBinaryFractions(sim, stepIdx, x) {
 
   html += '</table>';
   if (stepIdx === 0) {
-    html += '<div style="color:var(--dim);font-size:0.82rem;margin-top:8px;line-height:1.5"><b>Key insight:</b> Each qubit accumulates a binary fraction of the input. The Hadamard encodes the first bit, and each subsequent controlled-R<sub>k</sub> adds one more bit of precision. The final phase of qubit q is 2π × 0.x<sub>q+1</sub>x<sub>q+2</sub>...x<sub>n</sub>.</div>';
+    html += '<div style="color:var(--dim);font-size:0.82rem;margin-top:8px;line-height:1.5"><b>Key insight:</b> Each qubit accumulates a binary fraction of the input. The Hadamard encodes the most significant bit (coarsest phase: 180° or 0°), and each subsequent R<sub>k</sub> gate adds one more bit of precision (halving the rotation each time). The final phase of qubit q is 2π × 0.x<sub>q+1</sub>x<sub>q+2</sub>…x<sub>n</sub>.</div>';
   }
   container.innerHTML = html;
 }
@@ -1564,10 +1782,22 @@ function drawTensorProduct(sim, stepIdx, x) {
   const nonSwapSteps = sim.steps.filter(s => s.type !== 'SWAP').length;
   const pastAllGates = stepIdx >= nonSwapSteps;
 
-  let html = '';
+  // Determine qubit display order: reversed after SWAPs
+  const qubitOrder = [];
+  if (allSwapsDone) {
+    for (let q = n - 1; q >= 0; q--) qubitOrder.push(q);
+  } else {
+    for (let q = 0; q < n; q++) qubitOrder.push(q);
+  }
 
-  for (let q = 0; q < n; q++) {
-    if (q > 0) html += '<span class="tensor-symbol">&#8855;</span>';
+  let html = '';
+  if (allSwapsDone) {
+    html += '<div style="font-size:0.73rem;color:var(--accent3);margin-bottom:8px;font-weight:500">Bit-reversed output order (after SWAPs)</div>';
+  }
+
+  for (let idx = 0; idx < n; idx++) {
+    const q = qubitOrder[idx];
+    if (idx > 0) html += '<span class="tensor-symbol">&#8855;</span>';
 
     const complete = sim.qubitBlockComplete(q, stepIdx);
     const prog = sim.qubitBlockProgress(q, stepIdx);
@@ -1590,29 +1820,28 @@ function drawTensorProduct(sim, stepIdx, x) {
     }
     const totalPhase = 2 * Math.PI * accPhase;
 
-    // Display qubit index (in output order if swaps done)
-    const displayQ = allSwapsDone ? (n - 1 - q) : q;
-
     let expr = '';
-    if (!prog.started) {
-      expr = `|${xBin[q]}⟩`;
-    } else if (prog.done === 0) {
+    let binFracLabel = '';
+    if (!prog.started || prog.done === 0) {
       expr = `|${xBin[q]}⟩`;
     } else {
-      // Prefer omega notation for the phase coefficient
+      // Always express phase as omega power
       const omegaP = phaseToOmegaPower(totalPhase, sim.N);
-      if (Math.abs(totalPhase) < 1e-10) {
-        expr = `(|0⟩ + |1⟩) / √2`;
-      } else if (omegaP !== null) {
-        // Express as omega power: e.g. (|0⟩ + ω²|1⟩) / √2
-        const omLabel = omegaP === 1 ? 'ω' : `ω<sup>${omegaP}</sup>`;
-        // Special case: ω^{N/2} = -1
-        if (omegaP === sim.N / 2) {
-          expr = `(|0⟩ − |1⟩) / √2`;
+      if (omegaP !== null) {
+        const omLabel = omegaP === 0 ? 'ω<sup>0</sup>' :
+          omegaP === 1 ? 'ω' : `ω<sup>${omegaP}</sup>`;
+        // Simplify special cases for readability
+        if (omegaP === 0) {
+          // ω⁰ = 1, so (|0⟩ + |1⟩)/√2
+          expr = `(|0⟩ + |1⟩) / √2`;
+        } else if (omegaP === sim.N / 2) {
+          // ω^{N/2} = -1, so (|0⟩ − |1⟩)/√2
+          expr = `(|0⟩ − |1⟩) / √2 <span style="color:var(--dim);font-size:0.72rem">(${omLabel} = −1)</span>`;
         } else {
           expr = `(|0⟩ + <span class="math">${omLabel}</span>|1⟩) / √2`;
         }
       } else {
+        // Fallback: express as e^{iφ} (shouldn't happen for standard QFT, but just in case)
         const phFrac = formatPhaseAsFraction(totalPhase);
         if (phFrac) {
           expr = `(|0⟩ + <span class="math">e<sup>i${phFrac}</sup></span>|1⟩) / √2`;
@@ -1621,15 +1850,24 @@ function drawTensorProduct(sim, stepIdx, x) {
           expr = `(|0⟩ + <span class="math">e<sup>i·${deg.toFixed(0)}°</sup></span>|1⟩) / √2`;
         }
       }
+      // Build binary fraction label: 0.x_{q+1}x_{q+2}...
+      const encodedBits = [];
+      for (let k = 0; k < n - q && k < prog.done; k++) encodedBits.push(xBin[q + k]);
+      if (encodedBits.length > 0) {
+        binFracLabel = `<div style="font-size:0.68rem;color:var(--dim);margin-top:3px;font-family:'JetBrains Mono',monospace">φ = 2π·0.${encodedBits.join('')}</div>`;
+      }
     }
 
     // Mini Bloch circle
     const cSize = 40;
     const canvasId = `bloch_q${q}`;
+    // Show output position label when swaps done
+    const labelExtra = allSwapsDone ? ` <span style="color:var(--accent3);font-size:0.62rem">(was q${q})</span>` : '';
 
     html += `<div class="tensor-factor ${cls}">
-      <div class="tf-label">q${q}</div>
+      <div class="tf-label">q${allSwapsDone ? (n - 1 - q) : q}${labelExtra}</div>
       <div class="tf-expr">${expr}</div>
+      ${binFracLabel}
       <canvas id="${canvasId}" width="${cSize*2}" height="${cSize*2}" style="width:${cSize}px;height:${cSize}px"></canvas>
     </div>`;
   }
@@ -1758,7 +1996,45 @@ function getExplanation(sim, stepIdx, x) {
     return text;
   }
 
-  if (stepIdx > sim.steps.length) return getExplanation(sim, sim.steps.length, x);
+  if (stepIdx >= sim.steps.length) {
+    // List first few omega powers to show the pattern
+    const omegaTerms = [];
+    for (let k = 0; k < Math.min(4, N); k++) omegaTerms.push(`<span class="math">ω<sup>${(x*k)%N}</sup></span>|${k.toString(2).padStart(n,'0')}⟩`);
+    let text = `<b style="color:var(--green)">&#10003; QFT Complete!</b><br>
+      <span class="math">|${xBin}⟩</span> (x=${x}) has been transformed into:<br>
+      <span class="math">QFT|${xBin}⟩ = (1/√${N})</span> [ ${omegaTerms.join(' <span class="plus">+</span> ')} <span class="plus">+ …</span> ]<br>
+      Every amplitude has magnitude <span class="math">1/√${N} ≈ ${(1/Math.sqrt(N)).toFixed(4)}</span>, but the phases
+      wind around the circle at a rate determined by x=${x}.
+      ${x === 0 ? 'Since x=0, all phases are <span class="math">ω<sup>0</sup>=1</span> — a uniform superposition with no phase winding.' :
+      `The phase of |k⟩ is <span class="math">ω<sup>${x}k</sup></span>, so the phases advance by <span class="math">${x}×${(360/N).toFixed(0)}°=${((x*360/N)%360).toFixed(0)}°</span> per basis state.`}` +
+      ` <span style="color:var(--dim);font-size:0.82rem">See the <b>R gate reference</b> at the bottom of the page for gate definitions.</span>`;
+
+    if (detailedMode) {
+      // Build the tensor product expression with omega powers for detailed view
+      const tensorTerms = [];
+      for (let q = 0; q < n; q++) {
+        let accP = 0;
+        for (let k = 0; k < n - q; k++) {
+          if (xBin[q + k] === '1') accP += N / (1 << (k + 1));
+        }
+        const omP = Math.round(accP) % N;
+        const omStr = omP === 0 ? 'ω<sup>0</sup>' : omP === 1 ? 'ω' : `ω<sup>${omP}</sup>`;
+        tensorTerms.push(`(|0⟩+${omStr}|1⟩)`);
+      }
+      text += `<div class="expanded"><b>Why does this matter?</b> The QFT converts position information (which basis state is |1⟩) into frequency information (how fast phases rotate).
+      This is the key to quantum algorithms like <b>Shor's factoring</b> and <b>phase estimation</b>: they encode answers as periodicities, then use the QFT to extract them.
+      <br><br><b>Efficiency:</b> This ${n}-qubit QFT used ${sim.steps.filter(s=>s.type!=='SWAP').length} quantum gates to transform ${N} amplitudes —
+      compared to O(${N} log ${N}) = ~${Math.round(N * Math.log2(N))} operations for the classical FFT. That's an exponential advantage in gate count.
+      <br><br><b>Tensor product structure:</b> The output factorizes as:<br>
+      <span class="math">(1/√${N})</span> ${tensorTerms.join(' ⊗ ')}<br>
+      Each factor is <span class="math">(|0⟩ + ω<sup>p</sup>|1⟩)/√2</span> where the power <span class="math">p</span> encodes the binary fraction of x=${x}. This factorization is why the circuit only needs O(n²) gates — it builds the output one qubit at a time.
+      <br><br><b>R gate precision cascade:</b> Each qubit block starts with H (180° or 0° based on its input bit), then applies R<sub>2</sub> (90°), R<sub>3</sub> (45°), R<sub>4</sub> (22.5°), etc.
+      Each gate halves the rotation angle — this geometric progression is what builds up the binary fraction bit by bit.
+      For qubit q${0}, the full sequence is: H encodes x<sub>${0}</sub>, then R<sub>2</sub> encodes x<sub>${1}</sub>${n > 2 ? `, R<sub>3</sub> encodes x<sub>2</sub>` : ''}${n > 3 ? ', …' : ''}.
+      The final phase of qubit q is <span class="math">2π × 0.x<sub>q+1</sub>x<sub>q+2</sub>…x<sub>n</sub></span> — exactly the binary fraction decomposition.</div>`;
+    }
+    return text;
+  }
   const step = sim.steps[stepIdx-1];
 
   if (step.type === 'H') {
@@ -1823,7 +2099,8 @@ function buildProgressBar() {
   if (!sim) return;
   for (let i = 0; i < sim.steps.length; i++) {
     const seg = document.createElement('div');
-    seg.className = 'seg';
+    const gateType = sim.steps[i].type.toLowerCase();
+    seg.className = `seg seg-${gateType}`;
     if (i < currentStep) seg.classList.add('done');
     if (i === currentStep-1) seg.classList.add('current');
     const tip = document.createElement('div');
@@ -1866,6 +2143,9 @@ function init() {
   sim._trailCache = null;
   currentStep = 0;
   prevStateForDelta = null;
+  // Responsive circuit height: more qubits need more vertical space
+  const circuitH = n <= 2 ? 180 : n === 3 ? 220 : 280;
+  document.getElementById('circuitCanvas').style.height = circuitH + 'px';
   populateInputStates(n);
   inputX = parseInt(document.getElementById('inputState').value);
   displayState = sim.simulate(inputX, 0);
@@ -1873,6 +2153,7 @@ function init() {
   drawMatrix(n, inputX);
   updateUI();
   drawAllVisualizations();
+  if (typeof buildRGateReference === 'function') buildRGateReference();
 }
 
 function populateInputStates(n) {
@@ -1895,19 +2176,26 @@ function updateCircuitAnnotation() {
     el.innerHTML = '<span class="ann-detail">Initial state &mdash; no gates applied yet. Press Next or Play to begin.</span>';
     return;
   }
-  if (currentStep > sim.steps.length) { el.innerHTML = ''; return; }
+  if (currentStep >= sim.steps.length) {
+    const n = sim.n, N = sim.N;
+    el.innerHTML = `<span style="color:var(--green);font-weight:600">&#10003; QFT complete</span> &mdash; ` +
+      `<span class="ann-detail">|${inputX.toString(2).padStart(n,'0')}⟩ → (1/√${N}) Σ<sub>k</sub> ω<sup>${inputX}k</sup>|k⟩</span>`;
+    return;
+  }
   const gate = sim.steps[currentStep - 1];
   const n = sim.n;
   if (gate.type === 'H') {
     const targetBit = (inputX >> (n-1-gate.target)) & 1;
+    const halfN = sim.N / 2;
+    const omP = targetBit === 1 ? halfN : 0;
     el.innerHTML = `<span class="ann-gate h-gate">H</span> Hadamard on <b>q${gate.target}</b> ` +
-      `<span class="ann-detail">&mdash; q${gate.target}=|${targetBit}⟩ → (|0⟩ ${targetBit===1?'−':'+'}|1⟩)/√2</span>`;
+      `<span class="ann-detail">&mdash; |${targetBit}⟩ → (|0⟩ + ω<sup>${omP}</sup>|1⟩)/√2${omP === halfN ? ' = (|0⟩−|1⟩)/√2' : ''}</span>`;
   } else if (gate.type === 'CR') {
-    const deg = (360/(1<<gate.m)).toFixed(1);
+    const omegaPow = sim.N / (1 << gate.m);
     const controlBit = (inputX >> (n-1-gate.control)) & 1;
     const applied = controlBit === 1;
     el.innerHTML = `<span class="ann-gate cr-gate">CR${gate.m}</span> ` +
-      `Control <b>q${gate.control}</b> → Target <b>q${gate.target}</b> (${deg}°) ` +
+      `Control <b>q${gate.control}</b> → Target <b>q${gate.target}</b> (×ω<sup>${omegaPow}</sup>) ` +
       `<span class="ann-detail">&mdash; control=|${controlBit}⟩ → ${applied?'<b style="color:#00d4aa">applied</b>':'<b style="color:#666">no effect</b>'}</span>`;
   } else if (gate.type === 'SWAP') {
     el.innerHTML = `<span class="ann-gate swap-gate">SWAP</span> Swap <b>q${gate.q1}</b> ↔ <b>q${gate.q2}</b> ` +
@@ -1915,11 +2203,41 @@ function updateCircuitAnnotation() {
   }
 }
 
+function updateGateSummary() {
+  const el = document.getElementById('gateSummary');
+  if (!el || !sim) return;
+  const n = sim.n;
+  // Build block descriptions: q0 block, q1 block, ..., SWAPs
+  const blocks = [];
+  let stepIdx = 0;
+  for (let q = 0; q < n; q++) {
+    const blockSize = 1 + (n - q - 1);
+    const blockEnd = stepIdx + blockSize;
+    const gateNames = [`H`];
+    for (let k = 1; k < n - q; k++) gateNames.push(`R${k+1}`);
+    let cls = 'gs-pending';
+    if (currentStep >= blockEnd) cls = 'gs-done';
+    else if (currentStep > stepIdx) cls = 'gs-active';
+    blocks.push(`<span class="gs-block ${cls}">q${q}: ${gateNames.join('·')}</span>`);
+    stepIdx = blockEnd;
+  }
+  // SWAP block
+  const nSwaps = Math.floor(n / 2);
+  if (nSwaps > 0) {
+    let cls = 'gs-pending';
+    if (currentStep >= sim.steps.length) cls = 'gs-done';
+    else if (currentStep > stepIdx) cls = 'gs-active';
+    blocks.push(`<span class="gs-block ${cls}">${nSwaps > 1 ? nSwaps + '×' : ''}SWAP</span>`);
+  }
+  el.innerHTML = blocks.join('<span class="gs-sep">→</span>');
+}
+
 function updateUI() {
   document.getElementById('stepIndicator').textContent = `Step ${currentStep} / ${sim.steps.length}`;
   document.getElementById('explainText').innerHTML = getExplanation(sim, currentStep, inputX);
   updateProgressBar();
   updateCircuitAnnotation();
+  updateGateSummary();
   // Prev/Next disabled states
   document.getElementById('btnPrev').classList.toggle('nav-disabled', currentStep === 0);
   document.getElementById('btnNext').classList.toggle('nav-disabled', currentStep >= sim.steps.length);
@@ -1978,6 +2296,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === ' ') { e.preventDefault(); toggleAutoPlay(); }
   if (e.key === 'r' || e.key === 'R') { e.preventDefault(); stopAutoPlay(); stepTo(0); }
   if (e.key === 'e' || e.key === 'E') { e.preventDefault(); stopAutoPlay(); stepTo(sim.steps.length); }
+  if (e.key === 'd' || e.key === 'D') { e.preventDefault(); document.getElementById('btnDetail').click(); }
 });
 
 // Detailed explanation toggle
@@ -2017,10 +2336,13 @@ document.getElementById('circuitCanvas').addEventListener('click', (e) => {
     const gate = sim.steps[hit.gateIdx];
     const ann = document.getElementById('circuitAnnotation');
     if (gate.type === 'H') {
-      ann.innerHTML = `<span class="ann-gate h-gate">H</span> Hadamard on <b>q${gate.target}</b> — creates equal superposition with ±1 phases`;
+      const targetBit = (inputX >> (sim.n-1-gate.target)) & 1;
+      const halfN = sim.N / 2;
+      ann.innerHTML = `<span class="ann-gate h-gate">H</span> Hadamard on <b>q${gate.target}</b> — |${targetBit}⟩ → (|0⟩ + ω<sup>${targetBit===1?halfN:0}</sup>|1⟩)/√2`;
     } else if (gate.type === 'CR') {
-      const deg = (360/(1<<gate.m)).toFixed(1);
-      ann.innerHTML = `<span class="ann-gate cr-gate">CR${gate.m}</span> Control q${gate.control} → Target q${gate.target} — phase: 2π/${1<<gate.m} = ${deg}°`;
+      const omegaPow = sim.N / (1 << gate.m);
+      const controlBit = (inputX >> (sim.n-1-gate.control)) & 1;
+      ann.innerHTML = `<span class="ann-gate cr-gate">CR${gate.m}</span> Control q${gate.control} → Target q${gate.target} — ×ω<sup>${omegaPow}</sup> (${controlBit===1?'applied':'no effect, control=|0⟩'})`;
     } else if (gate.type === 'SWAP') {
       ann.innerHTML = `<span class="ann-gate swap-gate">SWAP</span> Swap q${gate.q1} ↔ q${gate.q2} — bit reversal correction`;
     }
@@ -2043,8 +2365,10 @@ document.getElementById('stateCanvas').addEventListener('click', (e) => {
     const mag = C.mag(c), phase = C.phase(c);
     const deg = ((phase*180/Math.PI)+360)%360;
     const piFrac = formatPhaseAsFraction(phase);
+    const omP = phaseToOmegaPower(phase, sim.N);
+    const omStr = omP !== null ? ` = ${omP === 0 ? '1' : omP === 1 ? 'ω' : 'ω<sup>' + omP + '</sup>'}` : '';
     readout.innerHTML = `<b>|${hit.idx.toString(2).padStart(sim.n,'0')}⟩</b> (${hit.idx}) &mdash; ` +
-      `Amplitude: ${mag.toFixed(4)}, Phase: ${deg.toFixed(1)}°${piFrac ? ' = '+piFrac : ''}, ` +
+      `Amplitude: ${mag.toFixed(4)}, Phase: ${deg.toFixed(1)}°${piFrac ? ' = '+piFrac : ''}${omStr}, ` +
       `Complex: ${c[0].toFixed(4)} ${c[1]>=0?'+':''}${c[1].toFixed(4)}i`;
     readout.classList.add('visible');
   } else {
@@ -2206,10 +2530,118 @@ document.querySelectorAll('.panel h2').forEach(h2 => {
   draw();
 })();
 
-// Boot
-updateSpeedLabel();
-init();
+// Scroll progress bar
+window.addEventListener('scroll', () => {
+  const el = document.getElementById('scroll-progress');
+  if (!el) return;
+  const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+  const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  el.style.width = scrollHeight > 0 ? (scrollTop / scrollHeight * 100) + '%' : '0%';
+});
+
+// =====================================================================
+// R Gate Reference Section (static, at bottom of page)
+// =====================================================================
+function buildRGateReference() {
+  const container = document.getElementById('rgateRef');
+  if (!container) return;
+  const n = sim.n, N = sim.N;
+
+  // Build the R gate table rows
+  let tableRows = '';
+  for (let k = 2; k <= Math.max(n, 4); k++) {
+    const angle = 360 / (1 << k);
+    const omPow = N / (1 << k);
+    const inCircuit = k <= n;
+    const dimStyle = inCircuit ? '' : ' style="opacity:0.35"';
+    const omStr = omPow === Math.floor(omPow) ? `ω<sup>${omPow}</sup>` : `e<sup>2πi/${1 << k}</sup>`;
+    const badge = inCircuit
+      ? `<span style="color:var(--green);font-size:0.75rem">used</span>`
+      : `<span style="color:var(--dim);font-size:0.75rem">—</span>`;
+    tableRows += `<tr${dimStyle}>
+      <td style="color:var(--accent2);font-weight:600">R<sub>${k}</sub></td>
+      <td>2π / 2<sup>${k}</sup> = <span style="color:var(--highlight)">${angle < 1 ? angle.toFixed(2) : angle.toFixed(1)}°</span></td>
+      <td style="font-family:'Cambria Math',serif">${omStr}</td>
+      <td><span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--dim)">[1, 0; 0, e<sup>2πi/${1<<k}</sup>]</span></td>
+      <td>${badge}</td>
+    </tr>`;
+  }
+
+  // Build the qubit block breakdown
+  let blocksHtml = '';
+  for (let q = 0; q < n; q++) {
+    const gates = ['<span style="color:var(--accent)">H</span>'];
+    const bits = [`x<sub>${q}</sub>`];
+    for (let k = 1; k < n - q; k++) {
+      gates.push(`<span style="color:var(--accent2)">R<sub>${k+1}</sub></span>`);
+      bits.push(`x<sub>${q+k}</sub>`);
+    }
+    blocksHtml += `<div style="margin-bottom:8px">
+      <span style="color:var(--accent2);font-weight:700">q${q}:</span>
+      ${gates.join(' → ')}
+      <span style="color:var(--dim);font-size:0.82rem;margin-left:8px">encodes bits ${bits.join(', ')}</span>
+      <span style="color:var(--dim);font-size:0.82rem"> → phase = 2π × 0.${bits.join('')}</span>
+    </div>`;
+  }
+
+  container.innerHTML = `<div class="rgate-card">
+    <h2>The Controlled-Rotation Gates (R<sub>k</sub>)</h2>
+    <div class="rgate-grid">
+      <div class="rgate-section">
+        <h3>Definition</h3>
+        <p style="font-size:0.9rem;color:var(--text);line-height:1.7;margin-bottom:10px">
+          The <b style="color:var(--accent2)">R<sub>k</sub></b> gate applies a phase rotation of
+          <span style="color:var(--highlight);font-family:'Cambria Math',serif">e<sup>2πi/2<sup>k</sup></sup></span>
+          to the |1⟩ component, leaving |0⟩ unchanged.
+        </p>
+        <div class="rgate-matrix">
+          R<sub>k</sub> = <span style="color:var(--dim)">│</span> 1 &nbsp;&nbsp; 0 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--dim)">│</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--dim)">│</span> 0 &nbsp;&nbsp; <span style="color:var(--highlight)">e<sup>2πi/2<sup>k</sup></sup></span> <span style="color:var(--dim)">│</span>
+        </div>
+        <p style="font-size:0.85rem;color:var(--dim);line-height:1.7;margin-top:10px">
+          When used as a <b>controlled</b> gate, the phase is applied only when both the control qubit <i>and</i> the target qubit are |1⟩.
+          This conditional phase is what builds up the binary fraction encoding.
+        </p>
+      </div>
+      <div class="rgate-section">
+        <h3>Gate Table (N = ${N})</h3>
+        <table class="rgate-table">
+          <tr><th>Gate</th><th>Angle</th><th>ω Power</th><th>Matrix</th><th></th></tr>
+          ${tableRows}
+        </table>
+      </div>
+    </div>
+
+    <div style="margin-top:20px">
+      <h3 style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--dim);margin-bottom:10px;font-weight:600">
+        Circuit Block Structure (${n} qubits)
+      </h3>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.88rem;line-height:1.8;padding:12px 16px;background:var(--panel2);border-radius:10px;border:1px solid var(--border)">
+        ${blocksHtml}
+      </div>
+    </div>
+
+    <div class="rgate-insight">
+      <b>Key insight — the precision cascade:</b> Each successive R gate halves the rotation angle.
+      The Hadamard (H) provides the coarsest encoding (180° for bit = 1), R<sub>2</sub> adds 90° precision,
+      R<sub>3</sub> adds 45°, and so on. This geometric progression is what builds the binary fraction
+      <span style="font-family:'Cambria Math',serif;color:var(--highlight)">2π × 0.x<sub>q+1</sub>x<sub>q+2</sub>…x<sub>n</sub></span>
+      — exactly one bit of precision per gate.
+      This is why the QFT only needs O(n²) gates: each of the n qubits needs at most n gates to accumulate its full phase.
+    </div>
+  </div>`;
+}
+
+// Boot — defer until DOM is ready so #rgateRef exists
+document.addEventListener('DOMContentLoaded', () => {
+  updateSpeedLabel();
+  init();
+  buildRGateReference();
+});
 </script>
+<!-- R Gate Reference Section -->
+<div class="rgate-ref" id="rgateRef"></div>
+
 <footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
   <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
   <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>

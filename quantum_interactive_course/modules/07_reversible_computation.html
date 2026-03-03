@@ -549,6 +549,42 @@
   }
   .hidden { display: none !important; }
 
+  /* Light theme */
+  :root[data-theme="light"] {
+    --bg: #f5f6fa;
+    --surface: #ffffff;
+    --surface2: #eef0f5;
+    --border: #d0d5e0;
+    --text: #1a1d27;
+    --text-dim: #5a5e70;
+    --accent-glow: rgba(99,102,241,0.15);
+    --cyan-glow: rgba(34,211,238,0.12);
+    --pink-glow: rgba(244,114,182,0.12);
+    --green-glow: rgba(52,211,153,0.12);
+  }
+  :root[data-theme="light"] .card { background: #fff; }
+  :root[data-theme="light"] .interactive { background: #fff; }
+  :root[data-theme="light"] .math-block { background: rgba(0,0,0,0.03); }
+  :root[data-theme="light"] .insight { background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(34,211,238,0.03)); }
+  :root[data-theme="light"] .warning-box { background: linear-gradient(135deg, rgba(248,113,113,0.04), rgba(251,146,60,0.03)); }
+  :root[data-theme="light"] .truth-table td { background: rgba(0,0,0,0.02); }
+  :root[data-theme="light"] .truth-table tr:hover td { background: rgba(99,102,241,0.04); }
+
+  #theme-toggle {
+    position: fixed; top: 1.2rem; right: 1.5rem; z-index: 1001;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(17,24,39,0.7); border: 1px solid rgba(42,53,80,0.5);
+    color: var(--text-dim); font-size: 1.15rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: all 0.2s; font-family: inherit;
+  }
+  #theme-toggle:hover { color: var(--text); border-color: var(--accent); }
+  :root[data-theme="light"] #theme-toggle {
+    background: rgba(255,255,255,0.85);
+    border-color: var(--border);
+  }
+
   /* Scroll animations */
   @keyframes slideIn {
     from { opacity: 0; transform: translateY(20px); }
@@ -597,6 +633,7 @@
 <body>
 
 <canvas id="particleBg"></canvas>
+<button id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle light/dark theme"></button>
 <a href="../index.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:1000;display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-dim,#8892a8);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;background:rgba(17,24,39,0.7);border:1px solid rgba(42,53,80,0.5);backdrop-filter:blur(8px);transition:all 0.2s;" onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#6366f1'" onmouseout="this.style.color='#8892a8';this.style.borderColor='rgba(42,53,80,0.5)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Course Home</a>
 
 <!-- ======================= HEADER ======================= -->
@@ -751,7 +788,7 @@
     <div style="text-align:center">
       <button class="apply-twice-btn" id="apply-twice-btn">Apply U<sub>f</sub> a second time</button>
     </div>
-    <div class="apply-msg" id="apply-msg"></div>
+    <div class="apply-msg" id="apply-msg" aria-live="polite"></div>
   </div>
 </section>
 
@@ -808,6 +845,7 @@
 
     <div class="tab-group" id="garbage-demo-tabs"></div>
     <div id="garbage-demo-content"></div>
+    <div class="kbd-hint"><kbd>&larr;</kbd> <kbd>&rarr;</kbd> step through</div>
   </div>
 </section>
 
@@ -882,11 +920,11 @@
       <canvas id="circuitCanvas"></canvas>
     </div>
 
-    <div class="gate-label" id="bennett-gate-label"></div>
+    <div class="gate-label" id="bennett-gate-label" aria-live="polite"></div>
 
     <div class="register-grid" id="bennett-registers"></div>
 
-    <div class="garbage-counter" id="garbage-counter">
+    <div class="garbage-counter" id="garbage-counter" aria-live="polite">
       <span>Garbage bits (non-zero ancillae):</span>
       <span class="count" id="garbage-count">0</span>
     </div>
@@ -1227,7 +1265,7 @@ function renderGateExplorer() {
     </div>
     <p style="font-size:0.88rem; margin-bottom:0.5rem;">
       <strong>${gate.label}</strong> : ${inputs[0].length}-bit input &rarr; ${uniqueOutputs[0].length}-bit output
-      <br><span style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:0.82rem">f(${inputs[0].length > 2 ? 'a,b,c' : 'a,b'}) = ${gate.notation}</span>
+      <br><span style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:0.82rem">f(${inputs[0].length === 1 ? 'a' : inputs[0].length === 2 ? 'a,b' : 'a,b,c'}) = ${gate.notation}</span>
     </p>
     <p style="font-size:0.88rem; color:var(--text-dim)">
       <strong>${inputs.length}</strong> possible inputs &rarr;
@@ -1240,7 +1278,7 @@ function renderGateExplorer() {
   // Truth table
   const nIn = inputs[0].length;
   const nOut = uniqueOutputs[0].length;
-  const inLabels = nIn === 3 ? ['a','b','c'] : ['a','b'];
+  const inLabels = nIn === 3 ? ['a','b','c'] : nIn === 2 ? ['a','b'] : ['a'];
   const outLabels = nOut > 1 ? (nOut === 3 ? ['a\'','b\'','c\''] : ['a\'','b\'']) : ['out'];
 
   let tt = '<table class="truth-table"><thead><tr>';
@@ -1423,17 +1461,7 @@ const bennettFunctions = {
     regDescriptions: ['input bit','input bit','input bit','ancilla for a\u2227b','ancilla for a\u2227c','ancilla for b\u2227c','work register','output register'],
     computeSteps(a, b, c) {
       const t1 = a & b, t2 = a & c, t3 = b & c;
-      const w1 = t1, w2 = t1 ^ t2, w3 = t1 ^ t2 ^ t3;
-      const f = (t1 | t2 | t3) ? 1 : 0; // majority = (ab + ac + bc) >= 1 means at least 2 of 3
-      // Actually majority(a,b,c) = (a&b) | (a&c) | (b&c) = (a&b) ^ (a&c) ^ (b&c) ^ (a&b&c&...)
-      // But simpler: majority = (a&b) XOR (a&c) XOR (b&c) XOR ((a&b)&(a&c)) ... no
-      // Actually: majority = ab + ac + bc - 2abc. Over GF(2): ab XOR ac XOR bc XOR abc... no that's wrong too
-      // Let me think: ab XOR ac XOR bc = ab + ac + bc mod 2. For majority we need ab OR ac OR bc.
-      // For 3-input majority: output 1 if at least 2 are 1.
-      // Using XOR of all pairwise ANDs: ab^ac^bc. Let's check:
-      // (1,1,0): 1^0^0=1 OK, (1,0,1): 0^1^0=1 OK, (0,1,1): 0^0^1=1 OK, (1,1,1): 1^1^1=1 OK
-      // (1,0,0): 0^0^0=0 OK, (0,1,0): 0^0^0=0 OK, (0,0,1): 0^0^0=0 OK, (0,0,0): 0 OK
-      // So majority(a,b,c) = (a&b) XOR (a&c) XOR (b&c).
+      // majority(a,b,c) = (a&b) XOR (a&c) XOR (b&c)
       const fv = t1 ^ t2 ^ t3;
       return [
         {regs:[a,b,c,0,0,0,0,0], gate:'Initial state', phase:'initial', changed:[], short:'Init'},
@@ -1810,6 +1838,11 @@ function drawCircuit(activeStep) {
   }
 }
 
+// =================== RESIZE HANDLER ===================
+window.addEventListener('resize', () => {
+  try { drawCircuit(bennettStepIdx); } catch(e) {}
+});
+
 // =================== KEYBOARD ACCESSIBILITY ===================
 document.addEventListener('keydown', (e) => {
   if (e.target.classList.contains('bit-toggle') && (e.key === 'Enter' || e.key === ' ')) {
@@ -1824,10 +1857,35 @@ document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
   if (e.target.tagName === 'BUTTON' || e.target.classList.contains('bit-toggle')) return;
 
+  // Check which interactive section is most visible
+  const garbageSection = document.getElementById('garbage');
   const bennettSection = document.getElementById('bennett');
-  const rect = bennettSection.getBoundingClientRect();
-  const visible = rect.top < window.innerHeight && rect.bottom > 0;
-  if (!visible) return;
+  const gRect = garbageSection.getBoundingClientRect();
+  const bRect = bennettSection.getBoundingClientRect();
+  const gVisible = gRect.top < window.innerHeight && gRect.bottom > 0;
+  const bVisible = bRect.top < window.innerHeight && bRect.bottom > 0;
+
+  // Prefer whichever section is more centered in viewport
+  const vCenter = window.innerHeight / 2;
+  const gDist = Math.abs((gRect.top + gRect.bottom) / 2 - vCenter);
+  const bDist = Math.abs((bRect.top + bRect.bottom) / 2 - vCenter);
+  const useGarbage = gVisible && (!bVisible || gDist < bDist);
+
+  if (useGarbage) {
+    const scenario = garbageDemoScenarios[garbageDemoMode];
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      garbageDemoStep = Math.min(scenario.states.length - 1, garbageDemoStep + 1);
+      renderGarbageDemo();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      garbageDemoStep = Math.max(0, garbageDemoStep - 1);
+      renderGarbageDemo();
+    }
+    return;
+  }
+
+  if (!bVisible) return;
 
   if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
     e.preventDefault();
@@ -2109,6 +2167,27 @@ function showQuizScore() {
 
 function resetQuiz() { buildQuiz(); }
 
+// =================== THEME TOGGLE ===================
+const themeBtn = document.getElementById('theme-toggle');
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  themeBtn.textContent = theme === 'light' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+  themeBtn.title = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+  // Redraw circuit with new theme
+  try { drawCircuit(bennettStepIdx); } catch(e) {}
+}
+themeBtn.addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  try { localStorage.setItem('module07-theme', next); } catch(e) {}
+  applyTheme(next);
+});
+try {
+  const saved = localStorage.getItem('module07-theme');
+  if (saved) applyTheme(saved);
+  else themeBtn.textContent = '\uD83C\uDF19';
+} catch(e) { themeBtn.textContent = '\uD83C\uDF19'; }
+
 // =================== INIT ===================
 document.addEventListener('DOMContentLoaded', () => {
   initGateExplorer();
@@ -2120,6 +2199,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+  <nav style="display:flex;justify-content:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+    <a href="06_multi_qubit_systems.html" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1.1rem;border-radius:8px;background:var(--surface,#111827);border:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);text-decoration:none;font-size:0.85rem;font-weight:500;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent,#6366f1)';this.style.color='var(--text,#e2e8f0)'" onmouseout="this.style.borderColor='var(--border,#2a3550)';this.style.color='var(--text-dim,#8892a8)'">&larr; Multi-Qubit Systems</a>
+    <a href="08_teleportation.html" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1.1rem;border-radius:8px;background:var(--surface,#111827);border:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);text-decoration:none;font-size:0.85rem;font-weight:500;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent,#6366f1)';this.style.color='var(--text,#e2e8f0)'" onmouseout="this.style.borderColor='var(--border,#2a3550)';this.style.color='var(--text-dim,#8892a8)'">Teleportation &rarr;</a>
+  </nav>
   <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
   <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
 </footer>

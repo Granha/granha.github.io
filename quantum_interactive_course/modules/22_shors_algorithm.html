@@ -41,6 +41,7 @@
   }
   header {
     text-align: center; padding: 24px 20px 16px;
+    padding-top: 48px;
     position: relative;
   }
   header::after {
@@ -94,7 +95,7 @@
   /* Main Content */
   #main { flex: 1; display: flex; flex-direction: column; max-width: 1100px; width: 100%; margin: 0 auto; padding: 20px; }
   #viz-area {
-    flex: 1; min-height: 360px; background: var(--surface);
+    min-height: 280px; background: var(--surface);
     border: 1px solid var(--border); border-radius: 16px;
     padding: 24px; position: relative; overflow: hidden;
     transition: border-color 0.3s;
@@ -159,14 +160,22 @@
     padding: 12px 14px; border-radius: 10px; font-weight: 600;
     font-size: 0.9em; text-align: center; min-width: 100px;
     border: 2px solid; transition: all 0.4s; opacity: 0;
-    animation: flowIn 0.5s forwards; flex-shrink: 0;
+    animation: flowBoxIn 0.5s ease-out forwards; flex-shrink: 0;
+    transform: scale(0.85) translateY(8px);
   }
   .flow-box.classical { background: rgba(63,185,80,0.1); border-color: var(--green); color: var(--green); }
   .flow-box.quantum { background: rgba(188,140,255,0.1); border-color: var(--purple); color: var(--purple); }
   .flow-box.result { background: rgba(248,120,174,0.1); border-color: var(--pink); color: var(--pink); }
   .flow-box.input { background: rgba(88,166,255,0.1); border-color: var(--blue); color: var(--blue); }
-  .flow-arrow { font-size: 1.5em; color: var(--text-dim); margin: 0 6px; opacity: 0; animation: flowIn 0.3s forwards; }
-  @keyframes flowIn { to { opacity: 1; } }
+  .flow-arrow { font-size: 1.5em; color: var(--text-dim); margin: 0 6px; opacity: 0; animation: flowArrowIn 0.4s ease-out forwards; }
+  @keyframes flowBoxIn {
+    from { opacity: 0; transform: scale(0.85) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes flowArrowIn {
+    from { opacity: 0; transform: translateX(-6px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
 
   /* Bar Chart */
   .bar-chart-container { margin: 10px 0; }
@@ -175,7 +184,7 @@
   /* Parameter Selector */
   .param-section { margin: 16px 0; }
   .param-label { font-size: 0.85em; color: var(--text-dim); margin-bottom: 8px; display: block; }
-  .param-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+  .param-grid { display: flex; gap: 10px; flex-wrap: wrap; }
   .param-btn {
     padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border);
     background: var(--surface2); color: var(--text); cursor: pointer;
@@ -199,11 +208,14 @@
     width: 60px; height: 54px; display: flex; flex-direction: column;
     align-items: center; justify-content: center; border-radius: 6px;
     font-size: 0.75em; border: 2px solid transparent;
-    transition: all 0.3s; opacity: 0; animation: cellIn 0.3s forwards;
+    transition: all 0.3s; opacity: 0; animation: cellIn 0.35s ease-out forwards;
   }
   .period-cell .x-val { color: var(--text-dim); font-size: 0.85em; }
   .period-cell .fx-val { font-weight: 700; font-size: 1.25em; }
-  @keyframes cellIn { to { opacity: 1; } }
+  @keyframes cellIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+  }
 
   /* Circuit Diagram */
   .circuit {
@@ -213,12 +225,12 @@
   }
   .circuit-register { display: flex; align-items: center; position: relative; }
   .circuit-label {
-    width: 100px; font-size: 0.8em; color: var(--text-dim);
-    text-align: right; padding-right: 12px; flex-shrink: 0;
+    width: 110px; font-size: 0.85em; color: var(--text-dim);
+    text-align: right; padding-right: 14px; flex-shrink: 0;
   }
-  .circuit-label strong { color: var(--text); display: block; }
+  .circuit-label strong { color: var(--text); display: block; font-size: 1.05em; }
   .circuit-wire {
-    flex: 1; height: 50px; display: flex; align-items: center;
+    flex: 1; height: 58px; display: flex; align-items: center;
     position: relative;
   }
   .circuit-wire::before {
@@ -227,27 +239,33 @@
   }
   .wire-ket {
     position: relative; z-index: 1; background: var(--bg);
-    padding: 2px 6px; font-family: 'JetBrains Mono', 'Georgia', serif; font-size: 0.9em;
+    padding: 3px 8px; font-family: 'JetBrains Mono', 'Georgia', serif; font-size: 0.95em;
     color: var(--cyan);
   }
   .circuit-gate {
-    position: relative; z-index: 1; padding: 8px 16px;
-    border-radius: 6px; font-size: 0.8em; font-weight: 600;
-    text-align: center; border: 2px solid; margin: 0 12px;
+    position: relative; z-index: 1; padding: 10px 18px;
+    border-radius: 8px; font-size: 0.88em; font-weight: 600;
+    text-align: center; border: 2px solid; margin: 0 14px;
     transition: all 0.3s; background: var(--bg);
   }
   .circuit-gate.h-gate { border-color: var(--blue); color: var(--blue); }
-  .circuit-gate.oracle-gate { border-color: var(--purple); color: var(--purple); min-width: 70px; }
+  .circuit-gate.oracle-gate { border-color: var(--purple); color: var(--purple); min-width: 80px; }
   .circuit-gate.qft-gate { border-color: var(--orange); color: var(--orange); }
   .circuit-gate.measure-gate { border-color: var(--pink); color: var(--pink); }
   .circuit-gate.active-gate {
     box-shadow: 0 0 20px var(--accent-glow);
     transform: scale(1.08);
+    animation: gateActivate 0.4s ease-out;
+  }
+  @keyframes gateActivate {
+    0% { transform: scale(1); box-shadow: none; }
+    50% { transform: scale(1.14); }
+    100% { transform: scale(1.08); box-shadow: 0 0 20px var(--accent-glow); }
   }
   .circuit-spacer { width: 60px; display: inline-block; margin: 0 12px; }
   .circuit-separator {
     border: none; border-top: 1px dashed var(--border);
-    margin: 4px 100px 4px 100px;
+    margin: 6px 110px 6px 110px;
   }
   .circuit-brace {
     position: absolute; right: -30px; top: 0; bottom: 0;
@@ -259,9 +277,9 @@
     display: flex; justify-content: center; gap: 8px; margin: 12px 0;
   }
   .substep-btn {
-    padding: 6px 16px; border-radius: 6px; border: 1px solid var(--border);
+    padding: 8px 18px; border-radius: 6px; border: 1px solid var(--border);
     background: var(--surface2); color: var(--text-dim); cursor: pointer;
-    font-family: 'Inter', sans-serif; font-size: 0.8em; font-weight: 500;
+    font-family: 'Inter', sans-serif; font-size: 0.85em; font-weight: 500;
     transition: all 0.25s;
   }
   .substep-btn:hover { border-color: var(--accent); color: var(--text); }
@@ -307,10 +325,23 @@
   .factor-reveal .times { color: var(--orange); margin: 0 8px; }
   @keyframes factorPulse {
     0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.02); }
+    50% { transform: scale(1.04); }
+  }
+  .factor-reveal .big-equation {
+    animation: equationReveal 0.8s 0.3s ease-out both;
+  }
+  .factor-reveal .factor-success-msg {
+    animation: fadeIn 0.5s 0.8s ease-out both;
+  }
+  @keyframes equationReveal {
+    0% { opacity: 0; transform: scale(0.8); letter-spacing: 0.15em; }
+    60% { opacity: 1; transform: scale(1.04); }
+    100% { opacity: 1; transform: scale(1); letter-spacing: normal; }
   }
 
   .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+  .info-grid > .info-card:nth-child(1) { animation: fadeIn var(--anim-med) 0.15s ease both; }
+  .info-grid > .info-card:nth-child(2) { animation: fadeIn var(--anim-med) 0.25s ease both; }
   .info-card {
     padding: 16px; background: var(--bg); border-radius: 10px;
     border: 1px solid var(--border); position: relative; overflow: hidden;
@@ -382,14 +413,14 @@
 
   /* Overview */
   .overview-wrapper { text-align: center; padding: 10px 0; }
-  .overview-subtitle { font-size: 1.1em; color: var(--text-dim); margin-bottom: 20px; }
-  .overview-bars-title { font-size: 0.85em; color: var(--text-dim); margin-bottom: 12px; text-align: center; }
-  .overview-bars-note { font-size: 0.7em; color: var(--text-dim); text-align: center; margin-top: 4px; }
-  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-  .bar-label { width: 130px; text-align: right; font-size: 0.78em; color: var(--text-dim); flex-shrink: 0; }
-  .bar-track { flex: 1; height: 26px; background: var(--surface2); border-radius: 6px; overflow: hidden; position: relative; }
+  .overview-subtitle { font-size: 1.15em; color: var(--text-dim); margin-bottom: 24px; line-height: 1.5; }
+  .overview-bars-title { font-size: 0.9em; color: var(--text-dim); margin-bottom: 14px; text-align: center; font-weight: 500; }
+  .overview-bars-note { font-size: 0.72em; color: var(--text-dim); text-align: center; margin-top: 6px; }
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .bar-label { width: 140px; text-align: right; font-size: 0.82em; color: var(--text-dim); flex-shrink: 0; }
+  .bar-track { flex: 1; height: 32px; background: var(--surface2); border-radius: 6px; overflow: hidden; position: relative; }
   .bar-fill { height: 100%; border-radius: 6px; animation: barGrow 1s ease-out forwards; transform-origin: left; }
-  .bar-note { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.72em; color: var(--text); }
+  .bar-note { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.78em; color: var(--text); font-weight: 500; }
 
   /* Callout */
   .callout-orange {
@@ -401,9 +432,9 @@
 
   /* Chart canvases */
   .chart-canvas { width: 100%; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); display: block; }
-  .chart-canvas-sm { height: 120px; }
-  .chart-canvas-md { height: 160px; }
-  .chart-canvas-lg { height: 200px; }
+  .chart-canvas-sm { height: 150px; }
+  .chart-canvas-md { height: 190px; }
+  .chart-canvas-lg { height: 240px; }
 
   /* Period indicator */
   .period-indicator { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
@@ -425,9 +456,20 @@
     border-radius: 4px; background: var(--surface2);
     border: 1px solid var(--border); color: var(--text-dim);
     cursor: pointer; transition: all 0.2s;
+    animation: pillIn 0.3s ease-out both;
   }
   .measure-pill.latest {
     background: rgba(247,120,186,0.15); border-color: var(--pink); color: var(--pink);
+    animation: pillLatest 0.4s ease-out both;
+  }
+  @keyframes pillIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes pillLatest {
+    0% { opacity: 0; transform: scale(0.7); }
+    60% { opacity: 1; transform: scale(1.1); }
+    100% { opacity: 1; transform: scale(1); }
   }
   .measure-confirm { margin-top: 6px; }
 
@@ -443,6 +485,13 @@
   .recap-title { color: var(--accent); margin-bottom: 10px; }
   .recap-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 0.88em; line-height: 1.6; }
   .recap-step { font-weight: 600; }
+  .recap-grid > * { animation: fadeIn var(--anim-med) ease both; }
+  .recap-grid > *:nth-child(1), .recap-grid > *:nth-child(2) { animation-delay: 0.05s; }
+  .recap-grid > *:nth-child(3), .recap-grid > *:nth-child(4) { animation-delay: 0.1s; }
+  .recap-grid > *:nth-child(5), .recap-grid > *:nth-child(6) { animation-delay: 0.15s; }
+  .recap-grid > *:nth-child(7), .recap-grid > *:nth-child(8) { animation-delay: 0.2s; }
+  .recap-grid > *:nth-child(9), .recap-grid > *:nth-child(10) { animation-delay: 0.25s; }
+  .recap-grid > *:nth-child(11), .recap-grid > *:nth-child(12) { animation-delay: 0.3s; }
 
   /* Intuition */
   .intuition { color: var(--text-dim); font-size: 0.9em; margin-top: 8px; }
@@ -455,10 +504,21 @@
   :focus:not(:focus-visible) { outline: none; }
 
   /* Hover: period cells */
+  .period-cell { cursor: pointer; }
   .period-cell:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     border-color: var(--text-dim) !important;
+  }
+  .period-cell.highlight-match {
+    border-color: var(--cyan) !important;
+    box-shadow: 0 0 10px var(--cyan-glow);
+    transform: scale(1.06);
+  }
+  .period-cell.highlight-dim { opacity: 0.35; }
+  .period-table-hint {
+    font-size: 0.78em; color: var(--text-dim); text-align: center;
+    margin-top: 4px; opacity: 0.7;
   }
 
   /* Hover: info cards */
@@ -544,12 +604,12 @@
 
   /* Wave interference canvas */
   .wave-canvas-container { margin-top: 12px; }
-  .wave-legend { display: flex; justify-content: center; gap: 16px; font-size: 0.78em; color: var(--text-dim); margin-top: 6px; }
+  .wave-legend { display: flex; justify-content: center; gap: 16px; font-size: 0.84em; color: var(--text-dim); margin-top: 8px; }
   .wave-legend-item { display: flex; align-items: center; gap: 4px; }
   .wave-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
   /* Period scatter canvas */
-  .chart-canvas-scatter { height: 140px; }
+  .chart-canvas-scatter { height: 170px; }
 
   /* CF tree */
   .cf-tree-container { margin: 16px 0; }
@@ -580,6 +640,11 @@
   .expandable-section summary::-webkit-details-marker { display: none; }
   .expandable-section .expand-body {
     padding: 16px; line-height: 1.7; font-size: 0.92em;
+    animation: expandOpen 0.3s ease-out;
+  }
+  @keyframes expandOpen {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   /* Keyboard hints bar */
@@ -665,6 +730,56 @@
     .measure-pill { min-height: 40px; padding: 8px 14px; }
   }
 
+  /* Module navigation footer */
+  .module-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 0;
+    margin-top: 2rem;
+    border-top: 1px solid var(--border);
+    max-width: 1100px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .module-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  .module-nav a:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: var(--accent);
+  }
+  .module-nav .nav-label {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .module-nav .nav-title { font-size: 0.9rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .factor-reveal { animation: none; }
+  }
+
   /* Particle background canvas */
   #particleBg {
     position: fixed;
@@ -688,7 +803,7 @@
 
 <div id="main">
   <div id="viz-area"></div>
-  <div id="explanation"></div>
+  <div id="explanation" aria-live="polite"></div>
   <div id="nav">
     <button class="nav-btn" id="btn-prev">&#9664; Back</button>
     <span id="step-counter"></span>
@@ -896,7 +1011,7 @@ function renderNav() {
   if (isLast) {
     btnNext.textContent = 'Start Over \u21BB';
     btnNext.disabled = false;
-    btnNext.classList.remove('primary');
+    btnNext.classList.add('primary');
     btnNext.dataset.navAction = 'start-over';
   } else {
     btnNext.textContent = S.step === STEPS.length - 2 ? 'Reveal Factors!' : 'Next \u25B6';
@@ -922,7 +1037,8 @@ function renderOverview() {
   v.innerHTML = `
     <div class="overview-wrapper">
       <div class="overview-subtitle">
-        Given a large composite number <span class="math">N</span>, find its prime factors
+        Given a large number <span class="math">N</span>, find its prime factors<br>
+        <span style="font-size:0.85em; color:var(--text-dim);">The problem that secures most internet encryption</span>
       </div>
       <div class="flow">
         <div class="flow-box input" style="animation-delay:0s">N = ???</div>
@@ -939,11 +1055,17 @@ function renderOverview() {
         <div class="info-card">
           <h4>Classical Part</h4>
           <div class="card-desc color-green">Random choice + GCD + number theory</div>
+          <div class="text-dim text-xs mt-8">Pick a random <span class="math">a</span>, then extract factors from the period</div>
         </div>
         <div class="info-card">
           <h4>Quantum Part</h4>
           <div class="card-desc color-purple">Period finding via QFT &mdash; exponential speedup</div>
+          <div class="text-dim text-xs mt-8">Find the period of <span class="math">a<sup>x</sup> mod N</span> using interference</div>
         </div>
+      </div>
+      <div class="callout-orange mt-16 max-w-600 mx-auto" style="text-align:left;">
+        <strong>Key Insight:</strong> Factoring reduces to finding the <em>period</em> of modular exponentiation.
+        Classical computers need exponential time to find this period, but quantum computers can do it in polynomial time using the QFT.
       </div>
       <div class="mt-24 max-w-600 mx-auto">
         <div class="overview-bars-title">
@@ -974,7 +1096,15 @@ function renderOverview() {
     <p>Peter Shor showed in 1994 that a quantum computer can factor <span class="math">N</span> in
     <span class="math">O((log N)<sup>3</sup>)</span> time, an <span class="highlight">exponential speedup</span>
     over the best known classical algorithms.</p>
-    <p>The key insight: factoring reduces to <strong>period finding</strong>, and quantum computers excel at finding periods via the <strong>Quantum Fourier Transform</strong>.</p>
+    <p>The algorithm has three big ideas:</p>
+    <ol class="step-list">
+      <li><strong>Reduction:</strong> Factoring <span class="math">N</span> reduces to finding the <em>period</em> of
+      <span class="math">f(x) = a<sup>x</sup> mod N</span>. Once the period <span class="math">r</span> is known,
+      simple algebra (difference of squares) extracts the factors.</li>
+      <li><strong>Quantum speedup:</strong> A quantum computer finds the period using superposition and the QFT,
+      turning an exponentially hard search into a polynomial-time computation.</li>
+      <li><strong>Classical post-processing:</strong> Continued fractions and GCD recover the factors from the quantum measurement.</li>
+    </ol>
     <div class="callout-orange">
       <strong>Real-world significance:</strong>
       RSA-2048, used to secure most internet traffic, relies on the difficulty of
@@ -1033,13 +1163,20 @@ function renderSetup() {
       </div>
     </div>`;
 
+  const gcdAN = gcd(S.a, S.N);
   expl().innerHTML = `<h3>Step 1: Classical Setup</h3>
-    <p>We want to factor <span class="math">N = ${S.N}</span>. First, pick a random integer
-    <span class="math">a</span> with <span class="math">1 &lt; a &lt; N</span>.</p>
-    <p>Check <span class="math">gcd(a, N)</span>. If it's greater than 1, we already found a factor! (Lucky case.)
-    Otherwise, <span class="math">a</span> and <span class="math">N</span> are coprime, and we proceed to quantum period finding.</p>
-    <p>Currently: <span class="math">a = ${S.a}</span>, <span class="math">gcd(${S.a}, ${S.N}) = ${gcd(S.a, S.N)}</span>
-    ${gcd(S.a, S.N) === 1 ? '&mdash; coprime, we proceed to quantum period finding.' : '&mdash; <span class="highlight">not coprime! We found a factor directly.</span>'}</p>`;
+    <p>We want to factor <span class="math">N = ${S.N}</span>. The first step is entirely classical:</p>
+    <ol class="step-list">
+      <li>Pick a random integer <span class="math">a</span> with <span class="math">1 &lt; a &lt; N</span>.</li>
+      <li>Compute <span class="math">gcd(a, N)</span>. If it's greater than 1, then <span class="math">a</span> and <span class="math">N</span>
+      share a common factor &mdash; we've found a factor of <span class="math">N</span> without any quantum computation! (This is rare for large <span class="math">N</span>.)</li>
+      <li>If <span class="math">gcd(a, N) = 1</span>, then <span class="math">a</span> and <span class="math">N</span> are <strong>coprime</strong>,
+      and the function <span class="math">f(x) = a<sup>x</sup> mod N</span> is guaranteed to be periodic. We proceed to
+      quantum period finding.</li>
+    </ol>
+    <p>Currently: <span class="math">a = ${S.a}</span>, <span class="math">gcd(${S.a}, ${S.N}) = ${gcdAN}</span>
+    ${gcdAN === 1 ? '&mdash; coprime, so the function <span class="math">' + S.a + '<sup>x</sup> mod ' + S.N + '</span> has a well-defined period. Let&rsquo;s find it!' : '&mdash; <span class="highlight">not coprime! gcd gives us a factor directly: ' + gcdAN + '</span>'}</p>
+    <p class="text-dim text-sm">Try clicking the <span style="color:var(--red)">red-marked</span> values of <span class="math">a</span> above to see what happens when <span class="math">a</span> shares a factor with <span class="math">N</span>.</p>`;
 }
 
 function factorHint(n) {
@@ -1049,15 +1186,33 @@ function factorHint(n) {
   return 'prime';
 }
 
+function isPerfectPower(n) {
+  for (let b = 2; b <= Math.log2(n); b++) {
+    const a = Math.round(Math.pow(n, 1 / b));
+    for (let c = a - 1; c <= a + 1; c++) {
+      if (c > 1 && Math.pow(c, b) === n) return { base: c, exp: b };
+    }
+  }
+  return null;
+}
+
 function validateCustomN(n) {
   if (isNaN(n) || n < 6) return { ok: false, msg: 'N must be at least 6' };
   if (n > 999) return { ok: false, msg: 'N must be \u2264 999 for this demo' };
   if (n % 2 === 0) return { ok: false, msg: `${n} is even \u2014 trivially divisible by 2` };
   // Check primality
+  let isComposite = false;
+  for (let i = 2; i * i <= n; i++) {
+    if (n % i === 0) { isComposite = true; break; }
+  }
+  if (!isComposite) return { ok: false, msg: `${n} is prime \u2014 cannot be factored` };
+  // Check for perfect powers (Shor's requires this pre-check)
+  const pp = isPerfectPower(n);
+  if (pp) return { ok: false, msg: `${n} = ${pp.base}^${pp.exp} \u2014 perfect power, use classical check` };
   for (let i = 2; i * i <= n; i++) {
     if (n % i === 0) return { ok: true, msg: `\u2705 ${n} = ${i} \u00D7 ${n / i}` };
   }
-  return { ok: false, msg: `${n} is prime \u2014 cannot be factored` };
+  return { ok: false, msg: `${n} cannot be factored` };
 }
 
 function selectN(n) {
@@ -1089,6 +1244,12 @@ function renderPeriod() {
   const r = S.period;
   const numShow = Math.min(3 * (r || 4) + 2, 32);
 
+  const periodBanner = S._prevStep === 1 ? `
+    <div class="step-transition-banner">
+      <div class="step-transition-text">Parameters set: <span class="highlight-link">N = ${S.N}, a = ${S.a}</span>. Let's see why f(x) = ${S.a}<sup>x</sup> mod ${S.N} is periodic.</div>
+    </div>` : '';
+  S._prevStep = null;
+
   // Compute values
   const vals = [];
   for (let x = 0; x < numShow; x++) {
@@ -1105,6 +1266,7 @@ function renderPeriod() {
   ];
 
   v.innerHTML = `
+    ${periodBanner}
     <div class="mb-8 text-dim text-md">
       Values of <span class="math">f(x) = ${S.a}<sup>x</sup> mod ${S.N}</span>:
     </div>
@@ -1112,12 +1274,13 @@ function renderPeriod() {
       ${vals.map((v, i) => {
         const cIdx = residues.indexOf(v.fx) % colors.length;
         const isStart = v.x % r === 0 && v.x > 0;
-        return `<div class="period-cell" style="background:${bgColors[cIdx]}; border-color:${isStart ? 'var(--orange)' : 'transparent'}; animation-delay:${i * 0.04}s">
+        return `<div class="period-cell" data-action="highlight-residue" data-residue="${v.fx}" style="background:${bgColors[cIdx]}; border-color:${isStart ? 'var(--orange)' : 'transparent'}; animation-delay:${i * 0.06}s">
           <span class="x-val">x=${v.x}</span>
           <span class="fx-val" style="color:${colors[cIdx]}">${v.fx}</span>
         </div>`;
       }).join('')}
     </div>
+    <div class="period-table-hint">Click a cell to highlight all occurrences of the same value</div>
     <div class="period-indicator">
       <div class="period-line" style="background: repeating-linear-gradient(90deg, var(--orange) 0, var(--orange) ${100/((numShow-1)/r)}%, transparent ${100/((numShow-1)/r)}%, transparent ${200/((numShow-1)/r)}%)"></div>
       <div class="period-value">Period r = ${r}</div>
@@ -1141,13 +1304,15 @@ function renderPeriod() {
 
   expl().innerHTML = `<h3>Step 2: The Period</h3>
     <p>The function <span class="math">f(x) = ${S.a}<sup>x</sup> mod ${S.N}</span> is <strong>periodic</strong> with period
-    <span class="highlight">r = ${r}</span>. This means <span class="math">${S.a}<sup>r</sup> &equiv; 1 (mod ${S.N})</span>.</p>
-    <p>The colored cells above show how the values repeat every ${r} steps. Finding this period is the
-    quantum computer's job!</p>
-    ${rEven ? `<p>Since <span class="math">r = ${r}</span> is even, we can compute:
-    <span class="math">${S.a}<sup>${r}/2</sup> = ${S.a}<sup>${r2}</sup> &equiv; ${aR2} (mod ${S.N})</span>.
-    Then <span class="math">gcd(${aR2}&minus;1, ${S.N})</span> and <span class="math">gcd(${aR2}+1, ${S.N})</span> should give us the factors.</p>` :
-    `<p>Note: <span class="math">r = ${r}</span> is odd, so this choice of <span class="math">a</span> won't directly work. In practice we'd retry with a different <span class="math">a</span>.</p>`}
+    <span class="highlight">r = ${r}</span>. This means <span class="math">${S.a}<sup>r</sup> &equiv; 1 (mod ${S.N})</span>
+    &mdash; the values cycle back to 1 every ${r} steps.</p>
+    <p>Click the cells above to highlight matching values and see the pattern. The colored cells repeat
+    in groups of ${r}. This periodic structure is exactly what the quantum computer will detect!</p>
+    ${rEven ? `<p><strong>Looking ahead:</strong> Since <span class="math">r = ${r}</span> is even, we'll be able to use the
+    difference-of-squares trick:
+    <span class="math-block math-block-sm">(${S.a}<sup>${r2}</sup> &minus; 1)(${S.a}<sup>${r2}</sup> + 1) &equiv; 0 (mod ${S.N})</span>
+    Computing GCDs with each factor will reveal the prime factors of <span class="math">${S.N}</span>.</p>` :
+    `<p>Note: <span class="math">r = ${r}</span> is odd, so the difference-of-squares trick won't work directly. In practice we'd retry with a different <span class="math">a</span>.</p>`}
     <details class="expandable-section">
       <summary>Why does the period help us factor?</summary>
       <div class="expand-body">
@@ -1155,9 +1320,9 @@ function renderPeriod() {
         <span class="math-block">a<sup>r</sup> &minus; 1 &equiv; 0 (mod N)</span>
         <p>If <span class="math">r</span> is <strong>even</strong>, we can write this as a <strong>difference of squares</strong>:</p>
         <span class="math-block">(a<sup>r/2</sup> &minus; 1)(a<sup>r/2</sup> + 1) &equiv; 0 (mod N)</span>
-        <p><span class="math">N</span> divides the product. Unless one factor is itself a multiple of <span class="math">N</span>
-        (the trivial case <span class="math">a<sup>r/2</sup> &equiv; &plusmn;1 mod N</span>), the prime factors of <span class="math">N</span> must be
-        <strong>split between the two terms</strong>.</p>
+        <p>This means <span class="math">N</span> divides the product of these two terms. Since <span class="math">N = p &times; q</span>,
+        one prime factor tends to divide <span class="math">(a<sup>r/2</sup> &minus; 1)</span> and the other divides
+        <span class="math">(a<sup>r/2</sup> + 1)</span> &mdash; the factors are <strong>split between the two terms</strong>.</p>
         <p>Therefore, <span class="math">gcd(a<sup>r/2</sup> &minus; 1, N)</span> and
         <span class="math">gcd(a<sup>r/2</sup> + 1, N)</span> give us <strong>non-trivial factors</strong>!</p>
         <p class="intuition">This algebraic trick works with probability &ge; 1/2 for a randomly chosen <span class="math">a</span>,
@@ -1176,9 +1341,7 @@ function renderCircuit() {
 
   const transitionBanner = S._prevStep === 2 ? `
     <div class="step-transition-banner">
-      <div class="step-transition-text">
-        We found the period <span class="highlight-link">r = ${S.period}</span>. Now let's build the quantum circuit that discovers this period.
-      </div>
+      <div class="step-transition-text">The period is <span class="highlight-link">r = ${S.period}</span>. We computed it classically to verify, but the quantum circuit below is how a quantum computer finds it &mdash; without trying every exponent.</div>
     </div>` : '';
   S._prevStep = null;
 
@@ -1204,9 +1367,10 @@ function renderCircuit() {
         <div class="circuit-wire">
           <span class="wire-ket">|0&rang;<sup>&otimes;${nW}</sup></span>
           <div class="circuit-spacer"></div>
-          <div class="circuit-gate oracle-gate circuit-gate-dim">U<sub>f</sub></div>
+          <div class="circuit-gate oracle-gate circuit-gate-dim" title="Same oracle gate - acts on both registers">U<sub>f</sub></div>
         </div>
       </div>
+      <div class="text-xs text-dim text-center mt-8" style="opacity:0.7">The dimmed U<sub>f</sub> on the work register shows the <em>same</em> oracle gate acting on both registers simultaneously</div>
     </div>
     <div class="substep-controls">
       ${['Hadamard', 'Oracle', 'Inv. QFT', 'Measure'].map((name, i) =>
@@ -1250,14 +1414,20 @@ function gateInfoHTML(idx) {
 
 function renderCircuitExplanation() {
   expl().innerHTML = `<h3>Step 3: The Quantum Circuit</h3>
-    <p>The circuit has two registers: a <strong>counting register</strong> (${N_QUBITS} qubits) and a
-    <strong>work register</strong> (${Math.ceil(Math.log2(S.N))} qubits).</p>
+    <p><strong>Goal:</strong> Build a circuit that encodes the period of <span class="math">${S.a}<sup>x</sup> mod ${S.N}</span>
+    into a quantum state, then read it out. The circuit transforms a <em>spatial</em> period (in the function values) into
+    <em>frequency</em> peaks (in the measurement probabilities).</p>
+    <p>The circuit has two registers:</p>
+    <ul class="step-list">
+      <li><strong>Counting register</strong> (${N_QUBITS} qubits) &mdash; holds the input <span class="math">x</span> and ultimately the measurement result</li>
+      <li><strong>Work register</strong> (${Math.ceil(Math.log2(S.N))} qubits) &mdash; holds the computed value <span class="math">f(x)</span></li>
+    </ul>
     <p>Click on each gate above to learn what it does. The algorithm proceeds left to right:</p>
     <ol class="step-list">
-      <li><span class="color-blue">Hadamard</span> &mdash; create <span class="notation-tip" data-glossary="superposition">superposition</span></li>
-      <li><span class="color-purple">Oracle</span> &mdash; encode the periodic function (<span class="notation-tip" data-glossary="entangled">entangle</span> registers)</li>
-      <li><span class="color-orange">Inverse <span class="notation-tip" data-glossary="QFT">QFT</span></span> &mdash; extract the period</li>
-      <li><span class="color-pink">Measurement</span> &mdash; read out a value encoding the period</li>
+      <li><span class="color-blue">Hadamard</span> &mdash; create <span class="notation-tip" data-glossary="superposition">superposition</span> of all inputs</li>
+      <li><span class="color-purple">Oracle</span> &mdash; compute the periodic function, <span class="notation-tip" data-glossary="entangled">entangling</span> both registers</li>
+      <li><span class="color-orange">Inverse <span class="notation-tip" data-glossary="QFT">QFT</span></span> &mdash; convert the periodic pattern into measurable frequency peaks</li>
+      <li><span class="color-pink">Measurement</span> &mdash; read out a value close to a multiple of Q/r, encoding the period</li>
     </ol>`;
 }
 
@@ -1336,18 +1506,45 @@ function drawPeriodCanvas(canvasId, vals, maxN, residues, cssColors) {
   const resolvedColors = cssColors.map(resolveColor);
   const barW = plotW / vals.length;
 
-  vals.forEach((v, i) => {
-    const cIdx = residues.indexOf(v.fx) % resolvedColors.length;
-    const h = (v.fx / maxN) * plotH;
-    const x = pad.left + i * barW;
-    const y = pad.top + plotH - h;
+  // Animated sweep: bars grow left-to-right with stagger
+  const animDur = 600;
+  const t0 = performance.now();
+  const drawPBars = (progress) => {
+    ctx.clearRect(pad.left - 1, pad.top, plotW + 2, plotH + 1);
+    drawGridlines(ctx, pad, plotW, plotH, maxN, v => String(Math.round(v)), canvas);
 
-    ctx.shadowColor = resolvedColors[cIdx];
-    ctx.shadowBlur = 6;
-    ctx.fillStyle = resolvedColors[cIdx];
-    ctx.fillRect(x + 1, y, Math.max(barW - 2, 2), h);
-  });
-  ctx.shadowBlur = 0;
+    const eased = 1 - Math.pow(1 - progress, 3);
+    vals.forEach((v, i) => {
+      // Per-bar stagger: earlier bars appear sooner
+      const barProgress = Math.min(Math.max((progress - (i / vals.length) * 0.3) / 0.7, 0), 1);
+      const barEased = 1 - Math.pow(1 - barProgress, 3);
+      const cIdx = residues.indexOf(v.fx) % resolvedColors.length;
+      const fullH = (v.fx / maxN) * plotH;
+      const h = fullH * barEased;
+      const x = pad.left + i * barW;
+      const y = pad.top + plotH - h;
+
+      ctx.shadowColor = resolvedColors[cIdx];
+      ctx.shadowBlur = 6 * barEased;
+      ctx.fillStyle = resolvedColors[cIdx];
+      ctx.globalAlpha = 0.4 + 0.6 * barEased;
+      ctx.fillRect(x + 1, y, Math.max(barW - 2, 2), h);
+    });
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  };
+
+  const animatePeriod = (now) => {
+    const elapsed = now - t0;
+    const progress = Math.min(elapsed / animDur, 1);
+    drawPBars(progress);
+    if (progress < 1) {
+      requestAnimationFrame(animatePeriod);
+    } else {
+      canvas._baseImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
+  };
+  requestAnimationFrame(animatePeriod);
 
   // X-axis labels
   ctx.fillStyle = '#8892a8';
@@ -1360,12 +1557,11 @@ function drawPeriodCanvas(canvasId, vals, maxN, residues, cssColors) {
     ctx.fillText(String(vals[i].x), x, pad.top + plotH + 6);
   }
 
-  // Store data for tooltip + base image for hover highlight
+  // Store data for tooltip
   canvas._data = vals;
   canvas._barW = barW;
   canvas._pad = pad;
   canvas._maxN = maxN;
-  canvas._baseImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
 function drawPeriodScatter(canvasId, vals, period, residues, cssColors) {
@@ -1488,18 +1684,44 @@ function drawDistributionCanvas(canvasId, probs, Q, cssColor, period) {
     const barW = plotW / Q;
     const minBarW = Math.max(barW, 4);
 
-    for (let i = 0; i < Q; i++) {
-      if (probs[i] <= threshold) continue;
-      const h = (probs[i] / maxP) * plotH;
-      const x = pad.left + (i / Q) * plotW;
-      const y = pad.top + plotH - h;
+    // Animated bar growth
+    const animDuration = 500; // ms
+    const startTime = performance.now();
+    const drawBars = (progress) => {
+      // Clear bar area
+      ctx.clearRect(pad.left - 1, pad.top, plotW + 2, plotH + 1);
+      drawGridlines(ctx, pad, plotW, plotH, maxP, v => (v * 100).toFixed(0) + '%', canvas);
 
-      ctx.shadowColor = color;
-      ctx.shadowBlur = 8;
-      ctx.fillStyle = color;
-      ctx.fillRect(x - minBarW / 2 + barW / 2, y, minBarW, h);
-    }
-    ctx.shadowBlur = 0;
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      for (let i = 0; i < Q; i++) {
+        if (probs[i] <= threshold) continue;
+        const fullH = (probs[i] / maxP) * plotH;
+        const h = fullH * eased;
+        const x = pad.left + (i / Q) * plotW;
+        const y = pad.top + plotH - h;
+
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8 * eased;
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.4 + 0.6 * eased;
+        ctx.fillRect(x - minBarW / 2 + barW / 2, y, minBarW, h);
+      }
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+    };
+
+    const animate = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / animDuration, 1);
+      drawBars(progress);
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Store tooltip data after animation completes
+        canvas._baseImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      }
+    };
+    requestAnimationFrame(animate);
   }
 
   // X-axis labels
@@ -1513,13 +1735,14 @@ function drawDistributionCanvas(canvasId, probs, Q, cssColor, period) {
     ctx.fillText(String(i), x, pad.top + plotH + 6);
   }
 
-  // Store data for tooltips + base image for hover highlight
+  // Store data for tooltips
   canvas._tooltipType = 'distribution';
   canvas._probs = probs;
   canvas._Q = Q;
   canvas._pad = pad;
   canvas._plotW = plotW;
-  canvas._baseImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  // baseImage set after animation completes (or immediately for dense)
+  if (isDense) canvas._baseImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
 function drawMeasurementCanvas(canvasId, probs, Q, measured) {
@@ -1533,26 +1756,55 @@ function drawMeasurementCanvas(canvasId, probs, Q, measured) {
   const barW = plotW / Q;
   const minBarW = Math.max(barW, 5);
 
-  for (let i = 0; i < Q; i++) {
-    if (probs[i] < 0.005) continue;
-    const h = (probs[i] / maxP) * plotH;
-    const x = pad.left + (i / Q) * plotW;
-    const y = pad.top + plotH - h;
-    const isMeasured = i === measured;
+  // Animated bar growth for measurement
+  const animDur = 600;
+  const t0 = performance.now();
+  const drawMeasBars = (progress) => {
+    ctx.clearRect(pad.left - 1, pad.top - 16, plotW + 2, plotH + 17);
+    drawGridlines(ctx, pad, plotW, plotH, maxP, v => (v * 100).toFixed(0) + '%', canvas);
 
-    ctx.shadowColor = isMeasured ? '#f778ba' : '#f0883e';
-    ctx.shadowBlur = isMeasured ? 12 : 6;
-    ctx.fillStyle = isMeasured ? '#f778ba' : 'rgba(240,136,62,0.5)';
-    ctx.fillRect(x - minBarW / 2 + barW / 2, y, minBarW, h);
-  }
-  ctx.shadowBlur = 0;
+    const eased = 1 - Math.pow(1 - progress, 3);
+    for (let i = 0; i < Q; i++) {
+      if (probs[i] < 0.005) continue;
+      const fullH = (probs[i] / maxP) * plotH;
+      const h = fullH * eased;
+      const x = pad.left + (i / Q) * plotW;
+      const y = pad.top + plotH - h;
+      const isMeasured = i === measured;
 
-  // Label the measured peak
-  const mx = pad.left + (measured / Q) * plotW + barW / 2;
-  ctx.fillStyle = '#f778ba';
-  ctx.font = canvasFont(11, 'bold', canvas);
-  ctx.textAlign = 'center';
-  ctx.fillText('\u25BC ' + measured, mx, pad.top - 1);
+      ctx.shadowColor = isMeasured ? '#f778ba' : '#f0883e';
+      ctx.shadowBlur = (isMeasured ? 12 : 6) * eased;
+      ctx.fillStyle = isMeasured ? '#f778ba' : 'rgba(240,136,62,0.5)';
+      ctx.globalAlpha = 0.4 + 0.6 * eased;
+      ctx.fillRect(x - minBarW / 2 + barW / 2, y, minBarW, h);
+    }
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+
+    // Label the measured peak (fade in)
+    if (progress > 0.5) {
+      const labelAlpha = (progress - 0.5) * 2;
+      const mx = pad.left + (measured / Q) * plotW + barW / 2;
+      ctx.globalAlpha = labelAlpha;
+      ctx.fillStyle = '#f778ba';
+      ctx.font = canvasFont(11, 'bold', canvas);
+      ctx.textAlign = 'center';
+      ctx.fillText('\u25BC ' + measured, mx, pad.top - 1);
+      ctx.globalAlpha = 1;
+    }
+  };
+
+  const animateMeas = (now) => {
+    const elapsed = now - t0;
+    const progress = Math.min(elapsed / animDur, 1);
+    drawMeasBars(progress);
+    if (progress < 1) {
+      requestAnimationFrame(animateMeas);
+    } else {
+      canvas._baseImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
+  };
+  requestAnimationFrame(animateMeas);
 
   // X-axis labels
   ctx.fillStyle = '#8892a8';
@@ -1564,14 +1816,13 @@ function drawMeasurementCanvas(canvasId, probs, Q, measured) {
     ctx.fillText(String(i), pad.left + (i / Q) * plotW, pad.top + plotH + 6);
   }
 
-  // Store data for tooltips + base image for hover highlight
+  // Store data for tooltips
   canvas._tooltipType = 'measurement';
   canvas._probs = probs;
   canvas._Q = Q;
   canvas._measured = measured;
   canvas._pad = pad;
   canvas._plotW = plotW;
-  canvas._baseImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
 function highlightCanvasBar(canvas, mx) {
@@ -1729,7 +1980,14 @@ function renderEvolution() {
   const ss = Math.min(S.subStep, 3);
   const currentDist = dist[subSteps[ss].key];
 
+  const evoBanner = S._prevStep === 3 ? `
+    <div class="step-transition-banner">
+      <div class="step-transition-text">Circuit built! Now watch the probability distribution evolve as each gate transforms the quantum state.</div>
+    </div>` : '';
+  S._prevStep = null;
+
   v.innerHTML = `
+    ${evoBanner}
     <div class="substep-controls">
       ${subSteps.map((s, i) => `<button class="substep-btn ${ss === i ? 'active' : ''}" data-action="evo-step" data-value="${i}">${s.title}</button>`).join('')}
     </div>
@@ -1850,6 +2108,12 @@ function renderMeasurement() {
     if (dist.qft[j] > 0.01) peaks.push(j);
   }
 
+  const measureBanner = S._prevStep === 4 ? `
+    <div class="step-transition-banner">
+      <div class="step-transition-text">The QFT produced sharp peaks. Now we measure to collapse the superposition into a single value.</div>
+    </div>` : '';
+  S._prevStep = null;
+
   if (S.measured === null) {
     // Pick a random non-zero peak for more interesting result
     const nonZeroPeaks = peaks.filter(p => p > 0);
@@ -1862,6 +2126,7 @@ function renderMeasurement() {
   const rCandidates = cf.convergents.filter(c => c.q > 0 && c.q <= S.N).map(c => c.q);
 
   v.innerHTML = `
+    ${measureBanner}
     <div class="bar-chart-container collapse-anim">
       <div class="bar-chart-title">Post-QFT probability distribution (measurement collapses to one peak)</div>
       <canvas id="meas-canvas" class="chart-canvas chart-canvas-md canvas-fade-in" aria-label="Post-QFT distribution with measured value ${j}">Measurement collapsed to value ${j}</canvas>
@@ -1923,13 +2188,16 @@ function renderMeasurement() {
   drawMeasurementCanvas('meas-canvas', dist.qft, Q, j);
   drawCFTree('cf-tree-canvas', cf, Q, S.a, S.N, r);
 
+  const sVal = Math.round(j * r / Q);
   expl().innerHTML = `<h3>Step 5: Measurement & Continued Fractions</h3>
     <p>We measure the counting register and get <span class="math">j = ${j}</span>.</p>
-    <p>We know <span class="math">j/${Q} = ${j}/${Q} \u2248 s/r</span> for some integer <span class="math">s</span>.
-    To extract <span class="math">r</span>, we use the <strong>continued fraction expansion</strong> of
-    <span class="math">${j}/${Q}</span>.</p>
-    <p>The convergents give us candidate periods. We check each: does
-    <span class="math">${S.a}<sup>r</sup> \u2261 1 (mod ${S.N})</span>?</p>
+    <p><strong>Why this value?</strong> The QFT placed peaks at multiples of <span class="math">Q/r = ${Q}/${r} = ${(Q/r).toFixed(1)}</span>.
+    Our measurement <span class="math">j = ${j}</span> is close to <span class="math">s &times; Q/r</span> where
+    <span class="math">s = ${sVal}</span>. This means:</p>
+    <span class="math-block math-block-sm">j/Q = ${j}/${Q} &approx; ${sVal}/${r} = s/r</span>
+    <p>The denominator <span class="math">r</span> of this fraction is our period! To extract it from the
+    ratio <span class="math">${j}/${Q}</span>, we use the <strong>continued fraction expansion</strong>,
+    which finds the simplest fraction close to a given decimal.</p>
     <p>Result: <span class="success">r = ${r}</span> ${rCandidates.includes(r) ? '(found in convergents!)' : '(may need multiple measurements)'}</p>
     <details class="expandable-section">
       <summary>How do continued fractions work?</summary>
@@ -2074,8 +2342,15 @@ function renderFactors() {
     }
   }
 
+  const factorBanner = S._prevStep === 5 ? `
+    <div class="step-transition-banner">
+      <div class="step-transition-text">Period <span class="highlight-link">r = ${r}</span> confirmed via continued fractions. Now we apply classical number theory to extract the factors.</div>
+    </div>` : '';
+  S._prevStep = null;
+
   if (success) {
     v.innerHTML = `
+      ${factorBanner}
       <div class="factor-reveal fade-in">
         <div class="factor-subtitle">
           From period <span class="math">r = ${r}</span> and <span class="math">a = ${S.a}</span>:
@@ -2102,11 +2377,12 @@ function renderFactors() {
           <span class="factor">${q}</span>
         </div>
         <div class="factor-success-msg" role="alert">\u2714 Successfully factored!</div>
-        <button class="nav-btn mt-20" data-action="try-again">Try Different Parameters \u21BB</button>
+        <button class="nav-btn primary mt-20" data-action="try-again">Try Different Parameters \u21BB</button>
       </div>`;
   } else {
     const reason = !rEven ? `r = ${r} is odd` : `a^(r/2) \u2261 -1 (mod N)`;
     v.innerHTML = `
+      ${factorBanner}
       <div class="factor-reveal fade-in color-orange">
         <div class="factor-fail-title">\u26A0 This attempt didn't yield factors</div>
         <div class="factor-fail-reason">Reason: ${reason}</div>
@@ -2120,16 +2396,26 @@ function renderFactors() {
 
   const aR2 = rEven ? modPow(S.a, r/2, S.N) : '?';
   expl().innerHTML = `<h3>Step 6: Classical Post-Processing</h3>
-    <p>With period <span class="math">r = ${r}</span>, the factoring recipe is:</p>
+    <p>Now we use the period <span class="math">r = ${r}</span> to extract factors. The key is the
+    <strong>difference of squares</strong> identity:</p>
+    ${rEven ? `
+    <span class="math-block math-block-sm">a<sup>r</sup> &minus; 1 = (a<sup>r/2</sup> &minus; 1)(a<sup>r/2</sup> + 1) &equiv; 0 (mod N)</span>
+    <p>Since <span class="math">N</span> divides this product but (usually) divides <em>neither</em> factor alone,
+    the prime factors of <span class="math">N</span> must be split between the two terms. Taking GCDs extracts them:</p>
     <ol class="step-list">
-      <li>Check: is <span class="math">r</span> even? <strong>${rEven ? 'Yes!' : 'No \u2014 retry'}</strong></li>
-      ${rEven ? `<li>Compute <span class="math">a<sup>r/2</sup> mod N = ${S.a}<sup>${r/2}</sup> mod ${S.N} = ${aR2}</span></li>
-      <li>Check: is <span class="math">${aR2} \u2261 &minus;1 (mod ${S.N})</span>? <strong>${Number(aR2) === S.N - 1 ? 'Yes \u2014 retry' : 'No \u2014 proceed!'}</strong></li>
-      <li>Compute <span class="math">gcd(${aR2} &minus; 1, ${S.N}) = ${p}</span> and <span class="math">gcd(${aR2} + 1, ${S.N}) = ${q}</span></li>` : ''}
-    </ol>
+      <li>Check: is <span class="math">r</span> even? <strong>Yes!</strong> (r = ${r})</li>
+      <li>Compute <span class="math">a<sup>r/2</sup> mod N = ${S.a}<sup>${r/2}</sup> mod ${S.N} = ${aR2}</span></li>
+      <li>Check: is <span class="math">${aR2} &equiv; &minus;1 (mod ${S.N})</span>? <strong>${Number(aR2) === S.N - 1 ? 'Yes \u2014 trivial case, retry' : 'No \u2014 proceed!'}</strong></li>
+      <li>Compute <span class="math">gcd(${aR2} &minus; 1, ${S.N}) = ${p}</span> and <span class="math">gcd(${aR2} + 1, ${S.N}) = ${q}</span></li>
+    </ol>` : `
+    <p>The difference of squares requires an <em>even</em> period, but <span class="math">r = ${r}</span> is odd.
+    In practice, we would pick a different <span class="math">a</span> and try again.</p>
+    <ol class="step-list">
+      <li>Check: is <span class="math">r</span> even? <strong>No</strong> (r = ${r})</li>
+    </ol>`}
     ${success ? `<p class="mt-12">The factors of <span class="math">${S.N}</span> are
     <span class="success">${p}</span> and <span class="success">${q}</span>.</p>` : ''}
-    <p class="confidence-note">Note: A real quantum computer would repeat the full quantum subroutine O(log log N) times to boost confidence.</p>
+    <p class="confidence-note">Note: A real quantum computer would repeat the quantum subroutine O(log log N) times. The probability of success per attempt is at least 1/2.</p>
     <div class="recap-box">
       <h4 class="recap-title">Algorithm Recap</h4>
       <div class="recap-grid">
@@ -2148,7 +2434,39 @@ function renderFactors() {
           ? `gcd(${aR2}\u22121, ${S.N})=${p} and gcd(${aR2}+1, ${S.N})=${q}`
           : `Period r=${r} ${!rEven ? 'was odd' : 'gave trivial factors'} \u2014 retry needed`}</span>
       </div>
-    </div>`;
+    </div>
+    <details class="expandable-section">
+      <summary>What's next?</summary>
+      <div class="expand-body">
+        <p>Now that you've seen Shor's algorithm in action, explore these related topics:</p>
+        <ul class="step-list">
+          <li><strong>Quantum Complexity Theory</strong> &mdash; understand where quantum factoring fits in the computational hierarchy (BQP vs NP).</li>
+          <li><strong>Error Correction</strong> &mdash; real quantum hardware needs error correction to run Shor's algorithm at scale. How do we protect fragile qubits?</li>
+          <li><strong>Post-Quantum Cryptography</strong> &mdash; lattice-based and code-based cryptosystems designed to resist quantum attacks.</li>
+        </ul>
+        <p class="intuition">Try factoring different numbers above to build intuition for how the period, QFT peaks, and continued fractions interact.</p>
+      </div>
+    </details>`;
+
+}
+
+function highlightResidueCells(residue) {
+  const cells = document.querySelectorAll('.period-cell[data-residue]');
+  const alreadyHighlighted = document.querySelector('.period-cell.highlight-match[data-residue="' + residue + '"]');
+  // Toggle off if clicking same residue
+  if (alreadyHighlighted) {
+    cells.forEach(c => { c.classList.remove('highlight-match', 'highlight-dim'); });
+    return;
+  }
+  cells.forEach(c => {
+    if (Number(c.dataset.residue) === residue) {
+      c.classList.add('highlight-match');
+      c.classList.remove('highlight-dim');
+    } else {
+      c.classList.add('highlight-dim');
+      c.classList.remove('highlight-match');
+    }
+  });
 }
 
 function tryAgain() {
@@ -2320,6 +2638,38 @@ document.addEventListener('mouseout', (e) => {
   }
 });
 
+// Touch support for canvas tooltips
+document.addEventListener('touchstart', (e) => {
+  const canvas = e.target.closest('canvas');
+  const tooltip = document.getElementById('tooltip');
+  if (!canvas || (!canvas._data && !canvas._probs)) { tooltip.style.display = 'none'; return; }
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const mx = touch.clientX - rect.left;
+  let text = null;
+  if (canvas._data) {
+    const barIdx = Math.floor((mx - canvas._pad.left) / canvas._barW);
+    if (barIdx >= 0 && barIdx < canvas._data.length) {
+      const v = canvas._data[barIdx];
+      text = `x=${v.x}: ${S.a}^${v.x} mod ${S.N} = ${v.fx}`;
+    }
+  } else if (canvas._probs) {
+    const Q = canvas._Q;
+    const idx = Math.round(((mx - canvas._pad.left) / canvas._plotW) * Q);
+    if (idx >= 0 && idx < Q && canvas._probs[idx] > 0.001) {
+      text = `|${idx}\u27E9: P = ${(canvas._probs[idx] * 100).toFixed(2)}%`;
+    }
+  }
+  if (text) {
+    tooltip.textContent = text;
+    tooltip.style.display = 'block';
+    tooltip.style.left = Math.min(touch.clientX + 12, window.innerWidth - 220) + 'px';
+    tooltip.style.top = (touch.clientY - 40) + 'px';
+    highlightCanvasBar(canvas, mx);
+    setTimeout(() => { tooltip.style.display = 'none'; }, 2000);
+  }
+}, { passive: true });
+
 // ==================== INIT ====================
 document.getElementById('step-indicator').addEventListener('click', (e) => {
   const dot = e.target.closest('.step-dot');
@@ -2368,6 +2718,7 @@ document.getElementById('viz-area').addEventListener('click', (e) => {
     case 'try-again':       tryAgain(); break;
     case 'show-measurement': S.measured = Number(val); renderMeasurement(); break;
     case 'apply-custom-n':  applyCustomN(); break;
+    case 'highlight-residue': highlightResidueCells(Number(btn.dataset.residue)); break;
   }
 });
 
@@ -2399,7 +2750,23 @@ window.addEventListener('orientationchange', () => setTimeout(handleResize, 300)
 render();
 </script>
 
-<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:3rem;">
+<!-- Module Navigation -->
+<div class="module-nav">
+  <a href="21_period_finding.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    <div><div class="nav-label">Previous</div><div class="nav-title">Period Finding</div></div>
+  </a>
+  <a href="../index.html" style="border-style:dashed;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <div><div class="nav-label">Course</div><div class="nav-title">All Modules</div></div>
+  </a>
+  <a href="16_complexity_theory.html">
+    <div><div class="nav-label">Next</div><div class="nav-title">Complexity Theory</div></div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  </a>
+</div>
+
+<footer style="text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border,#2a3550);color:var(--text-dim,#8892a8);font-family:'Inter',sans-serif;font-size:0.82rem;margin-top:1rem;">
   <p style="margin:0 0 0.3rem;">This is a <span style="color:var(--orange,#fb923c);font-weight:500;">beta version</span></p>
   <p style="margin:0;">By <a href="https://granha.github.io" target="_blank" rel="noopener" style="color:var(--accent,#6366f1);text-decoration:none;">Fernando Granha Jeronimo</a></p>
 </footer>
