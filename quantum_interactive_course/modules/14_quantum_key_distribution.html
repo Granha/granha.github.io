@@ -1571,6 +1571,10 @@
         <tbody id="tableBody"></tbody>
       </table>
     </div>
+    <p id="simPlaceholder" style="text-align:center; color:var(--text-dim); font-size:0.85rem; padding:1rem 0; opacity:0.7;">
+      Configure the parameters above and click <strong style="color:var(--accent);">Run Protocol</strong> to see the BB84 simulation in action.
+      Toggle <strong style="color:var(--red);">Eve</strong> to see how eavesdropping introduces detectable errors.
+    </p>
 
     <!-- Stats -->
     <div class="stats" id="statsBar" style="display:none;">
@@ -1898,7 +1902,7 @@
         <tr><td>90%</td><td>8</td><td>~10%</td></tr>
         <tr><td>95%</td><td>11</td><td>~4.2%</td></tr>
         <tr><td>99%</td><td>16</td><td>~1.0%</td></tr>
-        <tr class="highlight-row"><td>99.9%</td><td>24</td><td>~0.1%</td></tr>
+        <tr><td>99.9%</td><td>24</td><td>~0.1%</td></tr>
         <tr><td>99.99%</td><td>32</td><td>~0.01%</td></tr>
         <tr><td>99.9999%</td><td>48</td><td>&lt; 0.0001%</td></tr>
       </tbody>
@@ -2408,7 +2412,7 @@
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
     if (e.key === 'ArrowRight' && current < data.length - 1) { current++; update(true); }
     if (e.key === 'ArrowLeft' && current > 0) { current--; update(true); }
   });
@@ -2572,6 +2576,9 @@ function showStats(data) {
   document.getElementById('safeExplain').classList.remove('show');
   if (withEve && isErr) document.getElementById('eveExplain').classList.add('show');
   else if (!withEve) document.getElementById('safeExplain').classList.add('show');
+
+  // Update OTP key display
+  if (window.updateOTPKeyDisplay) window.updateOTPKeyDisplay();
 }
 
 function hideResults() {
@@ -2639,6 +2646,8 @@ document.getElementById('btnRun').addEventListener('click', async function() {
   animating = true;
   stepping = false;
   setSimButtons(false);
+  const placeholder = document.getElementById('simPlaceholder');
+  if (placeholder) placeholder.style.display = 'none';
   const n = parseInt(document.getElementById('selBits').value);
   const withEve = document.getElementById('chkEve').checked;
   simData = runBB84(n, withEve);
@@ -2733,6 +2742,8 @@ document.getElementById('btnStep').addEventListener('click', async function() {
   if (animating) return;
   if (!stepping) {
     stepping = true; stepIndex = 0;
+    const placeholder = document.getElementById('simPlaceholder');
+    if (placeholder) placeholder.style.display = 'none';
     const n = parseInt(document.getElementById('selBits').value);
     const withEve = document.getElementById('chkEve').checked;
     simData = runBB84(n, withEve);
@@ -2761,9 +2772,12 @@ document.getElementById('btnReset').addEventListener('click', function() {
   document.getElementById('statsBar').style.display = 'none';
   document.getElementById('phaseBar').classList.add('hidden');
   hideResults();
+  setSimButtons(true);
   document.getElementById('photon').className = 'photon';
   document.getElementById('eveMarker').classList.remove('show');
   document.getElementById('photonInfo').classList.remove('show');
+  // Update OTP key display
+  if (window.updateOTPKeyDisplay) window.updateOTPKeyDisplay();
 });
 
 // ========== BE BOB CHALLENGE ==========
@@ -2885,12 +2899,17 @@ document.getElementById('btnReset').addEventListener('click', function() {
     html += '</tr>';
     html += '</tbody></table></div>';
 
+    const matchRate = ((matched.length / bobData.length) * 100).toFixed(0);
     html += '<div class="bob-score-grid">';
     html += `<div class="bob-score-item"><div class="label">Sent</div><div class="value">${bobData.length}</div></div>`;
     html += `<div class="bob-score-item"><div class="label">Matched</div><div class="value" style="color:var(--green)">${matched.length}</div></div>`;
-    html += `<div class="bob-score-item"><div class="label">Match Rate</div><div class="value" style="color:var(--cyan)">${((matched.length / bobData.length) * 100).toFixed(0)}%</div></div>`;
+    html += `<div class="bob-score-item"><div class="label">Match Rate</div><div class="value" style="color:var(--cyan)">${matchRate}%</div></div>`;
     html += `<div class="bob-score-item"><div class="label">Key</div><div class="value" style="color:var(--accent)">${keyBits.join('')}</div></div>`;
     html += '</div>';
+    html += `<p style="font-size:0.82rem; color:var(--text-dim); margin-top:0.75rem; text-align:center; line-height:1.6;">
+      Expected match rate: <strong style="color:var(--text);">~50%</strong> (you got ${matchRate}%).
+      With only 2 bases chosen independently, Alice and Bob agree about half the time.
+      Your ${keyBits.length}-bit sifted key is ready for one-time pad encryption!</p>`;
     html += '</div>';
 
     document.getElementById('bobResults').innerHTML = html;
@@ -2969,11 +2988,75 @@ document.getElementById('btnReset').addEventListener('click', function() {
     document.getElementById('mcLegend').style.display = 'flex';
   });
 
+  const MC_W = 700, MC_H = 280;
+  const mcPad = { left: 50, right: 30, top: 20, bottom: 40 };
+
+  // Draw empty axes so the canvas isn't blank before running
+  function drawMCAxes(ctx, W, H, maxCount) {
+    const plotW = W - mcPad.left - mcPad.right;
+    const plotH = H - mcPad.top - mcPad.bottom;
+    const maxRate = 55;
+
+    // Axes
+    ctx.strokeStyle = 'rgba(42,53,80,0.6)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(mcPad.left, mcPad.top);
+    ctx.lineTo(mcPad.left, mcPad.top + plotH);
+    ctx.lineTo(mcPad.left + plotW, mcPad.top + plotH);
+    ctx.stroke();
+
+    // Y-axis labels
+    ctx.fillStyle = '#8892a8';
+    ctx.font = '11px JetBrains Mono, monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) {
+      const val = Math.round(maxCount * i / 4);
+      const y = mcPad.top + plotH - (plotH * i / 4);
+      ctx.fillText(val.toString(), mcPad.left - 8, y);
+      if (i > 0) {
+        ctx.strokeStyle = 'rgba(42,53,80,0.3)';
+        ctx.beginPath();
+        ctx.moveTo(mcPad.left, y);
+        ctx.lineTo(mcPad.left + plotW, y);
+        ctx.stroke();
+      }
+    }
+
+    // X-axis labels
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let pct = 0; pct <= maxRate; pct += 10) {
+      const x = mcPad.left + (pct / maxRate) * plotW;
+      ctx.fillText(pct + '%', x, mcPad.top + plotH + 8);
+      ctx.strokeStyle = 'rgba(42,53,80,0.3)';
+      ctx.beginPath(); ctx.moveTo(x, mcPad.top); ctx.lineTo(x, mcPad.top + plotH); ctx.stroke();
+    }
+    ctx.fillText('Error Rate', mcPad.left + plotW / 2, mcPad.top + plotH + 24);
+  }
+
+  // Initialize the canvas with empty axes
+  (function initMCCanvas() {
+    const c = document.getElementById('mcCanvas');
+    const ctx = c.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    c.width = MC_W * dpr; c.height = MC_H * dpr;
+    c.style.width = MC_W + 'px'; c.style.height = MC_H + 'px';
+    ctx.scale(dpr, dpr);
+    drawMCAxes(ctx, MC_W, MC_H, 100);
+    // Hint text
+    ctx.fillStyle = 'rgba(136,146,168,0.5)';
+    ctx.font = '13px Inter, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Click "Run 500 Simulations" to generate the histogram', MC_W / 2, MC_H / 2 - 10);
+  })();
+
   function drawHistogram(cleanRates, eveRates) {
     const c = document.getElementById('mcCanvas');
     const ctx = c.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
-    const W = 700, H = 280;
+    const W = MC_W, H = MC_H;
     c.width = W * dpr; c.height = H * dpr;
     c.style.width = W + 'px'; c.style.height = H + 'px';
     ctx.scale(dpr, dpr);
@@ -2996,46 +3079,12 @@ document.getElementById('btnReset').addEventListener('click', function() {
     const eveBins = toBins(eveRates);
     const maxCount = Math.max(...cleanBins, ...eveBins);
 
-    const left = 50, right = 30, top = 20, bottom = 40;
+    const left = mcPad.left, right = mcPad.right, top = mcPad.top, bottom = mcPad.bottom;
     const plotW = W - left - right;
     const plotH = H - top - bottom;
     const barW = plotW / bins;
 
-    // Axes
-    ctx.strokeStyle = 'rgba(42,53,80,0.6)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(left, top);
-    ctx.lineTo(left, top + plotH);
-    ctx.lineTo(left + plotW, top + plotH);
-    ctx.stroke();
-
-    // Y-axis labels
-    ctx.fillStyle = '#8892a8';
-    ctx.font = '11px JetBrains Mono, monospace';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    for (let i = 0; i <= 4; i++) {
-      const val = Math.round(maxCount * i / 4);
-      const y = top + plotH - (plotH * i / 4);
-      ctx.fillText(val.toString(), left - 8, y);
-      if (i > 0) {
-        ctx.strokeStyle = 'rgba(42,53,80,0.3)';
-        ctx.beginPath();
-        ctx.moveTo(left, y);
-        ctx.lineTo(left + plotW, y);
-        ctx.stroke();
-      }
-    }
-
-    // X-axis labels
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    for (let pct = 0; pct <= maxRate; pct += 10) {
-      const x = left + (pct / maxRate) * plotW;
-      ctx.fillText(pct + '%', x, top + plotH + 8);
-    }
-    ctx.fillText('Error Rate', left + plotW / 2, top + plotH + 24);
+    drawMCAxes(ctx, W, H, maxCount);
 
     // Draw clean bars
     ctx.globalAlpha = 0.7;
@@ -3189,8 +3238,8 @@ document.getElementById('btnReset').addEventListener('click', function() {
     resultBox.style.animation = 'solutionReveal 0.5s ease-out';
   });
 
-  // Poll for sim data changes to update key display
-  setInterval(updateKeyDisplay, 500);
+  // Expose for event-driven updates from the simulation
+  window.updateOTPKeyDisplay = updateKeyDisplay;
 })();
 
 // ========== PHOTON POLARIZATION INDICATOR ==========
@@ -3610,13 +3659,19 @@ document.getElementById('btnReset').addEventListener('click', function() {
     ctx.fill();
   }
 
+  // Pre-generate bit outcomes so the grid doesn't flicker on slider change
+  const BIT_GRID_MAX = 50;
+  const bitGridOutcomes = [];
+  for (let i = 0; i < BIT_GRID_MAX; i++) {
+    bitGridOutcomes.push(Math.random() < 0.75); // true = Eve evades, false = caught
+  }
+
   function updateBitGrid(n) {
     bitGrid.innerHTML = '';
     for (let i = 0; i < n; i++) {
       const div = document.createElement('div');
       div.className = 'detect-bit';
-      const evadeThis = Math.random() < 0.75; // Eve evades single check with P=3/4
-      if (!evadeThis) {
+      if (!bitGridOutcomes[i]) {
         div.classList.add('caught');
         div.textContent = '!';
         div.title = 'Bit ' + (i+1) + ': Mismatch detected!';
@@ -3644,6 +3699,13 @@ document.getElementById('btnReset').addEventListener('click', function() {
 
     drawGraph(n);
     updateBitGrid(n);
+
+    // Highlight the confidence table row closest to current n
+    const thresholds = [8, 11, 16, 24, 32, 48];
+    const rows = document.querySelectorAll('#confidenceTable tbody tr');
+    rows.forEach((row, i) => {
+      row.classList.toggle('highlight-row', n >= thresholds[i] && (i === thresholds.length - 1 || n < thresholds[i + 1]));
+    });
   }
 
   slider.addEventListener('input', update);

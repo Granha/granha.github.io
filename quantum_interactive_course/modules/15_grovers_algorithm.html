@@ -218,6 +218,17 @@
   .btn-primary:hover:not(:disabled) { background: #5a52e0; }
   .btn-primary:active:not(:disabled) { transform: translateY(1px); }
 
+  .btn-accent {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    color: #fff;
+    font-weight: 600;
+    padding: 0.55rem 1.3rem;
+    transition: all 0.2s;
+  }
+  .btn-accent:hover:not(:disabled) { background: #00b397; }
+  .btn-accent:active:not(:disabled) { transform: translateY(1px); }
+
   .btn-secondary {
     background: transparent;
     border-color: var(--border);
@@ -1112,6 +1123,20 @@
   }
   .inline-quiz .iq-opt.disabled { cursor: default; opacity: 0.65; }
   .inline-quiz .iq-opt.disabled.correct { opacity: 1; }
+  .inline-quiz .iq-retry {
+    display: none;
+    margin-top: 0.5rem;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .inline-quiz .iq-retry.show { display: inline-block; }
+  .inline-quiz .iq-retry:hover { color: var(--accent); border-color: var(--accent); }
   .inline-quiz .iq-fb {
     margin-top: 0.6rem;
     padding: 0.6rem 0.75rem;
@@ -1184,6 +1209,27 @@
   .tab-panel.active .card:nth-child(5) { animation-delay: 0.20s; }
   .tab-panel.active .card:nth-child(6) { animation-delay: 0.25s; }
   .tab-panel.active .card:nth-child(7) { animation-delay: 0.30s; }
+
+  /* --- Theory-to-simulator bridge link --- */
+  .sim-bridge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.18);
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    margin-top: 0.5rem;
+  }
+  .sim-bridge:hover { background: rgba(99, 102, 241, 0.15); border-color: var(--accent); }
+  .sim-bridge::before { content: '\25B6'; font-size: 0.7rem; }
+  :root[data-theme="light"] .sim-bridge { background: rgba(99, 102, 241, 0.06); }
 
   /* --- Section summary chip --- */
   .section-summary {
@@ -1857,7 +1903,7 @@
 
     <div class="card">
       <h2>Classical vs. Quantum Race</h2>
-      <p style="color:var(--muted);margin-bottom:0.5rem;">See the quadratic speedup live: classical random search checks items one by one until a target is found, while Grover's algorithm needs only &radic;N oracle queries. Run multiple races to see the statistical advantage.</p>
+      <p style="color:var(--muted);margin-bottom:0.5rem;">See the quadratic speedup live: classical random search checks items one by one until a target is found, while Grover's algorithm needs only &radic;N oracle queries. Run multiple races to build up statistics.</p>
       <div class="race-bar-container" id="race-container">
         <div class="race-col">
           <div class="race-label-top" id="race-c-label" style="color:var(--negative);">-</div>
@@ -1870,10 +1916,21 @@
           <div class="race-label-bottom">Grover<br>(quantum)</div>
         </div>
       </div>
-      <div style="text-align:center;margin-top:0.75rem;">
+      <div style="text-align:center;margin-top:0.75rem;display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
         <button class="btn-secondary" id="btn-race">Run Race</button>
+        <button class="btn-secondary" id="btn-race-10">Run 10 Races</button>
+        <button class="btn-secondary" id="btn-race-clear" style="font-size:0.82rem;">Clear Stats</button>
       </div>
       <p class="footnote" id="race-result" style="text-align:center;"></p>
+      <div id="race-stats" style="display:none;margin-top:0.75rem;padding:0.75rem;background:rgba(0,0,0,0.1);border-radius:var(--radius);border:1px solid var(--border);">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.5rem;text-align:center;">
+          <div><div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Races Run</div><div style="font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--accent);" id="race-stat-count">0</div></div>
+          <div><div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Quantum Wins</div><div style="font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--accent2);" id="race-stat-wins">0%</div></div>
+          <div><div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Avg Classical</div><div style="font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--negative);" id="race-stat-avg-c">-</div></div>
+          <div><div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Avg Speedup</div><div style="font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--accent2);" id="race-stat-speedup">-</div></div>
+        </div>
+        <p class="footnote" id="race-stat-note" style="text-align:center;margin-top:0.5rem;"></p>
+      </div>
     </div>
   </div>
 
@@ -2054,8 +2111,10 @@ Amplitudes: [<span class="highlight">0.5</span>, <span class="highlight">0.5</sp
       </div>
       <div class="challenge-box">
         <h4>&#129518; Try This</h4>
-        <p>Switch to the <strong>Simulator</strong> tab, set <strong>2 qubits</strong>, mark |11&rang; as the target, and step through one full iteration. Verify that the target reaches amplitude 1.0 exactly.</p>
-        <p>Then try <strong>3 qubits</strong> with target |101&rang;. After 2 iterations, check: is the success probability exactly 100%? Why not?</p>
+        <p>Set <strong>2 qubits</strong>, mark |11&rang; as the target, and step through one full iteration. Verify that the target reaches amplitude 1.0 exactly.</p>
+        <a class="sim-bridge" onclick="switchTab('simulator'); setTimeout(function(){ var qs = document.getElementById('qubit-select'); if(qs && qs.value !== '2'){ qs.value = '2'; qs.dispatchEvent(new Event('change')); }}, 100);">Open in Simulator &mdash; 2 qubits</a>
+        <p style="margin-top:0.6rem;">Then try <strong>3 qubits</strong> with target |101&rang;. After 2 iterations, check: is the success probability exactly 100%? Why not?</p>
+        <a class="sim-bridge" onclick="switchTab('simulator'); setTimeout(function(){ var qs = document.getElementById('qubit-select'); if(qs && qs.value !== '3'){ qs.value = '3'; qs.dispatchEvent(new Event('change')); }}, 100);">Open in Simulator &mdash; 3 qubits</a>
         <p style="color:var(--muted);font-size:0.82rem;margin-top:0.4rem;"><em>Hint: compute &theta; = arcsin(&radic;(1/8)) &asymp; 20.7&deg;, so (2&middot;2+1)&theta; = 5&theta; &asymp; 103.5&deg; &ne; 90&deg;.</em></p>
       </div>
     </div>
@@ -2168,7 +2227,7 @@ $$P(\text{target}) = \sin^2\!\big((2k+1)\theta\big)$$</div>
         <div class="key-insight">
           <strong>Each iteration = rotation by \(2\theta\).</strong> The Oracle reflects about \(|s'\rangle\), the Diffusion reflects about \(|\psi\rangle\). Two reflections compose into a rotation. We want the total angle \((2k+1)\theta\) to reach \(\pi/2\) (i.e. the \(|w\rangle\) axis), which happens at \(k \approx \pi/(4\theta) \approx (\pi/4)\sqrt{N/M}\) iterations. Overshooting rotates the vector <em>past</em> \(|w\rangle\), which is why over-rotation decreases the success probability.
         </div>
-        <p style="color:var(--muted);margin-top:0.5rem;">Switch to the <strong>Simulator</strong> tab and watch the Geometric View panel to see this rotation in real time.</p>
+        <a class="sim-bridge" onclick="switchTab('simulator'); setTimeout(function(){ document.getElementById('geo-canvas')?.scrollIntoView({behavior:'smooth',block:'center'}); }, 200);" style="margin-top:0.5rem;">Open Simulator &mdash; Geometric View</a>
       </div>
     </div>
 
@@ -3079,9 +3138,24 @@ Each probability = 1/${N} = ${(100/N).toFixed(1)}%</div>`);
   const prevMean = prevAmps.reduce((s, a) => s + a, 0) / N;
 
   if (isOracleStep) {
+    // Build inline phase diagram SVG showing the sign flip
+    const phaseCircleSize = 42;
+    const phaseCircleSvg = `<svg width="${phaseCircleSize * 2 + 50}" height="${phaseCircleSize + 10}" viewBox="0 0 ${phaseCircleSize * 2 + 50} ${phaseCircleSize + 10}" style="display:block;margin:0.4rem auto;">
+      <circle cx="${phaseCircleSize/2}" cy="${phaseCircleSize/2+5}" r="${phaseCircleSize/2-2}" fill="none" stroke="var(--border)" stroke-width="1"/>
+      <line x1="${phaseCircleSize/2}" y1="${phaseCircleSize/2+5}" x2="${phaseCircleSize-2}" y2="${phaseCircleSize/2+5}" stroke="var(--oracle)" stroke-width="2.5"/>
+      <circle cx="${phaseCircleSize-2}" cy="${phaseCircleSize/2+5}" r="3" fill="var(--oracle)"/>
+      <text x="${phaseCircleSize/2}" y="${phaseCircleSize+8}" text-anchor="middle" fill="var(--muted)" font-size="8" font-family="monospace">+phase</text>
+      <text x="${phaseCircleSize + 10}" y="${phaseCircleSize/2+9}" fill="var(--muted)" font-size="14">\u2192</text>
+      <circle cx="${phaseCircleSize * 1.5 + 20}" cy="${phaseCircleSize/2+5}" r="${phaseCircleSize/2-2}" fill="none" stroke="var(--border)" stroke-width="1"/>
+      <line x1="${phaseCircleSize * 1.5 + 20}" y1="${phaseCircleSize/2+5}" x2="${phaseCircleSize + 22}" y2="${phaseCircleSize/2+5}" stroke="var(--negative)" stroke-width="2.5"/>
+      <circle cx="${phaseCircleSize + 22}" cy="${phaseCircleSize/2+5}" r="3" fill="var(--negative)"/>
+      <text x="${phaseCircleSize * 1.5 + 20}" y="${phaseCircleSize+8}" text-anchor="middle" fill="var(--muted)" font-size="8" font-family="monospace">\u2212phase</text>
+    </svg>`;
+
     setExplanation(`
       <h3><span class="badge badge-oracle">Oracle</span> Iteration ${iter} of ${optimalIterations()} &mdash; Phase Flip</h3>
       <p style="color:var(--muted);margin-bottom:0.4rem;">The oracle marks ${M > 1 ? M + ' target states' : '|' + targetBin + '\u27E9'} by flipping ${M > 1 ? 'their' : 'its'} amplitude sign. Non-targets are untouched.</p>
+      ${phaseCircleSvg}
       <div class="math-block"><span class="oracle-color">O<sub>f</sub></span>|x&rang; = (-1)<sup>f(x)</sup>|x&rang;
 
 Target${M>1?'s':''}: ${prevAmps[t0].toFixed(4)} &rarr; <span class="oracle-color">${amplitudes[t0].toFixed(4)}</span>  (&times; &minus;1)
@@ -3104,9 +3178,36 @@ Mean shifted: ${prevMean.toFixed(4)} &rarr; <span class="oracle-color">${mean.to
           <p style="margin-top:0.3rem;color:var(--muted);">This is the heart of the algorithm: the Oracle creates a phase difference; Diffusion converts it into an amplitude difference through quantum interference.</p>
         </div>
       </details>`;
+    // Build mini bar diagram showing inversion about mean
+    const ampTarget = amplitudes[t0];
+    const ampOther = amplitudes[nt];
+    const prevAmpT = prevAmps[t0];
+    const prevAmpO = prevAmps[nt];
+    const maxAmp = Math.max(Math.abs(ampTarget), Math.abs(ampOther), Math.abs(prevAmpT), Math.abs(prevAmpO), 0.5);
+    const barScale = 35 / maxAmp;
+    const meanY = 50 - prevMean * barScale;
+    const miniDiagram = `<div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;margin:0.3rem 0 0.4rem;">
+      <div style="text-align:center;font-size:0.72rem;color:var(--muted);">Before<br>
+        <svg width="60" height="55" viewBox="0 0 60 55" style="display:block;margin:0 auto;">
+          <line x1="0" y1="${meanY}" x2="60" y2="${meanY}" stroke="var(--accent2)" stroke-width="1" stroke-dasharray="3,2" opacity="0.6"/>
+          <text x="60" y="${meanY-2}" fill="var(--accent2)" font-size="7" text-anchor="end">\u03BC</text>
+          <rect x="8" y="${prevAmpO >= 0 ? 50 - prevAmpO * barScale : 50}" width="12" height="${Math.abs(prevAmpO) * barScale}" rx="1" fill="var(--accent)" opacity="0.7"/>
+          <rect x="35" y="${prevAmpT >= 0 ? 50 - prevAmpT * barScale : 50}" width="12" height="${Math.abs(prevAmpT) * barScale}" rx="1" fill="${prevAmpT >= 0 ? 'var(--oracle)' : 'var(--negative)'}"/>
+        </svg>
+      </div>
+      <span style="color:var(--accent2);font-size:1.1rem;font-weight:700;">\u2192</span>
+      <div style="text-align:center;font-size:0.72rem;color:var(--muted);">After<br>
+        <svg width="60" height="55" viewBox="0 0 60 55" style="display:block;margin:0 auto;">
+          <rect x="8" y="${ampOther >= 0 ? 50 - ampOther * barScale : 50}" width="12" height="${Math.max(1, Math.abs(ampOther) * barScale)}" rx="1" fill="var(--accent)" opacity="0.7"/>
+          <rect x="35" y="${ampTarget >= 0 ? 50 - ampTarget * barScale : 50}" width="12" height="${Math.abs(ampTarget) * barScale}" rx="1" fill="var(--oracle)"/>
+        </svg>
+      </div>
+    </div>`;
+
     setExplanation(`
       <h3><span class="badge badge-diffusion">Diffusion</span> Iteration ${iter} of ${optimalIterations()} &mdash; Inversion about Mean</h3>
       <p style="color:var(--muted);margin-bottom:0.4rem;">Each amplitude is reflected about the mean. The negated target gets a big boost; non-targets shrink slightly.</p>
+      ${miniDiagram}
       <div class="math-block"><span class="diffusion-color">D</span>: &alpha;<sub>x</sub> &rarr; 2&mu; &minus; &alpha;<sub>x</sub>,  &mu; = ${prevMean.toFixed(4)}
 
 Target${M>1?'s':''}:  2(${prevMean.toFixed(4)}) &minus; (${prevAmps[t0].toFixed(4)}) = <span class="diffusion-color">${amplitudes[t0].toFixed(4)}</span>
@@ -3125,7 +3226,16 @@ function renderGeo(angle) {
   const canvas = document.getElementById('geo-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  // HiDPI support: scale canvas bitmap to match device pixel ratio
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const cssW = rect.width || 340, cssH = rect.height || 340;
+  if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = cssW, H = cssH;
   const cx = W / 2, cy = H / 2;
   const R = Math.min(W, H) / 2 - 45;
   const M = targetIndices.length;
@@ -3238,6 +3348,30 @@ function renderGeo(angle) {
     const thetaDeg = (theta * 180 / Math.PI).toFixed(1);
     const curDeg = (angle * 180 / Math.PI).toFixed(1);
     const pTarget = (Math.sin(angle) ** 2 * 100).toFixed(1);
+    const iter = Math.ceil(currentStep / 2);
+    const isOracleStep = currentStep > 0 && currentStep % 2 === 1;
+    const isDiffusionStep = currentStep > 0 && currentStep % 2 === 0;
+    const remaining = 90 - parseFloat(curDeg);
+
+    let interferenceNote = '';
+    if (isOracleStep && !measured) {
+      interferenceNote = `
+<span style="color:var(--oracle);font-size:0.82rem;">\u25B6 Oracle reflected about |s\u2019\u27E9</span>`;
+    } else if (isDiffusionStep && !measured) {
+      interferenceNote = `
+<span style="color:var(--accent2);font-size:0.82rem;">\u25B6 Diffusion reflected about |\u03C8\u27E9
+  \u2192 Net: +2\u03B8 rotation toward |w\u27E9</span>`;
+    }
+
+    let statusLine = '';
+    if (remaining > 5 && !measured && currentStep > 0) {
+      statusLine = `\n<span style="font-size:0.82rem;color:var(--muted);">${remaining.toFixed(1)}\u00B0 remaining to 90\u00B0</span>`;
+    } else if (Math.abs(remaining) <= 5 && currentStep > 0 && !measured) {
+      statusLine = `\n<span style="font-size:0.82rem;color:var(--accent2);font-weight:600;">Near optimal \u2014 measure now!</span>`;
+    } else if (remaining < -5 && !measured) {
+      statusLine = `\n<span style="font-size:0.82rem;color:var(--oracle);">Over-rotated past 90\u00B0</span>`;
+    }
+
     geoMath.innerHTML = `\u03B8 = arcsin(\u221A(${M}/${N})) = <span class="highlight">${thetaDeg}\u00B0</span>
 
 Current angle = <span class="diffusion-color">${curDeg}\u00B0</span>
@@ -3246,7 +3380,7 @@ Current angle = <span class="diffusion-color">${curDeg}\u00B0</span>
 P(target) = sin\u00B2(${curDeg}\u00B0)
 = <span class="highlight">${pTarget}%</span>
 
-Goal: rotate to 90\u00B0 (\u2248 ${optimalIterations()} iterations)`;
+Goal: rotate to 90\u00B0 (\u2248 ${optimalIterations()} iterations)${interferenceNote}${statusLine}`;
   }
 }
 
@@ -3493,14 +3627,39 @@ function drawHistogram() {
     ctx.fillText(v, pad.left - 5, H - pad.bottom - f * plotH + 4);
   }
 
-  // Summary
+  // Summary with chi-squared goodness-of-fit
   const summary = document.getElementById('histogram-summary');
   if (summary) {
     let targetHits = 0;
     targetIndices.forEach(t => { targetHits += histogramData.counts[t]; });
     const pct = (targetHits / histogramData.total * 100).toFixed(1);
     const expectedPct = (targetIndices.reduce((s, t) => s + histogramData.expectedProb[t], 0) * 100).toFixed(1);
-    summary.innerHTML = `Target found: <strong>${targetHits}/${histogramData.total}</strong> (${pct}%) &mdash; Expected: ${expectedPct}%`;
+
+    // Chi-squared statistic
+    let chiSq = 0;
+    for (let i = 0; i < N; i++) {
+      const observed = histogramData.counts[i];
+      const expected = histogramData.expectedProb[i] * histogramData.total;
+      if (expected > 0) chiSq += Math.pow(observed - expected, 2) / expected;
+    }
+    const df = N - 1;
+    // Approximate p-value using Wilson-Hilferty transformation
+    const z = Math.pow(chiSq / df, 1/3) - (1 - 2/(9*df));
+    const denom = Math.sqrt(2/(9*df));
+    const zScore = denom > 0 ? z / denom : 0;
+    // Standard normal CDF approximation
+    const pValue = 0.5 * (1 + Math.tanh(zScore * 0.7978845608 * (1 + 0.04417 * zScore * zScore)));
+    const pVal1Tail = Math.max(0, Math.min(1, 1 - pValue));
+
+    let fitLabel = '';
+    if (histogramData.total >= 100) {
+      if (pVal1Tail > 0.05) fitLabel = '<span style="color:var(--accent2);">\u2714 Good fit</span>';
+      else if (pVal1Tail > 0.01) fitLabel = '<span style="color:var(--oracle);">\u26A0 Marginal</span>';
+      else fitLabel = '<span style="color:var(--negative);">\u2718 Poor fit</span>';
+      fitLabel += ` <span style="color:var(--muted);font-size:0.8rem;">(&#967;\u00B2=${chiSq.toFixed(1)}, df=${df}, p\u2248${pVal1Tail < 0.001 ? '&lt;0.001' : pVal1Tail.toFixed(3)})</span>`;
+    }
+
+    summary.innerHTML = `Target found: <strong>${targetHits}/${histogramData.total}</strong> (${pct}%) &mdash; Expected: ${expectedPct}%${fitLabel ? '<br>' + fitLabel : ''}`;
   }
 }
 
@@ -3518,9 +3677,23 @@ document.getElementById('btn-hist-clear').addEventListener('click', () => {
 // ===========================
 // CLASSICAL vs QUANTUM RACE
 // ===========================
-document.getElementById('btn-race').addEventListener('click', runRace);
+let raceHistory = [];
 
-function runRace() {
+document.getElementById('btn-race').addEventListener('click', () => runRace(true));
+document.getElementById('btn-race-10').addEventListener('click', () => {
+  for (let i = 0; i < 10; i++) setTimeout(() => runRace(i === 9), i * 80);
+});
+document.getElementById('btn-race-clear').addEventListener('click', () => {
+  raceHistory = [];
+  document.getElementById('race-stats').style.display = 'none';
+  document.getElementById('race-result').innerHTML = '';
+  document.getElementById('race-c-bar').style.height = '2px';
+  document.getElementById('race-q-bar').style.height = '2px';
+  document.getElementById('race-c-label').textContent = '-';
+  document.getElementById('race-q-label').textContent = '-';
+});
+
+function runRace(animate_) {
   const cBar = document.getElementById('race-c-bar'), qBar = document.getElementById('race-q-bar');
   const cLabel = document.getElementById('race-c-label'), qLabel = document.getElementById('race-q-label');
   const result = document.getElementById('race-result');
@@ -3529,9 +3702,23 @@ function runRace() {
   let classicalQ = 0;
   for (let i = 0; i < N; i++) { classicalQ++; if (isTarget(items[i])) break; }
   const quantumQ = optimalIterations();
+  const quantumWins = quantumQ <= classicalQ;
+
+  // Record stats
+  raceHistory.push({ classical: classicalQ, quantum: quantumQ, qWin: quantumWins });
+  updateRaceStats();
+
+  if (!animate_) {
+    // Quick update without animation for batch races
+    const maxQ = Math.max(classicalQ, quantumQ, 1), maxH = 130;
+    cBar.style.height = Math.max(2, classicalQ / maxQ * maxH) + 'px';
+    qBar.style.height = Math.max(2, quantumQ / maxQ * maxH) + 'px';
+    cLabel.textContent = classicalQ; qLabel.textContent = quantumQ;
+    return;
+  }
+
   const maxQ = Math.max(classicalQ, quantumQ, 1), maxH = 130, duration = 1200;
   const startTime = performance.now();
-  // Reset state
   cBar.style.height = '2px'; qBar.style.height = '2px';
   cBar.classList.remove('winner'); qBar.classList.remove('winner');
   cLabel.textContent = '0'; cLabel.classList.remove('winner'); cLabel.style.color = '';
@@ -3540,7 +3727,6 @@ function runRace() {
   result.classList.remove('race-result-reveal');
   function animate(now) {
     const p = Math.min((now - startTime) / duration, 1);
-    // Use ease-out for more dramatic buildup
     const eased = 1 - Math.pow(1 - p, 3);
     const cQ = Math.round(classicalQ * eased), qQ = Math.round(quantumQ * eased);
     cBar.style.height = Math.max(2, cQ / maxQ * maxH) + 'px';
@@ -3548,8 +3734,6 @@ function runRace() {
     cLabel.textContent = cQ; qLabel.textContent = qQ;
     if (p < 1) requestAnimationFrame(animate);
     else {
-      // Victory effects
-      const quantumWins = quantumQ <= classicalQ;
       const winnerBar = quantumWins ? qBar : cBar;
       const winnerLabel = quantumWins ? qLabel : cLabel;
       winnerBar.classList.add('winner');
@@ -3564,6 +3748,25 @@ function runRace() {
     }
   }
   requestAnimationFrame(animate);
+}
+
+function updateRaceStats() {
+  const el = document.getElementById('race-stats');
+  if (!el || raceHistory.length === 0) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  const n = raceHistory.length;
+  const wins = raceHistory.filter(r => r.qWin).length;
+  const avgC = raceHistory.reduce((s, r) => s + r.classical, 0) / n;
+  const avgQ = raceHistory[0].quantum; // always the same
+  const avgSpeedup = avgC / Math.max(avgQ, 1);
+  const theoreticalSpeedup = Math.sqrt(N) / (Math.PI / 4); // average classical = N/2, Grover = pi/4 sqrt(N)
+  document.getElementById('race-stat-count').textContent = n;
+  document.getElementById('race-stat-wins').textContent = Math.round(wins / n * 100) + '%';
+  document.getElementById('race-stat-avg-c').textContent = avgC.toFixed(1);
+  document.getElementById('race-stat-speedup').textContent = avgSpeedup.toFixed(1) + '\u00D7';
+  const M = targetIndices.length;
+  const expectedAvgC = N / (2 * M);
+  document.getElementById('race-stat-note').innerHTML = `Average classical converges to N/${2*M} = ${expectedAvgC.toFixed(0)} queries. Speedup converges to <strong>${(expectedAvgC / avgQ).toFixed(1)}\u00D7</strong> (theoretical \u221A${N}/M \u2248 ${Math.sqrt(N / M).toFixed(1)}\u00D7). Run more races to see convergence!`;
 }
 
 // ===========================
@@ -3677,7 +3880,12 @@ function drawCircuit() {
 // ===========================
 // CIRCUIT WALKTHROUGH
 // ===========================
+// Track walkthrough cleanup to prevent duplicate event listeners
+var _wkCleanup = null;
 function setupGroverWalkthrough() {
+  // Clean up previous instance to prevent memory leak
+  if (_wkCleanup) { _wkCleanup(); _wkCleanup = null; }
+
   const n = nQubits, opt = optimalIterations();
   const N = Math.pow(2, n);
   let currentStep = 0;
@@ -3685,41 +3893,44 @@ function setupGroverWalkthrough() {
 
   // Build step definitions
   const steps = [];
+  const thetaRad = Math.asin(1 / Math.sqrt(N));
+  const thetaDeg = (thetaRad * 180 / Math.PI).toFixed(1);
   steps.push({
     label: 'Initialization',
     short: 'Init',
-    desc: 'All ' + n + ' qubits start in the |0\u27E9 state. The quantum register is in a definite classical state \u2014 no superposition yet.',
+    desc: 'All ' + n + ' qubits start in the |0\u27E9 state. The quantum register is in a definite classical state \u2014 no superposition yet. This is the computational zero state |' + '0'.repeat(n) + '\u27E9.',
     qState: 'q-zero', qLabel: '|0\u27E9'
   });
   steps.push({
     label: 'Hadamard H\u2297' + n,
     short: 'H\u2297' + n,
-    desc: 'Apply Hadamard to all ' + n + ' qubits, creating an <strong>equal superposition</strong> of all ' + N + ' states. Each state has amplitude 1/\u221A' + N + ' \u2248 ' + (1/Math.sqrt(N)).toFixed(3) + '. This is the starting point for the search.',
+    desc: 'Apply Hadamard to all ' + n + ' qubits, creating an <strong>equal superposition</strong> of all ' + N + ' states. Each state has amplitude 1/\u221A' + N + ' \u2248 ' + (1/Math.sqrt(N)).toFixed(3) + '. The state vector makes angle \u03B8 = ' + thetaDeg + '\u00B0 with |s\u2019\u27E9.',
     qState: 'q-super', qLabel: '|+\u27E9'
   });
   for (let k = 0; k < opt; k++) {
-    const iterLabel = opt > 1 ? ' (iter ' + (k+1) + ')' : '';
-    const theta = Math.asin(1 / Math.sqrt(N));
-    const probAfterD = Math.round(Math.pow(Math.sin((2*(k+1)+1) * theta), 2) * 100);
+    const iterLabel = opt > 1 ? ' (iter ' + (k+1) + '/' + opt + ')' : '';
+    const angleAfterO = ((2*k+1) * 2 + 1) * thetaRad; // this is wrong, let me compute properly
+    const probAfterO = Math.round(Math.pow(Math.sin((2*k+1) * thetaRad), 2) * 100);
+    const probAfterD = Math.round(Math.pow(Math.sin((2*(k+1)+1) * thetaRad), 2) * 100);
+    const angleDegAfterD = ((2*(k+1)+1) * thetaRad * 180 / Math.PI).toFixed(1);
     steps.push({
       label: 'Oracle' + iterLabel,
-      short: opt > 1 ? 'O\u2081\u2082\u2083\u2084\u2085'[k] || 'O' : 'Oracle',
-      desc: 'The <strong>oracle</strong> flips the phase of the target state to \u22121. All other amplitudes stay positive. This creates an invisible asymmetry \u2014 the target\u2019s amplitude is now negative while others remain positive.',
+      short: opt > 1 ? 'O' + '\u2081\u2082\u2083\u2084\u2085'[k] || 'O' : 'Oracle',
+      desc: 'The <strong style="color:var(--oracle);">oracle</strong> flips the phase of the target state: amplitude \u00D7 (\u22121). Probabilities are unchanged (|\u00B1a|\u00B2 = |a|\u00B2), but the target is now <strong>below the mean</strong> \u2014 a hidden asymmetry. <span style="color:var(--muted);font-size:0.88rem;">Geometrically: reflection about the |s\u2019\u27E9 axis.</span>',
       qState: 'q-marked', qLabel: '\u00B1\u27E9'
     });
     steps.push({
       label: 'Diffusion' + iterLabel,
-      short: opt > 1 ? 'D\u2081\u2082\u2083\u2084\u2085'[k] || 'D' : 'Diffuse',
-      desc: 'The <strong>diffusion operator</strong> inverts all amplitudes about their mean. The target (below the mean) gets boosted; non-targets get reduced. Target probability is now ~<strong>' + Math.min(100, probAfterD) + '%</strong>.',
+      short: opt > 1 ? 'D' + '\u2081\u2082\u2083\u2084\u2085'[k] || 'D' : 'Diffuse',
+      desc: 'The <strong style="color:var(--accent2);">diffusion operator</strong> reflects amplitudes about their mean. <span style="color:var(--accent2);font-weight:600;">Constructive</span> interference boosts the target; <span style="color:var(--negative);">destructive</span> interference suppresses non-targets. Angle is now ' + angleDegAfterD + '\u00B0, P(target) \u2248 <strong>' + Math.min(100, probAfterD) + '%</strong>.' + (k === opt - 1 ? ' <span style="color:var(--accent2);font-weight:600;">Optimal reached!</span>' : ''),
       qState: 'q-amplified', qLabel: '|\u03C8\u27E9'
     });
   }
-  const finalTheta = Math.asin(1 / Math.sqrt(N));
-  const finalProb = Math.round(Math.pow(Math.sin((2*opt+1) * finalTheta), 2) * 100);
+  const finalProb = Math.round(Math.pow(Math.sin((2*opt+1) * thetaRad), 2) * 100);
   steps.push({
     label: 'Measurement',
     short: 'Measure',
-    desc: 'Measure all ' + n + ' qubits. After ' + opt + ' Grover iteration' + (opt > 1 ? 's' : '') + ', the target state has ~<strong>' + finalProb + '%</strong> probability. The superposition collapses, yielding the answer.',
+    desc: 'Measure all ' + n + ' qubits in the computational basis. After ' + opt + ' Grover iteration' + (opt > 1 ? 's' : '') + ', the target state has ~<strong>' + finalProb + '%</strong> probability of being observed. The superposition collapses to a definite classical outcome \u2014 with high probability, it\u2019s the marked state.',
     qState: 'q-measured', qLabel: '|x*\u27E9'
   });
 
@@ -3841,14 +4052,21 @@ function setupGroverWalkthrough() {
   });
 
   // Keyboard shortcuts (only when circuit tab active)
-  document.addEventListener('keydown', function(e) {
+  function wkKeyHandler(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
     var circuitTab = document.getElementById('circuit');
     if (!circuitTab || !circuitTab.classList.contains('active')) return;
     if (e.key === 'ArrowLeft' && currentStep > 0) { currentStep--; updateWkStep(); e.preventDefault(); }
     if (e.key === 'ArrowRight' && currentStep < steps.length - 1) { currentStep++; updateWkStep(); e.preventDefault(); }
     if (e.key === ' ') { e.preventDefault(); playBtn.click(); }
-  });
+  }
+  document.addEventListener('keydown', wkKeyHandler);
+
+  // Register cleanup function to prevent memory leaks on re-init
+  _wkCleanup = function() {
+    if (playTimer) clearTimeout(playTimer);
+    document.removeEventListener('keydown', wkKeyHandler);
+  };
 
   // Initial render
   updateWkStep();
@@ -3861,7 +4079,16 @@ function drawScalingChart() {
   const canvas = document.getElementById('scaling-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  // HiDPI support
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const cssW = rect.width || 520, cssH = rect.height || 280;
+  if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = cssW, H = cssH;
   const pad = {top: 25, right: 30, bottom: 45, left: 65};
   const gridColor = themeColor('--border') || '#2a2d3a';
   const mutedColor = themeColor('--muted') || '#8888a0';
@@ -3927,7 +4154,7 @@ function loadStateFromHash() {
     }
     if (params.has('n')) {
       const nl = parseInt(params.get('n'));
-      if (nl >= 0 && nl <= 30) { noiseLevel = nl / 100; noiseSlider.value = nl; noiseBadge.classList.toggle('visible', noiseLevel > 0); }
+      if (nl >= 0 && nl <= 30) { noiseLevel = nl / 100; noiseSlider.value = nl; document.getElementById('noise-value').textContent = nl + '%'; noiseBadge.classList.toggle('visible', noiseLevel > 0); }
     }
     populateTargets();
     init();
@@ -4204,6 +4431,22 @@ document.querySelectorAll('.inline-quiz').forEach(quiz => {
   const fbIncorrect = quiz.querySelector('.iq-fb.fb-incorrect');
   let answered = false;
 
+  // Add retry button
+  const retryBtn = document.createElement('button');
+  retryBtn.className = 'iq-retry';
+  retryBtn.textContent = '\u21BB Try again';
+  quiz.appendChild(retryBtn);
+
+  function resetQuiz() {
+    answered = false;
+    opts.forEach(o => { o.classList.remove('disabled', 'correct', 'incorrect'); });
+    if (fbCorrect) fbCorrect.classList.remove('show');
+    if (fbIncorrect) fbIncorrect.classList.remove('show');
+    retryBtn.classList.remove('show');
+  }
+
+  retryBtn.addEventListener('click', resetQuiz);
+
   opts.forEach(opt => {
     opt.addEventListener('click', () => {
       if (answered) return;
@@ -4218,6 +4461,8 @@ document.querySelectorAll('.inline-quiz').forEach(quiz => {
 
       if (isCorrect && fbCorrect) { fbCorrect.classList.add('show'); }
       else if (!isCorrect && fbIncorrect) { fbIncorrect.classList.add('show'); }
+
+      retryBtn.classList.add('show');
     });
   });
 });

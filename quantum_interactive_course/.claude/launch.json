@@ -6,7 +6,7 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8780"],
       "port": 8780,
-      "url": "http://localhost:8780/modules/26_superposition_hero.html"
+      "url": "http://localhost:8780/modules/02_measurements.html"
     },
     {
       "name": "toric-server",

@@ -155,7 +155,7 @@
       gap: 0; overflow: hidden; margin: 1.5rem 0;
     }
     .bloch-container {
-      aspect-ratio: 1; max-height: 420px;
+      aspect-ratio: 1; max-height: 620px;
       background: var(--bg-secondary); position: relative; cursor: grab;
     }
     .bloch-container:active { cursor: grabbing; }
@@ -218,8 +218,9 @@
     .btn-primary {
       background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: white;
     }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(96,165,250,0.3); }
-    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(96,165,250,0.3); }
+    .btn-primary:active:not(:disabled) { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.3); }
     .btn-secondary {
       background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary);
     }
@@ -235,7 +236,8 @@
       border-radius: var(--radius-sm); cursor: pointer; font-weight: 600;
       font-size: 0.85rem; font-family: var(--font-body); transition: all var(--transition);
     }
-    .basis-btn:hover { border-color: var(--accent-blue); color: var(--text-primary); }
+    .basis-btn:hover:not(:disabled) { border-color: var(--accent-blue); color: var(--text-primary); }
+    .basis-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .basis-btn.active {
       background: rgba(96,165,250,0.15); border-color: var(--accent-blue); color: var(--accent-blue);
     }
@@ -321,8 +323,9 @@
     .states-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 1rem 0; }
     .states-table th, .states-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border-subtle); }
     .states-table th { text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
-    .states-table .clickable { cursor: pointer; color: var(--accent-blue); }
+    .states-table .clickable { cursor: pointer; color: var(--accent-blue); transition: background var(--transition); }
     .states-table .clickable:hover { text-decoration: underline; }
+    .states-table .clickable.active-row { background: rgba(96,165,250,0.1); }
 
     /* ===== Custom axis controls ===== */
     .custom-axis { display: none; flex-direction: column; gap: 0.75rem; }
@@ -346,7 +349,7 @@
       .hamburger { display: flex; }
       .main-content { margin-left: 0; padding: 1.5rem 1rem 3rem; }
       .interactive-panel { grid-template-columns: 1fr; }
-      .bloch-container { max-height: 350px; }
+      .bloch-container { max-height: 480px; }
       .comparison-grid { grid-template-columns: 1fr; }
     }
 
@@ -387,6 +390,12 @@
   .measure-dot.z0 { background: rgba(96,165,250,0.25); color: var(--accent-blue); }
   .measure-dot.z1 { background: rgba(251,146,60,0.25); color: var(--accent-orange); }
   @keyframes dotPop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+  @keyframes measurePulse {
+    0% { box-shadow: inset 0 0 0 0 rgba(96,165,250,0.0); }
+    30% { box-shadow: inset 0 0 40px 8px rgba(96,165,250,0.25); }
+    100% { box-shadow: inset 0 0 0 0 rgba(96,165,250,0.0); }
+  }
+  .bloch-container.pulse { animation: measurePulse 0.6s ease-out; }
   .log-summary { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); padding: 0.25rem 0; }
 
   /* Scroll progress bar */
@@ -593,6 +602,7 @@
                 <input type="range" id="phim-slider" min="0" max="6.28318530" step="0.01" value="0">
               </div>
             </div>
+            <div class="state-display" id="stateDisplay3"></div>
             <div class="prob-bars">
               <div class="prob-row">
                 <span class="prob-label" id="basis-label-plus">\(|0\rangle\)</span>
@@ -645,6 +655,7 @@
                 <input type="range" id="phi-slider-born" min="0" max="6.28318530" step="0.01" value="0">
               </div>
             </div>
+            <div class="state-display" id="stateDisplayBorn"></div>
             <div class="slider-group">
               <label>Measurement basis</label>
               <div class="basis-selector" id="born-basis-selector">
@@ -693,14 +704,23 @@
               <label>&phi; <span id="phi-val-4">0.00</span></label>
               <input type="range" id="phi-slider-4" min="0" max="6.28318530" step="0.01" value="0">
             </div>
+            <div class="state-display" id="stateDisplayCollapse"></div>
+            <div class="slider-group">
+              <label>Measurement basis</label>
+              <div class="basis-selector" id="collapse-basis-selector">
+                <button class="basis-btn active" data-collapse-basis="Z">Z</button>
+                <button class="basis-btn" data-collapse-basis="X">X</button>
+                <button class="basis-btn" data-collapse-basis="Y">Y</button>
+              </div>
+            </div>
             <div class="prob-bars" id="collapse-probs">
               <div class="prob-row">
-                <span class="prob-label">\(|0\rangle\)</span>
+                <span class="prob-label" id="collapse-label-plus">\(|0\rangle\)</span>
                 <div class="prob-track"><div class="prob-fill blue" id="prob0-fill-4"></div></div>
                 <span class="prob-val" id="prob0-val-4">50%</span>
               </div>
               <div class="prob-row">
-                <span class="prob-label">\(|1\rangle\)</span>
+                <span class="prob-label" id="collapse-label-minus">\(|1\rangle\)</span>
                 <div class="prob-track"><div class="prob-fill orange" id="prob1-fill-4"></div></div>
                 <span class="prob-val" id="prob1-val-4">50%</span>
               </div>
@@ -950,8 +970,8 @@ class BlochSphere {
     const w = this.container.clientWidth || 400;
     const h = this.container.clientHeight || 400;
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
-    this.camera.position.set(2.8, 2.0, 2.8);
+    this.camera = new THREE.PerspectiveCamera(44, w / h, 0.1, 100);
+    this.camera.position.set(3.2, 2.2, 3.2);
     this.camera.lookAt(0, 0, 0);
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setSize(w, h);
@@ -960,14 +980,14 @@ class BlochSphere {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
-    this.controls.minDistance = 2.5;
-    this.controls.maxDistance = 6;
+    this.controls.minDistance = 3.0;
+    this.controls.maxDistance = 7;
     this.controls.enablePan = false;
 
     // Wireframe sphere
     const sphereGeo = new THREE.SphereGeometry(1, 32, 16);
     this.scene.add(new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({
-      color: 0x60a5fa, wireframe: true, transparent: true, opacity: 0.08
+      color: 0x60a5fa, wireframe: true, transparent: true, opacity: 0.13
     })));
 
     // Equator
@@ -975,14 +995,22 @@ class BlochSphere {
     for (let i = 0; i <= 64; i++) { const a = (i / 64) * Math.PI * 2; eqPts.push(new THREE.Vector3(Math.cos(a), 0, Math.sin(a))); }
     this.scene.add(new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(eqPts),
-      new THREE.LineBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.25 })
+      new THREE.LineBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.4 })
+    ));
+
+    // Prime meridian (longitude circle in X-Y plane for depth reference)
+    const merPts = [];
+    for (let i = 0; i <= 64; i++) { const a = (i / 64) * Math.PI * 2; merPts.push(new THREE.Vector3(Math.cos(a), Math.sin(a), 0)); }
+    this.scene.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(merPts),
+      new THREE.LineBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.18 })
     ));
 
     // Axes: Bloch X->Three X, Bloch Y->Three Z, Bloch Z->Three Y
     const L = 1.35;
     const mkAxis = (a, b, c) => {
       const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a), new THREE.Vector3(...b)]);
-      this.scene.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: 0.4 })));
+      this.scene.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: 0.6 })));
     };
     mkAxis([-L,0,0],[L,0,0], 0xff6b6b);
     mkAxis([0,-L,0],[0,L,0], 0x94a3b8);
@@ -995,7 +1023,7 @@ class BlochSphere {
       cx.fillStyle = col; cx.textAlign = 'center'; cx.textBaseline = 'middle';
       cx.fillText(txt, 32, 32);
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true }));
-      sp.position.set(...pos); sp.scale.set(0.3,0.3,0.3);
+      sp.position.set(...pos); sp.scale.set(0.38,0.38,0.38);
       this.scene.add(sp);
     };
     mkLabel('X', [1.55,0,0], '#ff6b6b');
@@ -1008,7 +1036,7 @@ class BlochSphere {
       const cx = cv.getContext('2d'); cx.font='24px sans-serif'; cx.fillStyle=col;
       cx.textAlign='center'; cx.textBaseline='middle'; cx.fillText(txt,64,24);
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true}));
-      sp.position.set(...pos); sp.scale.set(0.4,0.15,1); this.scene.add(sp);
+      sp.position.set(...pos); sp.scale.set(0.5,0.19,1); this.scene.add(sp);
     };
     mkSmall('|0\u27E9',[0,1.25,0],'#e2e8f0');
     mkSmall('|1\u27E9',[0,-1.25,0],'#e2e8f0');
@@ -1017,11 +1045,26 @@ class BlochSphere {
     mkSmall('|+i\u27E9',[0,0,1.2],'#94a3b8');
     mkSmall('|-i\u27E9',[0,0,-1.2],'#94a3b8');
 
-    // State vector arrow
+    // State vector arrow (brighter blue, larger head)
     this.stateArrow = new THREE.ArrowHelper(
-      new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1.0, 0x60a5fa, 0.12, 0.07
+      new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1.0, 0x93c5fd, 0.14, 0.08
     );
     this.scene.add(this.stateArrow);
+
+    // Equator projection: vertical line from state tip to equator plane + shadow dot
+    this.projLine = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0)]),
+      new THREE.LineBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.35 })
+    );
+    // Make it dashed
+    this.projLine.computeLineDistances();
+    this.projLine.material = new THREE.LineDashedMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.35, dashSize: 0.06, gapSize: 0.04 });
+    this.scene.add(this.projLine);
+    this.projDot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.04, 12, 8),
+      new THREE.MeshBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.5 })
+    );
+    this.scene.add(this.projDot);
 
     // Measurement axis arrows (hidden)
     this.measArrow1 = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1.15, 0xfb923c, 0.1, 0.06);
@@ -1053,7 +1096,19 @@ class BlochSphere {
   }
 
   _updateStateArrow() {
-    this.stateArrow.setDirection(this._b2t(this._theta, this._phi).normalize());
+    const dir = this._b2t(this._theta, this._phi).normalize();
+    this.stateArrow.setDirection(dir);
+    // Equator projection: vertical dashed line from tip to equator plane (y=0)
+    const proj = new THREE.Vector3(dir.x, 0, dir.z);
+    const pts = [dir.clone(), proj.clone()];
+    this.projLine.geometry.dispose();
+    this.projLine.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+    this.projLine.computeLineDistances();
+    this.projDot.position.copy(proj);
+    // Hide projection when state is on a pole (no meaningful equator shadow)
+    const onPole = Math.abs(dir.y) > 0.98;
+    this.projLine.visible = !onPole;
+    this.projDot.visible = !onPole;
   }
 
   setStateVector(t, p) { this._theta = t; this._phi = p; this._updateStateArrow(); }
@@ -1083,7 +1138,16 @@ class BlochSphere {
         let t = Math.min((now - t0) / dur, 1);
         t = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2;
         const q = new THREE.Quaternion(); q.slerpQuaternions(sq, eq, t);
-        this.stateArrow.setDirection(new THREE.Vector3(0,1,0).applyQuaternion(q).normalize());
+        const dir = new THREE.Vector3(0,1,0).applyQuaternion(q).normalize();
+        this.stateArrow.setDirection(dir);
+        // Update projection during animation
+        const proj = new THREE.Vector3(dir.x, 0, dir.z);
+        this.projLine.geometry.dispose();
+        this.projLine.geometry = new THREE.BufferGeometry().setFromPoints([dir.clone(), proj.clone()]);
+        this.projLine.computeLineDistances();
+        this.projDot.position.copy(proj);
+        const onPole = Math.abs(dir.y) > 0.98;
+        this.projLine.visible = !onPole; this.projDot.visible = !onPole;
         if (t < 1) requestAnimationFrame(step);
         else { this._theta = targetT; this._phi = targetP; resolve(); }
       };
@@ -1114,11 +1178,21 @@ function drawHistogram(canvas, counts, total, theory, labels) {
   const W = canvas.width, H = canvas.height;
   ctx.fillStyle = '#162037'; ctx.fillRect(0,0,W,H);
   const textCol = '#94a3b8';
+  const gridCol = 'rgba(148,163,184,0.1)';
   const colors = ['#60a5fa','#fb923c'];
   const theoryCol = '#a78bfa';
-  const m = {top:30,right:30,bottom:50,left:30};
+  const m = {top:30,right:30,bottom:50,left:50};
   const pW = W-m.left-m.right, pH = H-m.top-m.bottom;
   const bW = pW/4, gap = pW/6;
+  // Y-axis gridlines
+  const gridSteps = [0, 0.25, 0.5, 0.75, 1.0];
+  for (const frac of gridSteps) {
+    const gy = m.top + pH - frac * pH;
+    ctx.strokeStyle = gridCol; ctx.lineWidth = 1; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(m.left, gy); ctx.lineTo(W - m.right, gy); ctx.stroke();
+    ctx.fillStyle = textCol; ctx.font = '10px system-ui'; ctx.textAlign = 'right';
+    ctx.fillText((frac * 100).toFixed(0) + '%', m.left - 8, gy + 3);
+  }
   for (let i=0;i<2;i++){
     const x = m.left+gap+i*(bW+gap);
     const freq = total>0 ? counts[i]/total : 0;
@@ -1206,6 +1280,13 @@ async function main() {
     return ['|{+n}\\rangle','|{-n}\\rangle','|+n\u27E9','|-n\u27E9'];
   }
 
+  function pulseBloch(id) {
+    const el = $(id); if (!el) return;
+    el.classList.remove('pulse');
+    void el.offsetWidth; // force reflow
+    el.classList.add('pulse');
+  }
+
   // Bloch spheres
   const bloch1 = new BlochSphere('bloch1');
   const bloch2 = new BlochSphere('bloch2');
@@ -1227,14 +1308,34 @@ async function main() {
   }), {threshold:0.1, rootMargin:'0px 0px -40px 0px'});
   document.querySelectorAll('section, .interactive-panel, .callout, .callout-challenge, .exercise').forEach(el => enterObs.observe(el));
 
-  // Nav highlighting
-  const navObs = new IntersectionObserver(es => es.forEach(e => {
-    if (!e.isIntersecting) return;
-    document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
-    const link = document.querySelector(`.sidebar a[href="#${e.target.id}"]`);
-    if (link) link.classList.add('active');
-  }), {threshold:0.2, rootMargin:'-10% 0px -70% 0px'});
-  document.querySelectorAll('section[id]').forEach(s => navObs.observe(s));
+  // Nav highlighting — scroll-based for reliable tracking of tall sections
+  const navSections = Array.from(document.querySelectorAll('section[id]'));
+  const navLinks = document.querySelectorAll('.sidebar a');
+  let navTicking = false;
+  function updateNavHighlight() {
+    const trigger = window.innerHeight * 0.5;
+    let current = navSections[0];
+    for (const s of navSections) {
+      if (s.getBoundingClientRect().top <= trigger) current = s;
+    }
+    // Near bottom of page: highlight the last section visible on screen
+    const atBottom = (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 60);
+    if (atBottom) {
+      for (let i = navSections.length - 1; i >= 0; i--) {
+        if (navSections[i].getBoundingClientRect().top < window.innerHeight) { current = navSections[i]; break; }
+      }
+    }
+    navLinks.forEach(a => a.classList.remove('active'));
+    if (current) {
+      const link = document.querySelector(`.sidebar a[href="#${current.id}"]`);
+      if (link) link.classList.add('active');
+    }
+    navTicking = false;
+  }
+  window.addEventListener('scroll', () => {
+    if (!navTicking) { navTicking = true; requestAnimationFrame(updateNavHighlight); }
+  });
+  updateNavHighlight();
 
 
   // Hamburger
@@ -1281,6 +1382,7 @@ async function main() {
     const lb = basisLabels(currentBasis);
     KR.render('basis-label-plus', lb[0]);
     KR.render('basis-label-minus', lb[1]);
+    KR.render('stateDisplay3', '|\\psi\\rangle = '+state.toKatex());
   }
 
   // Sync all sliders
@@ -1298,16 +1400,42 @@ async function main() {
   ['theta-slider-2','phi-slider-2'].forEach(id => $(id).addEventListener('input', ()=>syncAll('theta-slider-2','phi-slider-2')));
   ['theta-slider-3','phi-slider-3'].forEach(id => $(id).addEventListener('input', ()=>syncAll('theta-slider-3','phi-slider-3')));
 
-  // Special states
-  document.querySelectorAll('.states-table .clickable').forEach(row => {
-    row.addEventListener('click', () => {
-      state.theta = parseFloat(row.dataset.theta);
-      state.phi = parseFloat(row.dataset.phi);
-      allThetas.forEach(id => $(id).value=state.theta);
-      allPhis.forEach(id => $(id).value=state.phi);
+  // Special states (animated transition)
+  let presetAnimating = false;
+  const presetRows = document.querySelectorAll('.states-table .clickable');
+  presetRows.forEach(row => {
+    row.addEventListener('click', async () => {
+      if (presetAnimating) return;
+      const newT = parseFloat(row.dataset.theta);
+      const newP = parseFloat(row.dataset.phi);
+      presetRows.forEach(r => r.classList.remove('active-row'));
+      row.classList.add('active-row');
+      presetAnimating = true;
+      const startT = state.theta, startP = state.phi;
+      const dur = 400, t0 = performance.now();
+      // Animate sliders + prob bars in sync with Bloch sphere
+      const sliderAnim = new Promise(resolve => {
+        function step(now) {
+          let frac = Math.min((now - t0) / dur, 1);
+          frac = frac < 0.5 ? 2*frac*frac : 1 - Math.pow(-2*frac+2,2)/2; // ease-in-out
+          const curT = startT + (newT - startT) * frac;
+          const curP = startP + (newP - startP) * frac;
+          allThetas.forEach(id => $(id).value = curT);
+          allPhis.forEach(id => $(id).value = curP);
+          state.theta = curT; state.phi = curP;
+          updateSec2(); updateSec3(); updateSec4();
+          if (frac < 1) requestAnimationFrame(step); else resolve();
+        }
+        requestAnimationFrame(step);
+      });
+      await Promise.all([bloch1.animateCollapse(newT, newP, dur), sliderAnim]);
+      presetAnimating = false;
+      state.theta = newT; state.phi = newP;
       updateSec2(); updateSec3(); updateSec4();
     });
   });
+  // Clear highlight when sliders are used (state is no longer a preset)
+  ['theta-slider','phi-slider'].forEach(id => $(id).addEventListener('input', () => presetRows.forEach(r => r.classList.remove('active-row'))));
 
   // Z-measurement
   let preZTheta = state.theta, preZPhi = state.phi;
@@ -1332,6 +1460,7 @@ async function main() {
     if (r.outcome==='+') { el.classList.add('outcome-0'); el.innerHTML=`Outcome: |0\u27E9 &nbsp;(prob ${(r.prob*100).toFixed(1)}%)`; }
     else { el.classList.add('outcome-1'); el.innerHTML=`Outcome: |1\u27E9 &nbsp;(prob ${(r.prob*100).toFixed(1)}%)`; }
     updateZLog(r.outcome);
+    pulseBloch('bloch2');
     await bloch2.animateCollapse(r.newState.theta, r.newState.phi);
     state.theta=r.newState.theta; state.phi=r.newState.phi;
     allThetas.forEach(id=>$(id).value=state.theta);
@@ -1391,6 +1520,7 @@ async function main() {
     if (r.outcome==='+') { el.classList.add('outcome-0'); el.innerHTML=`Outcome: ${lb[2]} &nbsp;(prob ${(r.prob*100).toFixed(1)}%)`; }
     else { el.classList.add('outcome-1'); el.innerHTML=`Outcome: ${lb[3]} &nbsp;(prob ${(r.prob*100).toFixed(1)}%)`; }
     updateBasisLog(r.outcome);
+    pulseBloch('bloch3');
     await bloch3.animateCollapse(r.newState.theta, r.newState.phi);
     state.theta=r.newState.theta; state.phi=r.newState.phi;
     allThetas.forEach(id=>$(id).value=state.theta);
@@ -1412,8 +1542,12 @@ async function main() {
 
   // Born rule
   let bornBasis = 'Z';
-  $('theta-slider-born').addEventListener('input', e => $('theta-val-born').textContent=parseFloat(e.target.value).toFixed(2));
-  $('phi-slider-born').addEventListener('input', e => $('phi-val-born').textContent=parseFloat(e.target.value).toFixed(2));
+  function updateBornState() {
+    const q = new QubitState(parseFloat($('theta-slider-born').value), parseFloat($('phi-slider-born').value));
+    KR.render('stateDisplayBorn', '|\\psi\\rangle = '+q.toKatex());
+  }
+  $('theta-slider-born').addEventListener('input', e => { $('theta-val-born').textContent=parseFloat(e.target.value).toFixed(2); updateBornState(); });
+  $('phi-slider-born').addEventListener('input', e => { $('phi-val-born').textContent=parseFloat(e.target.value).toFixed(2); updateBornState(); });
   document.querySelectorAll('[data-born-basis]').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('[data-born-basis]').forEach(b => b.classList.remove('active'));
@@ -1458,13 +1592,31 @@ async function main() {
   // Collapse demo
   let collapseState = new QubitState(Math.PI/2,0);
   let isCollapsed = false;
+  let collapseBasis = 'Z';
+  function collapseAngles() { return basisAngles(collapseBasis); }
+  function collapseLabels() { return basisLabels(collapseBasis); }
   function updateCollapseProbs() {
-    const p = collapseState.probZ();
-    $('prob0-fill-4').style.width = (p.p0*100)+'%';
-    $('prob1-fill-4').style.width = (p.p1*100)+'%';
-    $('prob0-val-4').textContent = (p.p0*100).toFixed(0)+'%';
-    $('prob1-val-4').textContent = (p.p1*100).toFixed(0)+'%';
+    const {tM,pM} = collapseAngles();
+    const pr = collapseState.probAxis(tM, pM);
+    $('prob0-fill-4').style.width = (pr.pPlus*100)+'%';
+    $('prob1-fill-4').style.width = (pr.pMinus*100)+'%';
+    $('prob0-val-4').textContent = (pr.pPlus*100).toFixed(0)+'%';
+    $('prob1-val-4').textContent = (pr.pMinus*100).toFixed(0)+'%';
+    const lb = collapseLabels();
+    KR.render('collapse-label-plus', lb[0]);
+    KR.render('collapse-label-minus', lb[1]);
+    KR.render('stateDisplayCollapse', '|\\psi\\rangle = '+collapseState.toKatex());
+    bloch4.setMeasurementAxis(tM, pM);
   }
+  document.querySelectorAll('[data-collapse-basis]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (isCollapsed) return;
+      document.querySelectorAll('[data-collapse-basis]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      collapseBasis = btn.dataset.collapseBasis;
+      updateCollapseProbs();
+    });
+  });
   $('theta-slider-4').addEventListener('input', () => { if(isCollapsed)return; collapseState.theta=parseFloat($('theta-slider-4').value); $('theta-val-4').textContent=collapseState.theta.toFixed(2); bloch4.setStateVector(collapseState.theta,collapseState.phi); updateCollapseProbs(); });
   $('phi-slider-4').addEventListener('input', () => { if(isCollapsed)return; collapseState.phi=parseFloat($('phi-slider-4').value); $('phi-val-4').textContent=collapseState.phi.toFixed(2); bloch4.setStateVector(collapseState.theta,collapseState.phi); updateCollapseProbs(); });
 
@@ -1480,13 +1632,22 @@ async function main() {
     isCollapsed=false; $('collapse-narration').innerHTML='';
     $('btn-measure-again').style.display='none'; $('btn-reset-collapse').style.display='none';
     $('theta-slider-4').disabled=true; $('phi-slider-4').disabled=true;
-    addNar(`<strong>Step 1:</strong> Initial state (&theta;=${collapseState.theta.toFixed(2)}, &phi;=${collapseState.phi.toFixed(2)})`);
+    document.querySelectorAll('[data-collapse-basis]').forEach(b => b.disabled=true);
+    const {tM,pM} = collapseAngles();
+    const lb = collapseLabels();
+    const initKet = collapseState.toKatex();
+    addNar(`<strong>Step 1:</strong> Initial state: <span class="nar-math" data-tex="|\\psi\\rangle = ${initKet}"></span> &nbsp;(&theta;=${collapseState.theta.toFixed(2)}, &phi;=${collapseState.phi.toFixed(2)})`);
+    // Render inline KaTeX in narration
+    document.querySelectorAll('.nar-math[data-tex]').forEach(el => {
+      if (!el.dataset.rendered) { KR.render(el, el.dataset.tex); el.dataset.rendered='1'; }
+    });
     await new Promise(r=>setTimeout(r,500));
-    addNar('<strong>Step 2:</strong> Measuring in Z-basis...');
+    addNar(`<strong>Step 2:</strong> Measuring in ${collapseBasis}-basis...`);
     await new Promise(r=>setTimeout(r,400));
-    const result = collapseState.measureAxis(0,0);
-    const lbl = result.outcome==='+' ? '|0\u27E9' : '|1\u27E9';
+    const result = collapseState.measureAxis(tM,pM);
+    const lbl = result.outcome==='+' ? lb[2] : lb[3];
     addNar(`<strong>Step 3:</strong> Outcome: <span style="color:var(--accent-cyan)">${lbl}</span> (prob ${(result.prob*100).toFixed(1)}%)`, true);
+    pulseBloch('bloch4');
     await bloch4.animateCollapse(result.newState.theta, result.newState.phi, 800);
     collapseState = result.newState;
     updateCollapseProbs();
@@ -1496,8 +1657,11 @@ async function main() {
     $('btn-collapse-demo').disabled = false;
   });
   $('btn-measure-again').addEventListener('click', () => {
-    const r=collapseState.measureAxis(0,0);
-    addNar(`<strong>Re-measure:</strong> Outcome ${r.outcome==='+'?'|0\u27E9':'|1\u27E9'} (prob ${(r.prob*100).toFixed(1)}%). Eigenstate measurement is <em>deterministic</em>.`, true);
+    const {tM,pM} = collapseAngles();
+    const lb = collapseLabels();
+    const r=collapseState.measureAxis(tM,pM);
+    const lbl = r.outcome==='+' ? lb[2] : lb[3];
+    addNar(`<strong>Re-measure:</strong> Outcome ${lbl} (prob ${(r.prob*100).toFixed(1)}%). Eigenstate measurement is <em>deterministic</em>.`, true);
   });
   $('btn-reset-collapse').addEventListener('click', () => {
     isCollapsed=false; collapseState=new QubitState(parseFloat($('theta-slider-4').value),parseFloat($('phi-slider-4').value));
@@ -1506,6 +1670,7 @@ async function main() {
     $('collapse-narration').innerHTML='';
     $('btn-measure-again').style.display='none'; $('btn-reset-collapse').style.display='none';
     $('theta-slider-4').disabled=false; $('phi-slider-4').disabled=false;
+    document.querySelectorAll('[data-collapse-basis]').forEach(b => b.disabled=false);
   });
 
   // Statistics
@@ -1606,7 +1771,7 @@ async function main() {
   });
 
   // Initial
-  updateSec2(); updateSec3(); updateSec4(); updateCollapseProbs(); updateStatsDisplay();
+  updateSec2(); updateSec3(); updateSec4(); updateBornState(); updateCollapseProbs(); updateStatsDisplay();
 }
 
 main();

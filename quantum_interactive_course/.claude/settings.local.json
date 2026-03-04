@@ -55,7 +55,10 @@
       "Bash(lsof -i :8782)",
       "Bash(kill 8179)",
       "Bash(lsof -i :8780)",
-      "Bash(kill 15226)"
+      "Bash(kill 15226)",
+      "Bash(du -sh /Users/fegranha/repo/granha.github.io/quantum_interactive_course/*)",
+      "Bash(sort -t: -k2 -rn)",
+      "Bash(grep -l \"bb84\\\\|BB84\\\\|quantum key\\\\|key distribution\" /Users/fegranha/repo/granha.github.io/quantum_interactive_course/modules/*.html)"
     ]
   }
 }
