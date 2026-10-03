@@ -6,9 +6,8 @@
     <meta name="description" content="Fernando Granha Jeronimo is an Assistant Professor at UIUC working in theoretical computer science: coding theory, expanders, optimization, and quantum computing." />
     <meta name="author" content="Fernando Granha Jeronimo" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
     <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
-    <meta name="keywords" content="Fernando Granha Jeronimo, UIUC, Theoretical Computer Science, TCS, CS Theory, Coding Theory, Quantum Computing, Quantum Complexity,
-				   Expanders, Expander Graphs, Optimization, Sum-of-Squares, SDP, LP, HDX" />
     <link rel="canonical" href="https://granha.github.io/" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:type" content="website" />
@@ -25,17 +24,18 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Merriweather:wght@500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Merriweather:wght@500;700&amp;display=swap" rel="stylesheet" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#f9fbf9" />
-    <link rel="stylesheet" type="text/css" href="index-modern.css" media="all" />
-    
+    <meta name="theme-color" content="#f6f9f6" />
+    <link rel="stylesheet" type="text/css" href="index-redesign.css" media="all" />
+
 
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="index-page.js" defer></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -49,9 +49,6 @@
           "name": "University of Illinois Urbana-Champaign"
         },
         "department": "Siebel School of Computing and Data Science",
-        "sameAs": [
-          "https://siebelschool.illinois.edu"
-        ],
         "knowsAbout": [
           "Theoretical Computer Science",
           "Coding Theory",
@@ -63,27 +60,46 @@
     </script>
   </head>
 
-  <body class="light">
+  <body id="top" class="light">
     <a class="skip-link" href="#main-content">Skip to content</a>
     <div id="layout">
 
-      <div class="row hero-row">
+      <header class="hero-row">
 	<div class="col c6 hero-main">
-	  <h2><a href="index.html">Fernando Granha Jeronimo</a></h2>
+	  <p class="hero-label">Theoretical Computer Science · UIUC</p>
+	  <h1><a href="index.html">Fernando Granha Jeronimo</a></h1>
 	  <p class="slogan hero-kicker">
-	    Assistant Professor in Computer Science at
+	    Assistant Professor in Computer Science at<br />
 	    <a href="https://siebelschool.illinois.edu">the Siebel School at University of Illinois Urbana-Champaign</a>.
 	  </p>
+	  <div class="hero-tags" role="list" aria-label="Research areas">
+	    <span role="listitem">Coding theory</span>
+	    <span role="listitem">Expanders</span>
+	    <span role="listitem">Optimization</span>
+	    <span role="listitem">Quantum computing</span>
+	  </div>
+	  <address class="hero-meta">
+	    <span class="hero-email">granha[at]illinois[dot]edu</span>
+	  </address>
 	</div>
 	<div class="col c3 headerimage">
-	  <img src="images/fernando_compressed.jpg" width="180" height="180" alt="Portrait of Fernando Granha Jeronimo" />
+	  <img src="images/fernando_compressed.jpg" width="180" height="180" alt="Portrait of Fernando Granha Jeronimo" decoding="async" fetchpriority="high" />
 	</div>
-      </div>
+      </header>
+
+      <nav class="section-nav" aria-label="Homepage sections">
+	<a href="#about">About</a>
+	<a href="#teaching">Teaching</a>
+	<a href="#students">Students</a>
+	<a href="#papers">Papers</a>
+	<a href="#bio">Bio</a>
+	<a href="#reading-groups">Activities</a>
+      </nav>
 
       <main id="main-content">
-      <div id="about" class="row">
+      <div id="about" class="row" role="region" aria-labelledby="about-title">
 	<div class="col c5">
-	  <h3>About me</h3>
+	  <h3 id="about-title">About me</h3>
 	  <p>
 	    My research is in theoretical computer science (TCS), mainly involving:
 	  </p>
@@ -104,56 +120,46 @@
 	    <a href="https://www.youtube.com/watch?v=D3uh12zvm_0">here</a>
 	    and
 	    <a href="https://www.youtube.com/watch?v=n8HpJEVvK8U">here</a>.
-	  </p>	  
+	  </p>
 	  <p>
 	    I am looking to continuously grow my research group over the years.
 	    Motivated students are encouraged to apply to our
 	    <a href="https://siebelschool.illinois.edu/admissions/graduate">graduate programs</a>.
 	  </p>
-	  <p>
-	    Email: <b> granha[at]illinois[dot]edu </b>
-	  </p>
 	</div>
       </div>
 
-      <!-- 
-      <div class="col c6">
-	Please, feel free to reach out to me if you are interested in working together.
-	<br>	
-	<br> <br>
-      </div>
-      -->
-
-      <div id="teaching" class="row">
+      <div id="teaching" class="row" role="region" aria-labelledby="teaching-title">
 	<div class="col c6">
-	  <h3>Teaching</h3>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>
+	  <h3 id="teaching-title">Teaching</h3>
 	  <p>
 	    CS 498:
 	    <a href="cs498_spring26/index.html">
 	      Introduction to Quantum Computing
-	    </a> <a href="https://granha.github.io/quantum_interactive_course/index.html">[Quantum Interactive Course]</a>
+	    </a>
 	    (Spring 2026)
-	  </p>	  
+	    <span class="course-resource">
+	      <span>Interactive companion</span>
+	      <a href="https://granha.github.io/quantum_interactive_course/index.html">Quantum Interactive Course</a>
+	    </span>
+	  </p>
 	  <p>
 	    CS 579:
-	    <a href="./cs579_fall25.html" class="current">
+	    <a href="./cs579_fall25.html">
 	      Computational Complexity
 	    </a>
 	    (Fall 2025)
-	  </p>	  	  
+	  </p>
 	  <p>
 	    CS 498:
 	    <a href="https://courses.grainger.illinois.edu/cs498qcg/sp2025/">
 	      Introduction to Quantum Computing
 	    </a>
 	    (Spring 2025)
-	  </p>	  
+	  </p>
 	  <p>
 	    CS 598:
-	    <a href="./cs598_fall24.html" class="current">
+	    <a href="./cs598_fall24.html">
 	       Expansion, Codes, and Optimization both Classical and Quantum
 	    </a>
 	    (Fall 2024)
@@ -161,9 +167,9 @@
 	</div>
       </div>
 
-      <div id="students" class="row">
+      <div id="students" class="row" role="region" aria-labelledby="students-title">
 	<div class="col c6">
-	  <h3>PhD Students</h3> 
+	  <h3 id="students-title">PhD Students</h3>
 
 	  <div id="students-list">
 	    <p>
@@ -185,369 +191,355 @@
 	</div>
       </div>
 
-      <div id="papers" class="row">
+      <div id="papers" class="row" role="region" aria-labelledby="papers-title">
 	<div class="col c6">
-	  <h3>Papers</h3>
+	  <div class="papers-heading">
+	    <div>
+	      <p class="section-kicker">Research archive</p>
+	      <h3 id="papers-title">Papers</h3>
+	    </div>
+	  </div>
+	  <ul class="publication-list">
 
 
-	  <div style="line-height:50%">
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2609.20780">
+	      Asymptotically Good Quantum Locally Testable Codes
+	    </a>
 	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2608.20287" class="current">
+	    (with William Gay)
+	  </li>
+
+	  <li class="publication">
+	    <a href="https://eccc.weizmann.ac.il/report/2026/200/">
+	      Subspace-Design Codes from LCL Derandomization: A Short Note
+	    </a>
+	    <br>
+	    (with Nikhil Shagrithaya)
+	  </li>		    	  
+
+
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2609.25127">
+	      Stable Regularity Lemmas: Efficient Algorithms and Essentially Tight Littlestone Bounds
+	    </a>
+	    <br>
+	    (with Leonardo Nagami Coregliano)
+	  </li>
+
+
+
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2609.05870">
+	      Algorithmic List Decoding at Capacity and Optimal Proximity Gaps for Reed–Solomon Codes
+	    </a>
+	    <br>
+	    (Fernando Granha Jeronimo)
+	  </li>
+	  
+
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2609.40313">
+	      Explicit Capacity-Achieving Quantum LDPC Codes List Decodable in Near-linear Time
+	    </a>
+	    <br>
+	    (with William Gay and Abhi Shukul) <span class="venue">SODA 2027</span> (to appear)
+	  </li>
+
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2609.40262">
+	      Quantum List Recovery and Decoding: Achievability and Limitations	      
+	    </a>
+	    <br>
+	    (with Xiaojuan Ma)
+	  </li>
+
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2609.40252">
+	      From Random Quantum Codes to Explicit qLDPC Codes via Local Properties
+	    </a>
+	    <br>
+	    (with Xiaojuan Ma and Nikhil Shagrithaya)
+	  </li>	  	  
+
+
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2608.20287">
 	      The Honeycomb Framework for Code Bounds
 	    </a>
 	    <br>
-	    (with William Gay and Lenny Liu)  
-	  </p>	  	  	  	  
+	    (with William Gay and Lenny Liu)
+	  </li>
 
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2608.06345" class="current">
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2608.06345">
 	      Dimension-Free Polylogarithmic Quantum Shadow Tomography from Sequential PGM
 	    </a>
 	    <br>
-	    (with Qizhao Huang and Lenny Liu)  
-	  </p>	  	  	  
+	    (with Qizhao Huang and Lenny Liu)
+	  </li>
 
 	  
-	  <div style="line-height:50%">
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2609.11854">
+	      PureSuperQMA(exp) = BellPureSymQMA(poly) = QMA via Dimension-Free Bosonic Argmax
+	    </a>
 	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2608.02590" class="current">
+	    (with William Gay, Lenny Liu, Itai Leigh, Pei Wu and Haochen Xu)
+	  </li>	    	    	  
+
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2608.02590">
 	      Optimal Quantum de Finetti Theorems via Argmax Rounding
 	    </a>
 	    <br>
-	    (with Pei Wu and Haochen Xu)  
-	  </p>	  	  
-	  
+	    (with Pei Wu and Haochen Xu)
+	  </li>
 
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2608.02594" class="current">
+
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2608.02594">
 	      An Argmax Principle for Sum-of-Squares Relaxations on the Sphere
 	    </a>
 	    <br>
-	    (with Pei Wu and Haochen Xu)  
-	  </p>	  	  
+	    (with Pei Wu and Haochen Xu)
+	  </li>
 
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2605.16249" class="current">
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2605.16249">
 	      The Collapse of Unentangled Stoquastic Merlin-Arthur Proof Systems
 	    </a>
 	    <br>
-	    (with William Gay)  
-	  </p>	  	  	  
+	    (with William Gay)
+	  </li>
 
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2607.21477" class="current">
-	      An Optimal Analysis of the Product Test	      
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2607.21477">
+	      An Optimal Analysis of the Product Test
 	    </a>
 	    <br>
-	    (with Jacob Beckey and Pei Wu)  
-	  </p>
+	    (with Jacob Beckey and Pei Wu)
+	  </li>
 
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2510.06185" class="current">
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2510.06185">
 	      Probabilistic Guarantees to Explicit Constructions: Local Properties of Linear Codes
 	    </a>
 	    <br>
-	    (with Nikhil Shagrithaya)  <b> - </b>  <b> STOC 2026 </b>
-	  </p>	  	  	  
+	    (with Nikhil Shagrithaya)  <span class="venue">STOC 2026</span>
+	  </li>
 
-	  <div style="line-height:50%">
-	    <br>
-	  </div>
-	  <p>
+	  <li class="publication">
 	    <span class="nolink-title">A Framework for CSPs over the Hypercube: from Sublinear to Subexponential Time</span>
 	    <br>
-	    (with Agastya Vibhuti Jha and Davide Mazzali) 
-	  </p>	  	  
+	    (with Agastya Vibhuti Jha and Davide Mazzali)
+	  </li>
 
 
-	  <div style="line-height:50%">
-	    <br>
-	  </div>
-	  <p>
-	    <a href="https://arxiv.org/abs/2509.05203" class="current">
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2509.05203">
 	      List Decoding Expander-Based Codes via Fast Approximation of Expanding CSPs: I
 	    </a>
 	    <br>
-	    (with Aman Singh) 
-	  </p>
+	    (with Aman Singh)
+	  </li>
 
-	  <p>
-	    <a href="https://arxiv.org/abs/2501.04854" class="current">
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2501.04854">
 	      Higher-order Delsarte Dual LPs: Lifting, Constructions and Completeness
 	    </a>
 	    <br>
-	    (with Leonardo Nagami Coregliano, Chris Jones, Nati Linial and Elyassaf Loyfer)   <b> - </b> <b> ITCS 2026 </b>
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  
-	  <div style="line-height:50%">
-	    <br>
-	  </div>
-	  <p>
-	    <a href="https://arxiv.org/abs/2507.14445" class="current">
+	    (with Leonardo Nagami Coregliano, Chris Jones, Nati Linial and Elyassaf Loyfer)   <span class="venue">ITCS 2026</span>
+	  </li>
+
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2507.14445">
 		Pseudorandomness of Expander Walks via Fourier Analysis on Groups
 	    </a>
 	    <br>
-	    (with Tushant Mittal and Sourya Roy) <b> - </b> <b> RANDOM 2025 </b>
-	  </p>	  
+	    (with Tushant Mittal and Sourya Roy) <span class="venue">RANDOM 2025</span>
+	  </li>
 
-	  
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2502.07308" class="current">
+
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2502.07308">
 	      Explicit Codes approaching Generalized Singleton Bound using Expanders
 	    </a>
 	    <br>
-	    (with Tushant Mittal, Shashank Srivastava and Madhur Tulsiani) <b> - </b> <b> STOC 2025 </b><span class="special-issue">(invited to special issue)</span>
+	    (with Tushant Mittal, Shashank Srivastava and Madhur Tulsiani) <span class="venue">STOC 2025</span><span class="special-issue">(invited to special issue)</span>
 	    <br>
-	    <a href="./presentations/fernando_talk_ael_gsb.pdf"> [slides @CS Seminar]</a>
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
+	    <a href="./presentations/fernando_talk_ael_gsb.pdf">slides @CS Seminar</a>
+	  </li>
+	  <li class="publication">
 	    <span class="nolink-title">List Decoding Explicit Binary Codes Near Capacity at (semi-)Structured Centroids</span>
 	    <br>
-	    (Fernando Granha Jeronimo) <!-- <b> - </b> <b> Preprint </b> -->	    
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2411.15148" class="current">
+	    (Fernando Granha Jeronimo)
+	  </li>
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2411.15148">
 	      Coherence in Property Testing: Quantum-Classical Collapses and Separations
 	    </a>
 	    <br>
-	    (with Nir Magrafta, Joseph Slote and Pei Wu)  <b> - </b> <b> QIP 2025 </b>
+	    (with Nir Magrafta, Joseph Slote and Pei Wu)  <span class="venue">QIP 2025</span>
 	    <br>
-	    <a href="https://www.youtube.com/watch?v=RBYbr-V8Ojo"> [video @QIP'25]</a>	    
-	  </p>
-	  
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2411.04306" class="current">
+	    <a href="https://www.youtube.com/watch?v=RBYbr-V8Ojo">video @QIP'25</a>
+	  </li>
+
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2411.04306">
 	      List Decodable Quantum LDPC Codes
 	    </a>
 	    <br>
-	    (with T. Bergamaschi, T. Mittal, S. Srivastava and M. Tulsiani) <b> - </b> <b>QIP 2025</b> (poster)
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2312.15285" class="current">
+	    (with T. Bergamaschi, T. Mittal, S. Srivastava and M. Tulsiani) <span class="venue">QIP 2025</span> (poster)
+	  </li>
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2312.15285">
 	      Pseudorandom and Pseudoentangled States from Subset States
 	    </a>
 	    <br>
-	    (with Nir Magrafta and Pei Wu) <b> - </b> <b> TQC 2024</b> (poster)
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	    	    	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2402.15282" class="current">
+	    (with Nir Magrafta and Pei Wu) <span class="venue">TQC 2024</span> (poster)
+	  </li>
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2402.15282">
 	      Dimension Independent Disentanglers from Unentanglement and Applications
 	    </a>
 	    <br>
-	    (with Pei Wu) <b> - </b> <b> CCC 2024 </b>
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	    	    	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2311.02263" class="current">
+	    (with Pei Wu) <span class="venue">CCC 2024</span>
+	  </li>
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2311.02263">
 	      List Decoding of Tanner and Expander Amplified Codes from Distance Certificates
 	    </a>
 	    <br>
-	    (with Shashank Srivastava and Madhur Tulsiani) <b> - </b> <b> FOCS 2023 </b>	    	    
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="http://arxiv.org/abs/2402.18790" class="current">
+	    (with Shashank Srivastava and Madhur Tulsiani) <span class="venue">FOCS 2023</span>
+	  </li>
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2402.18790">
 		The Power of Unentangled Quantum Proofs with Non-negative Amplitudes
 	    </a>
 	    <br>
-	    (with Pei Wu) <b> - </b> <b> STOC 2023 </b>  (QIP 2024)
+	    (with Pei Wu) <span class="venue">STOC 2023</span>  (QIP 2024)
 	    <br>
-	    <a href="https://www.youtube.com/watch?v=pMUraExiMFk"> [video @STOC'23]</a>
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	    	    	  
-	  <p>
-	    <a href="doc/gen_dec_csp.pdf" class="current">
+	    <a href="https://www.youtube.com/watch?v=pMUraExiMFk">video @STOC'23</a>
+	  </li>
+	  <li class="publication">
+	    <a href="doc/gen_dec_csp.pdf">
 		Fast Decoding of Explicit almost Optimal \(\epsilon\)-balanced \(q\)-ary Codes and
 	      <br>
-	      &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp Fast Approximation of Expanding \(k\)-CSPs 
+	      Fast Approximation of Expanding \(k\)-CSPs
 	    </a>
 	    <br>
-	    (Fernando Granha Jeronimo)<b> - </b> <b> RANDOM 2023 </b>    
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>		  
-	  <p>
-	    <a href="https://arxiv.org/abs/2211.01248" class="current">
+	    (Fernando Granha Jeronimo)<span class="venue">RANDOM 2023</span>
+	  </li>
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2211.01248">
 		Exact Completeness of LP Hierarchies for Linear Codes
 	    </a>
 	    <br>
-	    (with Leonardo Nagami Coregliano and Chris Jones) <b> - </b> <b> ITCS 2023 </b>
+	    (with Leonardo Nagami Coregliano and Chris Jones) <span class="venue">ITCS 2023</span>
 	    <br>
-	    <a href="https://www.youtube.com/watch?v=X8hDsnn2P1k"> [video @ITCS]</a>
-	  </p>	  
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2209.07024" class="current">
+	    <a href="https://www.youtube.com/watch?v=X8hDsnn2P1k">video @ITCS</a>
+	  </li>
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2209.07024">
 		Almost Ramanujan Expanders from Arbitrary Expanders via Operator Amplification
 	    </a>
 	    <br>
-	    (with Tushant Mittal, Sourya Roy and Avi Wigderson) <b> - </b> <b> FOCS 2022 </b><span class="special-issue">(invited to special issue)</span> 
+	    (with Tushant Mittal, Sourya Roy and Avi Wigderson) <span class="venue">FOCS 2022</span><span class="special-issue">(invited to special issue)</span>
 	    <br>
-	    <a href="https://www.youtube.com/watch?v=8CkbLun5hFs"> [video @IAS]</a> <a href="https://www.youtube.com/watch?v=SkiNeHg-1zA"> [video @Princeton]</a>
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2112.09221" class="current">
+	    <a href="https://www.youtube.com/watch?v=8CkbLun5hFs">video @IAS</a> <a href="https://www.youtube.com/watch?v=SkiNeHg-1zA">video @Princeton</a>
+	  </li>
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2112.09221">
 		A Complete Linear Programming Hierarchy for Linear Codes
 	    </a>
 	    <br>
-	    (with Leonardo Nagami Coregliano and Chris Jones) <b> - </b> <b> ITCS 2022 </b>
+	    (with Leonardo Nagami Coregliano and Chris Jones) <span class="venue">ITCS 2022</span>
 	    <br>
-	    <a href="https://www.youtube.com/watch?v=9OaTdpTUQFI"> [video @IAS]</a>
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2112.01647" class="current">
+	    <a href="https://www.youtube.com/watch?v=9OaTdpTUQFI">video @IAS</a>
+	  </li>
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2112.01647">
 		Explicit Abelian Lifts and Quantum LDPC Codes
 	    </a>
 	    <br>
-	    (with Tushant Mittal, Ryan O’Donnell, Pedro Paredes and Madhur Tulsiani) <b> - </b> <b> ITCS 2022 </b>
+	    (with Tushant Mittal, Ryan O’Donnell, Pedro Paredes and Madhur Tulsiani) <span class="venue">ITCS 2022</span>
 	    <br>
-	    <a href="https://www.youtube.com/watch?v=CIsHzvtFpZ8"> [video @IAS]</a>  
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
+	    <a href="https://www.youtube.com/watch?v=CIsHzvtFpZ8">video @IAS</a>
+	  </li>
+	  <li class="publication">
 	    <a href="doc/regularity_decoding.pdf">
 		Near-linear Time Decoding of Ta-Shma's Codes via Splittable Regularity
 	    </a>
 	    <br>
-	    (with Shashank Srivastava and Madhur Tulsiani) <b> - </b> <b> STOC 2021 </b>
+	    (with Shashank Srivastava and Madhur Tulsiani) <span class="venue">STOC 2021</span>
 	    <br>
-	    <a href="https://www.youtube.com/watch?v=fsFh4-bevX4"> [video @STOC'21]</a>
-	    <a href="presentations/dec_stoc21.pdf"> [slides @STOC'21]</a>	    	    
-	    <a href="https://northwestern.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=a584339e-6b7e-4859-8d51-aca7015d6561"> [video @JTW'20]</a>
-	    <a href="presentations/northwestern_jtw20.pdf"> [slides @Junior Theorists Workshop'20]</a>	    
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
+	    <a href="https://www.youtube.com/watch?v=fsFh4-bevX4">video @STOC'21</a>
+	    <a href="presentations/dec_stoc21.pdf">slides @STOC'21</a>
+	    <a href="https://northwestern.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=a584339e-6b7e-4859-8d51-aca7015d6561">video @JTW'20</a>
+	    <a href="presentations/northwestern_jtw20.pdf">slides @Junior Theorists Workshop'20</a>
+	  </li>
+	  <li class="publication">
 	    <a href="https://arxiv.org/abs/2011.05500">
 		Unique Decoding of Explicit \(\epsilon\)-balanced Codes Near the Gilbert-Varshamov Bound
-	    </a> 
+	    </a>
 	    <br>
-	    (with Dylan Quintana, Shashank Srivastava and Madhur Tulsiani) <b> - </b> <b> FOCS 2020 </b><span class="special-issue">(invited to special issue)</span> 
+	    (with Dylan Quintana, Shashank Srivastava and Madhur Tulsiani) <span class="venue">FOCS 2020</span><span class="special-issue">(invited to special issue)</span>
 	    <br>
-	    <a href="https://www.youtube.com/watch?v=6OIAzLAcAkE"> [longer video @FOCS20]</a> <a href="presentations/dec_binary.pdf"> [longer slides @FOCS20]</a> <a href="presentations/dec_near_gv_bound.pdf"> [slides general CS audience]</a>
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
+	    <a href="https://www.youtube.com/watch?v=6OIAzLAcAkE">longer video @FOCS20</a> <a href="presentations/dec_binary.pdf">longer slides @FOCS20</a> <a href="presentations/dec_near_gv_bound.pdf">slides general CS audience</a>
+	  </li>
+	  <li class="publication">
 	    <a href="https://arxiv.org/abs/2009.01874">
 		Sum-of-Squares Lower Bounds for Sherrington-Kirkpatrick via Planted Affine Planes
 	    </a>
 	    <br>
-	    (with Mrinalkanti Ghosh, Chris Jones, Aaron Potechin and Goutham Rajendran) <b> - </b> <b> FOCS 2020 </b>
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/2007.05841" class="current">
+	    (with Mrinalkanti Ghosh, Chris Jones, Aaron Potechin and Goutham Rajendran) <span class="venue">FOCS 2020</span>
+	  </li>
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/2007.05841">
 		Tighter Bounds on the Independence Number of the Birkhoff Graph
 	    </a>
 	    <br>
-	    (with Leonardo Nagami Coregliano) <b> - </b> <b> European J. of Combinatorics </b>
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
+	    (with Leonardo Nagami Coregliano) <span class="venue">European J. of Combinatorics</span>
+	  </li>
+	  <li class="publication">
 	    <a href="https://arxiv.org/abs/2011.05467">
 		List Decoding of Direct Sum Codes
 	    </a>
 	    <br>
-	    (with Vedat Levi Alev, Dylan Quintana, Shashank Srivastava and Madhur Tulsiani) <b> - </b> <b> SODA 2020 </b>
+	    (with Vedat Levi Alev, Dylan Quintana, Shashank Srivastava and Madhur Tulsiani) <span class="venue">SODA 2020</span>
 	    <br>
-	    <a href="presentations/list_dec_soda.pdf"> [slides @SODA20]</a>	    
-	  </p>
-	  <div style="line-height:50%">
-	    <br>
-	  </div>	  
-	  <p>
-	    <a href="https://arxiv.org/abs/1907.07833" class="current">
+	    <a href="presentations/list_dec_soda.pdf">slides @SODA20</a>
+	  </li>
+	  <li class="publication">
+	    <a href="https://arxiv.org/abs/1907.07833">
 		Approximating Constraint Satisfaction Problems on High-Dimensional Expanders
 	    </a>
 	    <br>
-	    (with Vedat Levi Alev and Madhur Tulsiani) <b> - </b> <b> FOCS 2019 </b>
+	    (with Vedat Levi Alev and Madhur Tulsiani) <span class="venue">FOCS 2019</span>
+	  </li>
+	  </ul>
+	</div>
+      </div>
+
+
+      <div id="writing" class="row" role="region" aria-labelledby="writing-title">
+	<div class="col c6">
+	  <h3 id="writing-title">Other Writings</h3>
+	  <p>
+	    <a href="doc/fernando_dissertation.pdf">  A Constrained Random Walk Through Coding Theory </a>
+	    <br>
+	    (Fernando Granha Jeronimo) <span class="venue">Dissertation</span>
 	  </p>
 	</div>
       </div>
 
 
-      <div id="writing" class="row">
-	<div class="col c6">
-	  <h3>Other Writings</h3>
-	  <p>
-	    <a href="doc/fernando_dissertation.pdf">  A Constrained Random Walk Through Coding Theory </a>
-	    <br>
-	    (Fernando Granha Jeronimo) <b> - </b> <b> Dissertation </b>
-	  </p>	  
-	</div>
-      </div>
-
-
-      <div id="bio" class="row">
+      <div id="bio" class="row" role="region" aria-labelledby="bio-title">
 	<div class="col c5">
-	  <h3>Short Bio</h3>
+	  <h3 id="bio-title">Short Bio</h3>
 	  <p>
-	    Prior to UIUC, I was a Simons-Berkeley fellow, and 
+	    Prior to UIUC, I was a Simons-Berkeley fellow, and
 	    thankfully supported in part as a Google Research Fellow.
 	    I had a wonderful experience as a postdoc in <a href="https://www.math.ias.edu/avi/home">Avi Wigderson's</a>
 	    group at the Institute for Advanced Study (IAS).
@@ -555,91 +547,92 @@
 	    I received a B.Sc. and M.Sc. degrees from Unicamp
 	    Brazil (my home country) and also received an engineering
 	    degree from Telecom Paris (France) as part of a double degree
-	    program. 
+	    program.
 	  </p>
 	</div>
-      </div>      
+      </div>
 
-      <div id="research-courses" class="row">
+      <div id="research-courses" class="row" role="region" aria-labelledby="courses-title">
 	<div class="col c6">
-	  <h3>Research Courses</h3>
+	  <h3 id="courses-title">Research Courses</h3>
 	  <p>
-	     <a href="https://darintuga.github.io/" class="current">
+	     <a href="https://darintuga.github.io/">
 	       Code Bounds: A (Crude) Course
-	    </a>	  
-	  </p>	  
+	    </a>
+	  </p>
 	</div>
-      </div>      
-      
-      <div id="reading-groups" class="row">
+      </div>
+
+      <div id="reading-groups" class="row" role="region" aria-labelledby="groups-title">
 	<div class="col c6">
-	  <h3>Reading Groups in Theory</h3>
+	  <h3 id="groups-title">Reading Groups in Theory</h3>
 	  <p>
-	     <a href="./tcs_spring26.html" class="current">
+	     <a href="./tcs_spring26.html">
 	       Reading Group on TCS - Spring 2026
 	    </a>
-	  </p>		  	  
-	  <p>
-	     <a href="https://darintuga.github.io/tcs_fall25.html" class="current">
-	       Reading Group on TCS - Fall 2025
-	    </a>
-	  </p>		  
-	  <p>
-	     <a href="./rg/pcp/around_pcp.html" class="current">
-	       Around Classical and Quantum PCPs
-	    </a>
-	  </p>		  	  
-	  <p>
-	     <a href="https://www.cs.princeton.edu/~pparedes/cte-reading-group/" class="current">
-	      Previous Reading Group on Expansion and Coding Theory (IAS+Princeton University)
-	    </a>
-	  </p>		  
-	  <p>
-	     <a href="https://darintuga.github.io/" class="current">
-	       Previous External Speaker Series.	       
-	    </a>	  
 	  </p>
 	  <p>
-	     <a href="https://darintuga.github.io/" class="current">
+	     <a href="https://darintuga.github.io/tcs_fall25.html">
+	       Reading Group on TCS - Fall 2025
+	    </a>
+	  </p>
+	  <p>
+	     <a href="./rg/pcp/around_pcp.html">
+	       Around Classical and Quantum PCPs
+	    </a>
+	  </p>
+	  <p>
+	     <a href="https://www.cs.princeton.edu/~pparedes/cte-reading-group/">
+	      Previous Reading Group on Expansion and Coding Theory (IAS+Princeton University)
+	    </a>
+	  </p>
+	  <p>
+	     <a href="https://darintuga.github.io/">
+	       Previous External Speaker Series.
+	    </a>
+	  </p>
+	  <p>
+	     <a href="https://darintuga.github.io/">
 	      Previous Reading Group on Coding Theory
 	    </a>
 	  </p>
 	  <p>
-	     <a href="https://darintuga.github.io/" class="current">
+	     <a href="https://darintuga.github.io/">
 	      Previous Reading Group on High-dimensional Expanders
 	    </a>
-	  </p>	  
+	  </p>
 	</div>
       </div>
 
-      <div id="mentorship" class="row">
+      <div id="mentorship" class="row" role="region" aria-labelledby="mentorship-title">
 	<div class="col c6">
-	  <h3>Local-to-Global Mentorship Program</h3>
+	  <h3 id="mentorship-title">Local-to-Global Mentorship Program</h3>
 	  <p>
-	     <a href="./prog/local_to_global.html" class="current">
+	     <a href="./prog/local_to_global.html">
 	       Local-to-Global TCS Mentorship Program at UIUC
 	    </a>
-	  </p>		  	  	  
+	  </p>
 	</div>
       </div>
-      
 
-      <div id="past-teaching" class="row">
+
+      <div id="past-teaching" class="row" role="region" aria-labelledby="past-teaching-title">
 	<div class="col c5">
-	  <h3>Past Teaching Activities</h3>
+	  <h3 id="past-teaching-title">Past Teaching Activities</h3>
 	  <p>
 	    I was a TA 14 times for various courses during my PhD receiving two (annual) TA prizes from the CS department.
 	  </p>
 	</div>
       </div>
       </main>
-                    
 
-      <div class="row">
+
+      <footer class="site-footer">
 	<div class="col c12 alignright">
-	  <p><span class="larger">2026 Fernando Granha Jeronimo</span></p>
+	  <a class="back-to-top" href="#top">Back to top <span aria-hidden="true">↑</span></a>
+	  <p><span class="larger">&copy; 2026 Fernando Granha Jeronimo</span></p>
 	</div>
-      </div>
+      </footer>
     </div>
   </body>
 </html>
